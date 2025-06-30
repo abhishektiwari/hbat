@@ -1,0 +1,9 @@
+# HBAT - Hydrogen Bond Analysis Tool
+# Core production dependencies
+
+# Essential PDB parsing
+pdbreader>=0.1.0
+
+# Optional visualization (GUI features)
+networkx>=2.5.0
+matplotlib>=3.3.0

@@ -1,0 +1,42 @@
+# HBAT - Development Requirements
+# Extended requirements for development, testing, and contribution
+
+# Include core requirements
+-r requirements.txt
+
+# Testing framework
+pytest>=6.0.0
+pytest-cov>=2.8.0
+pytest-mock>=3.0.0
+
+# Code quality tools
+black>=21.0.0
+flake8>=3.8.0
+isort>=5.0.0
+mypy>=0.800
+
+# Type checking
+# See list of stubs here https://github.com/python/typeshed/tree/main/stubs
+#types-networkx
+types-setuptools
+types-requests
+types-Pillow
+pandas-stubs
+git+https://github.com/microsoft/python-type-stubs.git 
+# Pre-commit hooks
+pre-commit>=2.10.0
+
+# Documentation
+sphinx>=3.0.0
+sphinx-rtd-theme>=0.5.0
+
+# Development tools
+coverage>=5.0.0
+
+# Package building and distribution
+build>=0.8.0
+twine>=4.0.0
+setuptools-scm>=6.2.0
+
+# Standalone executable building
+pyinstaller>=5.0.0

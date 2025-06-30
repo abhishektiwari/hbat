@@ -216,3 +216,7 @@ _version.py
 
 # Don't track readthedocs.yaml
 .readthedocs.yaml
+
+# Include requirements files
+!requirements.txt
+!requirements-dev.txt

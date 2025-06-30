@@ -1,0 +1,13 @@
+# Documentation build requirements for Read the Docs
+
+# Core dependencies needed for autodoc
+pdbreader>=0.1.0
+networkx>=2.5.0
+matplotlib>=3.3.0
+
+# Sphinx and extensions
+sphinx>=3.0.0
+sphinx-rtd-theme>=0.5.0
+
+# For better docstring parsing
+sphinx-autodoc-typehints
