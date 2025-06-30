@@ -23,6 +23,9 @@ HBAT Documentation
    :branch: main
    :last-commit:
 
+.. image:: https://img.shields.io/pypi/status/hbat
+   :alt: PyPI - Status
+
 .. github-shield::
    :username: abhishektiwari
    :repository: hbat
