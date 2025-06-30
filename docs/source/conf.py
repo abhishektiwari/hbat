@@ -6,12 +6,22 @@ import sys
 # Add the project root to the Python path
 sys.path.insert(0, os.path.abspath('../..'))
 
+# Import version from package
+try:
+    from hbat import __version__
+except ImportError:
+    __version__ = '0.0.0+unknown'
+
 # -- Project information -----------------------------------------------------
 
 project = 'HBAT'
 copyright = '2025, Abhishek Tiwari'
 author = 'Abhishek Tiwari'
-release = '1.0.0'
+
+# The short X.Y version
+version = __version__
+# The full version, including alpha/beta/rc tags
+release = __version__
 
 # -- General configuration ---------------------------------------------------
 
@@ -93,7 +103,6 @@ html_theme_options = {
     'canonical_url': '',
     'analytics_id': '',
     'logo_only': False,
-    'display_version': True,
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
     'vcs_pageview_mode': '',
@@ -105,8 +114,14 @@ html_theme_options = {
     'titles_only': False
 }
 
+# The version info for the project you're documenting, acts as replacement for
+# |version| and |release|, also used in various other places throughout the
+# built documents.
+html_title = f"{project} {version}"
+html_short_title = f"{project} {version}"
+
 # Add project logo
-html_logo = '../../hbat.png'
+html_logo = '../../hbat.svg'
 html_favicon = '../../hbat.ico'
 
 # Output file base name for HTML help builder.

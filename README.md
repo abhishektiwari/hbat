@@ -1,12 +1,16 @@
-![HBAT](hbat.svg)
+![HBAT](https://github.com/abhishektiwari/hbat/raw/main/hbat.svg)
 
 # Hydrogen Bond Analysis Tool (HBAT) v2 
 
 A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions like halogen bonds and non-canonical interactions in macromolecular structures, available in Brookhaven Protein Database (PDB) file format. HBAT uses a geometric approach to identify potential hydrogen bonds by analyzing distance and angular criteria between donor-hydrogen-acceptor triplets.
 
+![License](https://img.shields.io/github/license/abhishektiwari/hbat)
+![PyPI - Version](https://img.shields.io/pypi/v/hbat)
+![PyPI - Status](https://img.shields.io/pypi/status/hbat)
+
 ## Background
 
-HBAT v2  is a modern Python re-implementation of the original Perl-based tool developed by Abhishek Tiwari and Sunil Kumar Panigrahi.
+HBAT v2  is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi.
 
 ## Features
 
