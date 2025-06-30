@@ -3,8 +3,7 @@ HBAT Documentation
 
 Welcome to HBAT (Hydrogen Bond Analysis Tool) documentation!
 
-HBAT is a powerful tool for analyzing molecular interactions in protein structures, 
-including hydrogen bonds, halogen bonds, and π interactions.
+A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions like halogen bonds and non-canonical interactions in macromolecular structures, available in Brookhaven Protein Database (PDB) file format. HBAT uses a geometric approach to identify potential hydrogen bonds by analyzing distance and angular criteria between donor-hydrogen-acceptor triplets.
 
 .. toctree::
    :maxdepth: 2

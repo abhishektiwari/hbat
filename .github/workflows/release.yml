@@ -65,6 +65,12 @@ jobs:
       with:
         name: build-artifacts
         path: dist/*
+    
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        skip-existing: true
 
   build-macos:
     needs: generate-tag
