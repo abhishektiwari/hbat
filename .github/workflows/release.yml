@@ -12,25 +12,23 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     outputs:
-      release_tag: ${{ steps.generate_tag.outputs.tag }}
+      release_tag: ${{ steps.generate_tag.outputs.version_tag }}
       version: ${{ steps.generate_tag.outputs.version }}
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     
     - name: Generate release tag
       id: generate_tag
-      run: |
-        GIT_HASH=$(git rev-parse --short=7 HEAD)
-        # Convert git hash to a numeric value to make it PEP 440 compliant
-        # This uses the decimal representation of the first 6 hex chars
-        NUMERIC_HASH=$(printf "%d" 0x${GIT_HASH:0:6})
-        VERSION="2.0.${NUMERIC_HASH}"
-        TAG="v${VERSION}"
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "tag=$TAG" >> $GITHUB_OUTPUT
-        echo "Generated VERSION: $VERSION (from git hash: $GIT_HASH)"
-        echo "Generated TAG: $TAG"
+      uses: paulhatch/semantic-version@v5.4.0
+      with:
+        tag_prefix: "v"
+        major_pattern: "(MAJOR)"
+        minor_pattern: "(MINOR)"
+        version_format: "${major}.${minor}.${patch}"
+        bump_each_commit: true
 
   release:
     needs: generate-tag
