@@ -1,6 +1,27 @@
 HBAT Documentation
 ==================
 
+.. pypi-shield::
+   :project: hbat
+   :version:
+
+.. pypi-shield::
+   :wheel:
+
+.. pypi-shield::
+   :py-versions:
+   
+.. github-shield::
+   :username: abhishektiwari
+   :repository: hbat
+   :branch: main
+   :last-commit:
+
+.. github-shield::
+   :username: abhishektiwari
+   :repository: hbat
+   :license:
+
 Welcome to HBAT (Hydrogen Bond Analysis Tool) documentation!
 
 **Version:** |version|

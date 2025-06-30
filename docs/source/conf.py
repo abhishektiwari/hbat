@@ -33,7 +33,11 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.coverage',
     'sphinx.ext.githubpages',
+    'sphinx_toolbox.shields',
 ]
+
+# Mock imports for modules that might not be available in CI
+autodoc_mock_imports = ['tkinter', 'matplotlib']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -126,3 +130,21 @@ html_favicon = '../../hbat.ico'
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'HBATdoc'
+
+# -- Edit on GitHub configuration --------------------------------------------
+
+# Variables for Edit on GitHub links
+html_context = {
+    'display_github': True,  # Enable GitHub integration
+    'github_user': 'abhishektiwari',  # GitHub username
+    'github_repo': 'hbat',  # GitHub repository name
+    'github_version': 'main/',  # Git branch
+    'conf_py_path': 'docs/source/',  # Path to documentation source
+}
+
+# -- Shield badges configuration ---------------------------------------------
+
+# GitHub and PyPI information for badges
+github_username = 'abhishektiwari'
+github_repository = 'hbat'
+pypi_name = 'hbat'
