@@ -1,0 +1,25 @@
+{
+  "format_version": "1.0",
+  "application": "HBAT",
+  "created": "2024-01-15T10:30:00.000000",
+  "description": "HBAT Standard Resolution Preset - Default parameters optimized for typical protein crystal structures (1.5-2.5Å resolution)",
+  "parameters": {
+    "hydrogen_bonds": {
+      "h_a_distance_cutoff": 3.5,
+      "dha_angle_cutoff": 120.0,
+      "d_a_distance_cutoff": 4.0
+    },
+    "halogen_bonds": {
+      "x_a_distance_cutoff": 4.0,
+      "cxa_angle_cutoff": 120.0
+    },
+    "pi_interactions": {
+      "h_pi_distance_cutoff": 4.5,
+      "dh_pi_angle_cutoff": 90.0
+    },
+    "general": {
+      "covalent_cutoff_factor": 1.2,
+      "analysis_mode": "complete"
+    }
+  }
+}

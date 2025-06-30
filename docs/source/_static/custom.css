@@ -1,0 +1,78 @@
+/* Custom HBAT Documentation Styling */
+
+/* Sidebar customization */
+.wy-nav-side {
+    background: #2c3e50 !important;  /* Main sidebar background */
+}
+
+/* Sidebar header */
+.wy-side-nav-search {
+    background-color: #34495e !important;  /* Search area background */
+}
+
+/* Sidebar navigation links */
+.wy-menu-vertical a {
+    color: #ecf0f1 !important;  /* Link text color */
+}
+
+.wy-menu-vertical a:hover {
+    background-color: #3498db !important;  /* Hover background */
+    color: #ffffff !important;
+}
+
+/* Current page highlighting */
+.wy-menu-vertical li.current a {
+    background-color: #e74c3c !important;  /* Current page background */
+    color: #ffffff !important;
+}
+
+.wy-menu-vertical li.current > a {
+    background-color: #c0392b !important;  /* Current section background */
+}
+
+/* Nested navigation items */
+.wy-menu-vertical li.toctree-l2 a {
+    color: #bdc3c7 !important;  /* Sub-item text color */
+}
+
+.wy-menu-vertical li.toctree-l2.current a {
+    background-color: #e67e22 !important;  /* Current sub-item */
+}
+
+/* Search box styling */
+.wy-side-nav-search input[type=text] {
+    background-color: #ecf0f1 !important;
+    border: 1px solid #bdc3c7 !important;
+    color: #2c3e50 !important;
+}
+
+/* Logo area */
+.wy-side-nav-search > a {
+    color: #ecf0f1 !important;
+    font-weight: bold;
+}
+
+/* Scrollbar customization for webkit browsers */
+.wy-nav-side::-webkit-scrollbar {
+    width: 8px;
+}
+
+.wy-nav-side::-webkit-scrollbar-track {
+    background: #34495e;
+}
+
+.wy-nav-side::-webkit-scrollbar-thumb {
+    background: #3498db;
+    border-radius: 4px;
+}
+
+.wy-nav-side::-webkit-scrollbar-thumb:hover {
+    background: #2980b9;
+}
+
+/* Mobile responsive adjustments */
+@media screen and (max-width: 768px) {
+    .wy-nav-side {
+        background: #2c3e50 !important;
+    }
+}

@@ -1,0 +1,157 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["Tests"]
+    types:
+      - completed
+    branches: [ main ]
+
+jobs:
+  generate-tag:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      release_tag: ${{ steps.generate_tag.outputs.tag }}
+      version: ${{ steps.generate_tag.outputs.version }}
+    
+    steps:
+    - name: Generate release tag
+      id: generate_tag
+      run: |
+        VERSION="2.$(date +'%Y%m%d.%H%M%S')"
+        TAG="v${VERSION}"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+        echo "Generated VERSION: $VERSION"
+        echo "Generated TAG: $TAG"
+
+  release:
+    needs: generate-tag
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
+        pip install -e .
+    
+    - name: Set version for setuptools-scm
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git tag -a "${{ needs.generate-tag.outputs.release_tag }}" -m "Release ${{ needs.generate-tag.outputs.release_tag }}"
+        echo "Created tag: ${{ needs.generate-tag.outputs.release_tag }}"
+    
+    - name: Build package
+      run: make build
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: dist/*
+
+  build-macos:
+    needs: generate-tag
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
+        pip install -e .
+        # Install tkinter on macOS
+        brew install python-tk create-dmg
+    
+    - name: Set version for setuptools-scm
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git tag -a "${{ needs.generate-tag.outputs.release_tag }}" -m "Release ${{ needs.generate-tag.outputs.release_tag }}"
+        echo "Created tag: ${{ needs.generate-tag.outputs.release_tag }}"
+    
+    - name: Build standalone macOS app
+      run: make build-standalone
+
+    - name: Ad-hoc sign the app
+      run: |
+        echo "Signing app with ad-hoc signature..."
+        codesign --force --deep --sign - dist/HBAT-GUI.app
+        codesign --verify --verbose dist/HBAT-GUI.app
+
+    - name: Remove HBAT-GUI folder
+      run: |
+        echo "Contents of dist directory:"
+        ls -la dist/
+        cd dist && rm -rf HBAT-GUI
+    
+    - name: Create DMG installer
+      run: |
+        create-dmg \
+          --volname "HBAT Installer" \
+          --window-pos 200 120 \
+          --window-size 800 400 \
+          --icon-size 100 \
+          --icon "HBAT-GUI.app" 200 190 \
+          --hide-extension "HBAT-GUI.app" \
+          --app-drop-link 600 185 \
+          "hbat-${{ needs.generate-tag.outputs.version }}.dmg" \
+          "dist/"
+        mv hbat-${{ needs.generate-tag.outputs.version }}.dmg dist/
+    
+    - name: Upload macOS app artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-app
+        path: dist/hbat-${{ needs.generate-tag.outputs.version }}.dmg
+  
+  create-release:
+    needs: [generate-tag, release, build-macos]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+        path: dist/
+    
+    - name: Download macOS app
+      uses: actions/download-artifact@v4
+      with:
+        name: macos-app
+        path: dist/
+    
+    - name: List dist directory contents
+      run: |
+        echo "Contents of dist directory:"
+        ls -la dist/
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+            dist/hbat-${{ needs.generate-tag.outputs.version }}-py3-none-any.whl
+            dist/hbat-${{ needs.generate-tag.outputs.version }}.tar.gz
+            dist/hbat-${{ needs.generate-tag.outputs.version }}.dmg
+        tag_name: ${{ needs.generate-tag.outputs.release_tag }}
+        name: Release ${{ needs.generate-tag.outputs.release_tag }}
+        body: ${{ github.event.head_commit.message }}

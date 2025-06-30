@@ -1,0 +1,25 @@
+{
+  "format_version": "1.0",
+  "application": "HBAT",
+  "created": "2024-01-15T10:30:00.000000",
+  "description": "HBAT Strong Interactions Preset - Very strict criteria to identify only the strongest and most significant molecular interactions",
+  "parameters": {
+    "hydrogen_bonds": {
+      "h_a_distance_cutoff": 2.8,
+      "dha_angle_cutoff": 140.0,
+      "d_a_distance_cutoff": 3.5
+    },
+    "halogen_bonds": {
+      "x_a_distance_cutoff": 3.5,
+      "cxa_angle_cutoff": 140.0
+    },
+    "pi_interactions": {
+      "h_pi_distance_cutoff": 4.0,
+      "dh_pi_angle_cutoff": 80.0
+    },
+    "general": {
+      "covalent_cutoff_factor": 1.1,
+      "analysis_mode": "complete"
+    }
+  }
+}

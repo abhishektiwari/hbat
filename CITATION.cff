@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Tiwari"
+  given-names: "Abhishek"
+  orcid: "https://orcid.org/0000-0003-2222-2395"
+- family-names: "Panigrahi"
+  given-names: "Sunil Kumar"
+title: "HBAT: Hydrogen Bond Analysis Tool (v2)"
+version: 2.0.4
+doi: 10.3233/ISI-2007-003
+date-released: 2017-12-18
+url: "https://github.com/abhishektiwari/hbat"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Tiwari"
+    given-names: "Abhishek"
+    orcid: "https://orcid.org/0000-0003-2222-2395"
+  - family-names: "Panigrahi"
+    given-names: "Sunil Kumar"
+  doi: "10.3233/ISI-2007-00337"
+  journal: "In Silico Biology"
+  month: 12
+  year: 2007
+  title: "HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures"
+  issue: 6
+  volume: 7

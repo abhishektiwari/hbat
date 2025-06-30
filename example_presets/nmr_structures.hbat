@@ -1,0 +1,25 @@
+{
+  "format_version": "1.0",
+  "application": "HBAT",
+  "created": "2024-01-15T10:30:00.000000",
+  "description": "HBAT NMR Structures Preset - Parameters accounting for structural flexibility and coordinate uncertainty in solution NMR structures",
+  "parameters": {
+    "hydrogen_bonds": {
+      "h_a_distance_cutoff": 3.7,
+      "dha_angle_cutoff": 110.0,
+      "d_a_distance_cutoff": 4.2
+    },
+    "halogen_bonds": {
+      "x_a_distance_cutoff": 4.2,
+      "cxa_angle_cutoff": 110.0
+    },
+    "pi_interactions": {
+      "h_pi_distance_cutoff": 4.7,
+      "dh_pi_angle_cutoff": 95.0
+    },
+    "general": {
+      "covalent_cutoff_factor": 1.3,
+      "analysis_mode": "complete"
+    }
+  }
+}

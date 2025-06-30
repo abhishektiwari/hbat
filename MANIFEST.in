@@ -1,0 +1,44 @@
+# MANIFEST.in - Include additional files in distribution package
+
+# Documentation files
+include README.md
+include LICENSE
+include CONTRIBUTING.md
+include CODE_OF_CONDUCT.md
+
+# Configuration files
+include pyproject.toml
+include pytest.ini
+include requirements*.txt
+include Makefile
+
+# Icon and graphics files
+include *.ico
+include *.png
+include *.svg
+
+# Example files
+recursive-include example_pdb_files *.pdb
+recursive-include example_presets *.hbat
+
+# Test files and documentation
+recursive-include tests *.py
+recursive-include tests *.md
+exclude tests/htmlcov/*
+
+# Executable scripts
+include hbat_cli.py
+include hbat_gui.py
+
+# Exclude development and build artifacts
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude __pycache__
+global-exclude .git*
+global-exclude .DS_Store
+global-exclude *.so
+global-exclude .coverage
+global-exclude .pytest_cache
+prune build
+prune dist
+prune *.egg-info

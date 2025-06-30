@@ -1,0 +1,39 @@
+/* Light Theme Alternative for HBAT Documentation */
+
+/* Sidebar customization - Light theme */
+.wy-nav-side {
+    background: #f8f9fa !important;  /* Light gray sidebar */
+    border-right: 2px solid #e9ecef !important;
+}
+
+/* Sidebar header */
+.wy-side-nav-search {
+    background-color: #ffffff !important;  /* White search area */
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+/* Sidebar navigation links */
+.wy-menu-vertical a {
+    color: #495057 !important;  /* Dark gray text */
+}
+
+.wy-menu-vertical a:hover {
+    background-color: #e3f2fd !important;  /* Light blue hover */
+    color: #1976d2 !important;
+}
+
+/* Current page highlighting */
+.wy-menu-vertical li.current a {
+    background-color: #2196f3 !important;  /* Blue current page */
+    color: #ffffff !important;
+}
+
+.wy-menu-vertical li.current > a {
+    background-color: #1976d2 !important;  /* Darker blue current section */
+}
+
+/* Logo area */
+.wy-side-nav-search > a {
+    color: #212529 !important;
+    font-weight: bold;
+}
