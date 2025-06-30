@@ -16,10 +16,13 @@ jobs:
       version: ${{ steps.generate_tag.outputs.version }}
     
     steps:
+    - uses: actions/checkout@v4
+    
     - name: Generate release tag
       id: generate_tag
       run: |
-        VERSION="2.$(date +'%Y%m%d.%H%M%S')"
+        GIT_HASH=$(git rev-parse --short=7 HEAD)
+        VERSION="2.0.${GIT_HASH}"
         TAG="v${VERSION}"
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "tag=$TAG" >> $GITHUB_OUTPUT
