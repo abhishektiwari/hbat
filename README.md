@@ -1,4 +1,4 @@
-![HBAT](hbat.svg)
+![HBAT](https://raw.githubusercontent.com/abhishektiwari/hbat/refs/heads/main/hbat.svg)
 
 # Hydrogen Bond Analysis Tool (HBAT) v2 
 

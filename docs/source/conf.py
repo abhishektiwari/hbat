@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 project = 'HBAT'
 copyright = '2025, Abhishek Tiwari'
 author = 'Abhishek Tiwari'
-release = '1.0.0'
+release = '2.0.0'
 
 # -- General configuration ---------------------------------------------------
 
@@ -106,7 +106,7 @@ html_theme_options = {
 }
 
 # Add project logo
-html_logo = '../../hbat.png'
+html_logo = '../../hbat.svg'
 html_favicon = '../../hbat.ico'
 
 # Output file base name for HTML help builder.
