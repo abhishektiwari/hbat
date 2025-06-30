@@ -106,7 +106,7 @@ html_theme_options = {
 }
 
 # Add project logo
-html_logo = '../../hbat.png'
+html_logo = '../../hbat.svg'
 html_favicon = '../../hbat.ico'
 
 # Output file base name for HTML help builder.
