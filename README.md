@@ -4,9 +4,13 @@
 
 A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions like halogen bonds and non-canonical interactions in macromolecular structures, available in Brookhaven Protein Database (PDB) file format. HBAT uses a geometric approach to identify potential hydrogen bonds by analyzing distance and angular criteria between donor-hydrogen-acceptor triplets.
 
-![License](https://img.shields.io/github/license/abhishektiwari/hbat)
+![GitHub Release](https://img.shields.io/github/v/release/abhishektiwari/hbat)
+![GitHub Actions Test Workflow Status](https://img.shields.io/github/actions/workflow/status/abhishektiwari/hbat/test.yml?label=tests)
+![Python Versions](https://img.shields.io/pypi/pyversions/hbat?logo=python&logoColor=white)
 ![PyPI - Version](https://img.shields.io/pypi/v/hbat)
 ![PyPI - Status](https://img.shields.io/pypi/status/hbat)
+![Python Wheels](https://img.shields.io/pypi/wheel/hbat)
+![License](https://img.shields.io/github/license/abhishektiwari/hbat)
 
 ## Background
 
