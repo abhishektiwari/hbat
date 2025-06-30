@@ -1,9 +1,37 @@
 HBAT Documentation
 ==================
 
-Welcome to HBAT (Hydrogen Bond Analysis Tool) documentation!
+.. image:: https://img.shields.io/github/v/release/abhishektiwari/hbat
+   :alt: GitHub Release
 
-**Version:** |version|
+.. image:: https://img.shields.io/github/actions/workflow/status/abhishektiwari/hbat/test.yml?label=tests
+   :alt: GitHub Actions Test Workflow Status
+
+.. pypi-shield::
+   :project: hbat
+   :version:
+
+.. pypi-shield::
+   :wheel:
+
+.. pypi-shield::
+   :py-versions:
+   
+.. github-shield::
+   :username: abhishektiwari
+   :repository: hbat
+   :branch: main
+   :last-commit:
+
+.. image:: https://img.shields.io/pypi/status/hbat
+   :alt: PyPI - Status
+
+.. github-shield::
+   :username: abhishektiwari
+   :repository: hbat
+   :license:
+
+Welcome to HBAT (Hydrogen Bond Analysis Tool) documentation!
 
 A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions like halogen bonds and non-canonical interactions in macromolecular structures, available in Brookhaven Protein Database (PDB) file format. HBAT uses a geometric approach to identify potential hydrogen bonds by analyzing distance and angular criteria between donor-hydrogen-acceptor triplets.
 
