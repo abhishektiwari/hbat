@@ -33,6 +33,10 @@ jobs:
   release:
     needs: generate-tag
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
     
     steps:
     - uses: actions/checkout@v4
@@ -67,7 +71,7 @@ jobs:
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
-        password: ${{ secrets.PYPI_API_TOKEN }}
+        attestations: true
         skip-existing: true
 
   build-macos:
