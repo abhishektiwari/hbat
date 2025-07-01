@@ -34,6 +34,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.githubpages',
     'sphinx_toolbox.shields',
+    'sphinx_sitemap',
 ]
 
 # Mock imports for modules that might not be available in CI
@@ -121,8 +122,8 @@ html_theme_options = {
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
-html_title = f"{project} {version}"
-html_short_title = f"{project} {version}"
+html_title = f"{project} Latest Version"
+html_short_title = f"{project} Latest Version"
 
 # Add project logo
 html_logo = '../../hbat.svg'
@@ -130,6 +131,8 @@ html_favicon = '../../hbat.ico'
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'HBATdoc'
+html_baseurl = 'https://hbat.abhishek-tiwari.com/'
+sitemap_url_scheme = '{link}'
 
 # -- Edit on GitHub configuration --------------------------------------------
 
