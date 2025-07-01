@@ -1,0 +1,81 @@
+name: Conda Release
+
+on:
+  workflow_run:
+    workflows: ["Release"]
+    types:
+      - completed
+    branches: [ main ]
+
+jobs:
+  conda-build:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Get release tag
+      id: get_tag
+      run: |
+        # Get the latest tag
+        LATEST_TAG=$(git describe --tags --abbrev=0)
+        echo "release_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+        echo "Latest tag: ${LATEST_TAG}"
+    
+    - name: Setup Miniconda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        auto-update-conda: true
+        python-version: 3.11
+        channels: conda-forge,defaults
+        channel-priority: true
+    
+    - name: Install conda-build and anaconda-client
+      shell: bash -l {0}
+      run: |
+        conda install -y conda-build anaconda-client conda-verify
+        conda config --set anaconda_upload no
+    
+    - name: Build conda package
+      shell: bash -l {0}
+      run: |
+        # Export the tag for the recipe
+        export GIT_DESCRIBE_TAG=${{ steps.get_tag.outputs.release_tag }}
+        echo "Building package with version: ${GIT_DESCRIBE_TAG}"
+        
+        # Build the package
+        conda build conda --output-folder conda-build
+        
+        # List built packages
+        echo "Built packages:"
+        ls -la conda-build/noarch/
+    
+    - name: Upload to Anaconda Cloud
+      shell: bash -l {0}
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+      run: |
+        # Find the built package
+        PACKAGE_PATH=$(find conda-build -name "hbat-*.tar.bz2" | head -n 1)
+        
+        if [ -z "$PACKAGE_PATH" ]; then
+          echo "Error: No package found!"
+          exit 1
+        fi
+        
+        echo "Uploading package: $PACKAGE_PATH"
+        
+        # Upload to Anaconda Cloud
+        anaconda -t $ANACONDA_API_TOKEN upload \
+          --user ${{ secrets.ANACONDA_USERNAME }} \
+          --label main \
+          $PACKAGE_PATH
+    
+    - name: Upload conda package as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: conda-package
+        path: conda-build/noarch/hbat-*.tar.bz2

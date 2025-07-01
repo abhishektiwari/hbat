@@ -1,0 +1,61 @@
+{% set name = "hbat" %}
+{% set version = environ.get('GIT_DESCRIBE_TAG', '0.0.0').lstrip('v') %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  path: ..
+
+build:
+  number: 0
+  noarch: python
+  script: {{ PYTHON }} -m pip install . -vv
+  entry_points:
+    - hbat = hbat.cli.main:main
+    - hbat-gui = hbat.gui:main
+
+requirements:
+  host:
+    - python >=3.9
+    - pip
+    - setuptools >=45
+    - setuptools-scm >=6.2
+    - wheel
+  run:
+    - python >=3.9
+    - pdbreader >=0.1.0
+    - networkx >=2.5.0
+    - matplotlib-base >=3.3.0
+    - tk  # For GUI support
+
+test:
+  imports:
+    - hbat
+    - hbat.core
+    - hbat.cli
+    - hbat.gui
+  commands:
+    - hbat --help
+    - hbat --version
+  requires:
+    - pytest
+
+about:
+  home: https://github.com/abhishektiwari/hbat
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: 'Hydrogen Bond Analysis Tool for PDB structures'
+  description: |
+    HBAT (Hydrogen Bond Analysis Tool) is a Python package for analyzing 
+    hydrogen bonds, halogen bonds, and X-H...π interactions in protein 
+    structures from PDB files. It provides both GUI and CLI interfaces 
+    for molecular interaction analysis.
+  doc_url: https://hbat.abhishek-tiwari.com
+  dev_url: https://github.com/abhishektiwari/hbat
+
+extra:
+  recipe-maintainers:
+    - abhishektiwari
