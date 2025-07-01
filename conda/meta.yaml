@@ -25,10 +25,11 @@ requirements:
     - wheel
   run:
     - python >=3.9
-    - pdbreader >=0.1.0
+    - pip
     - networkx >=2.5.0
     - matplotlib-base >=3.3.0
     - tk  # For GUI support
+    # pdbreader will be installed via pip as part of the package installation
 
 test:
   imports:
