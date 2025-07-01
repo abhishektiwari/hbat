@@ -79,35 +79,3 @@ jobs:
       with:
         name: conda-package
         path: conda-build/noarch/hbat-*.tar.bz2
-
-  conda-forge-pr:
-    needs: conda-build
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Create conda-forge PR reminder
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const tag = '${{ steps.get_tag.outputs.release_tag }}';
-          const issue = await github.rest.issues.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: `Update conda-forge recipe for ${tag}`,
-            body: `A new release ${tag} has been published to PyPI and Anaconda Cloud.
-            
-            Please update the conda-forge feedstock:
-            1. Fork https://github.com/conda-forge/hbat-feedstock (if it exists)
-            2. Update the version and sha256 in the recipe
-            3. Submit a PR to conda-forge
-            
-            If the feedstock doesn't exist yet:
-            1. Use conda-smithy to create a new feedstock
-            2. Follow https://conda-forge.org/docs/maintainer/adding_pkgs.html
-            
-            Package details:
-            - PyPI: https://pypi.org/project/hbat/
-            - Anaconda Cloud: https://anaconda.org/${{ secrets.ANACONDA_USERNAME }}/hbat
-            `,
-            labels: ['conda-forge', 'release']
-          });
