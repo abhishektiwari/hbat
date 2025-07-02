@@ -8,6 +8,7 @@ allowing users to load PDB files, configure analysis parameters, and view result
 import os
 import threading
 import tkinter as tk
+import webbrowser
 from tkinter import filedialog, messagebox, scrolledtext, ttk
 from typing import Optional
 
@@ -66,6 +67,7 @@ class MainWindow:
         """
         menubar = tk.Menu(self.root)
         self.root.config(menu=menubar)
+        self.menubar = menubar  # Store reference for state updates
 
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
@@ -88,21 +90,18 @@ class MainWindow:
         # Analysis menu
         analysis_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Analysis", menu=analysis_menu)
+        self.analysis_menu = analysis_menu  # Store reference
         analysis_menu.add_command(
-            label="Run Analysis", accelerator="F5", command=self._run_analysis
+            label="Run Analysis",
+            accelerator="F5",
+            command=self._run_analysis,
+            state=tk.DISABLED,
         )
+        self.run_analysis_index = 0  # Index of "Run Analysis" menu item
         analysis_menu.add_command(label="Clear Results", command=self._clear_results)
         analysis_menu.add_separator()
         analysis_menu.add_command(
             label="Reset Parameters", command=self._reset_parameters
-        )
-
-        # Tools menu
-        tools_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Tools", menu=tools_menu)
-        tools_menu.add_command(label="Generate Charts", command=self._generate_charts)
-        tools_menu.add_command(
-            label="Export Visualization", command=self._export_visualization
         )
 
         # Help menu
@@ -121,8 +120,7 @@ class MainWindow:
     def _create_toolbar(self) -> None:
         """Create the toolbar.
 
-        Creates a toolbar with buttons for common operations like file opening,
-        analysis execution, and result management. Includes a progress bar.
+        Creates a toolbar with only a progress bar for showing operation status.
 
         :returns: None
         :rtype: None
@@ -130,34 +128,12 @@ class MainWindow:
         toolbar = ttk.Frame(self.root)
         toolbar.pack(fill=tk.X, padx=5, pady=2)
 
-        # File operations
-        ttk.Button(toolbar, text="Open PDB", command=self._open_file).pack(
-            side=tk.LEFT, padx=2
-        )
-        ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, padx=5, fill=tk.Y)
-
-        # Analysis operations
-        self.run_button = ttk.Button(
-            toolbar, text="Run Analysis", command=self._run_analysis, state=tk.DISABLED
-        )
-        self.run_button.pack(side=tk.LEFT, padx=2)
-
-        ttk.Button(toolbar, text="Clear Results", command=self._clear_results).pack(
-            side=tk.LEFT, padx=2
-        )
-        ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, padx=5, fill=tk.Y)
-
-        # Export operations
-        ttk.Button(toolbar, text="Save Results", command=self._save_results).pack(
-            side=tk.LEFT, padx=2
-        )
-
         # Progress bar
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(
             toolbar, variable=self.progress_var, mode="indeterminate"
         )
-        self.progress_bar.pack(side=tk.RIGHT, padx=5, fill=tk.X, expand=True)
+        self.progress_bar.pack(fill=tk.BOTH, padx=5, expand=True)
 
     def _create_main_content(self) -> None:
         """Create the main content area.
@@ -239,7 +215,8 @@ class MainWindow:
             try:
                 self.current_file = filename
                 self._load_file_content(filename)
-                self.run_button.config(state=tk.NORMAL)
+                # Enable "Run Analysis" menu item
+                self.analysis_menu.entryconfig(self.run_analysis_index, state=tk.NORMAL)
                 self.status_var.set(f"Loaded: {os.path.basename(filename)}")
                 self._clear_results()
 
@@ -330,7 +307,7 @@ class MainWindow:
         self.analysis_thread.start()
 
         # Update UI
-        self.run_button.config(state=tk.DISABLED)
+        self.analysis_menu.entryconfig(self.run_analysis_index, state=tk.DISABLED)
         self.progress_bar.config(mode="indeterminate")
         self.progress_bar.start(GUIDefaults.PROGRESS_BAR_INTERVAL)
         self.status_var.set("Running analysis...")
@@ -374,7 +351,7 @@ class MainWindow:
         self.progress_bar.stop()
         self.progress_bar.config(mode="determinate")
         self.progress_var.set(0)
-        self.run_button.config(state=tk.NORMAL)
+        self.analysis_menu.entryconfig(self.run_analysis_index, state=tk.NORMAL)
 
         # Update results panel
         self.results_panel.update_results(self.analyzer)
@@ -402,7 +379,7 @@ class MainWindow:
         self.progress_bar.stop()
         self.progress_bar.config(mode="determinate")
         self.progress_var.set(0)
-        self.run_button.config(state=tk.NORMAL)
+        self.analysis_menu.entryconfig(self.run_analysis_index, state=tk.NORMAL)
         self.status_var.set("Analysis failed")
         messagebox.showerror("Analysis Error", f"Analysis failed:\n{error_msg}")
 
@@ -526,40 +503,6 @@ class MainWindow:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to export results:\n{str(e)}")
 
-    def _generate_charts(self) -> None:
-        """Generate analysis charts.
-
-        Creates visual charts and graphs from analysis results.
-        Currently shows placeholder message for future implementation.
-
-        :returns: None
-        :rtype: None
-        """
-        if not self.analyzer:
-            messagebox.showwarning(
-                "Warning", "No results available. Run analysis first."
-            )
-            return
-
-        messagebox.showinfo("Info", "Chart generation feature coming soon!")
-
-    def _export_visualization(self) -> None:
-        """Export visualization scripts.
-
-        Exports scripts for external visualization tools.
-        Currently shows placeholder message for future implementation.
-
-        :returns: None
-        :rtype: None
-        """
-        if not self.analyzer:
-            messagebox.showwarning(
-                "Warning", "No results available. Run analysis first."
-            )
-            return
-
-        messagebox.showinfo("Info", "Visualization export feature coming soon!")
-
     def _reset_parameters(self) -> None:
         """Reset analysis parameters to defaults.
 
@@ -601,24 +544,12 @@ Python conversion: 2025
     def _show_help(self) -> None:
         """Show help dialog.
 
-        Displays basic usage instructions and guidance for using
-        the HBAT GUI application.
+        Opens the HBAT documentation website in the default web browser.
 
         :returns: None
         :rtype: None
         """
-        help_text = """
-HBAT User Guide
-
-1. Open a PDB file using File > Open PDB File
-2. Adjust analysis parameters in the Parameters tab
-3. Click 'Run Analysis' or press F5 to start analysis
-4. View results in the Results panel
-5. Save or export results using the File menu
-
-For more detailed information, please refer to the documentation.
-        """
-        messagebox.showinfo("Help", help_text.strip())
+        webbrowser.open("https://hbat.abhishek-tiwari.com")
 
     def _on_closing(self) -> None:
         """Handle window closing event.
