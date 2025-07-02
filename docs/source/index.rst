@@ -46,6 +46,7 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
    quickstart
    cli
    parameters
+   pdbfixing
    api/index
    development
    logic
@@ -56,6 +57,7 @@ Features
 
 - **Comprehensive Analysis**: Detects hydrogen bonds, halogen bonds, and X-H...π interactions
 - **Cooperativity Detection**: Identifies chains of cooperative molecular interactions
+- **Structure Enhancement**: Automated PDB fixing with OpenBabel and PDBFixer integration
 - **Flexible Parameters**: Customizable analysis parameters for different research needs
 - **Multiple Output Formats**: Support for CSV, JSON, and formatted text output
 - **GUI Interface**: User-friendly graphical interface for interactive analysis

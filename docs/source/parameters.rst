@@ -51,6 +51,34 @@ Default Parameter Values
      - 90.0
      - degrees
      - Donor-hydrogen-π angle cutoff
+   * - PDB Fixing Enabled
+     - False
+     - boolean
+     - Enable automatic structure fixing
+   * - PDB Fixing Method
+     - "openbabel"
+     - string
+     - Method for structure enhancement
+   * - Add Hydrogens
+     - True
+     - boolean
+     - Add missing hydrogen atoms
+   * - Add Heavy Atoms
+     - False
+     - boolean
+     - Add missing heavy atoms (PDBFixer only)
+   * - Replace Nonstandard
+     - False
+     - boolean
+     - Convert non-standard residues (PDBFixer only)
+   * - Remove Heterogens
+     - False
+     - boolean
+     - Remove non-protein molecules (PDBFixer only)
+   * - Keep Water
+     - True
+     - boolean
+     - Preserve water when removing heterogens
 
 Hydrogen Bond Parameters
 ------------------------
@@ -264,6 +292,214 @@ D-H...π Angle Cutoff (Default: 90°)
 - **30° - 60°**: Good π interaction geometry
 - **60° - 90°**: Acceptable but weaker
 - **> 90°**: Generally not considered π interactions
+
+PDB Structure Fixing Parameters
+--------------------------------
+
+HBAT includes comprehensive PDB structure fixing capabilities to enhance analysis quality by adding missing atoms, standardizing residues, and cleaning structures. These parameters control automated structure preparation.
+
+.. note::
+   For detailed information about PDB fixing methods and workflows, see :doc:`pdbfixing`.
+
+Core PDB Fixing Parameters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+fix_pdb_enabled (Default: False)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Definition**: Enable or disable automatic PDB structure fixing.
+
+**Purpose**:
+
+- Controls whether structure enhancement is applied before analysis
+- Must be enabled to access other PDB fixing features
+- Provides option to analyze original structures unchanged
+
+**Usage considerations**:
+
+- **Enable for**: Crystal structures missing hydrogens, incomplete side chains
+- **Disable for**: Pre-processed structures, performance-critical workflows
+- **Default disabled**: Preserves original analysis behavior
+
+fix_pdb_method (Default: "openbabel")
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Definition**: Choose the method for structure fixing operations.
+
+**Available options**:
+
+- **"openbabel"**: Fast hydrogen addition, good for routine analysis
+- **"pdbfixer"**: Comprehensive fixing with advanced capabilities
+
+**Method comparison**:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 35 40
+
+   * - Capability
+     - OpenBabel
+     - PDBFixer
+   * - Add hydrogens
+     - ✓ Fast and reliable
+     - ✓ pH-dependent protonation
+   * - Add heavy atoms
+     - ✗ Not supported
+     - ✓ Complete missing atoms
+   * - Convert residues
+     - ✗ Limited
+     - ✓ Comprehensive database
+   * - Remove heterogens
+     - ✗ Not supported
+     - ✓ Selective removal
+   * - Speed
+     - Very fast
+     - Moderate
+   * - Dependencies
+     - Lightweight
+     - Requires OpenMM
+
+fix_pdb_add_hydrogens (Default: True)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Definition**: Add missing hydrogen atoms to the structure.
+
+**Physical significance**:
+
+- Most PDB crystal structures lack hydrogen atoms
+- Essential for accurate hydrogen bond analysis
+- Improves interaction detection completeness
+
+**Method-specific behavior**:
+
+- **OpenBabel**: Standard hydrogen placement with chemical rules
+- **PDBFixer**: pH-dependent protonation states (His, Cys, Asp, Glu, Lys, Arg)
+
+**Impact on analysis**:
+
+- Dramatically increases hydrogen bond detection
+- Enables complete interaction network analysis
+- Critical for meaningful cooperativity assessment
+
+fix_pdb_add_heavy_atoms (Default: False, PDBFixer only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Definition**: Add missing heavy atoms to complete incomplete residues.
+
+**Use cases**:
+
+- Low-resolution structures with missing side chain atoms
+- Truncated residues in crystal contacts
+- Structures with disordered regions
+
+**Processing approach**:
+
+- Identifies missing atoms using standard residue templates
+- Adds atoms with reasonable geometric placement
+- Preserves existing atom positions
+
+**Considerations**:
+
+- May add atoms in energetically unfavorable positions
+- Requires subsequent energy minimization for accuracy
+- Useful for completeness rather than precision
+
+fix_pdb_replace_nonstandard (Default: False, PDBFixer only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Definition**: Convert non-standard amino acid residues to standard equivalents.
+
+**Common conversions**:
+
+- **MSE** (selenomethionine) → **MET** (methionine)
+- **CSO** (cysteine sulfenic acid) → **CYS** (cysteine)
+- **HYP** (hydroxyproline) → **PRO** (proline)
+- **PCA** (pyroglutamic acid) → **GLU** (glutamic acid)
+
+**Benefits**:
+
+- Ensures consistent analysis parameters
+- Prevents unrecognized residue errors
+- Enables standard interaction pattern recognition
+
+**Limitations**:
+
+- May lose important chemical information
+- Could affect binding site analysis
+- Not suitable for studies focusing on modified residues
+
+fix_pdb_remove_heterogens (Default: False, PDBFixer only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Definition**: Remove non-protein heterogens (ligands, ions, etc.) from structure.
+
+**Removed by default**:
+
+- Small molecule ligands
+- Metal ions
+- Crystallization additives
+- Buffer components
+
+**Interaction with keep_water**:
+
+- When ``fix_pdb_keep_water`` is True: water molecules are preserved
+- When ``fix_pdb_keep_water`` is False: all heterogens including water are removed
+
+**Use cases**:
+
+- **Remove for**: Clean protein-only analysis, secondary structure focus
+- **Keep for**: Binding site analysis, metal coordination studies
+
+fix_pdb_keep_water (Default: True, PDBFixer only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Definition**: When removing heterogens, preserve water molecules.
+
+**Rationale for keeping water**:
+
+- Water mediates many protein interactions
+- Important for realistic hydrogen bond networks
+- Critical for binding site analysis
+
+**Rationale for removing water**:
+
+- Simplifies analysis for protein-only studies
+- Reduces computational complexity
+- Focuses on direct protein interactions
+
+**Effect on analysis**:
+
+- **With water**: More comprehensive interaction networks, water-mediated bonds
+- **Without water**: Direct protein interactions only, simplified patterns
+
+Advanced PDB Fixing Parameters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+pH Parameter (PDBFixer method)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Definition**: pH value for determining protonation states (default: 7.0).
+
+**Affected residues**:
+
+- **Histidine**: Protonation of ND1/NE2 based on pH
+- **Aspartic acid**: Protonation state of carboxyl group
+- **Glutamic acid**: Protonation state of carboxyl group
+- **Lysine**: Amino group protonation
+- **Arginine**: Guanidinium group state
+- **Cysteine**: Potential disulfide bond formation
+
+**pH ranges and effects**:
+
+- **Low pH (< 4)**: More protonated states, positively charged
+- **Physiological pH (7.0)**: Standard protonation patterns
+- **High pH (> 10)**: More deprotonated states, negatively charged
+
+**Setting guidelines**:
+
+- **pH 7.0**: Standard for most protein analyses
+- **pH 6.0**: Slightly acidic conditions (some enzymes)
+- **pH 8.0**: Slightly basic conditions (alkaline phosphatases)
 
 General Analysis Parameters
 ----------------------------
@@ -500,6 +736,15 @@ HBAT presets are saved as JSON files with the following structure:
        "general": {
          "covalent_cutoff_factor": 1.2,
          "analysis_mode": "complete"
+       },
+       "pdb_fixing": {
+         "enabled": false,
+         "method": "openbabel",
+         "add_hydrogens": true,
+         "add_heavy_atoms": false,
+         "replace_nonstandard": false,
+         "remove_heterogens": false,
+         "keep_water": true
        }
      }
    }
