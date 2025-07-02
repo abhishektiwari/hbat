@@ -99,8 +99,14 @@ class MainWindow:
         )
         self.run_analysis_index = 0  # Index of "Run Analysis" menu item
         analysis_menu.add_command(label="Clear Results", command=self._clear_results)
-        analysis_menu.add_separator()
-        analysis_menu.add_command(
+
+        # Settings menu
+        settings_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Settings", menu=settings_menu)
+        settings_menu.add_command(
+            label="Edit Parameters...", command=self._open_parameters_window
+        )
+        settings_menu.add_command(
             label="Reset Parameters", command=self._reset_parameters
         )
 
@@ -121,19 +127,19 @@ class MainWindow:
         """Create the toolbar.
 
         Creates a toolbar with only a progress bar for showing operation status.
+        The progress bar is hidden by default and only shown during operations.
 
         :returns: None
         :rtype: None
         """
-        toolbar = ttk.Frame(self.root)
-        toolbar.pack(fill=tk.X, padx=5, pady=2)
+        self.toolbar = ttk.Frame(self.root)
+        # Don't pack the toolbar initially - it will be shown when needed
 
         # Progress bar
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(
-            toolbar, variable=self.progress_var, mode="indeterminate"
+            self.toolbar, variable=self.progress_var, mode="indeterminate"
         )
-        self.progress_bar.pack(fill=tk.BOTH, padx=5, expand=True)
 
     def _create_main_content(self) -> None:
         """Create the main content area.
@@ -165,9 +171,10 @@ class MainWindow:
         )
         self.file_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        # Parameters tab
-        self.parameter_panel = ParameterPanel(left_notebook)
-        left_notebook.add(self.parameter_panel.frame, text="Parameters")
+        # Store parameters separately (no longer in tab)
+        self.parameter_panel = None
+        self.parameters_window = None
+        self.session_parameters = None  # Store parameters for session persistence
 
         # Right panel - Results
         right_frame = ttk.Frame(main_paned)
@@ -296,8 +303,17 @@ class MainWindow:
             messagebox.showinfo("Info", "Analysis is already running.")
             return
 
-        # Get parameters from the parameter panel
-        params = self.parameter_panel.get_parameters()
+        # Get parameters from the parameter panel or session storage
+        if self.parameter_panel:
+            params = self.parameter_panel.get_parameters()
+        elif self.session_parameters:
+            params = self.session_parameters
+        else:
+            # Use default parameters if none have been set
+            from ..core.analysis import AnalysisParameters
+
+            params = AnalysisParameters()
+            self.session_parameters = params
 
         # Start analysis in a separate thread
         self.analysis_thread = threading.Thread(
@@ -308,6 +324,10 @@ class MainWindow:
 
         # Update UI
         self.analysis_menu.entryconfig(self.run_analysis_index, state=tk.DISABLED)
+        # Show toolbar and progress bar
+        if not self.toolbar.winfo_ismapped():
+            self.toolbar.pack(fill=tk.X, padx=5, pady=2)
+        self.progress_bar.pack(fill=tk.BOTH, padx=5, expand=True)
         self.progress_bar.config(mode="indeterminate")
         self.progress_bar.start(GUIDefaults.PROGRESS_BAR_INTERVAL)
         self.status_var.set("Running analysis...")
@@ -351,6 +371,9 @@ class MainWindow:
         self.progress_bar.stop()
         self.progress_bar.config(mode="determinate")
         self.progress_var.set(0)
+        # Hide progress bar and toolbar
+        self.progress_bar.pack_forget()
+        self.toolbar.pack_forget()
         self.analysis_menu.entryconfig(self.run_analysis_index, state=tk.NORMAL)
 
         # Update results panel
@@ -379,6 +402,9 @@ class MainWindow:
         self.progress_bar.stop()
         self.progress_bar.config(mode="determinate")
         self.progress_var.set(0)
+        # Hide progress bar and toolbar
+        self.progress_bar.pack_forget()
+        self.toolbar.pack_forget()
         self.analysis_menu.entryconfig(self.run_analysis_index, state=tk.NORMAL)
         self.status_var.set("Analysis failed")
         messagebox.showerror("Analysis Error", f"Analysis failed:\n{error_msg}")
@@ -512,7 +538,15 @@ class MainWindow:
         :returns: None
         :rtype: None
         """
-        self.parameter_panel.reset_to_defaults()
+        # Reset session parameters to defaults
+        from ..core.analysis import AnalysisParameters
+
+        self.session_parameters = AnalysisParameters()
+
+        # If parameters window is open, update it too
+        if self.parameter_panel:
+            self.parameter_panel.reset_to_defaults()
+
         self.status_var.set("Parameters reset to defaults")
 
     def _show_about(self) -> None:
@@ -540,6 +574,102 @@ School of Chemistry, University of Hyderabad
 Python conversion: 2025
         """
         messagebox.showinfo("About HBAT", about_text.strip())
+
+    def _open_parameters_window(self) -> None:
+        """Open parameters configuration in a popup window.
+
+        Creates a popup window containing the parameter panel, preserving
+        any existing parameter values for the session.
+
+        :returns: None
+        :rtype: None
+        """
+        if self.parameters_window and self.parameters_window.winfo_exists():
+            # Bring existing window to front
+            self.parameters_window.lift()
+            self.parameters_window.focus_force()
+            return
+
+        # Create new parameters window
+        self.parameters_window = tk.Toplevel(self.root)
+        self.parameters_window.title("Analysis Parameters")
+        self.parameters_window.geometry("600x700")
+        self.parameters_window.resizable(True, True)
+
+        # Create parameter panel in popup window
+        self.parameter_panel = ParameterPanel(self.parameters_window)
+        self.parameter_panel.frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Restore previous session parameters if they exist
+        if self.session_parameters:
+            self.parameter_panel.set_parameters(self.session_parameters)
+
+        # Add Apply and Cancel buttons
+        button_frame = ttk.Frame(self.parameters_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+
+        ttk.Button(button_frame, text="Apply", command=self._apply_parameters).pack(
+            side=tk.RIGHT, padx=(5, 0)
+        )
+
+        ttk.Button(button_frame, text="Cancel", command=self._cancel_parameters).pack(
+            side=tk.RIGHT
+        )
+
+        # Center the window
+        self.parameters_window.transient(self.root)
+        self.parameters_window.grab_set()
+
+        # Handle window closing
+        self.parameters_window.protocol("WM_DELETE_WINDOW", self._on_parameters_close)
+
+    def _apply_parameters(self) -> None:
+        """Apply parameter changes and close the window.
+
+        Saves parameters to session storage for persistence.
+
+        :returns: None
+        :rtype: None
+        """
+        if self.parameter_panel:
+            # Save current parameters to session storage
+            self.session_parameters = self.parameter_panel.get_parameters()
+            self.status_var.set("Parameters updated")
+        self._close_parameters_window()
+
+    def _cancel_parameters(self) -> None:
+        """Cancel parameter changes and revert to session values.
+
+        Restores the last saved session parameters if they exist.
+
+        :returns: None
+        :rtype: None
+        """
+        if self.parameter_panel and self.session_parameters:
+            # Revert to last saved session parameters
+            self.parameter_panel.set_parameters(self.session_parameters)
+        self._close_parameters_window()
+
+    def _close_parameters_window(self) -> None:
+        """Close the parameters window.
+
+        :returns: None
+        :rtype: None
+        """
+        if self.parameters_window:
+            self.parameters_window.destroy()
+            self.parameters_window = None
+            self.parameter_panel = None
+
+    def _on_parameters_close(self) -> None:
+        """Handle parameters window closing via window manager.
+
+        Treats window closing as a cancel operation.
+
+        :returns: None
+        :rtype: None
+        """
+        self._cancel_parameters()
 
     def _show_help(self) -> None:
         """Show help dialog.
