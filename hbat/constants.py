@@ -11,7 +11,7 @@ except ImportError:
     APP_VERSION = "0.0.0+unknown"
 
 # Application metadata
-APP_NAME = "HBAT - Hydrogen Bond Analysis Tool"
+APP_NAME = "Hydrogen Bond Analysis Tool"
 
 
 # Analysis parameter defaults

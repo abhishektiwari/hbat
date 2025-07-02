@@ -167,7 +167,7 @@ class MainWindow:
         left_notebook.add(file_frame, text="PDB File")
 
         self.file_text = scrolledtext.ScrolledText(
-            file_frame, wrap=tk.NONE, font=("Courier", 9)
+            file_frame, wrap=tk.NONE, font=("Courier", 12)
         )
         self.file_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
@@ -269,7 +269,7 @@ class MainWindow:
         self.file_text.tag_configure("atom", foreground="blue")
         self.file_text.tag_configure("hetatm", foreground="red")
         self.file_text.tag_configure(
-            "header", foreground="green", font=("Courier", 9, "bold")
+            "header", foreground="green", font=("Courier", 12, "bold")
         )
 
         content = self.file_text.get(1.0, tk.END)
@@ -558,20 +558,10 @@ class MainWindow:
         :returns: None
         :rtype: None
         """
-        about_text = """
-HBAT - Hydrogen Bond Analysis Tool v2.0
+        about_text = f"""
+{APP_NAME} v{APP_VERSION}
 
-A comprehensive tool for analyzing hydrogen bonds, halogen bonds, 
-and X-H...π interactions in protein structures.
-
-Original Authors:
-Abhishek Tiwari & Sunil Kumar Panigrahi
-
-Guide & Project Head:
-Prof Gautam R. Desiraju
-School of Chemistry, University of Hyderabad
-
-Python conversion: 2025
+Author: Abhishek Tiwari
         """
         messagebox.showinfo("About HBAT", about_text.strip())
 

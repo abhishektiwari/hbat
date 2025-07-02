@@ -79,7 +79,7 @@ class ResultsPanel:
         text_frame = ttk.Frame(summary_frame)
         text_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        self.summary_text = tk.Text(text_frame, wrap=tk.WORD, font=("Courier", 10))
+        self.summary_text = tk.Text(text_frame, wrap=tk.WORD, font=("Courier", 12))
         summary_scrollbar = ttk.Scrollbar(
             text_frame, orient=tk.VERTICAL, command=self.summary_text.yview
         )
@@ -92,8 +92,8 @@ class ResultsPanel:
         self.summary_text.tag_configure(
             "header", font=("Courier", 12, "bold"), foreground="blue"
         )
-        self.summary_text.tag_configure("subheader", font=("Courier", 10, "bold"))
-        self.summary_text.tag_configure("highlight", background="springgreen")
+        self.summary_text.tag_configure("subheader", font=("Courier", 12, "bold"))
+        self.summary_text.tag_configure("highlight", background="cyan")
 
     def _create_hydrogen_bonds_tab(self):
         """Create hydrogen bonds results tab."""
@@ -380,7 +380,7 @@ class ResultsPanel:
         text_frame = ttk.Frame(stats_frame)
         text_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        self.stats_text = tk.Text(text_frame, wrap=tk.WORD, font=("Courier", 10))
+        self.stats_text = tk.Text(text_frame, wrap=tk.WORD, font=("Courier", 12))
         stats_scrollbar = ttk.Scrollbar(
             text_frame, orient=tk.VERTICAL, command=self.stats_text.yview
         )
@@ -393,9 +393,9 @@ class ResultsPanel:
         self.stats_text.tag_configure(
             "header", font=("Courier", 12, "bold"), foreground="blue"
         )
-        self.stats_text.tag_configure("subheader", font=("Courier", 10, "bold"))
+        self.stats_text.tag_configure("subheader", font=("Courier", 12, "bold"))
         self.stats_text.tag_configure(
-            "number", foreground="red", font=("Courier", 10, "bold")
+            "number", foreground="red", font=("Courier", 12, "bold")
         )
 
     def update_results(self, analyzer: HBondAnalyzer) -> None:
