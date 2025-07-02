@@ -8,6 +8,7 @@ allowing users to load PDB files, configure analysis parameters, and view result
 import os
 import threading
 import tkinter as tk
+import webbrowser
 from tkinter import filedialog, messagebox, scrolledtext, ttk
 from typing import Optional
 
@@ -66,6 +67,7 @@ class MainWindow:
         """
         menubar = tk.Menu(self.root)
         self.root.config(menu=menubar)
+        self.menubar = menubar  # Store reference for state updates
 
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
@@ -88,21 +90,24 @@ class MainWindow:
         # Analysis menu
         analysis_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Analysis", menu=analysis_menu)
+        self.analysis_menu = analysis_menu  # Store reference
         analysis_menu.add_command(
-            label="Run Analysis", accelerator="F5", command=self._run_analysis
+            label="Run Analysis",
+            accelerator="F5",
+            command=self._run_analysis,
+            state=tk.DISABLED,
         )
+        self.run_analysis_index = 0  # Index of "Run Analysis" menu item
         analysis_menu.add_command(label="Clear Results", command=self._clear_results)
-        analysis_menu.add_separator()
-        analysis_menu.add_command(
-            label="Reset Parameters", command=self._reset_parameters
-        )
 
-        # Tools menu
-        tools_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Tools", menu=tools_menu)
-        tools_menu.add_command(label="Generate Charts", command=self._generate_charts)
-        tools_menu.add_command(
-            label="Export Visualization", command=self._export_visualization
+        # Settings menu
+        settings_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Settings", menu=settings_menu)
+        settings_menu.add_command(
+            label="Edit Parameters...", command=self._open_parameters_window
+        )
+        settings_menu.add_command(
+            label="Reset Parameters", command=self._reset_parameters
         )
 
         # Help menu
@@ -121,43 +126,20 @@ class MainWindow:
     def _create_toolbar(self) -> None:
         """Create the toolbar.
 
-        Creates a toolbar with buttons for common operations like file opening,
-        analysis execution, and result management. Includes a progress bar.
+        Creates a toolbar with only a progress bar for showing operation status.
+        The progress bar is hidden by default and only shown during operations.
 
         :returns: None
         :rtype: None
         """
-        toolbar = ttk.Frame(self.root)
-        toolbar.pack(fill=tk.X, padx=5, pady=2)
-
-        # File operations
-        ttk.Button(toolbar, text="Open PDB", command=self._open_file).pack(
-            side=tk.LEFT, padx=2
-        )
-        ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, padx=5, fill=tk.Y)
-
-        # Analysis operations
-        self.run_button = ttk.Button(
-            toolbar, text="Run Analysis", command=self._run_analysis, state=tk.DISABLED
-        )
-        self.run_button.pack(side=tk.LEFT, padx=2)
-
-        ttk.Button(toolbar, text="Clear Results", command=self._clear_results).pack(
-            side=tk.LEFT, padx=2
-        )
-        ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, padx=5, fill=tk.Y)
-
-        # Export operations
-        ttk.Button(toolbar, text="Save Results", command=self._save_results).pack(
-            side=tk.LEFT, padx=2
-        )
+        self.toolbar = ttk.Frame(self.root)
+        # Don't pack the toolbar initially - it will be shown when needed
 
         # Progress bar
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(
-            toolbar, variable=self.progress_var, mode="indeterminate"
+            self.toolbar, variable=self.progress_var, mode="indeterminate"
         )
-        self.progress_bar.pack(side=tk.RIGHT, padx=5, fill=tk.X, expand=True)
 
     def _create_main_content(self) -> None:
         """Create the main content area.
@@ -185,13 +167,14 @@ class MainWindow:
         left_notebook.add(file_frame, text="PDB File")
 
         self.file_text = scrolledtext.ScrolledText(
-            file_frame, wrap=tk.NONE, font=("Courier", 9)
+            file_frame, wrap=tk.NONE, font=("Courier", 12)
         )
         self.file_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        # Parameters tab
-        self.parameter_panel = ParameterPanel(left_notebook)
-        left_notebook.add(self.parameter_panel.frame, text="Parameters")
+        # Store parameters separately (no longer in tab)
+        self.parameter_panel = None
+        self.parameters_window = None
+        self.session_parameters = None  # Store parameters for session persistence
 
         # Right panel - Results
         right_frame = ttk.Frame(main_paned)
@@ -239,7 +222,8 @@ class MainWindow:
             try:
                 self.current_file = filename
                 self._load_file_content(filename)
-                self.run_button.config(state=tk.NORMAL)
+                # Enable "Run Analysis" menu item
+                self.analysis_menu.entryconfig(self.run_analysis_index, state=tk.NORMAL)
                 self.status_var.set(f"Loaded: {os.path.basename(filename)}")
                 self._clear_results()
 
@@ -285,7 +269,7 @@ class MainWindow:
         self.file_text.tag_configure("atom", foreground="blue")
         self.file_text.tag_configure("hetatm", foreground="red")
         self.file_text.tag_configure(
-            "header", foreground="green", font=("Courier", 9, "bold")
+            "header", foreground="green", font=("Courier", 12, "bold")
         )
 
         content = self.file_text.get(1.0, tk.END)
@@ -319,8 +303,17 @@ class MainWindow:
             messagebox.showinfo("Info", "Analysis is already running.")
             return
 
-        # Get parameters from the parameter panel
-        params = self.parameter_panel.get_parameters()
+        # Get parameters from the parameter panel or session storage
+        if self.parameter_panel:
+            params = self.parameter_panel.get_parameters()
+        elif self.session_parameters:
+            params = self.session_parameters
+        else:
+            # Use default parameters if none have been set
+            from ..core.analysis import AnalysisParameters
+
+            params = AnalysisParameters()
+            self.session_parameters = params
 
         # Start analysis in a separate thread
         self.analysis_thread = threading.Thread(
@@ -330,7 +323,11 @@ class MainWindow:
         self.analysis_thread.start()
 
         # Update UI
-        self.run_button.config(state=tk.DISABLED)
+        self.analysis_menu.entryconfig(self.run_analysis_index, state=tk.DISABLED)
+        # Show toolbar and progress bar
+        if not self.toolbar.winfo_ismapped():
+            self.toolbar.pack(fill=tk.X, padx=5, pady=2)
+        self.progress_bar.pack(fill=tk.BOTH, padx=5, expand=True)
         self.progress_bar.config(mode="indeterminate")
         self.progress_bar.start(GUIDefaults.PROGRESS_BAR_INTERVAL)
         self.status_var.set("Running analysis...")
@@ -374,7 +371,10 @@ class MainWindow:
         self.progress_bar.stop()
         self.progress_bar.config(mode="determinate")
         self.progress_var.set(0)
-        self.run_button.config(state=tk.NORMAL)
+        # Hide progress bar and toolbar
+        self.progress_bar.pack_forget()
+        self.toolbar.pack_forget()
+        self.analysis_menu.entryconfig(self.run_analysis_index, state=tk.NORMAL)
 
         # Update results panel
         self.results_panel.update_results(self.analyzer)
@@ -402,7 +402,10 @@ class MainWindow:
         self.progress_bar.stop()
         self.progress_bar.config(mode="determinate")
         self.progress_var.set(0)
-        self.run_button.config(state=tk.NORMAL)
+        # Hide progress bar and toolbar
+        self.progress_bar.pack_forget()
+        self.toolbar.pack_forget()
+        self.analysis_menu.entryconfig(self.run_analysis_index, state=tk.NORMAL)
         self.status_var.set("Analysis failed")
         messagebox.showerror("Analysis Error", f"Analysis failed:\n{error_msg}")
 
@@ -526,40 +529,6 @@ class MainWindow:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to export results:\n{str(e)}")
 
-    def _generate_charts(self) -> None:
-        """Generate analysis charts.
-
-        Creates visual charts and graphs from analysis results.
-        Currently shows placeholder message for future implementation.
-
-        :returns: None
-        :rtype: None
-        """
-        if not self.analyzer:
-            messagebox.showwarning(
-                "Warning", "No results available. Run analysis first."
-            )
-            return
-
-        messagebox.showinfo("Info", "Chart generation feature coming soon!")
-
-    def _export_visualization(self) -> None:
-        """Export visualization scripts.
-
-        Exports scripts for external visualization tools.
-        Currently shows placeholder message for future implementation.
-
-        :returns: None
-        :rtype: None
-        """
-        if not self.analyzer:
-            messagebox.showwarning(
-                "Warning", "No results available. Run analysis first."
-            )
-            return
-
-        messagebox.showinfo("Info", "Visualization export feature coming soon!")
-
     def _reset_parameters(self) -> None:
         """Reset analysis parameters to defaults.
 
@@ -569,7 +538,15 @@ class MainWindow:
         :returns: None
         :rtype: None
         """
-        self.parameter_panel.reset_to_defaults()
+        # Reset session parameters to defaults
+        from ..core.analysis import AnalysisParameters
+
+        self.session_parameters = AnalysisParameters()
+
+        # If parameters window is open, update it too
+        if self.parameter_panel:
+            self.parameter_panel.reset_to_defaults()
+
         self.status_var.set("Parameters reset to defaults")
 
     def _show_about(self) -> None:
@@ -581,44 +558,118 @@ class MainWindow:
         :returns: None
         :rtype: None
         """
-        about_text = """
-HBAT - Hydrogen Bond Analysis Tool v2.0
+        about_text = f"""
+{APP_NAME} v{APP_VERSION}
 
-A comprehensive tool for analyzing hydrogen bonds, halogen bonds, 
-and X-H...π interactions in protein structures.
-
-Original Authors:
-Abhishek Tiwari & Sunil Kumar Panigrahi
-
-Guide & Project Head:
-Prof Gautam R. Desiraju
-School of Chemistry, University of Hyderabad
-
-Python conversion: 2025
+Author: Abhishek Tiwari
         """
         messagebox.showinfo("About HBAT", about_text.strip())
 
-    def _show_help(self) -> None:
-        """Show help dialog.
+    def _open_parameters_window(self) -> None:
+        """Open parameters configuration in a popup window.
 
-        Displays basic usage instructions and guidance for using
-        the HBAT GUI application.
+        Creates a popup window containing the parameter panel, preserving
+        any existing parameter values for the session.
 
         :returns: None
         :rtype: None
         """
-        help_text = """
-HBAT User Guide
+        if self.parameters_window and self.parameters_window.winfo_exists():
+            # Bring existing window to front
+            self.parameters_window.lift()
+            self.parameters_window.focus_force()
+            return
 
-1. Open a PDB file using File > Open PDB File
-2. Adjust analysis parameters in the Parameters tab
-3. Click 'Run Analysis' or press F5 to start analysis
-4. View results in the Results panel
-5. Save or export results using the File menu
+        # Create new parameters window
+        self.parameters_window = tk.Toplevel(self.root)
+        self.parameters_window.title("Analysis Parameters")
+        self.parameters_window.geometry("600x700")
+        self.parameters_window.resizable(True, True)
 
-For more detailed information, please refer to the documentation.
+        # Create parameter panel in popup window
+        self.parameter_panel = ParameterPanel(self.parameters_window)
+        self.parameter_panel.frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Restore previous session parameters if they exist
+        if self.session_parameters:
+            self.parameter_panel.set_parameters(self.session_parameters)
+
+        # Add Apply and Cancel buttons
+        button_frame = ttk.Frame(self.parameters_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+
+        ttk.Button(button_frame, text="Apply", command=self._apply_parameters).pack(
+            side=tk.RIGHT, padx=(5, 0)
+        )
+
+        ttk.Button(button_frame, text="Cancel", command=self._cancel_parameters).pack(
+            side=tk.RIGHT
+        )
+
+        # Center the window
+        self.parameters_window.transient(self.root)
+        self.parameters_window.grab_set()
+
+        # Handle window closing
+        self.parameters_window.protocol("WM_DELETE_WINDOW", self._on_parameters_close)
+
+    def _apply_parameters(self) -> None:
+        """Apply parameter changes and close the window.
+
+        Saves parameters to session storage for persistence.
+
+        :returns: None
+        :rtype: None
         """
-        messagebox.showinfo("Help", help_text.strip())
+        if self.parameter_panel:
+            # Save current parameters to session storage
+            self.session_parameters = self.parameter_panel.get_parameters()
+            self.status_var.set("Parameters updated")
+        self._close_parameters_window()
+
+    def _cancel_parameters(self) -> None:
+        """Cancel parameter changes and revert to session values.
+
+        Restores the last saved session parameters if they exist.
+
+        :returns: None
+        :rtype: None
+        """
+        if self.parameter_panel and self.session_parameters:
+            # Revert to last saved session parameters
+            self.parameter_panel.set_parameters(self.session_parameters)
+        self._close_parameters_window()
+
+    def _close_parameters_window(self) -> None:
+        """Close the parameters window.
+
+        :returns: None
+        :rtype: None
+        """
+        if self.parameters_window:
+            self.parameters_window.destroy()
+            self.parameters_window = None
+            self.parameter_panel = None
+
+    def _on_parameters_close(self) -> None:
+        """Handle parameters window closing via window manager.
+
+        Treats window closing as a cancel operation.
+
+        :returns: None
+        :rtype: None
+        """
+        self._cancel_parameters()
+
+    def _show_help(self) -> None:
+        """Show help dialog.
+
+        Opens the HBAT documentation website in the default web browser.
+
+        :returns: None
+        :rtype: None
+        """
+        webbrowser.open("https://hbat.abhishek-tiwari.com")
 
     def _on_closing(self) -> None:
         """Handle window closing event.
