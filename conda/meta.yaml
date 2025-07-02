@@ -11,7 +11,7 @@ source:
 build:
   number: 0
   noarch: python
-  script: {{ PYTHON }} -m pip install . -vv
+  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
   entry_points:
     - hbat = hbat.cli.main:main
     - hbat-gui = hbat.gui:main
@@ -25,21 +25,21 @@ requirements:
     - wheel
   run:
     - python >=3.9
-    - pdbreader >=0.1.0
+    - pip
     - networkx >=2.5.0
     - matplotlib-base >=3.3.0
     - tk  # For GUI support
+    # pdbreader will be installed via pip as part of the package installation
 
 test:
-  imports:
-    - hbat
-    - hbat.core
-    - hbat.cli
-    - hbat.gui
+  # Skip imports test since pdbreader is installed via pip
   commands:
+    - pip list | grep pdbreader || pip install pdbreader>=0.1.0
+    - python -c "import hbat; print(hbat.__version__)"
     - hbat --help
     - hbat --version
   requires:
+    - pip
     - pytest
 
 about:

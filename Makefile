@@ -23,6 +23,11 @@ help:
 	@echo "  format        Format code with black and isort"
 	@echo "  type-check    Run type checking with mypy"
 	@echo ""
+	@echo "Building:"
+	@echo "  build         Build Python package"
+	@echo "  conda-build   Build conda package locally"
+	@echo "  conda-build-test Build and test conda package"
+	@echo ""
 	@echo "Development:"
 	@echo "  clean         Clean build artifacts"
 	@echo "  docs          Build documentation"
@@ -134,6 +139,34 @@ build:
 build-legacy:
 	@echo "Building with legacy setup.py..."
 	python setup.py sdist bdist_wheel
+
+# Conda building
+conda-build:
+	@echo "Building conda package locally..."
+	@if ! command -v conda &> /dev/null; then \
+		echo "Error: conda is not installed. Install Miniconda or Anaconda first."; \
+		echo "  macOS: brew install miniconda"; \
+		echo "  Linux/Windows: https://docs.conda.io/en/latest/miniconda.html"; \
+		exit 1; \
+	fi
+	@echo "Setting version from git tag..."
+	@export GIT_DESCRIBE_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0") && \
+	echo "Building version: $$GIT_DESCRIBE_TAG" && \
+	conda build conda --output-folder conda-build-output
+
+conda-build-test:
+	@echo "Building and testing conda package locally..."
+	@if ! command -v conda &> /dev/null; then \
+		echo "Error: conda is not installed. Install Miniconda or Anaconda first."; \
+		echo "  macOS: brew install miniconda"; \
+		echo "  Linux/Windows: https://docs.conda.io/en/latest/miniconda.html"; \
+		exit 1; \
+	fi
+	@export GIT_DESCRIBE_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0") && \
+	echo "Building version: $$GIT_DESCRIBE_TAG" && \
+	conda build conda --output-folder conda-build-output && \
+	echo "Testing built package..." && \
+	conda build --test conda-build-output/noarch/hbat-*.tar.bz2
 
 # Standalone executables
 build-standalone:

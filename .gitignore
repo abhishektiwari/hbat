@@ -217,6 +217,9 @@ _version.py
 # Don't track readthedocs.yaml
 .readthedocs.yaml
 
+# Conda build artifacts
+conda-build-output/
+
 # Include requirements files
 !requirements.txt
 !requirements-dev.txt
