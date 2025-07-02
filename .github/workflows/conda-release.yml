@@ -58,8 +58,8 @@ jobs:
       env:
         ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
       run: |
-        # Find the built package
-        PACKAGE_PATH=$(find conda-build -name "hbat-*.tar.bz2" | head -n 1)
+        # Find the built package (could be .tar.bz2 or .conda)
+        PACKAGE_PATH=$(find conda-build -name "hbat-*.tar.bz2" -o -name "hbat-*.conda" | head -n 1)
         
         if [ -z "$PACKAGE_PATH" ]; then
           echo "Error: No package found!"
@@ -78,4 +78,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: conda-package
-        path: conda-build/noarch/hbat-*.tar.bz2
+        path: conda-build/noarch/hbat-*.*
