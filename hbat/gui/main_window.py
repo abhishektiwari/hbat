@@ -583,7 +583,7 @@ Author: Abhishek Tiwari
         # Create new parameters window
         self.parameters_window = tk.Toplevel(self.root)
         self.parameters_window.title("Analysis Parameters")
-        self.parameters_window.geometry("600x700")
+        self.parameters_window.geometry("800x800")
         self.parameters_window.resizable(True, True)
 
         # Create parameter panel in popup window

@@ -8,6 +8,7 @@ from hbat.core.analysis import HBondAnalyzer, AnalysisParameters
 from hbat.constants import AtomicData
 from tests.conftest import (
     ExpectedResults, 
+    PDBFixingExpectedResults,
     validate_hydrogen_bond, 
     validate_pi_interaction, 
     validate_cooperativity_chain
@@ -55,6 +56,88 @@ class TestAnalysisParameters:
         except (ValueError, AssertionError):
             # Acceptable to raise error for invalid values
             pass
+    
+    def test_pdb_fixing_parameters(self):
+        """Test PDB fixing parameter validation."""
+        # Test default PDB fixing parameters
+        params = AnalysisParameters()
+        assert hasattr(params, 'fix_pdb_enabled')
+        assert hasattr(params, 'fix_pdb_method')
+        assert hasattr(params, 'fix_pdb_add_hydrogens')
+        assert hasattr(params, 'fix_pdb_add_heavy_atoms')
+        assert hasattr(params, 'fix_pdb_replace_nonstandard')
+        assert hasattr(params, 'fix_pdb_remove_heterogens')
+        assert hasattr(params, 'fix_pdb_keep_water')
+        
+        # Test valid PDB fixing parameters
+        params = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="pdbfixer",
+            fix_pdb_add_hydrogens=True,
+            fix_pdb_add_heavy_atoms=True
+        )
+        assert params.fix_pdb_enabled is True
+        assert params.fix_pdb_method == "pdbfixer"
+        assert params.fix_pdb_add_hydrogens is True
+        assert params.fix_pdb_add_heavy_atoms is True
+        
+        # Test parameter validation
+        try:
+            params.validate()
+        except ValueError as e:
+            pytest.fail(f"Valid PDB fixing parameters should not raise validation error: {e}")
+    
+    def test_pdb_fixing_parameter_validation(self):
+        """Test PDB fixing parameter validation logic."""
+        # Test invalid method - should raise when creating HBondAnalyzer
+        params = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="invalid_method"
+        )
+        with pytest.raises(ValueError, match="PDB fixing method must be one of"):
+            HBondAnalyzer(params)
+        
+        # Test OpenBabel with PDBFixer-only operations
+        params = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="openbabel",
+            fix_pdb_add_heavy_atoms=True
+        )
+        with pytest.raises(ValueError, match="OpenBabel does not support"):
+            HBondAnalyzer(params)
+        
+        # Test enabled fixing with no operations selected
+        params = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="pdbfixer",
+            fix_pdb_add_hydrogens=False,
+            fix_pdb_add_heavy_atoms=False,
+            fix_pdb_replace_nonstandard=False,
+            fix_pdb_remove_heterogens=False
+        )
+        with pytest.raises(ValueError, match="At least one PDB fixing operation must be selected"):
+            HBondAnalyzer(params)
+    
+    def test_pdb_fixing_parameter_validation_direct(self):
+        """Test PDB fixing parameter validation using validate() method directly."""
+        # Test invalid method
+        params = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="invalid_method"
+        )
+        errors = params.validate()
+        assert any("PDB fixing method must be one of" in error for error in errors), f"Expected validation error, got: {errors}"
+        
+        # Test valid parameters should have no errors
+        params = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="openbabel",
+            fix_pdb_add_hydrogens=True
+        )
+        errors = params.validate()
+        # Filter out any non-PDB-fixing related errors for this test
+        pdb_errors = [e for e in errors if 'fix_pdb' in e or 'OpenBabel' in e or 'PDBFixer' in e]
+        assert len(pdb_errors) == 0, f"Valid PDB fixing parameters should not produce errors: {pdb_errors}"
 
 
 class TestHBondAnalyzer:
@@ -72,6 +155,27 @@ class TestHBondAnalyzer:
         analyzer = HBondAnalyzer(params)
         assert analyzer.parameters.hb_distance_cutoff == 3.0
     
+    def test_analyzer_with_pdb_fixing_parameters(self):
+        """Test analyzer creation with PDB fixing parameters."""
+        # Valid PDB fixing parameters
+        params = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="pdbfixer",
+            fix_pdb_add_hydrogens=True,
+            fix_pdb_add_heavy_atoms=False
+        )
+        analyzer = HBondAnalyzer(params)
+        assert analyzer.parameters.fix_pdb_enabled is True
+        assert analyzer.parameters.fix_pdb_method == "pdbfixer"
+        
+        # Invalid PDB fixing parameters should raise error
+        invalid_params = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="invalid_method"
+        )
+        with pytest.raises(ValueError):
+            HBondAnalyzer(invalid_params)
+    
     def test_analyzer_initial_state(self):
         """Test analyzer initial state."""
         analyzer = HBondAnalyzer()
@@ -86,6 +190,9 @@ class TestHBondAnalyzer:
         assert stats['halogen_bonds'] == 0
         assert stats['pi_interactions'] == 0
         assert stats['total_interactions'] == 0
+        
+        # Test that analyzer has PDB fixing methods
+        assert hasattr(analyzer, '_apply_pdb_fixing'), "Should have _apply_pdb_fixing method"
     
     @pytest.mark.integration
     def test_complete_analysis_workflow(self, sample_pdb_file):
@@ -105,6 +212,40 @@ class TestHBondAnalyzer:
             f"Expected >={ExpectedResults.MIN_PI_INTERACTIONS} π-interactions, got {stats['pi_interactions']}"
         assert stats['total_interactions'] >= ExpectedResults.MIN_TOTAL_INTERACTIONS, \
             f"Expected >={ExpectedResults.MIN_TOTAL_INTERACTIONS} total interactions, got {stats['total_interactions']}"
+    
+    @pytest.mark.integration
+    def test_pdb_fixing_workflow(self, pdb_fixing_test_file):
+        """Test analysis workflow with PDB fixing enabled using 1ubi.pdb."""
+        # Test with OpenBabel fixing
+        params_ob = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="openbabel",
+            fix_pdb_add_hydrogens=True
+        )
+        analyzer_ob = HBondAnalyzer(params_ob)
+        
+        success = analyzer_ob.analyze_file(pdb_fixing_test_file)
+        assert success, "Analysis with OpenBabel PDB fixing should succeed"
+        
+        stats_ob = analyzer_ob.get_statistics()
+        assert stats_ob['hydrogen_bonds'] >= 0, "Should have non-negative hydrogen bonds"
+        assert stats_ob['total_interactions'] >= PDBFixingExpectedResults.MIN_TOTAL_INTERACTIONS, \
+            f"Expected >={PDBFixingExpectedResults.MIN_TOTAL_INTERACTIONS} total interactions with fixing"
+        
+        # Test with PDBFixer fixing
+        params_pdb = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="pdbfixer",
+            fix_pdb_add_hydrogens=True,
+            fix_pdb_add_heavy_atoms=True
+        )
+        analyzer_pdb = HBondAnalyzer(params_pdb)
+        
+        success = analyzer_pdb.analyze_file(pdb_fixing_test_file)
+        assert success, "Analysis with PDBFixer PDB fixing should succeed"
+        
+        stats_pdb = analyzer_pdb.get_statistics()
+        assert stats_pdb['hydrogen_bonds'] >= 0, "Should have non-negative hydrogen bonds"
     
     @pytest.mark.integration
     def test_hydrogen_bond_analysis(self, sample_pdb_file):
@@ -245,6 +386,37 @@ class TestHBondAnalyzer:
         # Permissive should generally find more interactions
         assert permissive_stats['hydrogen_bonds'] >= strict_stats['hydrogen_bonds'], \
             "Permissive parameters should find at least as many H-bonds"
+    
+    @pytest.mark.integration
+    def test_pdb_fixing_effects(self, pdb_fixing_test_file):
+        """Test effects of PDB fixing on analysis results using 1ubi.pdb."""
+        # Analysis without PDB fixing
+        params_no_fix = AnalysisParameters(fix_pdb_enabled=False)
+        analyzer_no_fix = HBondAnalyzer(params_no_fix)
+        success = analyzer_no_fix.analyze_file(pdb_fixing_test_file)
+        assert success
+        
+        # Analysis with PDB fixing (add hydrogens)
+        params_with_fix = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="openbabel",
+            fix_pdb_add_hydrogens=True
+        )
+        analyzer_with_fix = HBondAnalyzer(params_with_fix)
+        success = analyzer_with_fix.analyze_file(pdb_fixing_test_file)
+        assert success
+        
+        stats_no_fix = analyzer_no_fix.get_statistics()
+        stats_with_fix = analyzer_with_fix.get_statistics()
+        
+        # PDB fixing should generally not decrease interaction count
+        # (may find more interactions with added hydrogens)
+        assert stats_with_fix['total_interactions'] >= 0, "Should have non-negative interactions"
+        assert stats_no_fix['total_interactions'] >= 0, "Should have non-negative interactions"
+        
+        print(f"\nPDB fixing effects on 1ubi.pdb:")
+        print(f"  Without fixing: {stats_no_fix['total_interactions']} interactions")
+        print(f"  With fixing: {stats_with_fix['total_interactions']} interactions")
 
 
 class TestAtomicPropertyLookup:
@@ -385,3 +557,48 @@ class TestPerformanceMetrics:
         assert stats['hydrogen_bonds'] >= ExpectedResults.MIN_HYDROGEN_BONDS
         assert stats['pi_interactions'] >= ExpectedResults.MIN_PI_INTERACTIONS
         assert stats['total_interactions'] >= ExpectedResults.MIN_TOTAL_INTERACTIONS
+    
+    @pytest.mark.integration
+    def test_pdb_fixing_results_documentation(self, pdb_fixing_test_file):
+        """Document expected results for 1ubi.pdb with PDB fixing."""
+        # Test with OpenBabel fixing
+        params_ob = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="openbabel",
+            fix_pdb_add_hydrogens=True
+        )
+        analyzer_ob = HBondAnalyzer(params_ob)
+        success = analyzer_ob.analyze_file(pdb_fixing_test_file)
+        assert success
+        
+        stats_ob = analyzer_ob.get_statistics()
+        
+        # Print results for documentation
+        print(f"\nExpected results for 1ubi.pdb with OpenBabel PDB fixing:")
+        print(f"  - Hydrogen bonds: {stats_ob['hydrogen_bonds']}")
+        print(f"  - Halogen bonds: {stats_ob['halogen_bonds']}")
+        print(f"  - π interactions: {stats_ob['pi_interactions']}")
+        print(f"  - Total interactions: {stats_ob['total_interactions']}")
+        
+        # Test with PDBFixer fixing
+        params_pdb = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="pdbfixer",
+            fix_pdb_add_hydrogens=True,
+            fix_pdb_add_heavy_atoms=True
+        )
+        analyzer_pdb = HBondAnalyzer(params_pdb)
+        success = analyzer_pdb.analyze_file(pdb_fixing_test_file)
+        assert success
+        
+        stats_pdb = analyzer_pdb.get_statistics()
+        
+        print(f"\nExpected results for 1ubi.pdb with PDBFixer PDB fixing:")
+        print(f"  - Hydrogen bonds: {stats_pdb['hydrogen_bonds']}")
+        print(f"  - Halogen bonds: {stats_pdb['halogen_bonds']}")
+        print(f"  - π interactions: {stats_pdb['pi_interactions']}")
+        print(f"  - Total interactions: {stats_pdb['total_interactions']}")
+        
+        # Both should produce valid results
+        assert stats_ob['total_interactions'] >= 0
+        assert stats_pdb['total_interactions'] >= 0

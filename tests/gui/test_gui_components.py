@@ -97,6 +97,31 @@ class TestParameterPanel:
         assert retrieved_params.hb_angle_cutoff == 130.0
         assert retrieved_params.analysis_mode == "local"
     
+    def test_pdb_fixing_parameter_setting(self):
+        """Test setting PDB fixing parameters programmatically."""
+        from hbat.core.analysis import AnalysisParameters
+        
+        test_params = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="pdbfixer",
+            fix_pdb_add_hydrogens=True,
+            fix_pdb_add_heavy_atoms=True,
+            fix_pdb_replace_nonstandard=False,
+            fix_pdb_remove_heterogens=True,
+            fix_pdb_keep_water=False
+        )
+        
+        self.panel.set_parameters(test_params)
+        retrieved_params = self.panel.get_parameters()
+        
+        assert retrieved_params.fix_pdb_enabled is True
+        assert retrieved_params.fix_pdb_method == "pdbfixer"
+        assert retrieved_params.fix_pdb_add_hydrogens is True
+        assert retrieved_params.fix_pdb_add_heavy_atoms is True
+        assert retrieved_params.fix_pdb_replace_nonstandard is False
+        assert retrieved_params.fix_pdb_remove_heterogens is True
+        assert retrieved_params.fix_pdb_keep_water is False
+    
     def test_reset_to_defaults(self):
         """Test resetting parameters to defaults."""
         from hbat.core.analysis import AnalysisParameters
@@ -158,6 +183,15 @@ class TestParameterPanel:
                 "general": {
                     "covalent_cutoff_factor": 1.2,
                     "analysis_mode": "complete"
+                },
+                "pdb_fixing": {
+                    "enabled": False,
+                    "method": "openbabel",
+                    "add_hydrogens": True,
+                    "add_heavy_atoms": False,
+                    "replace_nonstandard": False,
+                    "remove_heterogens": False,
+                    "keep_water": True
                 }
             }
         }
@@ -186,7 +220,10 @@ class TestParameterPanel:
             hb_distance_cutoff=3.1,
             hb_angle_cutoff=135.0,
             xb_distance_cutoff=3.8,
-            analysis_mode="local"
+            analysis_mode="local",
+            fix_pdb_enabled=True,
+            fix_pdb_method="openbabel",
+            fix_pdb_add_hydrogens=True
         )
         
         # Create preset data
@@ -211,6 +248,9 @@ class TestParameterPanel:
             assert loaded_params.hb_angle_cutoff == 135.0
             assert loaded_params.xb_distance_cutoff == 3.8
             assert loaded_params.analysis_mode == "local"
+            assert loaded_params.fix_pdb_enabled is True
+            assert loaded_params.fix_pdb_method == "openbabel"
+            assert loaded_params.fix_pdb_add_hydrogens is True
             
         finally:
             os.unlink(temp_path)
@@ -391,7 +431,11 @@ class TestGUIPresetIntegration:
             from hbat.core.analysis import AnalysisParameters
             test_params = AnalysisParameters(
                 hb_distance_cutoff=3.3,
-                hb_angle_cutoff=125.0
+                hb_angle_cutoff=125.0,
+                fix_pdb_enabled=True,
+                fix_pdb_method="pdbfixer",
+                fix_pdb_add_hydrogens=True,
+                fix_pdb_add_heavy_atoms=False
             )
             
             gui_preset_data = panel._create_preset_data(test_params)
@@ -407,6 +451,9 @@ class TestGUIPresetIntegration:
                 
                 assert cli_params.hb_distance_cutoff == 3.3
                 assert cli_params.hb_angle_cutoff == 125.0
+                assert cli_params.fix_pdb_enabled is True
+                assert cli_params.fix_pdb_method == "pdbfixer"
+                assert cli_params.fix_pdb_add_hydrogens is True
                 
             except SystemExit:
                 # Acceptable if CLI loading fails in test environment

@@ -58,15 +58,40 @@ class ParameterPanel:
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Parameter groups
-        self._create_general_parameters(scrollable_frame)
-        self._create_hydrogen_bond_parameters(scrollable_frame)
-        self._create_halogen_bond_parameters(scrollable_frame)
-        self._create_pi_interaction_parameters(scrollable_frame)
+        # Replace single column with two-column layout
+        self._create_two_column_layout(scrollable_frame)
 
-        # Buttons
-        button_frame = ttk.Frame(scrollable_frame)
-        button_frame.pack(fill=tk.X, padx=10, pady=10)
+    def _create_two_column_layout(self, parent):
+        """Create two-column layout with analysis parameters on left and PDB fixing on right."""
+        # Main container for two columns
+        columns_frame = ttk.Frame(parent)
+        columns_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        # Configure grid for equal column sizing
+        columns_frame.columnconfigure(0, weight=1)
+        columns_frame.columnconfigure(1, weight=1)
+        columns_frame.rowconfigure(0, weight=1)
+
+        # Left column - Original analysis parameters
+        left_frame = ttk.Frame(columns_frame)
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
+
+        # Right column - PDB fixing parameters
+        right_frame = ttk.Frame(columns_frame)
+        right_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
+
+        # Left column content - Original parameter groups
+        self._create_general_parameters(left_frame)
+        self._create_hydrogen_bond_parameters(left_frame)
+        self._create_halogen_bond_parameters(left_frame)
+        self._create_pi_interaction_parameters(left_frame)
+
+        # Right column content - PDB fixing parameters
+        self._create_pdb_fixing_parameters(right_frame)
+
+        # Buttons at bottom spanning both columns
+        button_frame = ttk.Frame(columns_frame)
+        button_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(10, 0))
 
         ttk.Button(
             button_frame, text="Reset to Defaults", command=self._set_defaults
@@ -130,6 +155,162 @@ class ParameterPanel:
 
         self.covalent_factor.trace("w", update_factor_label)
         update_factor_label()
+
+    def _create_pdb_fixing_parameters(self, parent):
+        """Create PDB structure fixing parameters."""
+        # Add title label at top
+        title_label = ttk.Label(
+            parent, text="PDB Structure Fixing", font=("TkDefaultFont", 10, "bold")
+        )
+        title_label.pack(pady=(0, 10))
+
+        # Main container frame
+        group = ttk.Frame(parent, padding=10)
+        group.pack(fill=tk.X, padx=5, pady=5)
+
+        # Enable/disable PDB fixing
+        self.fix_pdb_enabled = tk.BooleanVar(value=AnalysisDefaults.FIX_PDB_ENABLED)
+        ttk.Checkbutton(
+            group,
+            text="Enable PDB structure fixing",
+            variable=self.fix_pdb_enabled,
+            command=self._on_fix_pdb_enabled_changed,
+        ).pack(anchor=tk.W, pady=2)
+
+        # Method selection
+        method_section = ttk.Frame(group)
+        method_section.pack(fill=tk.X, pady=5)
+
+        ttk.Label(method_section, text="Fixing Method:").pack(anchor=tk.W, pady=2)
+        self.fix_pdb_method = tk.StringVar(value=AnalysisDefaults.FIX_PDB_METHOD)
+
+        method_frame = ttk.Frame(method_section)
+        method_frame.pack(anchor=tk.W, padx=20)
+
+        ttk.Radiobutton(
+            method_frame,
+            text="OpenBabel",
+            variable=self.fix_pdb_method,
+            value="openbabel",
+            command=self._on_fix_method_changed,
+        ).pack(anchor=tk.W)
+        ttk.Radiobutton(
+            method_frame,
+            text="PDBFixer",
+            variable=self.fix_pdb_method,
+            value="pdbfixer",
+            command=self._on_fix_method_changed,
+        ).pack(anchor=tk.W)
+
+        # Operations group
+        operations_frame = ttk.LabelFrame(group, text="Fixing Operations", padding=5)
+        operations_frame.pack(fill=tk.X, pady=10)
+
+        # Add hydrogens (available for both methods)
+        self.fix_pdb_add_hydrogens = tk.BooleanVar(
+            value=AnalysisDefaults.FIX_PDB_ADD_HYDROGENS
+        )
+        self.fix_hydrogens_cb = ttk.Checkbutton(
+            operations_frame,
+            text="Add missing hydrogen atoms",
+            variable=self.fix_pdb_add_hydrogens,
+        )
+        self.fix_hydrogens_cb.pack(anchor=tk.W, pady=1)
+
+        # Add heavy atoms (PDBFixer only)
+        self.fix_pdb_add_heavy_atoms = tk.BooleanVar(
+            value=AnalysisDefaults.FIX_PDB_ADD_HEAVY_ATOMS
+        )
+        self.fix_heavy_atoms_cb = ttk.Checkbutton(
+            operations_frame,
+            text="Add missing heavy atoms (PDBFixer only)",
+            variable=self.fix_pdb_add_heavy_atoms,
+        )
+        self.fix_heavy_atoms_cb.pack(anchor=tk.W, pady=1)
+
+        # Replace nonstandard residues (PDBFixer only)
+        self.fix_pdb_replace_nonstandard = tk.BooleanVar(
+            value=AnalysisDefaults.FIX_PDB_REPLACE_NONSTANDARD
+        )
+        self.fix_nonstandard_cb = ttk.Checkbutton(
+            operations_frame,
+            text="Replace nonstandard residues (PDBFixer only)",
+            variable=self.fix_pdb_replace_nonstandard,
+        )
+        self.fix_nonstandard_cb.pack(anchor=tk.W, pady=1)
+
+        # Remove heterogens (PDBFixer only)
+        self.fix_pdb_remove_heterogens = tk.BooleanVar(
+            value=AnalysisDefaults.FIX_PDB_REMOVE_HETEROGENS
+        )
+        self.fix_heterogens_cb = ttk.Checkbutton(
+            operations_frame,
+            text="Remove heterogens (PDBFixer only)",
+            variable=self.fix_pdb_remove_heterogens,
+            command=self._on_remove_heterogens_changed,
+        )
+        self.fix_heterogens_cb.pack(anchor=tk.W, pady=1)
+
+        # Keep water (sub-option for remove heterogens)
+        self.fix_pdb_keep_water = tk.BooleanVar(
+            value=AnalysisDefaults.FIX_PDB_KEEP_WATER
+        )
+        self.fix_keep_water_cb = ttk.Checkbutton(
+            operations_frame,
+            text="    ↳ Keep water molecules",
+            variable=self.fix_pdb_keep_water,
+        )
+        self.fix_keep_water_cb.pack(anchor=tk.W, pady=1, padx=20)
+
+        # Initialize widget states
+        self._update_fix_pdb_widget_states()
+
+    def _on_fix_pdb_enabled_changed(self):
+        """Handle PDB fixing enable/disable changes."""
+        self._update_fix_pdb_widget_states()
+
+    def _on_fix_method_changed(self):
+        """Handle PDB fixing method changes."""
+        self._update_fix_pdb_widget_states()
+
+    def _on_remove_heterogens_changed(self):
+        """Handle remove heterogens option changes."""
+        self._update_fix_pdb_widget_states()
+
+    def _update_fix_pdb_widget_states(self):
+        """Update the state of PDB fixing widgets based on current selections."""
+        enabled = self.fix_pdb_enabled.get()
+        method = self.fix_pdb_method.get()
+        remove_heterogens = self.fix_pdb_remove_heterogens.get()
+
+        # Enable/disable all operations based on main enable checkbox
+        widgets_to_toggle = [
+            self.fix_hydrogens_cb,
+            self.fix_heavy_atoms_cb,
+            self.fix_nonstandard_cb,
+            self.fix_heterogens_cb,
+            self.fix_keep_water_cb,
+        ]
+
+        for widget in widgets_to_toggle:
+            widget.config(state=tk.NORMAL if enabled else tk.DISABLED)
+
+        # PDBFixer-only options - disable for OpenBabel
+        pdbfixer_only_widgets = [
+            self.fix_heavy_atoms_cb,
+            self.fix_nonstandard_cb,
+            self.fix_heterogens_cb,
+        ]
+
+        if enabled and method == "openbabel":
+            for widget in pdbfixer_only_widgets:
+                widget.config(state=tk.DISABLED)
+
+        # Keep water option - only available if remove heterogens is checked
+        if enabled and method == "pdbfixer":
+            self.fix_keep_water_cb.config(
+                state=tk.NORMAL if remove_heterogens else tk.DISABLED
+            )
 
     def _create_hydrogen_bond_parameters(self, parent):
         """Create hydrogen bond analysis parameters."""
@@ -349,6 +530,14 @@ class ParameterPanel:
             pi_angle_cutoff=self.pi_angle.get(),
             covalent_cutoff_factor=self.covalent_factor.get(),
             analysis_mode=self.analysis_mode.get(),
+            # PDB fixing parameters
+            fix_pdb_enabled=self.fix_pdb_enabled.get(),
+            fix_pdb_method=self.fix_pdb_method.get(),
+            fix_pdb_add_hydrogens=self.fix_pdb_add_hydrogens.get(),
+            fix_pdb_add_heavy_atoms=self.fix_pdb_add_heavy_atoms.get(),
+            fix_pdb_replace_nonstandard=self.fix_pdb_replace_nonstandard.get(),
+            fix_pdb_remove_heterogens=self.fix_pdb_remove_heterogens.get(),
+            fix_pdb_keep_water=self.fix_pdb_keep_water.get(),
         )
 
     def set_parameters(self, params: AnalysisParameters) -> None:
@@ -371,6 +560,18 @@ class ParameterPanel:
         self.pi_angle.set(params.pi_angle_cutoff)
         self.covalent_factor.set(params.covalent_cutoff_factor)
         self.analysis_mode.set(params.analysis_mode)
+
+        # PDB fixing parameters
+        self.fix_pdb_enabled.set(params.fix_pdb_enabled)
+        self.fix_pdb_method.set(params.fix_pdb_method)
+        self.fix_pdb_add_hydrogens.set(params.fix_pdb_add_hydrogens)
+        self.fix_pdb_add_heavy_atoms.set(params.fix_pdb_add_heavy_atoms)
+        self.fix_pdb_replace_nonstandard.set(params.fix_pdb_replace_nonstandard)
+        self.fix_pdb_remove_heterogens.set(params.fix_pdb_remove_heterogens)
+        self.fix_pdb_keep_water.set(params.fix_pdb_keep_water)
+
+        # Update widget states after setting parameters
+        self._update_fix_pdb_widget_states()
 
     def _set_defaults(self):
         """Reset all parameters to default values."""
@@ -515,6 +716,15 @@ class ParameterPanel:
                 "general": {
                     "covalent_cutoff_factor": params.covalent_cutoff_factor,
                     "analysis_mode": params.analysis_mode,
+                },
+                "pdb_fixing": {
+                    "enabled": params.fix_pdb_enabled,
+                    "method": params.fix_pdb_method,
+                    "add_hydrogens": params.fix_pdb_add_hydrogens,
+                    "add_heavy_atoms": params.fix_pdb_add_heavy_atoms,
+                    "replace_nonstandard": params.fix_pdb_replace_nonstandard,
+                    "remove_heterogens": params.fix_pdb_remove_heterogens,
+                    "keep_water": params.fix_pdb_keep_water,
                 },
             },
         }

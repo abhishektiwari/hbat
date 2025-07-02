@@ -10,8 +10,8 @@ import os
 import tempfile
 from typing import Any, Dict, List, Optional
 
-from .pdb_parser import Atom, PDBParser
 from ..constants import SUBSTITUTIONS
+from .pdb_parser import Atom, PDBParser
 
 
 class PDBFixerError(Exception):
@@ -22,7 +22,7 @@ class PDBFixerError(Exception):
 
 class PDBFixer:
     """Fix PDB structures by adding missing hydrogen atoms.
-    
+
     This class provides methods to add missing hydrogen atoms to protein structures
     using either OpenBabel or PDBFixer with OpenMM. It works with HBAT's internal
     atom and residue data structures.
@@ -39,7 +39,7 @@ class PDBFixer:
         atoms: List[Atom],
         method: str = "openbabel",
         pH: float = 7.0,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> List[Atom]:
         """Add missing hydrogen atoms to a list of atoms.
 
@@ -69,29 +69,37 @@ class PDBFixer:
 
         # Convert atoms to PDB format
         pdb_lines = self._atoms_to_pdb_lines(atoms)
-        
+
         # Create temporary files for processing
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as input_file:
-            input_file.write('\n'.join(pdb_lines))
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".pdb", delete=False
+        ) as input_file:
+            input_file.write("\n".join(pdb_lines))
             input_file.flush()
-            
+
             try:
-                with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as output_file:
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".pdb", delete=False
+                ) as output_file:
                     output_file.close()
-                    
+
                     # Process the structure
                     if method == "openbabel":
-                        self._fix_with_openbabel(input_file.name, output_file.name, **kwargs)
+                        self._fix_with_openbabel(
+                            input_file.name, output_file.name, **kwargs
+                        )
                     elif method == "pdbfixer":
-                        self._fix_with_pdbfixer(input_file.name, output_file.name, pH, **kwargs)
-                    
+                        self._fix_with_pdbfixer(
+                            input_file.name, output_file.name, pH, **kwargs
+                        )
+
                     # Parse the result back to atoms
                     parser = PDBParser()
                     if parser.parse_file(output_file.name):
                         return parser.atoms
                     else:
                         raise PDBFixerError("Failed to parse fixed structure")
-                        
+
             finally:
                 # Clean up temporary files
                 if os.path.exists(input_file.name):
@@ -102,10 +110,7 @@ class PDBFixer:
         return []
 
     def add_missing_heavy_atoms(
-        self,
-        atoms: List[Atom],
-        method: str = "pdbfixer",
-        **kwargs: Any
+        self, atoms: List[Atom], method: str = "pdbfixer", **kwargs: Any
     ) -> List[Atom]:
         """Add missing heavy atoms to a structure.
 
@@ -132,26 +137,34 @@ class PDBFixer:
 
         # Convert atoms to PDB format
         pdb_lines = self._atoms_to_pdb_lines(atoms)
-        
+
         # Create temporary files for processing
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as input_file:
-            input_file.write('\n'.join(pdb_lines))
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".pdb", delete=False
+        ) as input_file:
+            input_file.write("\n".join(pdb_lines))
             input_file.flush()
-            
+
             try:
-                with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as output_file:
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".pdb", delete=False
+                ) as output_file:
                     output_file.close()
-                    
+
                     # Process with PDBFixer to add missing atoms only
-                    self._add_heavy_atoms_with_pdbfixer(input_file.name, output_file.name, **kwargs)
-                    
+                    self._add_heavy_atoms_with_pdbfixer(
+                        input_file.name, output_file.name, **kwargs
+                    )
+
                     # Parse the result back to atoms
                     parser = PDBParser()
                     if parser.parse_file(output_file.name):
                         return parser.atoms
                     else:
-                        raise PDBFixerError("Failed to parse structure with added heavy atoms")
-                        
+                        raise PDBFixerError(
+                            "Failed to parse structure with added heavy atoms"
+                        )
+
             finally:
                 # Clean up temporary files
                 if os.path.exists(input_file.name):
@@ -162,9 +175,7 @@ class PDBFixer:
         return []
 
     def convert_nonstandard_residues(
-        self,
-        atoms: List[Atom],
-        custom_replacements: Optional[Dict[str, str]] = None
+        self, atoms: List[Atom], custom_replacements: Optional[Dict[str, str]] = None
     ) -> List[Atom]:
         """Convert non-standard residues to their standard equivalents using PDBFixer.
 
@@ -183,28 +194,34 @@ class PDBFixer:
 
         # Convert atoms to PDB format
         pdb_lines = self._atoms_to_pdb_lines(atoms)
-        
+
         # Create temporary files for processing
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as input_file:
-            input_file.write('\n'.join(pdb_lines))
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".pdb", delete=False
+        ) as input_file:
+            input_file.write("\n".join(pdb_lines))
             input_file.flush()
-            
+
             try:
-                with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as output_file:
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".pdb", delete=False
+                ) as output_file:
                     output_file.close()
-                    
+
                     # Process with PDBFixer
                     self._convert_nonstandard_with_pdbfixer(
                         input_file.name, output_file.name, custom_replacements
                     )
-                    
+
                     # Parse the result back to atoms
                     parser = PDBParser()
                     if parser.parse_file(output_file.name):
                         return parser.atoms
                     else:
-                        raise PDBFixerError("Failed to parse structure with converted residues")
-                        
+                        raise PDBFixerError(
+                            "Failed to parse structure with converted residues"
+                        )
+
             finally:
                 # Clean up temporary files
                 if os.path.exists(input_file.name):
@@ -215,9 +232,7 @@ class PDBFixer:
         return []
 
     def remove_heterogens(
-        self,
-        atoms: List[Atom],
-        keep_water: bool = True
+        self, atoms: List[Atom], keep_water: bool = True
     ) -> List[Atom]:
         """Remove unwanted heterogens from the structure using PDBFixer.
 
@@ -236,26 +251,34 @@ class PDBFixer:
 
         # Convert atoms to PDB format
         pdb_lines = self._atoms_to_pdb_lines(atoms)
-        
+
         # Create temporary files for processing
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as input_file:
-            input_file.write('\n'.join(pdb_lines))
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".pdb", delete=False
+        ) as input_file:
+            input_file.write("\n".join(pdb_lines))
             input_file.flush()
-            
+
             try:
-                with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as output_file:
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".pdb", delete=False
+                ) as output_file:
                     output_file.close()
-                    
+
                     # Process with PDBFixer
-                    self._remove_heterogens_with_pdbfixer(input_file.name, output_file.name, keep_water)
-                    
+                    self._remove_heterogens_with_pdbfixer(
+                        input_file.name, output_file.name, keep_water
+                    )
+
                     # Parse the result back to atoms
                     parser = PDBParser()
                     if parser.parse_file(output_file.name):
                         return parser.atoms
                     else:
-                        raise PDBFixerError("Failed to parse structure with heterogens removed")
-                        
+                        raise PDBFixerError(
+                            "Failed to parse structure with heterogens removed"
+                        )
+
             finally:
                 # Clean up temporary files
                 if os.path.exists(input_file.name):
@@ -272,7 +295,7 @@ class PDBFixer:
         method: str = "openbabel",
         pH: float = 7.0,
         overwrite: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         """Fix a PDB file by adding missing hydrogen atoms.
 
@@ -324,10 +347,7 @@ class PDBFixer:
         return output_path
 
     def _fix_with_openbabel(
-        self, 
-        input_path: str, 
-        output_path: str, 
-        **kwargs: Any
+        self, input_path: str, output_path: str, **kwargs: Any
     ) -> None:
         """Fix structure using OpenBabel."""
         try:
@@ -355,15 +375,12 @@ class PDBFixer:
             raise PDBFixerError(f"Failed to write fixed PDB file: {output_path}")
 
     def _fix_with_pdbfixer(
-        self, 
-        input_path: str, 
-        output_path: str, 
-        pH: float, 
-        **kwargs: Any
+        self, input_path: str, output_path: str, pH: float, **kwargs: Any
     ) -> None:
         """Fix structure using PDBFixer."""
         try:
             from pdbfixer import PDBFixer
+
             try:
                 from openmm.app import PDBFile
             except ImportError:
@@ -402,21 +419,19 @@ class PDBFixer:
             fixer.addMissingHydrogens(pH)
 
             # Write output
-            with open(output_path, 'w') as f:
+            with open(output_path, "w") as f:
                 PDBFile.writeFile(fixer.topology, fixer.positions, f, keepIds=keep_ids)
 
         except Exception as e:
             raise PDBFixerError(f"PDBFixer failed: {str(e)}")
 
     def _add_heavy_atoms_with_pdbfixer(
-        self, 
-        input_path: str, 
-        output_path: str, 
-        **kwargs: Any
+        self, input_path: str, output_path: str, **kwargs: Any
     ) -> None:
         """Add missing heavy atoms using PDBFixer without adding hydrogens."""
         try:
             from pdbfixer import PDBFixer
+
             try:
                 from openmm.app import PDBFile
             except ImportError:
@@ -428,7 +443,9 @@ class PDBFixer:
             )
 
         # PDBFixer parameters
-        model_residues = kwargs.get("model_residues", True)  # Default to True for heavy atoms
+        model_residues = kwargs.get(
+            "model_residues", True
+        )  # Default to True for heavy atoms
         remove_heterogens = kwargs.get("remove_heterogens", False)
         keep_water = kwargs.get("keep_water", True)
         keep_ids = kwargs.get("keep_ids", True)
@@ -454,21 +471,22 @@ class PDBFixer:
             # Note: We don't add hydrogens in this method
 
             # Write output
-            with open(output_path, 'w') as f:
+            with open(output_path, "w") as f:
                 PDBFile.writeFile(fixer.topology, fixer.positions, f, keepIds=keep_ids)
 
         except Exception as e:
             raise PDBFixerError(f"PDBFixer failed while adding heavy atoms: {str(e)}")
 
     def _convert_nonstandard_with_pdbfixer(
-        self, 
-        input_path: str, 
-        output_path: str, 
-        custom_replacements: Optional[Dict[str, str]] = None
+        self,
+        input_path: str,
+        output_path: str,
+        custom_replacements: Optional[Dict[str, str]] = None,
     ) -> None:
         """Convert non-standard residues using PDBFixer API."""
         try:
             from pdbfixer import PDBFixer
+
             try:
                 from openmm.app import PDBFile
             except ImportError:
@@ -489,31 +507,36 @@ class PDBFixer:
             # Apply custom replacements if provided
             if custom_replacements:
                 # Modify the nonstandardResidues list based on custom replacements
-                for i, (residue, suggested_replacement) in enumerate(fixer.nonstandardResidues):
+                for i, (residue, suggested_replacement) in enumerate(
+                    fixer.nonstandardResidues
+                ):
                     residue_name = residue.name
                     if residue_name in custom_replacements:
                         # Replace the suggested replacement with custom one
-                        fixer.nonstandardResidues[i] = (residue, custom_replacements[residue_name])
+                        fixer.nonstandardResidues[i] = (
+                            residue,
+                            custom_replacements[residue_name],
+                        )
 
             # Replace non-standard residues
             fixer.replaceNonstandardResidues()
 
             # Write output
-            with open(output_path, 'w') as f:
+            with open(output_path, "w") as f:
                 PDBFile.writeFile(fixer.topology, fixer.positions, f)
 
         except Exception as e:
-            raise PDBFixerError(f"PDBFixer failed while converting non-standard residues: {str(e)}")
+            raise PDBFixerError(
+                f"PDBFixer failed while converting non-standard residues: {str(e)}"
+            )
 
     def _remove_heterogens_with_pdbfixer(
-        self, 
-        input_path: str, 
-        output_path: str, 
-        keep_water: bool = True
+        self, input_path: str, output_path: str, keep_water: bool = True
     ) -> None:
         """Remove heterogens using PDBFixer API."""
         try:
             from pdbfixer import PDBFixer
+
             try:
                 from openmm.app import PDBFile
             except ImportError:
@@ -532,7 +555,7 @@ class PDBFixer:
             fixer.removeHeterogens(keepWater=keep_water)
 
             # Write output
-            with open(output_path, 'w') as f:
+            with open(output_path, "w") as f:
                 PDBFile.writeFile(fixer.topology, fixer.positions, f)
 
         except Exception as e:
@@ -541,7 +564,7 @@ class PDBFixer:
     def _atoms_to_pdb_lines(self, atoms: List[Atom]) -> List[str]:
         """Convert list of atoms to PDB format lines."""
         lines = []
-        
+
         for atom in atoms:
             # Format PDB ATOM/HETATM line
             line = (
@@ -562,7 +585,7 @@ class PDBFixer:
                 f"{atom.charge:>2}"
             )
             lines.append(line)
-            
+
         lines.append("END")
         return lines
 
@@ -577,26 +600,27 @@ class PDBFixer:
         total_atoms = len(atoms)
         hydrogen_atoms = len([a for a in atoms if a.is_hydrogen()])
         heavy_atoms = total_atoms - hydrogen_atoms
-        
+
         # Estimate expected hydrogen count (rough approximation)
         # Proteins typically have ~1-2 hydrogens per heavy atom
         estimated_hydrogens = heavy_atoms * 1.5
-        
+
         return {
             "total_atoms": total_atoms,
             "hydrogen_atoms": hydrogen_atoms,
             "heavy_atoms": heavy_atoms,
-            "hydrogen_percentage": (hydrogen_atoms / total_atoms * 100) if total_atoms > 0 else 0,
-            "estimated_missing_hydrogens": max(0, int(estimated_hydrogens - hydrogen_atoms)),
-            "has_sufficient_hydrogens": hydrogen_atoms >= (heavy_atoms * 0.5)
+            "hydrogen_percentage": (
+                (hydrogen_atoms / total_atoms * 100) if total_atoms > 0 else 0
+            ),
+            "estimated_missing_hydrogens": max(
+                0, int(estimated_hydrogens - hydrogen_atoms)
+            ),
+            "has_sufficient_hydrogens": hydrogen_atoms >= (heavy_atoms * 0.5),
         }
 
 
 def add_missing_hydrogens(
-    atoms: List[Atom],
-    method: str = "openbabel",
-    pH: float = 7.0,
-    **kwargs: Any
+    atoms: List[Atom], method: str = "openbabel", pH: float = 7.0, **kwargs: Any
 ) -> List[Atom]:
     """Convenience function to add missing hydrogen atoms.
 
@@ -621,7 +645,7 @@ def fix_pdb_file(
     method: str = "openbabel",
     pH: float = 7.0,
     overwrite: bool = False,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> str:
     """Convenience function to fix a PDB file.
 
@@ -641,13 +665,13 @@ def fix_pdb_file(
     :rtype: str
     """
     fixer = PDBFixer()
-    return fixer.fix_structure_file(input_path, output_path, method, pH, overwrite, **kwargs)
+    return fixer.fix_structure_file(
+        input_path, output_path, method, pH, overwrite, **kwargs
+    )
 
 
 def add_missing_heavy_atoms(
-    atoms: List[Atom],
-    method: str = "pdbfixer",
-    **kwargs: Any
+    atoms: List[Atom], method: str = "pdbfixer", **kwargs: Any
 ) -> List[Atom]:
     """Convenience function to add missing heavy atoms.
 
@@ -665,8 +689,7 @@ def add_missing_heavy_atoms(
 
 
 def convert_nonstandard_residues(
-    atoms: List[Atom],
-    custom_replacements: Optional[Dict[str, str]] = None
+    atoms: List[Atom], custom_replacements: Optional[Dict[str, str]] = None
 ) -> List[Atom]:
     """Convenience function to convert non-standard residues using PDBFixer.
 
@@ -684,10 +707,7 @@ def convert_nonstandard_residues(
     return fixer.convert_nonstandard_residues(atoms, custom_replacements)
 
 
-def remove_heterogens(
-    atoms: List[Atom],
-    keep_water: bool = True
-) -> List[Atom]:
+def remove_heterogens(atoms: List[Atom], keep_water: bool = True) -> List[Atom]:
     """Convenience function to remove unwanted heterogens using PDBFixer.
 
     Uses PDBFixer's built-in removeHeterogens() method which only supports

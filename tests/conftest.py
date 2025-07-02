@@ -34,12 +34,33 @@ def find_sample_pdb_file():
             return path
     return None
 
+def find_pdb_fixing_test_file():
+    """Find the PDB file for PDB fixing tests."""
+    sample_paths = [
+        os.path.join(os.path.dirname(__file__), "..", "example_pdb_files", "1ubi.pdb"),
+        "../example_pdb_files/1ubi.pdb",  # When running from tests/
+        "example_pdb_files/1ubi.pdb",     # When running from project root
+    ]
+    
+    for path in sample_paths:
+        if os.path.exists(path):
+            return path
+    return None
+
 @pytest.fixture
 def sample_pdb_file():
     """Provide path to sample PDB file."""
     file_path = find_sample_pdb_file()
     if not file_path:
         pytest.skip("Sample PDB file (6rsa.pdb) not found")
+    return file_path
+
+@pytest.fixture
+def pdb_fixing_test_file():
+    """Provide path to PDB file for PDB fixing tests."""
+    file_path = find_pdb_fixing_test_file()
+    if not file_path:
+        pytest.skip("PDB fixing test file (1ubi.pdb) not found")
     return file_path
 
 @pytest.fixture
@@ -57,6 +78,34 @@ def analysis_parameters():
         hb_angle_cutoff=120.0,
         hb_donor_acceptor_cutoff=4.0,
         analysis_mode="complete"
+    )
+
+@pytest.fixture
+def pdb_fixing_parameters():
+    """Fixture providing PDB fixing parameters."""
+    from hbat.core.analysis import AnalysisParameters
+    return AnalysisParameters(
+        fix_pdb_enabled=True,
+        fix_pdb_method="openbabel",
+        fix_pdb_add_hydrogens=True,
+        fix_pdb_add_heavy_atoms=False,
+        fix_pdb_replace_nonstandard=False,
+        fix_pdb_remove_heterogens=False,
+        fix_pdb_keep_water=True
+    )
+
+@pytest.fixture
+def pdbfixer_parameters():
+    """Fixture providing PDBFixer parameters."""
+    from hbat.core.analysis import AnalysisParameters
+    return AnalysisParameters(
+        fix_pdb_enabled=True,
+        fix_pdb_method="pdbfixer",
+        fix_pdb_add_hydrogens=True,
+        fix_pdb_add_heavy_atoms=True,
+        fix_pdb_replace_nonstandard=False,
+        fix_pdb_remove_heterogens=False,
+        fix_pdb_keep_water=True
     )
 
 @pytest.fixture
@@ -80,6 +129,16 @@ class ExpectedResults:
     MIN_ATOMS = 2000
     MIN_HYDROGENS = 1000
     MIN_RESIDUES = 100
+
+# Constants for expected results with 1ubi.pdb (PDB fixing tests)
+class PDBFixingExpectedResults:
+    """Expected results for 1ubi.pdb PDB fixing tests."""
+    MIN_HYDROGEN_BONDS = 5
+    MIN_PI_INTERACTIONS = 1
+    MIN_TOTAL_INTERACTIONS = 3
+    MIN_ATOMS_ORIGINAL = 600
+    MIN_ATOMS_WITH_HYDROGENS = 1400  # After adding hydrogens
+    MIN_RESIDUES = 70
 
 # Test data validation utilities
 def validate_interaction_attributes(interaction, interaction_type):

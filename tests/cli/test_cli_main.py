@@ -71,6 +71,38 @@ class TestCLIArgumentParsing:
         assert args.list_presets is True
         assert args.input is None  # Should be optional when listing presets
     
+    def test_pdb_fixing_arguments(self):
+        """Test PDB fixing arguments."""
+        parser = create_parser()
+        
+        # Test basic PDB fixing arguments
+        args = parser.parse_args([
+            "test.pdb",
+            "--fix-pdb",
+            "--fix-method", "pdbfixer",
+            "--fix-add-hydrogens",
+            "--fix-add-heavy-atoms"
+        ])
+        
+        assert args.fix_pdb is True
+        assert args.fix_method == "pdbfixer"
+        assert args.fix_add_hydrogens is True
+        assert args.fix_add_heavy_atoms is True
+        
+        # Test PDBFixer-specific arguments
+        args = parser.parse_args([
+            "test.pdb",
+            "--fix-pdb",
+            "--fix-method", "pdbfixer",
+            "--fix-replace-nonstandard",
+            "--fix-remove-heterogens",
+            "--fix-keep-water"
+        ])
+        
+        assert args.fix_replace_nonstandard is True
+        assert args.fix_remove_heterogens is True
+        assert args.fix_keep_water is True
+    
     def test_output_format_arguments(self):
         """Test output format arguments."""
         parser = create_parser()
@@ -127,6 +159,41 @@ class TestParameterLoading:
         assert params.hb_distance_cutoff == 3.2
         assert params.hb_angle_cutoff == 140.0
         assert params.analysis_mode == "local"
+    
+    def test_pdb_fixing_parameter_loading(self):
+        """Test loading PDB fixing parameters."""
+        parser = create_parser()
+        args = parser.parse_args([
+            "test.pdb",
+            "--fix-pdb",
+            "--fix-method", "openbabel",
+            "--fix-add-hydrogens"
+        ])
+        
+        params = load_parameters_from_args(args)
+        assert params.fix_pdb_enabled is True
+        assert params.fix_pdb_method == "openbabel"
+        assert params.fix_pdb_add_hydrogens is True
+        assert params.fix_pdb_add_heavy_atoms is False  # Default
+        
+        # Test PDBFixer parameters
+        args = parser.parse_args([
+            "test.pdb",
+            "--fix-pdb",
+            "--fix-method", "pdbfixer",
+            "--fix-add-heavy-atoms",
+            "--fix-replace-nonstandard",
+            "--fix-remove-heterogens",
+            "--fix-keep-water"
+        ])
+        
+        params = load_parameters_from_args(args)
+        assert params.fix_pdb_enabled is True
+        assert params.fix_pdb_method == "pdbfixer"
+        assert params.fix_pdb_add_heavy_atoms is True
+        assert params.fix_pdb_replace_nonstandard is True
+        assert params.fix_pdb_remove_heterogens is True
+        assert params.fix_pdb_keep_water is True
     
     def test_preset_parameter_loading(self):
         """Test loading parameters from preset."""
@@ -256,6 +323,15 @@ class TestPresetManagement:
                 "general": {
                     "covalent_cutoff_factor": 1.2,
                     "analysis_mode": "complete"
+                },
+                "pdb_fixing": {
+                    "enabled": True,
+                    "method": "pdbfixer",
+                    "add_hydrogens": True,
+                    "add_heavy_atoms": False,
+                    "replace_nonstandard": False,
+                    "remove_heterogens": False,
+                    "keep_water": True
                 }
             }
         }
@@ -270,6 +346,10 @@ class TestPresetManagement:
             assert params.hb_distance_cutoff == 3.5
             assert params.hb_angle_cutoff == 120.0
             assert params.analysis_mode == "complete"
+            # Test PDB fixing parameters are loaded
+            assert params.fix_pdb_enabled is True
+            assert params.fix_pdb_method == "pdbfixer"
+            assert params.fix_pdb_add_hydrogens is True
         except (SystemExit, Exception):
             # Acceptable if loading fails in test environment
             pass
@@ -306,6 +386,35 @@ class TestCLIIntegration:
         # Verify analysis used the specified parameters
         assert analyzer.parameters.hb_distance_cutoff == 3.0
         assert analyzer.parameters.hb_angle_cutoff == 140.0
+    
+    @pytest.mark.integration
+    def test_cli_pdb_fixing_integration(self, pdb_fixing_test_file):
+        """Test that CLI PDB fixing parameters properly configure analysis."""
+        parser = create_parser()
+        args = parser.parse_args([
+            pdb_fixing_test_file,
+            "--fix-pdb",
+            "--fix-method", "openbabel",
+            "--fix-add-hydrogens"
+        ])
+        
+        params = load_parameters_from_args(args)
+        
+        # Verify PDB fixing parameters are correctly set
+        assert params.fix_pdb_enabled is True
+        assert params.fix_pdb_method == "openbabel"
+        assert params.fix_pdb_add_hydrogens is True
+        
+        # Test that these parameters can be used with analyzer
+        from hbat.core.analysis import HBondAnalyzer
+        analyzer = HBondAnalyzer(params)
+        
+        success = analyzer.analyze_file(pdb_fixing_test_file)
+        assert success, "Analysis with CLI PDB fixing parameters should succeed"
+        
+        # Verify analysis used the specified PDB fixing parameters
+        assert analyzer.parameters.fix_pdb_enabled is True
+        assert analyzer.parameters.fix_pdb_method == "openbabel"
     
     def test_error_handling(self):
         """Test CLI error handling."""
@@ -362,3 +471,9 @@ class TestCLIHelp:
         assert "Å" in help_text  # Distance units
         assert "degrees" in help_text  # Angle units
         assert "default:" in help_text.lower()  # Default values mentioned
+        
+        # Check that PDB fixing help is included
+        assert "fix-pdb" in help_text
+        assert "PDB Structure Fixing" in help_text
+        assert "openbabel" in help_text.lower()
+        assert "pdbfixer" in help_text.lower()

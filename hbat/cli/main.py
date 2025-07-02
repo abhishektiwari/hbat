@@ -126,6 +126,47 @@ Examples:
         help="Analysis mode: complete (all interactions) or local (intra-residue only)",
     )
 
+    # PDB structure fixing options
+    fix_group = parser.add_argument_group("PDB Structure Fixing")
+    fix_group.add_argument(
+        "--fix-pdb",
+        action="store_true",
+        help="Enable PDB structure fixing",
+    )
+    fix_group.add_argument(
+        "--fix-method",
+        choices=["openbabel", "pdbfixer"],
+        default=AnalysisDefaults.FIX_PDB_METHOD,
+        help=f"PDB fixing method: openbabel or pdbfixer (default: {AnalysisDefaults.FIX_PDB_METHOD})",
+    )
+    fix_group.add_argument(
+        "--fix-add-hydrogens",
+        action="store_true",
+        default=AnalysisDefaults.FIX_PDB_ADD_HYDROGENS,
+        help="Add missing hydrogen atoms (both OpenBabel and PDBFixer)",
+    )
+    fix_group.add_argument(
+        "--fix-add-heavy-atoms",
+        action="store_true",
+        help="Add missing heavy atoms (PDBFixer only)",
+    )
+    fix_group.add_argument(
+        "--fix-replace-nonstandard",
+        action="store_true",
+        help="Replace nonstandard residues (PDBFixer only)",
+    )
+    fix_group.add_argument(
+        "--fix-remove-heterogens",
+        action="store_true",
+        help="Remove heterogens (PDBFixer only)",
+    )
+    fix_group.add_argument(
+        "--fix-keep-water",
+        action="store_true",
+        default=AnalysisDefaults.FIX_PDB_KEEP_WATER,
+        help="Keep water when removing heterogens (PDBFixer only)",
+    )
+
     # Output control
     output_group = parser.add_argument_group("Output Control")
     output_group.add_argument(
@@ -256,6 +297,7 @@ def load_preset_file(preset_path: str) -> AnalysisParameters:
         xb_params = params.get("halogen_bonds", {})
         pi_params = params.get("pi_interactions", {})
         general_params = params.get("general", {})
+        fix_params = params.get("pdb_fixing", {})
 
         return AnalysisParameters(
             hb_distance_cutoff=hb_params.get(
@@ -284,6 +326,24 @@ def load_preset_file(preset_path: str) -> AnalysisParameters:
             ),
             analysis_mode=general_params.get(
                 "analysis_mode", AnalysisDefaults.ANALYSIS_MODE
+            ),
+            # PDB fixing parameters
+            fix_pdb_enabled=fix_params.get("enabled", AnalysisDefaults.FIX_PDB_ENABLED),
+            fix_pdb_method=fix_params.get("method", AnalysisDefaults.FIX_PDB_METHOD),
+            fix_pdb_add_hydrogens=fix_params.get(
+                "add_hydrogens", AnalysisDefaults.FIX_PDB_ADD_HYDROGENS
+            ),
+            fix_pdb_add_heavy_atoms=fix_params.get(
+                "add_heavy_atoms", AnalysisDefaults.FIX_PDB_ADD_HEAVY_ATOMS
+            ),
+            fix_pdb_replace_nonstandard=fix_params.get(
+                "replace_nonstandard", AnalysisDefaults.FIX_PDB_REPLACE_NONSTANDARD
+            ),
+            fix_pdb_remove_heterogens=fix_params.get(
+                "remove_heterogens", AnalysisDefaults.FIX_PDB_REMOVE_HETEROGENS
+            ),
+            fix_pdb_keep_water=fix_params.get(
+                "keep_water", AnalysisDefaults.FIX_PDB_KEEP_WATER
             ),
         )
 
@@ -392,6 +452,14 @@ def load_parameters_from_args(args: argparse.Namespace) -> AnalysisParameters:
             pi_angle_cutoff=args.pi_angle,
             covalent_cutoff_factor=args.covalent_factor,
             analysis_mode=args.mode,
+            # PDB fixing parameters
+            fix_pdb_enabled=args.fix_pdb,
+            fix_pdb_method=args.fix_method,
+            fix_pdb_add_hydrogens=args.fix_add_hydrogens,
+            fix_pdb_add_heavy_atoms=args.fix_add_heavy_atoms,
+            fix_pdb_replace_nonstandard=args.fix_replace_nonstandard,
+            fix_pdb_remove_heterogens=args.fix_remove_heterogens,
+            fix_pdb_keep_water=args.fix_keep_water,
         )
 
 

@@ -349,6 +349,20 @@ class AnalysisParameters:
     :type covalent_cutoff_factor: float
     :param analysis_mode: Analysis mode ('local' or 'global')
     :type analysis_mode: str
+    :param fix_pdb_enabled: Enable PDB structure fixing
+    :type fix_pdb_enabled: bool
+    :param fix_pdb_method: PDB fixing method ('openbabel' or 'pdbfixer')
+    :type fix_pdb_method: str
+    :param fix_pdb_add_hydrogens: Add missing hydrogen atoms (both methods)
+    :type fix_pdb_add_hydrogens: bool
+    :param fix_pdb_add_heavy_atoms: Add missing heavy atoms (PDBFixer only)
+    :type fix_pdb_add_heavy_atoms: bool
+    :param fix_pdb_replace_nonstandard: Replace nonstandard residues (PDBFixer only)
+    :type fix_pdb_replace_nonstandard: bool
+    :param fix_pdb_remove_heterogens: Remove heterogens (PDBFixer only)
+    :type fix_pdb_remove_heterogens: bool
+    :param fix_pdb_keep_water: Keep water when removing heterogens (PDBFixer only)
+    :type fix_pdb_keep_water: bool
     """
 
     # Hydrogen bond parameters
@@ -368,6 +382,148 @@ class AnalysisParameters:
     covalent_cutoff_factor: float = AnalysisDefaults.COVALENT_CUTOFF_FACTOR
     analysis_mode: str = AnalysisDefaults.ANALYSIS_MODE
 
+    # PDB structure fixing parameters
+    fix_pdb_enabled: bool = AnalysisDefaults.FIX_PDB_ENABLED
+    fix_pdb_method: str = AnalysisDefaults.FIX_PDB_METHOD
+    fix_pdb_add_hydrogens: bool = AnalysisDefaults.FIX_PDB_ADD_HYDROGENS
+    fix_pdb_add_heavy_atoms: bool = AnalysisDefaults.FIX_PDB_ADD_HEAVY_ATOMS
+    fix_pdb_replace_nonstandard: bool = AnalysisDefaults.FIX_PDB_REPLACE_NONSTANDARD
+    fix_pdb_remove_heterogens: bool = AnalysisDefaults.FIX_PDB_REMOVE_HETEROGENS
+    fix_pdb_keep_water: bool = AnalysisDefaults.FIX_PDB_KEEP_WATER
+
+    def validate(self) -> List[str]:
+        """Validate parameter values and return list of validation errors.
+
+        Checks all parameter values for validity and logical consistency.
+        Returns a list of validation error messages, empty list if all valid.
+
+        :returns: List of validation error messages
+        :rtype: List[str]
+        """
+        from ..constants import ParameterRanges, PDBFixingModes
+
+        errors = []
+
+        # Distance parameter validation
+        if not (
+            ParameterRanges.MIN_DISTANCE
+            <= self.hb_distance_cutoff
+            <= ParameterRanges.MAX_DISTANCE
+        ):
+            errors.append(
+                f"Hydrogen bond distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
+            )
+
+        if not (
+            ParameterRanges.MIN_DISTANCE
+            <= self.hb_donor_acceptor_cutoff
+            <= ParameterRanges.MAX_DISTANCE
+        ):
+            errors.append(
+                f"Donor-acceptor distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
+            )
+
+        if not (
+            ParameterRanges.MIN_DISTANCE
+            <= self.xb_distance_cutoff
+            <= ParameterRanges.MAX_DISTANCE
+        ):
+            errors.append(
+                f"Halogen bond distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
+            )
+
+        if not (
+            ParameterRanges.MIN_DISTANCE
+            <= self.pi_distance_cutoff
+            <= ParameterRanges.MAX_DISTANCE
+        ):
+            errors.append(
+                f"π interaction distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
+            )
+
+        # Angle parameter validation
+        if not (
+            ParameterRanges.MIN_ANGLE
+            <= self.hb_angle_cutoff
+            <= ParameterRanges.MAX_ANGLE
+        ):
+            errors.append(
+                f"Hydrogen bond angle cutoff must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
+            )
+
+        if not (
+            ParameterRanges.MIN_ANGLE
+            <= self.xb_angle_cutoff
+            <= ParameterRanges.MAX_ANGLE
+        ):
+            errors.append(
+                f"Halogen bond angle cutoff must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
+            )
+
+        if not (
+            ParameterRanges.MIN_ANGLE
+            <= self.pi_angle_cutoff
+            <= ParameterRanges.MAX_ANGLE
+        ):
+            errors.append(
+                f"π interaction angle cutoff must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
+            )
+
+        # Covalent factor validation
+        if not (
+            ParameterRanges.MIN_COVALENT_FACTOR
+            <= self.covalent_cutoff_factor
+            <= ParameterRanges.MAX_COVALENT_FACTOR
+        ):
+            errors.append(
+                f"Covalent bond factor must be between {ParameterRanges.MIN_COVALENT_FACTOR}-{ParameterRanges.MAX_COVALENT_FACTOR}"
+            )
+
+        # Analysis mode validation
+        from ..constants import AnalysisModes
+
+        if self.analysis_mode not in AnalysisModes.ALL_MODES:
+            errors.append(
+                f"Analysis mode must be one of: {', '.join(AnalysisModes.ALL_MODES)}"
+            )
+
+        # PDB fixing parameter validation
+        if self.fix_pdb_method not in PDBFixingModes.ALL_METHODS:
+            errors.append(
+                f"PDB fixing method must be one of: {', '.join(PDBFixingModes.ALL_METHODS)}"
+            )
+
+        # Logical consistency validation for PDB fixing
+        if self.fix_pdb_enabled:
+            if self.fix_pdb_method == "openbabel":
+                # OpenBabel only supports hydrogen addition
+                if self.fix_pdb_add_heavy_atoms:
+                    errors.append(
+                        "OpenBabel does not support adding heavy atoms - only PDBFixer supports this"
+                    )
+                if self.fix_pdb_replace_nonstandard:
+                    errors.append(
+                        "OpenBabel does not support replacing nonstandard residues - only PDBFixer supports this"
+                    )
+                if self.fix_pdb_remove_heterogens:
+                    errors.append(
+                        "OpenBabel does not support removing heterogens - only PDBFixer supports this"
+                    )
+
+            # At least one operation must be selected when fixing is enabled
+            operations_selected = [
+                self.fix_pdb_add_hydrogens,
+                self.fix_pdb_add_heavy_atoms,
+                self.fix_pdb_replace_nonstandard,
+                self.fix_pdb_remove_heterogens,
+            ]
+            if not any(operations_selected):
+                errors.append(
+                    "At least one PDB fixing operation must be selected when PDB fixing is enabled"
+                )
+
+        return errors
+
 
 class HBondAnalyzer:
     """Main analyzer for molecular interactions.
@@ -385,8 +541,15 @@ class HBondAnalyzer:
 
         :param parameters: Analysis parameters, defaults to standard parameters if None
         :type parameters: Optional[AnalysisParameters]
+        :raises: ValueError if parameters are invalid
         """
         self.parameters = parameters or AnalysisParameters()
+
+        # Validate parameters
+        validation_errors = self.parameters.validate()
+        if validation_errors:
+            raise ValueError(f"Invalid parameters: {'; '.join(validation_errors)}")
+
         self.parser = PDBParser()
         self.hydrogen_bonds: List[HydrogenBond] = []
         self.halogen_bonds: List[HalogenBond] = []
@@ -415,6 +578,22 @@ class HBondAnalyzer:
         if not self.parser.parse_file(pdb_file):
             return False
 
+        # Apply PDB fixing if enabled
+        if self.parameters.fix_pdb_enabled:
+            try:
+                fixed_atoms = self._apply_pdb_fixing(self.parser.atoms)
+                # Update parser with fixed atoms
+                self.parser.atoms = fixed_atoms
+                # Rebuild residue information
+                self.parser.residues = {}
+                for atom in fixed_atoms:
+                    self.parser._add_atom_to_residue(atom)
+                print(f"PDB fixing applied using {self.parameters.fix_pdb_method}")
+                print(f"Structure now has {len(fixed_atoms)} atoms")
+            except Exception as e:
+                print(f"Warning: PDB fixing failed: {e}")
+                print("Continuing with original structure")
+
         if not self.parser.has_hydrogens():
             print("Warning: PDB file appears to lack hydrogen atoms")
             print("Analysis results may be incomplete")
@@ -425,6 +604,41 @@ class HBondAnalyzer:
         self._find_cooperativity_chains()
 
         return True
+
+    def _apply_pdb_fixing(self, atoms: List[Atom]) -> List[Atom]:
+        """Apply PDB structure fixing based on current parameters.
+
+        :param atoms: Original atoms to fix
+        :type atoms: List[Atom]
+        :returns: Fixed atoms
+        :rtype: List[Atom]
+        :raises: ImportError if required fixing tools are not available
+        """
+        from .pdb_fixer import PDBFixer
+
+        fixer = PDBFixer()
+        fixed_atoms = atoms
+
+        # Apply each requested fixing operation in sequence
+        if self.parameters.fix_pdb_add_hydrogens:
+            fixed_atoms = fixer.add_missing_hydrogens(
+                fixed_atoms, method=self.parameters.fix_pdb_method
+            )
+
+        # PDBFixer-only operations
+        if self.parameters.fix_pdb_method == "pdbfixer":
+            if self.parameters.fix_pdb_add_heavy_atoms:
+                fixed_atoms = fixer.add_missing_heavy_atoms(fixed_atoms)
+
+            if self.parameters.fix_pdb_replace_nonstandard:
+                fixed_atoms = fixer.convert_nonstandard_residues(fixed_atoms)
+
+            if self.parameters.fix_pdb_remove_heterogens:
+                fixed_atoms = fixer.remove_heterogens(
+                    fixed_atoms, keep_water=self.parameters.fix_pdb_keep_water
+                )
+
+        return fixed_atoms
 
     def _find_hydrogen_bonds(self) -> None:
         """Find all hydrogen bonds in the structure.
