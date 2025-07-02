@@ -11,6 +11,7 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 ![Python Versions](https://img.shields.io/pypi/pyversions/hbat?logo=python&logoColor=white)
 ![GitHub last commit](https://img.shields.io/github/last-commit/abhishektiwari/hbat)
 ![PyPI - Status](https://img.shields.io/pypi/status/hbat)
+![Conda Version](https://img.shields.io/conda/v/hbat/hbat)
 ![License](https://img.shields.io/github/license/abhishektiwari/hbat)
 
 ## Background
@@ -42,7 +43,6 @@ Please review [HBAT documentation](https://hbat.abhishek-tiwari.com/) for more d
 ### Option 1: Install from PyPI (Recommended)
 
 ```bash
-# Install latest version
 pip install hbat
 ```
 
@@ -57,6 +57,12 @@ pip install -e .
 ```
 
 Run HBAT Command-Line Interface (CLI) using `hbat` or launch HBAT GUI using `hbat-gui`.
+
+### Option 3: Install from Conda
+
+```
+conda install -c hbat hbat
+```
 
 ### Requirements
 
