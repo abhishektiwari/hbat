@@ -163,7 +163,10 @@ conda-build-test:
 		exit 1; \
 	fi
 	@export GIT_DESCRIBE_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0") && \
-	conda build conda --output-folder conda-build-output --test
+	echo "Building version: $$GIT_DESCRIBE_TAG" && \
+	conda build conda --output-folder conda-build-output && \
+	echo "Testing built package..." && \
+	conda build --test conda-build-output/noarch/hbat-*.tar.bz2
 
 # Standalone executables
 build-standalone:
