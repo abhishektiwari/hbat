@@ -284,15 +284,20 @@ class PDBParser:
             res_seq = int(atom_row.get("resid", 0))
             i_code = str(atom_row.get("res_icode", "") or "").strip()
 
-            # Coordinates
-            x = float(atom_row.get("x", 0.0))
-            y = float(atom_row.get("y", 0.0))
-            z = float(atom_row.get("z", 0.0))
+            # Coordinates - handle None values
+            x_val = atom_row.get("x", 0.0)
+            y_val = atom_row.get("y", 0.0)
+            z_val = atom_row.get("z", 0.0)
+            x = float(x_val if x_val is not None else 0.0)
+            y = float(y_val if y_val is not None else 0.0)
+            z = float(z_val if z_val is not None else 0.0)
             coords = Vec3D(x, y, z)
 
-            # Other properties
-            occupancy = float(atom_row.get("occupancy", 1.0))
-            temp_factor = float(atom_row.get("b_factor", 0.0))
+            # Other properties - handle None values
+            occ_val = atom_row.get("occupancy", 1.0)
+            bf_val = atom_row.get("b_factor", 0.0)
+            occupancy = float(occ_val if occ_val is not None else 1.0)
+            temp_factor = float(bf_val if bf_val is not None else 0.0)
             element = str(atom_row.get("element", "") or "").strip()
             charge = str(atom_row.get("charge", "") or "").strip()
 
