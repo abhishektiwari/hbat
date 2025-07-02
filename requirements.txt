@@ -7,3 +7,8 @@ pdbreader>=0.1.0
 # Optional visualization (GUI features)
 networkx>=2.5.0
 matplotlib>=3.3.0
+
+# PDB structure fixing and chemical informatics
+pdbfixer @ git+https://github.com/openmm/pdbfixer.git
+openbabel-wheel>=3.1.1.22
+pybel>=0.15.5
