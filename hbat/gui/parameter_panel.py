@@ -840,3 +840,19 @@ class ParameterPanel:
         gen = params["general"]
         self.covalent_factor.set(gen["covalent_cutoff_factor"])
         self.analysis_mode.set(gen["analysis_mode"])
+
+        # Apply PDB fixing parameters if present
+        if "pdb_fixing" in params:
+            pdb_fix = params["pdb_fixing"]
+            self.fix_pdb_enabled.set(pdb_fix.get("enabled", False))
+            self.fix_pdb_method.set(pdb_fix.get("method", "openbabel"))
+            self.fix_pdb_add_hydrogens.set(pdb_fix.get("add_hydrogens", True))
+            self.fix_pdb_add_heavy_atoms.set(pdb_fix.get("add_heavy_atoms", False))
+            self.fix_pdb_replace_nonstandard.set(
+                pdb_fix.get("replace_nonstandard", False)
+            )
+            self.fix_pdb_remove_heterogens.set(pdb_fix.get("remove_heterogens", False))
+            self.fix_pdb_keep_water.set(pdb_fix.get("keep_water", True))
+
+        # Update widget states after applying all parameters
+        self._update_fix_pdb_widget_states()
