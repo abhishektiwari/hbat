@@ -70,7 +70,7 @@ jobs:
         
         # Upload to Anaconda Cloud
         anaconda -t $ANACONDA_API_TOKEN upload \
-          --org ${{ secrets.ANACONDA_ORG }} \
+          --user ${{ secrets.ANACONDA_ORG }} \
           --label main \
           $PACKAGE_PATH
     
