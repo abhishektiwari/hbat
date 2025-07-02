@@ -32,6 +32,14 @@ From Source
    cd hbat
    pip install -e .
 
+
+From Conda
+~~~~~~~~~~
+
+.. code-block:: bash
+
+   conda install -c hbat hbat
+
 Verification
 ------------
 

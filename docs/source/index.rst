@@ -26,6 +26,9 @@ HBAT Documentation
 .. image:: https://img.shields.io/pypi/status/hbat
    :alt: PyPI - Status
 
+.. image:: https://img.shields.io/conda/v/hbat/hbat
+   :alt: Conda Version
+
 .. github-shield::
    :username: abhishektiwari
    :repository: hbat
