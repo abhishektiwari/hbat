@@ -50,6 +50,7 @@ Project Structure
    │   ├── core/              # Core analysis logic
    │   │   ├── vector.py      # 3D vector mathematics
    │   │   ├── pdb_parser.py  # PDB file parsing
+   │   │   ├── pdb_fixer.py   # PDB structure fixing and enhancement
    │   │   └── analysis.py    # Main analysis engine
    │   ├── gui/               # GUI components
    │   │   ├── main_window.py # Main application window
@@ -156,6 +157,7 @@ The test suite follows a modular architecture with clear separation of concerns:
    ├── core/                      # Core functionality tests
    │   ├── test_vector.py         # 3D vector mathematics, geometric calculations
    │   ├── test_pdb_parser.py     # PDB file parsing, atom/residue handling
+   │   ├── test_pdb_fixer.py      # PDB structure fixing and enhancement
    │   └── test_analysis.py       # Analysis algorithms, interaction detection
    ├── cli/                       # Command-line interface tests
    │   └── test_cli_main.py       # Argument parsing, preset management, integration
@@ -177,6 +179,10 @@ The test suite follows a modular architecture with clear separation of concerns:
    │   ├── index.rst              # Documentation home page
    │   ├── installation.rst       # Installation guide
    │   ├── quickstart.rst         # Quick start tutorial
+   │   ├── cli.rst                # Command-line interface guide
+   │   ├── parameters.rst         # Analysis parameters documentation
+   │   ├── pdbfixing.rst          # PDB structure fixing guide
+   │   ├── logic.rst              # Algorithm and calculation logic
    │   ├── examples.rst           # Usage examples
    │   └── development.rst        # Development guide
    ├── build/                     # Generated documentation (HTML, PDF)
@@ -187,7 +193,7 @@ The test suite follows a modular architecture with clear separation of concerns:
 
 **Module Test Coverage:**
 
-- **Core Tests** (``tests/core/``): Vector operations, PDB parsing, hydrogen bond detection, π-interactions, cooperativity analysis
+- **Core Tests** (``tests/core/``): Vector operations, PDB parsing, PDB structure fixing, hydrogen bond detection, π-interactions, cooperativity analysis
 - **CLI Tests** (``tests/cli/``): Command-line argument validation, preset loading/saving, parameter overrides, output formatting
 - **GUI Tests** (``tests/gui/``): Parameter panels, results display, chain visualization, preset management
 - **Integration Tests**: End-to-end workflows using real PDB structures (6RSA.pdb, 2IZF.pdb)
