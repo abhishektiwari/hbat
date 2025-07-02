@@ -13,7 +13,7 @@ from hbat.core.pdb_parser import PDBParser
 def has_openbabel():
     """Check if OpenBabel is available."""
     try:
-        import openbabel
+        from openbabel import openbabel
         return True
     except ImportError:
         return False

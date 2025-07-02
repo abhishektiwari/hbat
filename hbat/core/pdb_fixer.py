@@ -331,7 +331,7 @@ class PDBFixer:
     ) -> None:
         """Fix structure using OpenBabel."""
         try:
-            import openbabel as ob
+            from openbabel import openbabel as ob
         except ImportError:
             raise PDBFixerError(
                 "OpenBabel is not installed. "
