@@ -107,8 +107,6 @@ class PDBFixer:
                 if os.path.exists(output_file.name):
                     os.unlink(output_file.name)
 
-        return []
-
     def add_missing_heavy_atoms(
         self, atoms: List[Atom], method: str = "pdbfixer", **kwargs: Any
     ) -> List[Atom]:
@@ -172,8 +170,6 @@ class PDBFixer:
                 if os.path.exists(output_file.name):
                     os.unlink(output_file.name)
 
-        return []
-
     def convert_nonstandard_residues(
         self, atoms: List[Atom], custom_replacements: Optional[Dict[str, str]] = None
     ) -> List[Atom]:
@@ -229,8 +225,6 @@ class PDBFixer:
                 if os.path.exists(output_file.name):
                     os.unlink(output_file.name)
 
-        return []
-
     def remove_heterogens(
         self, atoms: List[Atom], keep_water: bool = True
     ) -> List[Atom]:
@@ -285,8 +279,6 @@ class PDBFixer:
                     os.unlink(input_file.name)
                 if os.path.exists(output_file.name):
                     os.unlink(output_file.name)
-
-        return []
 
     def fix_structure_file(
         self,
@@ -350,6 +342,7 @@ class PDBFixer:
         self, input_path: str, output_path: str, **kwargs: Any
     ) -> None:
         """Fix structure using OpenBabel."""
+        # Note: kwargs is kept for API consistency but not used by OpenBabel
         try:
             from openbabel import openbabel as ob
         except ImportError:
@@ -507,7 +500,7 @@ class PDBFixer:
             # Apply custom replacements if provided
             if custom_replacements:
                 # Modify the nonstandardResidues list based on custom replacements
-                for i, (residue, suggested_replacement) in enumerate(
+                for i, (residue, _suggested_replacement) in enumerate(
                     fixer.nonstandardResidues
                 ):
                     residue_name = residue.name

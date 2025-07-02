@@ -115,7 +115,7 @@ line_length = 88
 known_first_party = ["hbat"]
 
 [tool.mypy]
-python_version = "3.7"
+python_version = "3.8"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -131,6 +131,22 @@ strict_equality = true
 
 [[tool.mypy.overrides]]
 module = "tkinter.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "openbabel.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pdbfixer.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "openmm.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "simtk.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
