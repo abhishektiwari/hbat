@@ -240,6 +240,30 @@ class ResultsPanel:
         tree_frame.grid_rowconfigure(0, weight=1)
         tree_frame.grid_columnconfigure(0, weight=1)
 
+        # Add search functionality
+        search_frame = ttk.Frame(xb_frame)
+        search_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+        self.xb_search_var = tk.StringVar()
+        search_entry = ttk.Entry(
+            search_frame, textvariable=self.xb_search_var, width=30
+        )
+        search_entry.pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            search_frame,
+            text="Filter",
+            command=lambda: self._filter_results(
+                self.xb_tree, self.xb_search_var.get()
+            ),
+        ).pack(side=tk.LEFT, padx=5)
+        ttk.Button(
+            search_frame,
+            text="Clear",
+            command=lambda: self._clear_filter(self.xb_tree, self.xb_search_var),
+        ).pack(side=tk.LEFT, padx=5)
+
     def _create_pi_interactions_tab(self):
         """Create π interactions results tab."""
         pi_frame = ttk.Frame(self.notebook)
@@ -287,6 +311,30 @@ class ResultsPanel:
         tree_frame.grid_rowconfigure(0, weight=1)
         tree_frame.grid_columnconfigure(0, weight=1)
 
+        # Add search functionality
+        search_frame = ttk.Frame(pi_frame)
+        search_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+        self.pi_search_var = tk.StringVar()
+        search_entry = ttk.Entry(
+            search_frame, textvariable=self.pi_search_var, width=30
+        )
+        search_entry.pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            search_frame,
+            text="Filter",
+            command=lambda: self._filter_results(
+                self.pi_tree, self.pi_search_var.get()
+            ),
+        ).pack(side=tk.LEFT, padx=5)
+        ttk.Button(
+            search_frame,
+            text="Clear",
+            command=lambda: self._clear_filter(self.pi_tree, self.pi_search_var),
+        ).pack(side=tk.LEFT, padx=5)
+
     def _create_cooperativity_chains_tab(self):
         """Create cooperativity chains results tab."""
         coop_frame = ttk.Frame(self.notebook)
@@ -329,6 +377,9 @@ class ResultsPanel:
 
         tree_frame.grid_rowconfigure(0, weight=1)
         tree_frame.grid_columnconfigure(0, weight=1)
+
+        # Bind double-click event to visualize chain
+        self.coop_tree.bind("<Double-1>", self._on_chain_double_click)
 
         # Add info label
         info_frame = ttk.Frame(coop_frame)
@@ -704,9 +755,16 @@ class ResultsPanel:
     def _clear_filter(self, tree, search_var):
         """Clear filter and show all results."""
         search_var.set("")
-        # Reattach all items
-        for item in tree.get_children():
-            tree.reattach(item, "", tk.END)
+        # Refresh the tree by updating the corresponding data
+        if self.analyzer:
+            if tree == self.hb_tree:
+                self._update_hydrogen_bonds()
+            elif tree == self.xb_tree:
+                self._update_halogen_bonds()
+            elif tree == self.pi_tree:
+                self._update_pi_interactions()
+            elif tree == self.coop_tree:
+                self._update_cooperativity_chains()
 
     def clear_results(self) -> None:
         """Clear all results from the panel.
@@ -735,6 +793,12 @@ class ResultsPanel:
 
         for item in self.coop_tree.get_children():
             self.coop_tree.delete(item)
+
+        # Clear all search filters
+        self.hb_search_var.set("")
+        self.xb_search_var.set("")
+        self.pi_search_var.set("")
+        self.coop_search_var.set("")
 
         # Add placeholder text
         self.summary_text.insert(tk.END, "No analysis results available.\n\n")
@@ -781,3 +845,13 @@ class ResultsPanel:
 
         # Create the visualization window using the new module
         ChainVisualizationWindow(self.parent, chain, chain_id)
+
+    def _on_chain_double_click(self, event):
+        """Handle double-click on cooperativity chain to open visualization."""
+        # Get the item that was double-clicked
+        item = self.coop_tree.identify_row(event.y)
+        if item:
+            # Select the item first
+            self.coop_tree.selection_set(item)
+            # Then visualize it
+            self._visualize_selected_chain()
