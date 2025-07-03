@@ -11,7 +11,7 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import filedialog, messagebox, ttk
 
-from ..constants import AnalysisDefaults
+from ..constants import AnalysisDefaults, ParameterRanges
 from ..core.analysis import AnalysisParameters
 
 
@@ -139,8 +139,8 @@ class ParameterPanel:
         )
         ttk.Scale(
             group,
-            from_=0,
-            to=1.0,
+            from_=ParameterRanges.MIN_COVALENT_FACTOR,
+            to=ParameterRanges.MAX_COVALENT_FACTOR,
             variable=self.covalent_factor,
             orient=tk.HORIZONTAL,
             length=200,
@@ -327,8 +327,8 @@ class ParameterPanel:
 
         ttk.Scale(
             distance_frame,
-            from_=2.0,
-            to=5.0,
+            from_=ParameterRanges.MIN_DISTANCE,
+            to=ParameterRanges.MAX_DISTANCE,
             variable=self.hb_distance,
             orient=tk.HORIZONTAL,
             length=150,
@@ -353,8 +353,8 @@ class ParameterPanel:
 
         ttk.Scale(
             angle_frame,
-            from_=90.0,
-            to=180.0,
+            from_=ParameterRanges.MIN_ANGLE,
+            to=ParameterRanges.MAX_ANGLE,
             variable=self.hb_angle,
             orient=tk.HORIZONTAL,
             length=150,
@@ -379,8 +379,8 @@ class ParameterPanel:
 
         ttk.Scale(
             da_frame,
-            from_=3.0,
-            to=6.0,
+            from_=ParameterRanges.MIN_DISTANCE,
+            to=ParameterRanges.MAX_DISTANCE,
             variable=self.da_distance,
             orient=tk.HORIZONTAL,
             length=150,
@@ -410,8 +410,8 @@ class ParameterPanel:
 
         ttk.Scale(
             xb_dist_frame,
-            from_=2.5,
-            to=5.5,
+            from_=ParameterRanges.MIN_DISTANCE,
+            to=ParameterRanges.MAX_DISTANCE,
             variable=self.xb_distance,
             orient=tk.HORIZONTAL,
             length=150,
@@ -436,8 +436,8 @@ class ParameterPanel:
 
         ttk.Scale(
             xb_angle_frame,
-            from_=90.0,
-            to=180.0,
+            from_=ParameterRanges.MIN_ANGLE,
+            to=ParameterRanges.MAX_ANGLE,
             variable=self.xb_angle,
             orient=tk.HORIZONTAL,
             length=150,
@@ -469,8 +469,8 @@ class ParameterPanel:
 
         ttk.Scale(
             pi_dist_frame,
-            from_=3.0,
-            to=6.0,
+            from_=ParameterRanges.MIN_DISTANCE,
+            to=ParameterRanges.MAX_DISTANCE,
             variable=self.pi_distance,
             orient=tk.HORIZONTAL,
             length=150,
@@ -495,8 +495,8 @@ class ParameterPanel:
 
         ttk.Scale(
             pi_angle_frame,
-            from_=60.0,
-            to=180.0,
+            from_=ParameterRanges.MIN_ANGLE,
+            to=ParameterRanges.MAX_ANGLE,
             variable=self.pi_angle,
             orient=tk.HORIZONTAL,
             length=150,
