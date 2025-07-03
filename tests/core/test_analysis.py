@@ -271,6 +271,35 @@ class TestHBondAnalyzer:
             assert angle_degrees >= analyzer.parameters.hb_angle_cutoff, \
                 f"Angle {angle_degrees}° should be >= {analyzer.parameters.hb_angle_cutoff}°"
     
+    def test_bond_based_hydrogen_donor_detection(self, sample_pdb_file):
+        """Test that hydrogen bond donor detection uses pre-calculated bonds."""
+        analyzer = HBondAnalyzer()
+        success = analyzer.analyze_file(sample_pdb_file)
+        assert success, "Analysis should succeed"
+        
+        # Get hydrogen bond donors using the updated method
+        donors = analyzer._get_hydrogen_bond_donors()
+        assert isinstance(donors, list), "Should return a list of donors"
+        
+        # Validate donor structure
+        for heavy_atom, hydrogen_atom in donors[:5]:  # Check first 5 donors
+            # Heavy atom should be a donor element
+            assert heavy_atom.element.upper() in ["N", "O", "S"], \
+                f"Heavy atom element {heavy_atom.element} should be N, O, or S"
+            
+            # Hydrogen should be hydrogen
+            assert hydrogen_atom.is_hydrogen(), "Hydrogen atom should be hydrogen"
+            
+            # Verify they are actually bonded according to the bond list
+            bonded_serials = analyzer.parser.get_bonded_atoms(hydrogen_atom.serial)
+            assert heavy_atom.serial in bonded_serials, \
+                "Heavy atom and hydrogen should be bonded according to bond list"
+        
+        # Test that we're actually using bonds vs falling back to distance calculation
+        # The parser should have detected bonds during parsing
+        bonds = analyzer.parser.get_bonds()
+        assert len(bonds) > 0, "Parser should have detected bonds"
+    
     @pytest.mark.integration
     def test_pi_interaction_analysis(self, sample_pdb_file):
         """Test π interaction detection and validation."""
@@ -312,6 +341,119 @@ class TestHBondAnalyzer:
             for chain in chains[:3]:
                 validate_cooperativity_chain(chain)
     
+    def test_bond_based_halogen_detection(self, sample_pdb_file):
+        """Test that halogen bond detection uses pre-calculated bonds."""
+        analyzer = HBondAnalyzer()
+        success = analyzer.analyze_file(sample_pdb_file)
+        assert success, "Analysis should succeed"
+        
+        # Test halogen atom detection - should only return halogens bonded to carbon
+        halogens = analyzer._get_halogen_atoms()
+        assert isinstance(halogens, list), "Should return a list of halogens"
+        
+        # Verify that each halogen is actually bonded to carbon
+        atom_map = {atom.serial: atom for atom in analyzer.parser.atoms}
+        
+        for halogen in halogens:
+            # Should be a halogen element
+            assert halogen.element.upper() in ["F", "CL", "BR", "I"], \
+                f"Atom element {halogen.element} should be a halogen"
+            
+            # Should be bonded to at least one carbon according to bond list
+            bonded_serials = analyzer.parser.get_bonded_atoms(halogen.serial)
+            has_carbon_bond = False
+            for bonded_serial in bonded_serials:
+                bonded_atom = atom_map.get(bonded_serial)
+                if bonded_atom is not None and bonded_atom.element.upper() == "C":
+                    has_carbon_bond = True
+                    break
+            
+            assert has_carbon_bond, \
+                f"Halogen {halogen.element} at serial {halogen.serial} should be bonded to carbon"
+        
+        # Test _find_bonded_carbon function for each halogen
+        for halogen in halogens[:5]:  # Test first 5 halogens
+            bonded_carbon = analyzer._find_bonded_carbon(halogen)
+            if bonded_carbon is not None:  # May be None if no carbon bonded
+                assert bonded_carbon.element.upper() == "C", \
+                    "Bonded atom should be carbon"
+                
+                # Verify they are actually bonded according to bond list
+                bonded_serials = analyzer.parser.get_bonded_atoms(halogen.serial)
+                assert bonded_carbon.serial in bonded_serials, \
+                    "Carbon and halogen should be bonded according to bond list"
+        
+        # Verify bond detection is working
+        bonds = analyzer.parser.get_bonds()
+        assert len(bonds) > 0, "Parser should have detected bonds"
+    
+    def test_halogen_bond_classification(self):
+        """Test halogen bond classification function."""
+        analyzer = HBondAnalyzer()
+        
+        # Create test atoms for different halogen bond types
+        from hbat.core.pdb_parser import Atom
+        from hbat.core.vector import Vec3D
+        
+        # Test Cl...O bond
+        cl_atom = Atom(
+            serial=1, name="CL", alt_loc="", res_name="TEST", chain_id="A",
+            res_seq=1, i_code="", coords=Vec3D(0, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="CL", charge="", record_type="ATOM"
+        )
+        
+        o_atom = Atom(
+            serial=2, name="O", alt_loc="", res_name="TEST", chain_id="A",
+            res_seq=2, i_code="", coords=Vec3D(2, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="O", charge="", record_type="ATOM"
+        )
+        
+        # Test classification
+        bond_type = analyzer._classify_halogen_bond(cl_atom, o_atom)
+        assert bond_type == "CL...O", f"Expected 'CL...O', got '{bond_type}'"
+        
+        # Test Br...N bond
+        br_atom = Atom(
+            serial=3, name="BR", alt_loc="", res_name="TEST", chain_id="A",
+            res_seq=3, i_code="", coords=Vec3D(4, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="BR", charge="", record_type="ATOM"
+        )
+        
+        n_atom = Atom(
+            serial=4, name="N", alt_loc="", res_name="TEST", chain_id="A",
+            res_seq=4, i_code="", coords=Vec3D(6, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="N", charge="", record_type="ATOM"
+        )
+        
+        bond_type = analyzer._classify_halogen_bond(br_atom, n_atom)
+        assert bond_type == "BR...N", f"Expected 'BR...N', got '{bond_type}'"
+        
+        # Test I...S bond
+        i_atom = Atom(
+            serial=5, name="I", alt_loc="", res_name="TEST", chain_id="A",
+            res_seq=5, i_code="", coords=Vec3D(8, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="I", charge="", record_type="ATOM"
+        )
+        
+        s_atom = Atom(
+            serial=6, name="S", alt_loc="", res_name="TEST", chain_id="A",
+            res_seq=6, i_code="", coords=Vec3D(10, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="S", charge="", record_type="ATOM"
+        )
+        
+        bond_type = analyzer._classify_halogen_bond(i_atom, s_atom)
+        assert bond_type == "I...S", f"Expected 'I...S', got '{bond_type}'"
+        
+        # Test case insensitivity
+        cl_lower = Atom(
+            serial=7, name="cl", alt_loc="", res_name="TEST", chain_id="A",
+            res_seq=7, i_code="", coords=Vec3D(12, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="cl", charge="", record_type="ATOM"
+        )
+        
+        bond_type = analyzer._classify_halogen_bond(cl_lower, o_atom)
+        assert bond_type == "CL...O", f"Expected 'CL...O' (case insensitive), got '{bond_type}'"
+
     @pytest.mark.integration
     def test_interaction_statistics(self, sample_pdb_file):
         """Test interaction statistics consistency."""

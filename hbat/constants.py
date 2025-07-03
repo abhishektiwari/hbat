@@ -51,80 +51,122 @@ class AnalysisDefaults:
 
 # Atomic data constants
 class AtomicData:
-    """Atomic properties and constants."""
+    """Atomic properties and constants.
+
+    This class contains atomic data for all elements commonly found in
+    protein, DNA, RNA, and water molecules in PDB structures.
+    """
 
     # Covalent radii in Angstroms
     COVALENT_RADII = {
-        "H": 0.31,
-        "C": 0.76,
-        "N": 0.71,
-        "O": 0.66,
-        "F": 0.57,
-        "P": 1.07,
-        "S": 1.05,
-        "CL": 0.99,
-        "BR": 1.14,
-        "I": 1.33,
-        "NA": 1.66,
-        "MG": 1.41,
-        "K": 2.03,
-        "CA": 1.76,
+        # Main biomolecule elements
+        "H": 0.31,  # Hydrogen
+        "D": 0.31,  # Deuterium (same as H)
+        "C": 0.76,  # Carbon
+        "N": 0.71,  # Nitrogen
+        "O": 0.66,  # Oxygen
+        "P": 1.07,  # Phosphorus (DNA/RNA backbone)
+        "S": 1.05,  # Sulfur (Cys, Met)
+        # Halogens
+        "F": 0.57,  # Fluorine
+        "CL": 0.99,  # Chlorine
+        "BR": 1.14,  # Bromine
+        "I": 1.33,  # Iodine
+        # Common metals in proteins
+        "NA": 1.66,  # Sodium
+        "MG": 1.41,  # Magnesium
+        "K": 2.03,  # Potassium
+        "CA": 1.76,  # Calcium
+        "MN": 1.39,  # Manganese
+        "FE": 1.32,  # Iron
+        "CO": 1.26,  # Cobalt
+        "NI": 1.24,  # Nickel
+        "CU": 1.32,  # Copper
+        "ZN": 1.22,  # Zinc
     }
 
     # Van der Waals radii in Angstroms
     VDW_RADII = {
-        "H": 1.09,
-        "C": 1.70,
-        "N": 1.55,
-        "O": 1.52,
-        "F": 1.47,
-        "P": 1.80,
-        "S": 1.80,
-        "CL": 1.75,
-        "BR": 1.85,
-        "I": 1.98,
-        "NA": 2.27,
-        "MG": 1.73,
-        "K": 2.75,
-        "CA": 2.31,
+        # Main biomolecule elements
+        "H": 1.09,  # Hydrogen
+        "D": 1.09,  # Deuterium (same as H)
+        "C": 1.70,  # Carbon
+        "N": 1.55,  # Nitrogen
+        "O": 1.52,  # Oxygen
+        "P": 1.80,  # Phosphorus (DNA/RNA backbone)
+        "S": 1.80,  # Sulfur (Cys, Met)
+        # Halogens
+        "F": 1.47,  # Fluorine
+        "CL": 1.75,  # Chlorine
+        "BR": 1.85,  # Bromine
+        "I": 1.98,  # Iodine
+        # Common metals in proteins
+        "NA": 2.27,  # Sodium
+        "MG": 1.73,  # Magnesium
+        "K": 2.75,  # Potassium
+        "CA": 2.31,  # Calcium
+        "MN": 2.05,  # Manganese
+        "FE": 2.04,  # Iron
+        "CO": 2.00,  # Cobalt
+        "NI": 1.63,  # Nickel
+        "CU": 1.40,  # Copper
+        "ZN": 1.39,  # Zinc
     }
 
     # Electronegativity values (Pauling scale)
     ELECTRONEGATIVITY = {
-        "F": 3.98,
-        "CL": 3.16,
-        "BR": 2.96,
-        "I": 2.66,
-        "O": 3.44,
-        "N": 3.04,
-        "S": 2.58,
-        "C": 2.55,
-        "H": 2.20,
+        # Main biomolecule elements
+        "H": 2.20,  # Hydrogen
+        "D": 2.20,  # Deuterium (same as H)
+        "C": 2.55,  # Carbon
+        "N": 3.04,  # Nitrogen
+        "O": 3.44,  # Oxygen
+        "P": 2.19,  # Phosphorus (DNA/RNA backbone)
+        "S": 2.58,  # Sulfur (Cys, Met)
+        # Halogens
+        "F": 3.98,  # Fluorine
+        "CL": 3.16,  # Chlorine
+        "BR": 2.96,  # Bromine
+        "I": 2.66,  # Iodine
+        # Common metals in proteins (less relevant for covalent interactions)
+        "NA": 0.93,  # Sodium
+        "MG": 1.31,  # Magnesium
+        "K": 0.82,  # Potassium
+        "CA": 1.00,  # Calcium
+        "MN": 1.55,  # Manganese
+        "FE": 1.83,  # Iron
+        "CO": 1.88,  # Cobalt
+        "NI": 1.91,  # Nickel
+        "CU": 1.90,  # Copper
+        "ZN": 1.65,  # Zinc
     }
 
-    # Atomic masses in amu
+    # Atomic masses in amu (atomic mass units)
     ATOMIC_MASSES = {
-        "H": 1.008,
-        "D": 2.014,
-        "C": 12.011,
-        "N": 14.007,
-        "O": 15.999,
-        "P": 30.974,
-        "S": 32.065,
-        "F": 18.998,
-        "CL": 35.453,
-        "BR": 79.904,
-        "I": 126.904,
-        "NA": 22.990,
-        "MG": 24.305,
-        "K": 39.098,
-        "CA": 40.078,
-        "MN": 54.938,
-        "FE": 55.845,
-        "CO": 58.933,
-        "NI": 58.693,
-        "CU": 63.546,
-        "ZN": 65.38,
+        # Main biomolecule elements
+        "H": 1.008,  # Hydrogen
+        "D": 2.014,  # Deuterium (heavy hydrogen)
+        "C": 12.011,  # Carbon
+        "N": 14.007,  # Nitrogen
+        "O": 15.999,  # Oxygen
+        "P": 30.974,  # Phosphorus (DNA/RNA backbone)
+        "S": 32.065,  # Sulfur (Cys, Met)
+        # Halogens
+        "F": 18.998,  # Fluorine
+        "CL": 35.453,  # Chlorine
+        "BR": 79.904,  # Bromine
+        "I": 126.904,  # Iodine
+        # Common metals in proteins
+        "NA": 22.990,  # Sodium
+        "MG": 24.305,  # Magnesium
+        "K": 39.098,  # Potassium
+        "CA": 40.078,  # Calcium
+        "MN": 54.938,  # Manganese
+        "FE": 55.845,  # Iron
+        "CO": 58.933,  # Cobalt
+        "NI": 58.693,  # Nickel
+        "CU": 63.546,  # Copper
+        "ZN": 65.38,  # Zinc
     }
 
     # Default atomic mass for unknown elements
@@ -221,175 +263,3 @@ class ParameterRanges:
     # Factor ranges
     MIN_COVALENT_FACTOR = 0.5
     MAX_COVALENT_FACTOR = 3.0
-
-
-SUBSTITUTIONS = {
-    "2AS": "ASP",
-    "3AH": "HIS",
-    "5HP": "GLU",
-    "5OW": "LYS",
-    "ACL": "ARG",
-    "AGM": "ARG",
-    "AIB": "ALA",
-    "ALM": "ALA",
-    "ALO": "THR",
-    "ALY": "LYS",
-    "ARM": "ARG",
-    "ASA": "ASP",
-    "ASB": "ASP",
-    "ASK": "ASP",
-    "ASL": "ASP",
-    "ASQ": "ASP",
-    "AYA": "ALA",
-    "BCS": "CYS",
-    "BHD": "ASP",
-    "BMT": "THR",
-    "BNN": "ALA",
-    "BUC": "CYS",
-    "BUG": "LEU",
-    "C5C": "CYS",
-    "C6C": "CYS",
-    "CAS": "CYS",
-    "CCS": "CYS",
-    "CEA": "CYS",
-    "CGU": "GLU",
-    "CHG": "ALA",
-    "CLE": "LEU",
-    "CME": "CYS",
-    "CSD": "ALA",
-    "CSO": "CYS",
-    "CSP": "CYS",
-    "CSS": "CYS",
-    "CSW": "CYS",
-    "CSX": "CYS",
-    "CXM": "MET",
-    "CY1": "CYS",
-    "CY3": "CYS",
-    "CYG": "CYS",
-    "CYM": "CYS",
-    "CYQ": "CYS",
-    "DAH": "PHE",
-    "DAL": "ALA",
-    "DAR": "ARG",
-    "DAS": "ASP",
-    "DCY": "CYS",
-    "DGL": "GLU",
-    "DGN": "GLN",
-    "DHA": "ALA",
-    "DHI": "HIS",
-    "DIL": "ILE",
-    "DIV": "VAL",
-    "DLE": "LEU",
-    "DLY": "LYS",
-    "DNP": "ALA",
-    "DPN": "PHE",
-    "DPR": "PRO",
-    "DSN": "SER",
-    "DSP": "ASP",
-    "DTH": "THR",
-    "DTR": "TRP",
-    "DTY": "TYR",
-    "DVA": "VAL",
-    "EFC": "CYS",
-    "FLA": "ALA",
-    "FME": "MET",
-    "GGL": "GLU",
-    "GL3": "GLY",
-    "GLZ": "GLY",
-    "GMA": "GLU",
-    "GSC": "GLY",
-    "HAC": "ALA",
-    "HAR": "ARG",
-    "HIC": "HIS",
-    "HIP": "HIS",
-    "HMR": "ARG",
-    "HPQ": "PHE",
-    "HTR": "TRP",
-    "HYP": "PRO",
-    "IAS": "ASP",
-    "IIL": "ILE",
-    "IYR": "TYR",
-    "KCX": "LYS",
-    "LLP": "LYS",
-    "LLY": "LYS",
-    "LTR": "TRP",
-    "LYM": "LYS",
-    "LYZ": "LYS",
-    "MAA": "ALA",
-    "MEN": "ASN",
-    "MHS": "HIS",
-    "MIS": "SER",
-    "MK8": "LEU",
-    "MLE": "LEU",
-    "MPQ": "GLY",
-    "MSA": "GLY",
-    "MSE": "MET",
-    "MVA": "VAL",
-    "NEM": "HIS",
-    "NEP": "HIS",
-    "NLE": "LEU",
-    "NLN": "LEU",
-    "NLP": "LEU",
-    "NMC": "GLY",
-    "OAS": "SER",
-    "OCS": "CYS",
-    "OMT": "MET",
-    "PAQ": "TYR",
-    "PCA": "GLU",
-    "PEC": "CYS",
-    "PHI": "PHE",
-    "PHL": "PHE",
-    "PR3": "CYS",
-    "PRR": "ALA",
-    "PTR": "TYR",
-    "PYX": "CYS",
-    "SAC": "SER",
-    "SAR": "GLY",
-    "SCH": "CYS",
-    "SCS": "CYS",
-    "SCY": "CYS",
-    "SEL": "SER",
-    "SEP": "SER",
-    "SET": "SER",
-    "SHC": "CYS",
-    "SHR": "LYS",
-    "SMC": "CYS",
-    "SOC": "CYS",
-    "STY": "TYR",
-    "SVA": "SER",
-    "TIH": "ALA",
-    "TPL": "TRP",
-    "TPO": "THR",
-    "TPQ": "ALA",
-    "TRG": "LYS",
-    "TRO": "TRP",
-    "TYB": "TYR",
-    "TYI": "TYR",
-    "TYQ": "TYR",
-    "TYS": "TYR",
-    "TYY": "TYR",
-}
-PROTEIN_RESIDUES = [
-    "ALA",
-    "ASN",
-    "CYS",
-    "GLU",
-    "HIS",
-    "LEU",
-    "MET",
-    "PRO",
-    "THR",
-    "TYR",
-    "ARG",
-    "ASP",
-    "GLN",
-    "GLY",
-    "ILE",
-    "LYS",
-    "PHE",
-    "SER",
-    "TRP",
-    "VAL",
-]
-RNA_RESIDUES = ["A", "G", "C", "U", "I"]
-DNA_RESIDUES = ["DA", "DG", "DC", "DT", "DI"]

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from ..constants import AnalysisDefaults, AtomicData
-from .pdb_parser import Atom, PDBParser, Residue
+from .pdb_parser import Atom, Bond, PDBParser, Residue
 from .vector import Vec3D, angle_between_vectors
 
 
@@ -866,26 +866,30 @@ class HBondAnalyzer:
         return " -> ".join(interaction_types)
 
     def _get_hydrogen_bond_donors(self) -> List[Tuple[Atom, Atom]]:
-        """Get potential hydrogen bond donors (heavy atom + bonded hydrogen)."""
+        """Get potential hydrogen bond donors (heavy atom + bonded hydrogen).
+
+        Uses the pre-calculated bonds from the PDB parser for improved efficiency
+        and accuracy compared to distance-based detection.
+        """
         donors = []
         hydrogens = self.parser.get_hydrogen_atoms()
 
+        # Create mapping from serial to atom for efficient lookup
+        atom_map = {atom.serial: atom for atom in self.parser.atoms}
+
         for h_atom in hydrogens:
-            # Find heavy atom bonded to this hydrogen
-            for atom in self.parser.atoms:
-                if atom.serial == h_atom.serial:
+            # Get bonded atoms using pre-calculated bonds
+            bonded_serials = self.parser.get_bonded_atoms(h_atom.serial)
+
+            for bonded_serial in bonded_serials:
+                bonded_atom = atom_map.get(bonded_serial)
+                if bonded_atom is None:
                     continue
 
-                distance = h_atom.coords.distance_to(atom.coords)
-                covalent_sum = self._get_covalent_radius(
-                    h_atom.element
-                ) + self._get_covalent_radius(atom.element)
-
-                if distance <= covalent_sum * self.parameters.covalent_cutoff_factor:
-                    # Check if heavy atom can be donor (N, O, S)
-                    if atom.element.upper() in ["N", "O", "S"]:
-                        donors.append((atom, h_atom))
-                    break
+                # Check if heavy atom can be donor (N, O, S)
+                if bonded_atom.element.upper() in ["N", "O", "S"]:
+                    donors.append((bonded_atom, h_atom))
+                    break  # Each hydrogen should only bond to one heavy atom
 
         return donors
 
@@ -898,11 +902,27 @@ class HBondAnalyzer:
         return acceptors
 
     def _get_halogen_atoms(self) -> List[Atom]:
-        """Get halogen atoms (F, Cl, Br, I)."""
+        """Get halogen atoms (F, Cl, Br, I) that are bonded to carbon.
+
+        For halogen bonds, we need C-X...Y geometry, so only halogens
+        bonded to carbon are potential halogen bond donors.
+        Uses pre-calculated bonds for efficiency.
+        """
         halogens = []
+
+        # Create mapping from serial to atom for efficient lookup
+        atom_map = {atom.serial: atom for atom in self.parser.atoms}
+
         for atom in self.parser.atoms:
             if atom.element.upper() in ["F", "CL", "BR", "I"]:
-                halogens.append(atom)
+                # Check if this halogen is bonded to carbon
+                bonded_serials = self.parser.get_bonded_atoms(atom.serial)
+                for bonded_serial in bonded_serials:
+                    bonded_atom = atom_map.get(bonded_serial)
+                    if bonded_atom is not None and bonded_atom.element.upper() == "C":
+                        halogens.append(atom)
+                        break  # Found at least one carbon, that's sufficient
+
         return halogens
 
     def _get_halogen_bond_acceptors(self) -> List[Atom]:
@@ -978,7 +998,7 @@ class HBondAnalyzer:
         if angle_degrees < self.parameters.xb_angle_cutoff:
             return None
 
-        bond_type = f"{halogen.element}...{acceptor.element}"
+        bond_type = self._classify_halogen_bond(halogen, acceptor)
 
         return HalogenBond(
             halogen=halogen,
@@ -1046,16 +1066,22 @@ class HBondAnalyzer:
         return center / len(coords)
 
     def _find_bonded_carbon(self, halogen: Atom) -> Optional[Atom]:
-        """Find carbon atom bonded to halogen."""
-        for atom in self.parser.atoms:
-            if atom.element.upper() == "C":
-                distance = halogen.coords.distance_to(atom.coords)
-                covalent_sum = self._get_covalent_radius(
-                    halogen.element
-                ) + self._get_covalent_radius("C")
+        """Find carbon atom bonded to halogen.
 
-                if distance <= covalent_sum * self.parameters.covalent_cutoff_factor:
-                    return atom
+        Uses pre-calculated bonds from the PDB parser for improved efficiency
+        and accuracy compared to distance-based detection.
+        """
+        # Get bonded atoms using pre-calculated bonds
+        bonded_serials = self.parser.get_bonded_atoms(halogen.serial)
+
+        # Create mapping from serial to atom for efficient lookup
+        atom_map = {atom.serial: atom for atom in self.parser.atoms}
+
+        for bonded_serial in bonded_serials:
+            bonded_atom = atom_map.get(bonded_serial)
+            if bonded_atom is not None and bonded_atom.element.upper() == "C":
+                return bonded_atom
+
         return None
 
     def _classify_hydrogen_bond(self, donor: Atom, acceptor: Atom) -> str:
@@ -1063,6 +1089,20 @@ class HBondAnalyzer:
         d_elem = donor.element.upper()
         a_elem = acceptor.element.upper()
         return f"{d_elem}-H...{a_elem}"
+
+    def _classify_halogen_bond(self, donor: Atom, acceptor: Atom) -> str:
+        """Classify halogen bond type.
+
+        :param donor: Halogen atom acting as donor (X in C-X...Y)
+        :type donor: Atom
+        :param acceptor: Acceptor atom (Y in C-X...Y)
+        :type acceptor: Atom
+        :returns: Halogen bond classification string
+        :rtype: str
+        """
+        x_elem = donor.element.upper()
+        y_elem = acceptor.element.upper()
+        return f"C-{x_elem}...{y_elem}"
 
     def _same_residue(self, atom1: Atom, atom2: Atom) -> bool:
         """Check if two atoms belong to the same residue."""

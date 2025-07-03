@@ -5,6 +5,7 @@ This module provides functionality to parse PDB (Protein Data Bank) files
 and extract atomic coordinates and molecular information using the pdbreader library.
 """
 
+import math
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
@@ -17,6 +18,103 @@ except ImportError:
     raise ImportError(
         "pdbreader package is required for PDB parsing. Install with: pip install pdbreader"
     )
+
+
+def _safe_int_convert(value: Any, default: int = 0) -> int:
+    """Safely convert a value to integer, handling NaN and None values.
+    
+    :param value: Value to convert
+    :type value: Any
+    :param default: Default value to use if conversion fails
+    :type default: int
+    :returns: Integer value or default
+    :rtype: int
+    """
+    if value is None:
+        return default
+    
+    try:
+        # Check for NaN values
+        if isinstance(value, float) and math.isnan(value):
+            return default
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
+def _safe_float_convert(value: Any, default: float = 0.0) -> float:
+    """Safely convert a value to float, handling NaN and None values.
+    
+    :param value: Value to convert
+    :type value: Any
+    :param default: Default value to use if conversion fails
+    :type default: float
+    :returns: Float value or default
+    :rtype: float
+    """
+    if value is None:
+        return default
+    
+    try:
+        float_val = float(value)
+        # Replace NaN with default
+        if math.isnan(float_val):
+            return default
+        return float_val
+    except (ValueError, TypeError):
+        return default
+
+
+@dataclass
+class Bond:
+    """Represents a chemical bond between two atoms.
+
+    This class stores information about atomic bonds, including
+    the atoms involved and bond type/origin.
+
+    :param atom1_serial: Serial number of first atom
+    :type atom1_serial: int
+    :param atom2_serial: Serial number of second atom
+    :type atom2_serial: int
+    :param bond_type: Type of bond ('covalent', 'explicit', etc.)
+    :type bond_type: str
+    :param distance: Distance between bonded atoms in Angstroms
+    :type distance: Optional[float]
+    """
+
+    atom1_serial: int
+    atom2_serial: int
+    bond_type: str = "covalent"  # 'covalent', 'explicit' (from CONECT)
+    distance: Optional[float] = None
+
+    def __post_init__(self) -> None:
+        """Ensure atom serials are ordered consistently."""
+        if self.atom1_serial > self.atom2_serial:
+            self.atom1_serial, self.atom2_serial = self.atom2_serial, self.atom1_serial
+
+    def involves_atom(self, serial: int) -> bool:
+        """Check if bond involves the specified atom.
+
+        :param serial: Atom serial number
+        :type serial: int
+        :returns: True if bond involves this atom
+        :rtype: bool
+        """
+        return serial in (self.atom1_serial, self.atom2_serial)
+
+    def get_partner(self, serial: int) -> Optional[int]:
+        """Get the bonding partner of the specified atom.
+
+        :param serial: Atom serial number
+        :type serial: int
+        :returns: Serial number of bonding partner, None if atom not in bond
+        :rtype: Optional[int]
+        """
+        if serial == self.atom1_serial:
+            return self.atom2_serial
+        elif serial == self.atom2_serial:
+            return self.atom1_serial
+        return None
 
 
 @dataclass
@@ -177,9 +275,11 @@ class PDBParser:
         """
         self.atoms: List[Atom] = []
         self.residues: Dict[str, Residue] = {}
+        self.bonds: List[Bond] = []
         self.title: str = ""
         self.header: str = ""
         self.pdb_id: str = ""
+        self._atom_serial_map: Dict[int, int] = {}  # serial -> index mapping
 
     def parse_file(self, filename: str) -> bool:
         """Parse a PDB file.
@@ -199,6 +299,7 @@ class PDBParser:
 
             self.atoms = []
             self.residues = {}
+            self.bonds = []
 
             # Process ATOM records
             if "ATOM" in structure and len(structure["ATOM"]) > 0:
@@ -215,6 +316,17 @@ class PDBParser:
                     if hbat_atom:
                         self.atoms.append(hbat_atom)
                         self._add_atom_to_residue(hbat_atom)
+
+            # Build atom serial mapping
+            self._build_atom_serial_map()
+
+            # Process CONECT records if available
+            if "CONECT" in structure and len(structure["CONECT"]) > 0:
+                self._parse_conect_records(structure["CONECT"])
+
+            # Detect bonds based on distances if no CONECT records
+            if not self.bonds:
+                self._detect_covalent_bonds()
 
             return len(self.atoms) > 0
 
@@ -244,6 +356,7 @@ class PDBParser:
 
             self.atoms = []
             self.residues = {}
+            self.bonds = []
 
             # Process ATOM records
             if "ATOM" in structure and len(structure["ATOM"]) > 0:
@@ -261,6 +374,17 @@ class PDBParser:
                         self.atoms.append(hbat_atom)
                         self._add_atom_to_residue(hbat_atom)
 
+            # Build atom serial mapping
+            self._build_atom_serial_map()
+
+            # Process CONECT records if available
+            if "CONECT" in structure and len(structure["CONECT"]) > 0:
+                self._parse_conect_records(structure["CONECT"])
+
+            # Detect bonds based on distances if no CONECT records
+            if not self.bonds:
+                self._detect_covalent_bonds()
+
             return len(self.atoms) > 0
 
         except Exception as e:
@@ -276,28 +400,23 @@ class PDBParser:
             #  'resid', 'res_icode', 'x', 'y', 'z', 'occupancy', 'b_factor',
             #  'segment', 'element', 'charge']
 
-            serial = int(atom_row.get("id", 0))
+            serial = _safe_int_convert(atom_row.get("id"), 0)
             name = str(atom_row.get("name", "")).strip()
             alt_loc = str(atom_row.get("loc_indicator", "") or "").strip()
             res_name = str(atom_row.get("resname", "")).strip()
             chain_id = str(atom_row.get("chain", "")).strip()
-            res_seq = int(atom_row.get("resid", 0))
+            res_seq = _safe_int_convert(atom_row.get("resid"), 0)
             i_code = str(atom_row.get("res_icode", "") or "").strip()
 
-            # Coordinates - handle None values
-            x_val = atom_row.get("x", 0.0)
-            y_val = atom_row.get("y", 0.0)
-            z_val = atom_row.get("z", 0.0)
-            x = float(x_val if x_val is not None else 0.0)
-            y = float(y_val if y_val is not None else 0.0)
-            z = float(z_val if z_val is not None else 0.0)
+            # Coordinates - handle None and NaN values
+            x = _safe_float_convert(atom_row.get("x"), 0.0)
+            y = _safe_float_convert(atom_row.get("y"), 0.0)
+            z = _safe_float_convert(atom_row.get("z"), 0.0)
             coords = Vec3D(x, y, z)
 
-            # Other properties - handle None values
-            occ_val = atom_row.get("occupancy", 1.0)
-            bf_val = atom_row.get("b_factor", 0.0)
-            occupancy = float(occ_val if occ_val is not None else 1.0)
-            temp_factor = float(bf_val if bf_val is not None else 0.0)
+            # Other properties - handle None and NaN values
+            occupancy = _safe_float_convert(atom_row.get("occupancy"), 1.0)
+            temp_factor = _safe_float_convert(atom_row.get("b_factor"), 0.0)
             element = str(atom_row.get("element", "") or "").strip()
             charge = str(atom_row.get("charge", "") or "").strip()
 
@@ -322,7 +441,17 @@ class PDBParser:
             )
 
         except Exception as e:
-            print(f"Error converting atom row: {e}")
+            # Provide more detailed error information for debugging
+            row_info = ""
+            try:
+                serial_val = atom_row.get("id", "unknown")
+                name_val = atom_row.get("name", "unknown")
+                res_name_val = atom_row.get("resname", "unknown")
+                row_info = f" (serial={serial_val}, name={name_val}, res={res_name_val})"
+            except:
+                pass
+            
+            print(f"Error converting atom row{row_info}: {e}")
             return None
 
     def _guess_element_from_name(self, atom_name: str) -> str:
@@ -525,3 +654,149 @@ class PDBParser:
 
         stats["elements"] = element_counts
         return stats
+
+    def _build_atom_serial_map(self) -> None:
+        """Build mapping from atom serial numbers to atom indices."""
+        self._atom_serial_map = {}
+        for i, atom in enumerate(self.atoms):
+            self._atom_serial_map[atom.serial] = i
+
+    def _parse_conect_records(self, conect_data: Any) -> None:
+        """Parse CONECT records to extract explicit bond information.
+
+        :param conect_data: CONECT records from pdbreader
+        :type conect_data: Any
+        """
+        try:
+            for _, conect_row in conect_data.iterrows():
+                # CONECT record format: atom_id followed by bonded atom_ids
+                atom_id = int(conect_row.get("atom_id", 0))
+
+                # Get bonded atoms (columns vary by pdbreader implementation)
+                bonded_atoms = []
+                for col in ["bonded1", "bonded2", "bonded3", "bonded4"]:
+                    if col in conect_row and conect_row[col] is not None:
+                        bonded_id = int(conect_row[col])
+                        if bonded_id > 0:  # Valid atom ID
+                            bonded_atoms.append(bonded_id)
+
+                # Create bonds
+                for bonded_id in bonded_atoms:
+                    if (
+                        atom_id in self._atom_serial_map
+                        and bonded_id in self._atom_serial_map
+                    ):
+                        atom1 = self.atoms[self._atom_serial_map[atom_id]]
+                        atom2 = self.atoms[self._atom_serial_map[bonded_id]]
+                        distance = atom1.coords.distance_to(atom2.coords)
+
+                        bond = Bond(
+                            atom1_serial=atom_id,
+                            atom2_serial=bonded_id,
+                            bond_type="explicit",
+                            distance=distance,
+                        )
+
+                        # Avoid duplicate bonds
+                        if not self._bond_exists(bond):
+                            self.bonds.append(bond)
+
+        except Exception as e:
+            print(f"Error parsing CONECT records: {e}")
+
+    def _detect_covalent_bonds(self) -> None:
+        """Detect covalent bonds based on distance and Van der Waals radii."""
+        if len(self.atoms) < 2:
+            return
+
+        # Sort atoms to check nearest neighbors first
+        for i, atom1 in enumerate(self.atoms):
+            for j, atom2 in enumerate(self.atoms[i + 1 :], i + 1):
+                if self._are_atoms_bonded(atom1, atom2):
+                    distance = atom1.coords.distance_to(atom2.coords)
+                    bond = Bond(
+                        atom1_serial=atom1.serial,
+                        atom2_serial=atom2.serial,
+                        bond_type="covalent",
+                        distance=distance,
+                    )
+                    self.bonds.append(bond)
+
+    def _are_atoms_bonded(self, atom1: Atom, atom2: Atom) -> bool:
+        """Check if two atoms are bonded based on distance and VdW radii.
+
+        :param atom1: First atom
+        :type atom1: Atom
+        :param atom2: Second atom
+        :type atom2: Atom
+        :returns: True if atoms are likely bonded
+        :rtype: bool
+        """
+        # Skip same atom
+        if atom1.serial == atom2.serial:
+            return False
+
+        # Get Van der Waals radii
+        vdw1 = AtomicData.VDW_RADII.get(atom1.element.upper(), 1.7)
+        vdw2 = AtomicData.VDW_RADII.get(atom2.element.upper(), 1.7)
+
+        # Calculate distance
+        distance = atom1.coords.distance_to(atom2.coords)
+
+        # Atoms are bonded if distance is less than sum of VdW radii
+        # Apply a factor to account for covalent vs Van der Waals contacts
+        vdw_cutoff = (vdw1 + vdw2) * 0.85  # 85% of VdW sum for covalent bonds
+
+        # Additional constraints for realistic bonds
+        max_bond_distance = 2.5  # Reasonable maximum for most covalent bonds
+        min_bond_distance = 0.5  # Minimum realistic bond distance
+        return min_bond_distance <= distance <= min(vdw_cutoff, max_bond_distance)
+
+    def _bond_exists(self, new_bond: Bond) -> bool:
+        """Check if a bond already exists.
+
+        :param new_bond: Bond to check
+        :type new_bond: Bond
+        :returns: True if bond already exists
+        :rtype: bool
+        """
+        for existing_bond in self.bonds:
+            if (
+                existing_bond.atom1_serial == new_bond.atom1_serial
+                and existing_bond.atom2_serial == new_bond.atom2_serial
+            ):
+                return True
+        return False
+
+    def get_bonds(self) -> List[Bond]:
+        """Get list of all bonds.
+
+        :returns: List of all bonds in the structure
+        :rtype: List[Bond]
+        """
+        return self.bonds
+
+    def get_bonds_for_atom(self, serial: int) -> List[Bond]:
+        """Get all bonds involving a specific atom.
+
+        :param serial: Atom serial number
+        :type serial: int
+        :returns: List of bonds involving this atom
+        :rtype: List[Bond]
+        """
+        return [bond for bond in self.bonds if bond.involves_atom(serial)]
+
+    def get_bonded_atoms(self, serial: int) -> List[int]:
+        """Get serial numbers of atoms bonded to the specified atom.
+
+        :param serial: Atom serial number
+        :type serial: int
+        :returns: List of bonded atom serial numbers
+        :rtype: List[int]
+        """
+        bonded = []
+        for bond in self.bonds:
+            partner = bond.get_partner(serial)
+            if partner is not None:
+                bonded.append(partner)
+        return bonded

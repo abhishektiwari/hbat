@@ -10,7 +10,7 @@ import os
 import tempfile
 from typing import Any, Dict, List, Optional
 
-from ..constants import SUBSTITUTIONS
+from .pdb_constants import PROTEIN_SUBSTITUTIONS
 from .pdb_parser import Atom, PDBParser
 
 
@@ -32,7 +32,7 @@ class PDBFixer:
         """Initialize PDB fixer."""
         self.supported_methods = ["openbabel", "pdbfixer"]
         # Use the comprehensive substitutions from constants
-        self.standard_residues = SUBSTITUTIONS.copy()
+        self.standard_residues = PROTEIN_SUBSTITUTIONS.copy()
 
     def add_missing_hydrogens(
         self,
