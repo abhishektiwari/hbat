@@ -10,7 +10,16 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
-from ..constants import AnalysisDefaults, AtomicData
+from ..constants import (
+    HALOGEN_BOND_ACCEPTOR_ELEMENTS,
+    HALOGEN_ELEMENTS,
+    HYDROGEN_BOND_ACCEPTOR_ELEMENTS,
+    HYDROGEN_BOND_DONOR_ELEMENTS,
+    RESIDUES_WITH_AROMATIC_RINGS,
+    RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS,
+    AnalysisDefaults,
+    AtomicData,
+)
 from .pdb_parser import Atom, Bond, PDBParser, Residue
 from .vector import Vec3D, angle_between_vectors
 
@@ -556,11 +565,8 @@ class HBondAnalyzer:
         self.pi_interactions: List[PiInteraction] = []
         self.cooperativity_chains: List[CooperativityChain] = []
 
-        # Atomic data
-        self._covalent_radii = AtomicData.COVALENT_RADII
-        self._vdw_radii = AtomicData.VDW_RADII
-        self._electronegativity = AtomicData.ELECTRONEGATIVITY
-        self._aromatic_residues = {"PHE", "TYR", "TRP", "HIS"}
+        # Aromatic residues for π interactions
+        self._aromatic_residues = set(RESIDUES_WITH_AROMATIC_RINGS)
 
     def analyze_file(self, pdb_file: str) -> bool:
         """Analyze a PDB file for molecular interactions.
@@ -887,7 +893,7 @@ class HBondAnalyzer:
                     continue
 
                 # Check if heavy atom can be donor (N, O, S)
-                if bonded_atom.element.upper() in ["N", "O", "S"]:
+                if bonded_atom.element.upper() in HYDROGEN_BOND_DONOR_ELEMENTS:
                     donors.append((bonded_atom, h_atom))
                     break  # Each hydrogen should only bond to one heavy atom
 
@@ -897,7 +903,7 @@ class HBondAnalyzer:
         """Get potential hydrogen bond acceptors."""
         acceptors = []
         for atom in self.parser.atoms:
-            if atom.element.upper() in ["N", "O", "S", "F", "CL"]:
+            if atom.element.upper() in HYDROGEN_BOND_ACCEPTOR_ELEMENTS:
                 acceptors.append(atom)
         return acceptors
 
@@ -914,7 +920,7 @@ class HBondAnalyzer:
         atom_map = {atom.serial: atom for atom in self.parser.atoms}
 
         for atom in self.parser.atoms:
-            if atom.element.upper() in ["F", "CL", "BR", "I"]:
+            if atom.element.upper() in HALOGEN_ELEMENTS:
                 # Check if this halogen is bonded to carbon
                 bonded_serials = self.parser.get_bonded_atoms(atom.serial)
                 for bonded_serial in bonded_serials:
@@ -929,7 +935,7 @@ class HBondAnalyzer:
         """Get potential halogen bond acceptors."""
         acceptors = []
         for atom in self.parser.atoms:
-            if atom.element.upper() in ["N", "O", "S"]:
+            if atom.element.upper() in HALOGEN_BOND_ACCEPTOR_ELEMENTS:
                 acceptors.append(atom)
         return acceptors
 
@@ -1037,16 +1043,10 @@ class HBondAnalyzer:
         )
 
     def _calculate_aromatic_center(self, residue: Residue) -> Vec3D:
-        """Calculate center of aromatic ring."""
-        if residue.name == "PHE":
-            ring_atoms = ["CG", "CD1", "CD2", "CE1", "CE2", "CZ"]
-        elif residue.name == "TYR":
-            ring_atoms = ["CG", "CD1", "CD2", "CE1", "CE2", "CZ"]
-        elif residue.name == "TRP":
-            ring_atoms = ["CG", "CD1", "CD2", "NE1", "CE2", "CE3", "CZ2", "CZ3", "CH2"]
-        elif residue.name == "HIS":
-            ring_atoms = ["CG", "ND1", "CD2", "CE1", "NE2"]
-        else:
+        """Calculate center of aromatic ring using standardized atom mappings."""
+        # Get ring atoms from the centralized constant
+        ring_atoms = RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS.get(residue.name)
+        if not ring_atoms:
             return Vec3D(0, 0, 0)
 
         coords = []
@@ -1111,76 +1111,6 @@ class HBondAnalyzer:
             and atom1.res_seq == atom2.res_seq
             and atom1.res_name == atom2.res_name
         )
-
-    def _get_covalent_radius(self, element: str) -> float:
-        """Get covalent radius for element with improved fallback logic."""
-        return self._get_atomic_property(element, self._covalent_radii, "C")
-
-    def _get_vdw_radius(self, element: str) -> float:
-        """Get van der Waals radius for element with improved fallback logic."""
-        return self._get_atomic_property(element, self._vdw_radii, "C")
-
-    def _get_electronegativity(self, element: str) -> float:
-        """Get electronegativity for element with improved fallback logic."""
-        return self._get_atomic_property(
-            element, self._electronegativity, "C", default_fallback=0.0
-        )
-
-    def _get_atomic_mass(self, element: str) -> float:
-        """Get atomic mass for element with improved fallback logic."""
-        return self._get_atomic_property(element, AtomicData.ATOMIC_MASSES, "C")
-
-    def _get_atomic_property(
-        self,
-        element: str,
-        property_dict: Dict[str, float],
-        carbon_fallback: str,
-        default_fallback: Optional[float] = None,
-    ) -> float:
-        """
-        Get atomic property with improved fallback logic optimized for PDB atom names.
-
-        Args:
-            element: Atom symbol (e.g., 'CA', 'N', 'O1', 'H2')
-            property_dict: Dictionary containing atomic properties
-            carbon_fallback: Fallback element symbol (usually 'C')
-            default_fallback: Default value if carbon fallback also fails
-
-        Returns:
-            Property value using improved lookup logic
-        """
-        element = element.upper()
-
-        # Step 1: For multi-character atom names, prioritize first character for H, C, N, O
-        # This handles PDB atom names like CA (alpha carbon), CB (beta carbon), ND1, OE1, etc.
-        if len(element) > 1:
-            first_char = element[0]
-            if first_char in ["H", "C", "N", "O"] and first_char in property_dict:
-                return property_dict[first_char]
-
-        # Step 2: Try exact match with full element symbol (for actual elements like ZN, FE, etc.)
-        if element in property_dict:
-            return property_dict[element]
-
-        # Step 3: Fallback to carbon properties
-        if carbon_fallback in property_dict:
-            return property_dict[carbon_fallback]
-
-        # Step 4: Use provided default or common fallback values
-        if default_fallback is not None:
-            return default_fallback
-
-        # Final fallbacks based on property type
-        if property_dict == self._covalent_radii:
-            return 0.76  # Carbon covalent radius
-        elif property_dict == self._vdw_radii:
-            return 1.70  # Carbon VDW radius
-        elif property_dict == self._electronegativity:
-            return 0.0  # Default electronegativity
-        elif property_dict == AtomicData.ATOMIC_MASSES:
-            return 12.011  # Carbon atomic mass
-        else:
-            return 1.0  # Generic fallback
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get comprehensive analysis statistics.

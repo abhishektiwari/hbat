@@ -139,8 +139,8 @@ class ParameterPanel:
         )
         ttk.Scale(
             group,
-            from_=1.0,
-            to=2.0,
+            from_=0,
+            to=1.0,
             variable=self.covalent_factor,
             orient=tk.HORIZONTAL,
             length=200,

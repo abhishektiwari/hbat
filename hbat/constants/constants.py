@@ -6,7 +6,7 @@ the HBAT application for both CLI and GUI interfaces.
 """
 
 try:
-    from ._version import version as APP_VERSION
+    from .._version import version as APP_VERSION
 except ImportError:
     APP_VERSION = "0.0.0+unknown"
 
@@ -257,8 +257,8 @@ class ParameterRanges:
     """Valid ranges for analysis parameters."""
 
     # Distance ranges (Angstroms)
-    MIN_DISTANCE = 0.1
-    MAX_DISTANCE = 10.0
+    MIN_DISTANCE = 0.5
+    MAX_DISTANCE = 6
 
     # Angle ranges (degrees)
     MIN_ANGLE = 0.0

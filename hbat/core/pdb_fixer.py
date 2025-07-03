@@ -10,7 +10,7 @@ import os
 import tempfile
 from typing import Any, Dict, List, Optional
 
-from .pdb_constants import PROTEIN_SUBSTITUTIONS
+from ..constants import PROTEIN_SUBSTITUTIONS
 from .pdb_parser import Atom, PDBParser
 
 

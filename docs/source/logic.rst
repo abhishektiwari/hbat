@@ -63,7 +63,7 @@ Step 3: Angular Criteria
 4. Key Parameters and Defaults
 ------------------------------
 
-From ``hbat/constants.py``:
+From ``hbat/constants``:
 
 .. list-table::
    :header-rows: 1

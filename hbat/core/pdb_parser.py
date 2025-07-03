@@ -9,7 +9,7 @@ import math
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from ..constants import AnalysisDefaults, AtomicData
+from ..constants import AnalysisDefaults, AtomicData, pdb_atom_to_element
 from .vector import Vec3D
 
 try:
@@ -457,107 +457,8 @@ class PDBParser:
             return None
 
     def _guess_element_from_name(self, atom_name: str) -> str:
-        """Guess element from atom name."""
-        name = atom_name.strip()
-
-        # Common hydrogen/deuterium patterns in PDB files
-        hydrogen_patterns = [
-            # Direct H naming
-            "H",
-            "HA",
-            "HB",
-            "HC",
-            "HD",
-            "HE",
-            "HZ",
-            "HG",
-            "HN",
-            # Numbered H naming
-            "1H",
-            "2H",
-            "3H",
-            "1HA",
-            "2HA",
-            "1HB",
-            "2HB",
-            "3HB",
-            "1HC",
-            "2HC",
-            "3HC",
-            "1HD",
-            "2HD",
-            "3HD",
-            "1HE",
-            "2HE",
-            "3HE",
-            "1HG",
-            "2HG",
-            "3HG",
-            "1HZ",
-            "2HZ",
-            "3HZ",
-            "HN1",
-            "HN2",
-            "HN3",
-            # Deuterium patterns (neutron diffraction)
-            "D",
-            "1D",
-            "2D",
-            "3D",
-            "1DZ",
-            "2DZ",
-            "3DZ",
-            "DA",
-            "DB",
-            "DC",
-            "DD",
-            "DE",
-            "DG",
-            "DZ",
-        ]
-
-        # Check for hydrogen patterns
-        if (
-            name in hydrogen_patterns
-            or name.startswith("H")
-            or name.endswith("H")
-            or (
-                name.startswith("D") and len(name) <= 3
-            )  # Only short D patterns for deuterium
-            or name.endswith("D")
-            or "H" in name
-        ):
-            return "H"
-
-        # Common element patterns
-        if name.startswith("C"):
-            return "C"
-        elif name.startswith("N"):
-            return "N"
-        elif name.startswith("O"):
-            return "O"
-        elif name.startswith("S"):
-            return "S"
-        elif name.startswith("P"):
-            return "P"
-        elif name.upper() in ["F", "CL", "BR", "I"]:
-            return name.upper()
-        elif name.upper() in [
-            "NA",
-            "MG",
-            "K",
-            "CA",
-            "MN",
-            "FE",
-            "CO",
-            "NI",
-            "CU",
-            "ZN",
-        ]:
-            return name.upper()
-
-        # Default to carbon
-        return "C"
+        """Guess element from atom name using standardized function."""
+        return pdb_atom_to_element(atom_name)
 
     def _add_atom_to_residue(self, atom: Atom) -> None:
         """Add atom to appropriate residue."""

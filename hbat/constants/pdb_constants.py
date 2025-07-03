@@ -647,50 +647,6 @@ Used for:
     - Molecular recognition studies
 """
 
-POLAR_ATOMS: List[str] = [
-    "O",
-    "N",
-    "S",
-    "F",
-    "CL",
-    "BR",
-    "I",
-    "N",
-    "NE",
-    "NH1",
-    "NH2",
-    "ND2",
-    "NE2",
-    "ND1",
-    "NZ",
-    "NE1",
-    "O",
-    "OD1",
-    "OD2",
-    "OE1",
-    "OE2",
-    "OG",
-    "OG1",
-    "OH",
-    "S",
-    "SD",
-    "SG",
-]
-"""List[str]: Polar atom names capable of participating in non-covalent interactions.
-
-Defines atoms with significant electronegativity that can participate in:
-    - Hydrogen bonds (as donors or acceptors)
-    - Halogen bonds (halogens as electron acceptors)
-    - Electrostatic interactions
-
-Organized by element type:
-    - Nitrogen: N, NE, NH1, NH2, ND1, ND2, NE1, NE2, NZ (donors/acceptors)
-    - Oxygen: O, OD1, OD2, OE1, OE2, OG, OG1, OH (primarily acceptors)
-    - Sulfur: S, SD, SG (weak donors/acceptors)
-    - Halogens: F, CL, BR, I (halogen bond donors)
-
-Critical for molecular interaction detection and analysis.
-"""
 
 WATER_MOLECULES: List[str] = ["HOH", "WAT", "DOD", "TIP3", "TIP4", "TIP5", "W"]
 """List[str]: Standard water molecule residue names in PDB files.
@@ -758,6 +714,59 @@ Used for:
     - Aromatic interaction analysis
     - π-π stacking detection between proteins and nucleic acids
     - DNA/RNA-protein interface studies
+"""
+
+# Molecular interaction element lists
+HALOGEN_ELEMENTS: List[str] = ["F", "CL", "BR", "I"]
+"""List[str]: Elements that can participate in halogen bonding as donors.
+
+These halogens can act as electron acceptors in halogen bonds when covalently
+bonded to carbon (C-X...Y geometry). The halogen forms a σ-hole that can interact
+with electron-rich regions on acceptor atoms.
+
+- F: Fluorine (weakest halogen bond donor due to high electronegativity)
+- CL: Chlorine (common in drug design, moderate halogen bonding)
+- BR: Bromine (strong halogen bond donor, commonly studied)
+- I: Iodine (strongest halogen bond donor due to large, polarizable electron cloud)
+"""
+
+HYDROGEN_BOND_DONOR_ELEMENTS: List[str] = ["N", "O", "S", "F"]
+"""List[str]: Elements that can act as hydrogen bond donors.
+
+These elements can form hydrogen bonds when covalently bonded to hydrogen atoms
+(D-H...A geometry). They are electronegative enough to polarize the D-H bond,
+creating a partial positive charge on the hydrogen that can interact with
+electron-rich acceptor atoms.
+
+- N: Nitrogen (amino groups, ring nitrogens, strong donors)
+- O: Oxygen (hydroxyl groups, moderate to strong donors)
+- S: Sulfur (thiol groups, weak donors due to lower electronegativity)
+"""
+
+HYDROGEN_BOND_ACCEPTOR_ELEMENTS: List[str] = ["N", "O", "S", "F", "CL"]
+"""List[str]: Elements that can act as hydrogen bond acceptors.
+
+These electronegative elements have lone pairs of electrons that can accept
+hydrogen bonds from donor atoms (D-H...A geometry). They can form favorable
+electrostatic interactions with the partial positive charge on hydrogen.
+
+- N: Nitrogen (lone pairs on amino groups, ring nitrogens)
+- O: Oxygen (lone pairs on carbonyl, hydroxyl, ether groups - strongest acceptors)
+- S: Sulfur (lone pairs on thiol, sulfide groups - weaker acceptors)
+- F: Fluorine (strongest electronegativity, excellent acceptor but rare in proteins)
+- CL: Chlorine (moderate acceptor, sometimes found in modified residues)
+"""
+
+HALOGEN_BOND_ACCEPTOR_ELEMENTS: List[str] = ["N", "O", "S"]
+"""List[str]: Elements that can act as halogen bond acceptors.
+
+These electronegative atoms can donate electron density to the σ-hole of
+halogen atoms in halogen bonds. They typically have lone pairs of electrons
+that can interact with the positive electrostatic potential of the halogen.
+
+- N: Nitrogen (lone pairs on amino groups, ring nitrogens)
+- O: Oxygen (lone pairs on carbonyl, hydroxyl, ether groups)
+- S: Sulfur (lone pairs on thiol, sulfide groups, weaker than N/O)
 """
 
 RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS: Dict[str, List[str]] = {

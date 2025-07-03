@@ -47,11 +47,14 @@ Project Structure
 
    hbat/
    ├── hbat/                   # Main package
+   │   ├── constants/         # Constants and defaults
+   │   │   ├── __init__.py    # Constants package interface
+   │   │   ├── constants.py   # Analysis defaults and atomic data
+   │   │   └── pdb_constants.py # PDB structure constants, residue mappings, and aromatic ring definitions
    │   ├── core/              # Core analysis logic
    │   │   ├── vector.py      # 3D vector mathematics
    │   │   ├── pdb_parser.py  # PDB file parsing
    │   │   ├── pdb_fixer.py   # PDB structure fixing and enhancement
-   │   │   ├── pdb_constants.py # PDB structure constants, residue mappings, and aromatic ring definitions
    │   │   └── analysis.py    # Main analysis engine
    │   ├── gui/               # GUI components
    │   │   ├── main_window.py # Main application window
