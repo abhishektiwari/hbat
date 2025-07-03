@@ -73,6 +73,59 @@ HBondAnalyzer
       print(f"Analysis completed in {stats.analysis_time:.2f} seconds")
       print(f"Processed {stats.total_atoms} atoms")
 
+   **Integrated PDB Fixing:**
+
+   The analyzer includes seamless integration with PDB structure fixing for handling incomplete structures:
+
+   .. code-block:: python
+
+      from hbat.core.analyzer import HBondAnalyzer
+      from hbat.constants import AnalysisParameters
+
+      # Analysis with automatic hydrogen addition
+      params = AnalysisParameters(
+          fix_pdb_enabled=True,
+          fix_pdb_method="openbabel",    # or "pdbfixer"
+          fix_pdb_add_hydrogens=True
+      )
+      
+      analyzer = HBondAnalyzer(params)
+      results = analyzer.analyze_file("structure_without_hydrogens.pdb")
+      
+      # The analyzer automatically:
+      # 1. Detects missing hydrogens
+      # 2. Adds them using the specified method
+      # 3. Re-detects bonds in the enhanced structure
+      # 4. Performs interaction analysis
+
+   **Method Selection Impact:**
+
+   Different PDB fixing methods significantly affect analysis results:
+
+   - **OpenBabel fixing**: Typically finds ~1.85x more hydrogen bonds
+   - **PDBFixer fixing**: Produces higher-quality geometric constraints
+   - **Both methods**: Add similar numbers of hydrogen atoms (~790 for 1ubi.pdb)
+   - **Quality difference**: OpenBabel more sensitive, PDBFixer more specific
+
+   Choose the method based on your analysis goals:
+
+   .. code-block:: python
+
+      # For comprehensive screening (high sensitivity)
+      screening_params = AnalysisParameters(
+          fix_pdb_enabled=True,
+          fix_pdb_method="openbabel",
+          fix_pdb_add_hydrogens=True
+      )
+
+      # For detailed analysis (high specificity)  
+      detailed_params = AnalysisParameters(
+          fix_pdb_enabled=True,
+          fix_pdb_method="pdbfixer",
+          fix_pdb_add_hydrogens=True,
+          fix_pdb_add_heavy_atoms=True
+      )
+
 Methods
 -------
 

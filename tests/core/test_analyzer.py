@@ -419,6 +419,114 @@ class TestHBondAnalyzer:
         print(f"  With fixing: {stats_with_fix['total_interactions']} interactions")
 
 
+    @pytest.mark.integration
+    def test_specific_hydrogen_bond_measurements(self):
+        """Test specific hydrogen bond measurements for 6RSA.pdb atom pairs."""
+        # Use 6RSA.pdb for this test
+        analyzer = HBondAnalyzer()
+        success = analyzer.analyze_file("example_pdb_files/6rsa.pdb")
+        assert success, "Analysis of 6RSA.pdb should succeed"
+        
+        # Define the specific atom pairs to test
+        # Format: (donor_serial, acceptor_serial)
+        test_pairs = [
+            (173, 1880),
+            (191, 1880),
+            (619, 1872),
+            (677, 1868),
+            (682, 1868),
+            (682, 1864),
+            (1791, 1882)
+        ]
+        
+        # Get all hydrogen bonds
+        hbonds = analyzer.hydrogen_bonds
+        
+        # Find hydrogen bonds involving our test pairs
+        found_pairs = {}
+        reversed_pairs = {}  # Check reversed donor-acceptor pairs
+        for hb in hbonds:
+            donor_serial = hb.donor.serial
+            acceptor_serial = hb.acceptor.serial
+            
+            for donor, acceptor in test_pairs:
+                if donor_serial == donor and acceptor_serial == acceptor:
+                    found_pairs[(donor, acceptor)] = hb
+                    break
+                elif donor_serial == acceptor and acceptor_serial == donor:
+                    # Found the pair but with reversed roles
+                    reversed_pairs[(donor, acceptor)] = hb
+        
+        # Print results for documentation
+        print(f"\nHydrogen bond measurements for 6RSA.pdb specific atom pairs:")
+        print("=" * 100)
+        print(f"{'Donor':<10} {'D-Elem':<8} {'Acceptor':<10} {'A-Elem':<8} {'D-A (Å)':<10} {'H-A (Å)':<10} {'D-H-A (°)':<10} {'H-Bond':<10}")
+        print("-" * 100)
+        
+        for donor, acceptor in test_pairs:
+            if (donor, acceptor) in found_pairs:
+                hb = found_pairs[(donor, acceptor)]
+                # D-A distance
+                da_distance = hb.donor_acceptor_distance
+                # H-A distance
+                ha_distance = hb.distance
+                # D-H-A angle in degrees
+                dha_angle = math.degrees(hb.angle)
+                # Get element names
+                donor_elem = hb.donor.element
+                acceptor_elem = hb.acceptor.element
+                
+                print(f"{donor:<10} {donor_elem:<8} {acceptor:<10} {acceptor_elem:<8} {da_distance:<10.3f} {ha_distance:<10.3f} {dha_angle:<10.1f} {'Yes':<10}")
+                
+                # Validate measurements
+                assert da_distance > 0, f"D-A distance should be positive for {donor}/{acceptor}"
+                assert ha_distance > 0, f"H-A distance should be positive for {donor}/{acceptor}"
+                assert 0 <= dha_angle <= 180, f"D-H-A angle should be between 0-180° for {donor}/{acceptor}"
+                
+                # Check that distances are within expected ranges
+                assert 2.0 <= da_distance <= 4.0, f"D-A distance {da_distance:.3f} outside expected range for {donor}/{acceptor}"
+                assert 1.0 <= ha_distance <= 3.5, f"H-A distance {ha_distance:.3f} outside expected range for {donor}/{acceptor}"
+                assert dha_angle >= 90, f"D-H-A angle {dha_angle:.1f} too acute for {donor}/{acceptor}"
+            else:
+                # Find the atoms to calculate distance even if no H-bond
+                donor_atom = None
+                acceptor_atom = None
+                for atom in analyzer.parser.atoms:
+                    if atom.serial == donor:
+                        donor_atom = atom
+                    elif atom.serial == acceptor:
+                        acceptor_atom = atom
+                    if donor_atom and acceptor_atom:
+                        break
+                
+                if donor_atom and acceptor_atom:
+                    # Calculate D-A distance
+                    da_distance = donor_atom.coords.distance_to(acceptor_atom.coords)
+                    donor_elem = donor_atom.element
+                    acceptor_elem = acceptor_atom.element
+                    # H-A distance and D-H-A angle are N/A without a hydrogen bond
+                    print(f"{donor:<10} {donor_elem:<8} {acceptor:<10} {acceptor_elem:<8} {da_distance:<10.3f} {'N/A':<10} {'N/A':<10} {'No':<10}")
+                else:
+                    print(f"{donor:<10} {'N/A':<8} {acceptor:<10} {'N/A':<8} {'N/A':<10} {'N/A':<10} {'N/A':<10} {'No':<10}")
+        
+        print("=" * 100)
+        
+        # Check for reversed pairs
+        if reversed_pairs:
+            print(f"\nFound {len(reversed_pairs)} hydrogen bonds with reversed donor-acceptor roles:")
+            print("=" * 100)
+            print(f"{'Expected D':<12} {'Expected A':<12} {'Actual D':<10} {'Actual A':<10} {'D-Elem':<8} {'A-Elem':<8}")
+            print("-" * 100)
+            for (expected_d, expected_a), hb in reversed_pairs.items():
+                print(f"{expected_d:<12} {expected_a:<12} {hb.donor.serial:<10} {hb.acceptor.serial:<10} {hb.donor.element:<8} {hb.acceptor.element:<8}")
+            print("=" * 100)
+        
+        # Ensure we found at least some of the expected pairs
+        found_count = len(found_pairs)
+        print(f"\nFound {found_count} out of {len(test_pairs)} expected hydrogen bonds")
+        assert found_count > 0, "Should find at least some of the expected hydrogen bonds"
+
+
 class TestPerformanceMetrics:
     """Test performance and expected results."""
     

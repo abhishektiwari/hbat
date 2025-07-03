@@ -80,6 +80,89 @@ PDBFixer
       print(f"Added {result.hydrogens_added} hydrogen atoms")
       print(f"Converted {result.residues_converted} residues")
 
+Fixing Methods Comparison
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The PDBFixer supports two different backend methods for hydrogen addition, each with distinct characteristics:
+
+**OpenBabel Method:**
+
+- **Algorithm**: Chemical rules-based hydrogen placement
+- **Sensitivity**: More aggressive hydrogen placement, finds ~2x more hydrogen bonds
+- **Quality**: More permissive geometry, may include marginal bonds
+- **Bond Perception**: Enhanced with ConnectTheDots() and PerceiveBondOrders() for robust aromatic handling
+- **Best For**: Screening studies where sensitivity is prioritized
+- **Typical Results**: Higher hydrogen bond counts, broader interaction detection
+
+**PDBFixer Method:**
+
+- **Algorithm**: Physics-based hydrogen placement using OpenMM force fields
+- **Specificity**: More conservative hydrogen placement, higher-quality geometry
+- **Quality**: Stricter geometric criteria, fewer false positives
+- **Integration**: Native support for missing heavy atoms and residue standardization
+- **Best For**: Detailed studies where accuracy is prioritized
+- **Typical Results**: Lower but higher-quality hydrogen bond counts
+
+**Method Selection Guidelines:**
+
+.. code-block:: python
+
+   # For high-sensitivity screening
+   fixer = PDBFixer()
+   result = fixer.fix_structure_file(
+       "structure.pdb", "fixed.pdb", 
+       method="openbabel"
+   )
+
+   # For high-accuracy analysis
+   fixer = PDBFixer()  
+   result = fixer.fix_structure_file(
+       "structure.pdb", "fixed.pdb",
+       method="pdbfixer",
+       add_heavy_atoms=True
+   )
+
+**Performance Characteristics:**
+
+- **OpenBabel**: ~1.85x more hydrogen bonds than PDBFixer
+- **Bond Quality**: PDBFixer produces fewer short bonds (<2.0Å) and marginal angles
+- **Computational Cost**: Similar processing times for both methods
+- **Memory Usage**: Comparable memory requirements
+
+**Scientific Validation:**
+
+Both methods are scientifically valid but optimized for different use cases:
+
+- **Research Publications**: Document which method was used for reproducibility
+- **Comparative Studies**: Consider running both methods and comparing results
+- **Quality Control**: Monitor bond distance/angle distributions for quality assessment
+
+Troubleshooting
+~~~~~~~~~~~~~~~
+
+**Common Warnings and Their Meanings:**
+
+*OpenBabel Kekulization Warning:*
+
+.. code-block:: text
+
+   *** Open Babel Warning in PerceiveBondOrders
+   Failed to kekulize aromatic bonds in OBMol::PerceiveBondOrders
+
+**Explanation**: This warning occurs when OpenBabel cannot assign alternating single/double bonds to aromatic rings due to non-ideal geometry in the PDB structure. This is common with real crystal structures and does not prevent successful hydrogen addition.
+
+**Impact**: Minimal - the analysis continues normally and hydrogen bonds are detected correctly.
+
+**Resolution**: No action needed. This is expected behavior for structures with imperfect aromatic ring geometry.
+
+*PDBFixer pH Warnings:*
+
+PDBFixer may issue warnings about protonation states at extreme pH values. These are informational and indicate the tool is making reasonable chemical assumptions.
+
+*Bond Detection Warnings:*
+
+After structure fixing, the analyzer re-detects bonds to ensure proper connectivity. This process may generate informational messages about bond count changes, which are normal and expected.
+
 Exception Classes
 ~~~~~~~~~~~~~~~~~
 

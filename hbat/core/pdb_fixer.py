@@ -366,16 +366,18 @@ class PDBFixer:
             mol.DeleteNonPolarHydrogens()  # Remove any existing hydrogens
             mol.ConnectTheDots()  # Re-perceive bonds based on geometry
             mol.PerceiveBondOrders()  # Assign bond orders
-            
+
             # Add hydrogens with proper bond perception
             mol.AddHydrogens()
-            
+
             # Final cleanup - ensure all bonds are properly assigned
             mol.ConnectTheDots()
-            
+
         except Exception as e:
             # If advanced bond perception fails, fall back to simple hydrogen addition
-            print(f"Warning: Advanced bond perception failed ({e}), using simple hydrogen addition")
+            print(
+                f"Warning: Advanced bond perception failed ({e}), using simple hydrogen addition"
+            )
             mol.AddHydrogens()
 
         # Write output
