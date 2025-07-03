@@ -360,8 +360,23 @@ class PDBFixer:
         if not conv.ReadFile(mol, input_path):
             raise PDBFixerError(f"Failed to read PDB file with OpenBabel: {input_path}")
 
-        # Add hydrogens
-        mol.AddHydrogens()
+        # Improve bond perception before adding hydrogens
+        try:
+            # Clear existing bonds and re-perceive them
+            mol.DeleteNonPolarHydrogens()  # Remove any existing hydrogens
+            mol.ConnectTheDots()  # Re-perceive bonds based on geometry
+            mol.PerceiveBondOrders()  # Assign bond orders
+            
+            # Add hydrogens with proper bond perception
+            mol.AddHydrogens()
+            
+            # Final cleanup - ensure all bonds are properly assigned
+            mol.ConnectTheDots()
+            
+        except Exception as e:
+            # If advanced bond perception fails, fall back to simple hydrogen addition
+            print(f"Warning: Advanced bond perception failed ({e}), using simple hydrogen addition")
+            mol.AddHydrogens()
 
         # Write output
         if not conv.WriteFile(mol, output_path):

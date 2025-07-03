@@ -5,18 +5,23 @@ This package centralizes all constants used throughout the HBAT application,
 including analysis defaults, atomic data, and PDB structure constants.
 """
 
+# Import utility functions from the utilities package
+from ..utilities import get_element_from_pdb_atom, pdb_atom_to_element
+from .app import APP_NAME, APP_VERSION
+
 # Import main constants classes and data
-from .constants import (
-    APP_NAME,
-    APP_VERSION,
-    AnalysisDefaults,
-    AnalysisModes,
-    AtomicData,
+from .atomic_data import AtomicData
+from .misc import (
     FileFormats,
     GUIDefaults,
-    ParameterRanges,
-    PDBFixingModes,
     VectorDefaults,
+)
+from .parameters import (
+    AnalysisModes,
+    AnalysisParameters,
+    ParameterRanges,
+    ParametersDefault,
+    PDBFixingModes,
 )
 
 # Import PDB-specific constants
@@ -29,6 +34,7 @@ from .pdb_constants import (
     HALOGEN_ELEMENTS,
     HYDROGEN_BOND_ACCEPTOR_ELEMENTS,
     HYDROGEN_BOND_DONOR_ELEMENTS,
+    HYDROGEN_ELEMENTS,
     PDB_ATOM_TO_ELEMENT,
     PROTEIN_BACKBONE_ATOMS,
     PROTEIN_RESIDUES,
@@ -40,15 +46,12 @@ from .pdb_constants import (
     RNA_RESIDUES,
     SIDECHAIN_ATOMS,
     WATER_MOLECULES,
-    get_element_from_pdb_atom,
-    pdb_atom_to_element,
 )
 
 __all__ = [
     # Main constants
     "APP_VERSION",
     "APP_NAME",
-    "AnalysisDefaults",
     "AtomicData",
     "GUIDefaults",
     "VectorDefaults",
@@ -56,6 +59,9 @@ __all__ = [
     "AnalysisModes",
     "PDBFixingModes",
     "ParameterRanges",
+    # Parameters
+    "AnalysisParameters",
+    "ParametersDefault",
     # PDB constants
     "PROTEIN_SUBSTITUTIONS",
     "PROTEIN_RESIDUES",
@@ -75,6 +81,7 @@ __all__ = [
     "HALOGEN_BOND_ACCEPTOR_ELEMENTS",
     "HYDROGEN_BOND_DONOR_ELEMENTS",
     "HYDROGEN_BOND_ACCEPTOR_ELEMENTS",
+    "HYDROGEN_ELEMENTS",
     "PDB_ATOM_TO_ELEMENT",
     "get_element_from_pdb_atom",
     "pdb_atom_to_element",

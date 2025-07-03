@@ -9,7 +9,9 @@ import math
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from ..constants import AnalysisDefaults, AtomicData, pdb_atom_to_element
+from ..constants import HYDROGEN_ELEMENTS, AtomicData
+from ..constants.parameters import ParametersDefault
+from ..utilities import pdb_atom_to_element
 from .vector import Vec3D
 
 try:
@@ -172,7 +174,7 @@ class Atom:
         :returns: True if atom is hydrogen or deuterium
         :rtype: bool
         """
-        return self.element.upper() in ["H", "D"]
+        return self.element.upper() in HYDROGEN_ELEMENTS
 
     def is_metal(self) -> bool:
         """Check if atom is a metal.
@@ -618,7 +620,7 @@ class PDBParser:
             for atom2 in self.atoms[i + 1 :]:
                 # Early distance check to avoid expensive VdW calculations
                 distance = atom1.coords.distance_to(atom2.coords)
-                if distance > AnalysisDefaults.MAX_BOND_DISTANCE:
+                if distance > ParametersDefault.MAX_BOND_DISTANCE:
                     continue  # Skip atoms that are clearly too far apart
 
                 if self._are_atoms_bonded_with_distance(atom1, atom2, distance):
@@ -672,13 +674,13 @@ class PDBParser:
 
         # Atoms are bonded if distance is less than sum of VdW radii
         # Apply a factor to account for covalent vs Van der Waals contacts
-        vdw_cutoff = (vdw1 + vdw2) * AnalysisDefaults.COVALENT_CUTOFF_FACTOR
+        vdw_cutoff = (vdw1 + vdw2) * ParametersDefault.COVALENT_CUTOFF_FACTOR
 
         # Additional constraints for realistic bonds
         return (
-            AnalysisDefaults.MIN_BOND_DISTANCE
+            ParametersDefault.MIN_BOND_DISTANCE
             <= distance
-            <= min(vdw_cutoff, AnalysisDefaults.MAX_BOND_DISTANCE)
+            <= min(vdw_cutoff, ParametersDefault.MAX_BOND_DISTANCE)
         )
 
     def _bond_exists(self, new_bond: Bond) -> bool:

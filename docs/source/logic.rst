@@ -22,19 +22,19 @@ Two distance checks are performed:
 
 1. **H...A Distance**: Hydrogen to acceptor distance
 
-   - **Cutoff**: 3.5 Å (default from ``AnalysisDefaults.HB_DISTANCE_CUTOFF``)
+   - **Cutoff**: 3.5 Å (default from ``ParametersDefault.HB_DISTANCE_CUTOFF``)
    - **Calculated**: Using 3D Euclidean distance via ``Vec3D.distance_to()``
 
 2. **D...A Distance**: Donor to acceptor distance
 
-   - **Cutoff**: 4.0 Å (default from ``AnalysisDefaults.HB_DA_DISTANCE``)
+   - **Cutoff**: 4.0 Å (default from ``ParametersDefault.HB_DA_DISTANCE``)
    - **Purpose**: Ensures realistic hydrogen bond geometry
 
 Step 3: Angular Criteria
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 - **Angle**: D-H...A angle using ``angle_between_vectors()`` from ``hbat/core/vector.py``
-- **Cutoff**: 120° minimum (default from ``AnalysisDefaults.HB_ANGLE_CUTOFF``)
+- **Cutoff**: 120° minimum (default from ``ParametersDefault.HB_ANGLE_CUTOFF``)
 - **Calculation**: Uses vector dot product formula: ``cos(θ) = (BA·BC)/(|BA||BC|)``
 
 3. Geometric Validation Process
@@ -63,7 +63,7 @@ Step 3: Angular Criteria
 4. Key Parameters and Defaults
 ------------------------------
 
-From ``hbat/constants``:
+From ``hbat/constants/parameters`` (``ParametersDefault`` class):
 
 .. list-table::
    :header-rows: 1
@@ -212,12 +212,12 @@ Once the aromatic center is calculated:
 
 1. **Distance Check**: H...π center distance
 
-   - **Cutoff**: ≤ 4.5 Å (from ``AnalysisDefaults.PI_DISTANCE_CUTOFF``)
+   - **Cutoff**: ≤ 4.5 Å (from ``ParametersDefault.PI_DISTANCE_CUTOFF``)
    - **Calculation**: 3D Euclidean distance from hydrogen to ring centroid
 
 2. **Angular Check**: D-H...π angle
 
-   - **Cutoff**: ≥ 90° (from ``AnalysisDefaults.PI_ANGLE_CUTOFF``)
+   - **Cutoff**: ≥ 90° (from ``ParametersDefault.PI_ANGLE_CUTOFF``)
    - **Calculation**: Angle between donor-hydrogen vector and hydrogen-π_center vector
    - Uses same ``angle_between_vectors()`` function as regular hydrogen bonds
 

@@ -1,1 +1,11 @@
-"""Core analysis modules for HBAT."""
+"""Core analysis modules for HBAT.
+
+This package contains the core analysis functionality split into focused modules:
+- analysis.py: Main module with backward-compatible exports
+- analyzer.py: Main analysis engine (HBondAnalyzer)
+- interactions.py: Interaction data classes
+- parameters.py: Analysis parameters
+- pdb_parser.py: PDB file parsing
+- pdb_fixer.py: PDB structure fixing
+- vector.py: 3D vector mathematics
+"""

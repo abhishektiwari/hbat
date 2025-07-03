@@ -11,7 +11,8 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import filedialog, messagebox, ttk
 
-from ..constants import AnalysisDefaults, ParameterRanges
+from ..constants import ParameterRanges
+from ..constants.parameters import ParametersDefault
 from ..core.analysis import AnalysisParameters
 
 
@@ -113,7 +114,7 @@ class ParameterPanel:
         ttk.Label(group, text="Analysis Mode:").grid(
             row=0, column=0, sticky=tk.W, pady=2
         )
-        self.analysis_mode = tk.StringVar(value=AnalysisDefaults.ANALYSIS_MODE)
+        self.analysis_mode = tk.StringVar(value=ParametersDefault.ANALYSIS_MODE)
         mode_frame = ttk.Frame(group)
         mode_frame.grid(row=0, column=1, sticky=tk.W, padx=10, pady=2)
 
@@ -135,7 +136,7 @@ class ParameterPanel:
             row=1, column=0, sticky=tk.W, pady=2
         )
         self.covalent_factor = tk.DoubleVar(
-            value=AnalysisDefaults.COVALENT_CUTOFF_FACTOR
+            value=ParametersDefault.COVALENT_CUTOFF_FACTOR
         )
         ttk.Scale(
             group,
@@ -169,7 +170,7 @@ class ParameterPanel:
         group.pack(fill=tk.X, padx=5, pady=5)
 
         # Enable/disable PDB fixing
-        self.fix_pdb_enabled = tk.BooleanVar(value=AnalysisDefaults.FIX_PDB_ENABLED)
+        self.fix_pdb_enabled = tk.BooleanVar(value=ParametersDefault.FIX_PDB_ENABLED)
         ttk.Checkbutton(
             group,
             text="Enable PDB structure fixing",
@@ -182,7 +183,7 @@ class ParameterPanel:
         method_section.pack(fill=tk.X, pady=5)
 
         ttk.Label(method_section, text="Fixing Method:").pack(anchor=tk.W, pady=2)
-        self.fix_pdb_method = tk.StringVar(value=AnalysisDefaults.FIX_PDB_METHOD)
+        self.fix_pdb_method = tk.StringVar(value=ParametersDefault.FIX_PDB_METHOD)
 
         method_frame = ttk.Frame(method_section)
         method_frame.pack(anchor=tk.W, padx=20)
@@ -208,7 +209,7 @@ class ParameterPanel:
 
         # Add hydrogens (available for both methods)
         self.fix_pdb_add_hydrogens = tk.BooleanVar(
-            value=AnalysisDefaults.FIX_PDB_ADD_HYDROGENS
+            value=ParametersDefault.FIX_PDB_ADD_HYDROGENS
         )
         self.fix_hydrogens_cb = ttk.Checkbutton(
             operations_frame,
@@ -219,7 +220,7 @@ class ParameterPanel:
 
         # Add heavy atoms (PDBFixer only)
         self.fix_pdb_add_heavy_atoms = tk.BooleanVar(
-            value=AnalysisDefaults.FIX_PDB_ADD_HEAVY_ATOMS
+            value=ParametersDefault.FIX_PDB_ADD_HEAVY_ATOMS
         )
         self.fix_heavy_atoms_cb = ttk.Checkbutton(
             operations_frame,
@@ -230,7 +231,7 @@ class ParameterPanel:
 
         # Replace nonstandard residues (PDBFixer only)
         self.fix_pdb_replace_nonstandard = tk.BooleanVar(
-            value=AnalysisDefaults.FIX_PDB_REPLACE_NONSTANDARD
+            value=ParametersDefault.FIX_PDB_REPLACE_NONSTANDARD
         )
         self.fix_nonstandard_cb = ttk.Checkbutton(
             operations_frame,
@@ -241,7 +242,7 @@ class ParameterPanel:
 
         # Remove heterogens (PDBFixer only)
         self.fix_pdb_remove_heterogens = tk.BooleanVar(
-            value=AnalysisDefaults.FIX_PDB_REMOVE_HETEROGENS
+            value=ParametersDefault.FIX_PDB_REMOVE_HETEROGENS
         )
         self.fix_heterogens_cb = ttk.Checkbutton(
             operations_frame,
@@ -253,7 +254,7 @@ class ParameterPanel:
 
         # Keep water (sub-option for remove heterogens)
         self.fix_pdb_keep_water = tk.BooleanVar(
-            value=AnalysisDefaults.FIX_PDB_KEEP_WATER
+            value=ParametersDefault.FIX_PDB_KEEP_WATER
         )
         self.fix_keep_water_cb = ttk.Checkbutton(
             operations_frame,
@@ -321,7 +322,7 @@ class ParameterPanel:
         ttk.Label(group, text="H...A Distance Cutoff (Å):").grid(
             row=0, column=0, sticky=tk.W, pady=2
         )
-        self.hb_distance = tk.DoubleVar(value=AnalysisDefaults.HB_DISTANCE_CUTOFF)
+        self.hb_distance = tk.DoubleVar(value=ParametersDefault.HB_DISTANCE_CUTOFF)
         distance_frame = ttk.Frame(group)
         distance_frame.grid(row=0, column=1, sticky=tk.W, padx=10, pady=2)
 
@@ -347,7 +348,7 @@ class ParameterPanel:
         ttk.Label(group, text="D-H...A Angle Cutoff (°):").grid(
             row=1, column=0, sticky=tk.W, pady=2
         )
-        self.hb_angle = tk.DoubleVar(value=AnalysisDefaults.HB_ANGLE_CUTOFF)
+        self.hb_angle = tk.DoubleVar(value=ParametersDefault.HB_ANGLE_CUTOFF)
         angle_frame = ttk.Frame(group)
         angle_frame.grid(row=1, column=1, sticky=tk.W, padx=10, pady=2)
 
@@ -373,7 +374,7 @@ class ParameterPanel:
         ttk.Label(group, text="D...A Distance Cutoff (Å):").grid(
             row=2, column=0, sticky=tk.W, pady=2
         )
-        self.da_distance = tk.DoubleVar(value=AnalysisDefaults.HB_DA_DISTANCE)
+        self.da_distance = tk.DoubleVar(value=ParametersDefault.HB_DA_DISTANCE)
         da_frame = ttk.Frame(group)
         da_frame.grid(row=2, column=1, sticky=tk.W, padx=10, pady=2)
 
@@ -404,7 +405,7 @@ class ParameterPanel:
         ttk.Label(group, text="X...A Distance Cutoff (Å):").grid(
             row=0, column=0, sticky=tk.W, pady=2
         )
-        self.xb_distance = tk.DoubleVar(value=AnalysisDefaults.XB_DISTANCE_CUTOFF)
+        self.xb_distance = tk.DoubleVar(value=ParametersDefault.XB_DISTANCE_CUTOFF)
         xb_dist_frame = ttk.Frame(group)
         xb_dist_frame.grid(row=0, column=1, sticky=tk.W, padx=10, pady=2)
 
@@ -430,7 +431,7 @@ class ParameterPanel:
         ttk.Label(group, text="C-X...A Angle Cutoff (°):").grid(
             row=1, column=0, sticky=tk.W, pady=2
         )
-        self.xb_angle = tk.DoubleVar(value=AnalysisDefaults.XB_ANGLE_CUTOFF)
+        self.xb_angle = tk.DoubleVar(value=ParametersDefault.XB_ANGLE_CUTOFF)
         xb_angle_frame = ttk.Frame(group)
         xb_angle_frame.grid(row=1, column=1, sticky=tk.W, padx=10, pady=2)
 
@@ -463,7 +464,7 @@ class ParameterPanel:
         ttk.Label(group, text="H...π Distance Cutoff (Å):").grid(
             row=0, column=0, sticky=tk.W, pady=2
         )
-        self.pi_distance = tk.DoubleVar(value=AnalysisDefaults.PI_DISTANCE_CUTOFF)
+        self.pi_distance = tk.DoubleVar(value=ParametersDefault.PI_DISTANCE_CUTOFF)
         pi_dist_frame = ttk.Frame(group)
         pi_dist_frame.grid(row=0, column=1, sticky=tk.W, padx=10, pady=2)
 
@@ -489,7 +490,7 @@ class ParameterPanel:
         ttk.Label(group, text="D-H...π Angle Cutoff (°):").grid(
             row=1, column=0, sticky=tk.W, pady=2
         )
-        self.pi_angle = tk.DoubleVar(value=AnalysisDefaults.PI_ANGLE_CUTOFF)
+        self.pi_angle = tk.DoubleVar(value=ParametersDefault.PI_ANGLE_CUTOFF)
         pi_angle_frame = ttk.Frame(group)
         pi_angle_frame.grid(row=1, column=1, sticky=tk.W, padx=10, pady=2)
 

@@ -13,7 +13,7 @@ import time
 from typing import Any, Dict, List, Optional
 
 from .. import __version__
-from ..constants import AnalysisDefaults
+from ..constants.parameters import ParametersDefault
 from ..core.analysis import AnalysisParameters, HBondAnalyzer
 from ..core.pdb_parser import PDBParser
 
@@ -72,57 +72,57 @@ Examples:
     param_group.add_argument(
         "--hb-distance",
         type=float,
-        default=AnalysisDefaults.HB_DISTANCE_CUTOFF,
-        help=f"Hydrogen bond H...A distance cutoff in Å (default: {AnalysisDefaults.HB_DISTANCE_CUTOFF})",
+        default=ParametersDefault.HB_DISTANCE_CUTOFF,
+        help=f"Hydrogen bond H...A distance cutoff in Å (default: {ParametersDefault.HB_DISTANCE_CUTOFF})",
     )
     param_group.add_argument(
         "--hb-angle",
         type=float,
-        default=AnalysisDefaults.HB_ANGLE_CUTOFF,
-        help=f"Hydrogen bond D-H...A angle cutoff in degrees (default: {AnalysisDefaults.HB_ANGLE_CUTOFF})",
+        default=ParametersDefault.HB_ANGLE_CUTOFF,
+        help=f"Hydrogen bond D-H...A angle cutoff in degrees (default: {ParametersDefault.HB_ANGLE_CUTOFF})",
     )
     param_group.add_argument(
         "--da-distance",
         type=float,
-        default=AnalysisDefaults.HB_DA_DISTANCE,
-        help=f"Donor-acceptor distance cutoff in Å (default: {AnalysisDefaults.HB_DA_DISTANCE})",
+        default=ParametersDefault.HB_DA_DISTANCE,
+        help=f"Donor-acceptor distance cutoff in Å (default: {ParametersDefault.HB_DA_DISTANCE})",
     )
     param_group.add_argument(
         "--xb-distance",
         type=float,
-        default=AnalysisDefaults.XB_DISTANCE_CUTOFF,
-        help=f"Halogen bond X...A distance cutoff in Å (default: {AnalysisDefaults.XB_DISTANCE_CUTOFF})",
+        default=ParametersDefault.XB_DISTANCE_CUTOFF,
+        help=f"Halogen bond X...A distance cutoff in Å (default: {ParametersDefault.XB_DISTANCE_CUTOFF})",
     )
     param_group.add_argument(
         "--xb-angle",
         type=float,
-        default=AnalysisDefaults.XB_ANGLE_CUTOFF,
-        help=f"Halogen bond C-X...A angle cutoff in degrees (default: {AnalysisDefaults.XB_ANGLE_CUTOFF})",
+        default=ParametersDefault.XB_ANGLE_CUTOFF,
+        help=f"Halogen bond C-X...A angle cutoff in degrees (default: {ParametersDefault.XB_ANGLE_CUTOFF})",
     )
     param_group.add_argument(
         "--pi-distance",
         type=float,
-        default=AnalysisDefaults.PI_DISTANCE_CUTOFF,
-        help=f"π interaction H...π distance cutoff in Å (default: {AnalysisDefaults.PI_DISTANCE_CUTOFF})",
+        default=ParametersDefault.PI_DISTANCE_CUTOFF,
+        help=f"π interaction H...π distance cutoff in Å (default: {ParametersDefault.PI_DISTANCE_CUTOFF})",
     )
     param_group.add_argument(
         "--pi-angle",
         type=float,
-        default=AnalysisDefaults.PI_ANGLE_CUTOFF,
-        help=f"π interaction D-H...π angle cutoff in degrees (default: {AnalysisDefaults.PI_ANGLE_CUTOFF})",
+        default=ParametersDefault.PI_ANGLE_CUTOFF,
+        help=f"π interaction D-H...π angle cutoff in degrees (default: {ParametersDefault.PI_ANGLE_CUTOFF})",
     )
     param_group.add_argument(
         "--covalent-factor",
         type=float,
-        default=AnalysisDefaults.COVALENT_CUTOFF_FACTOR,
-        help=f"Covalent bond detection factor (default: {AnalysisDefaults.COVALENT_CUTOFF_FACTOR})",
+        default=ParametersDefault.COVALENT_CUTOFF_FACTOR,
+        help=f"Covalent bond detection factor (default: {ParametersDefault.COVALENT_CUTOFF_FACTOR})",
     )
 
     # Analysis mode
     param_group.add_argument(
         "--mode",
         choices=["complete", "local"],
-        default=AnalysisDefaults.ANALYSIS_MODE,
+        default=ParametersDefault.ANALYSIS_MODE,
         help="Analysis mode: complete (all interactions) or local (intra-residue only)",
     )
 
@@ -136,13 +136,13 @@ Examples:
     fix_group.add_argument(
         "--fix-method",
         choices=["openbabel", "pdbfixer"],
-        default=AnalysisDefaults.FIX_PDB_METHOD,
-        help=f"PDB fixing method: openbabel or pdbfixer (default: {AnalysisDefaults.FIX_PDB_METHOD})",
+        default=ParametersDefault.FIX_PDB_METHOD,
+        help=f"PDB fixing method: openbabel or pdbfixer (default: {ParametersDefault.FIX_PDB_METHOD})",
     )
     fix_group.add_argument(
         "--fix-add-hydrogens",
         action="store_true",
-        default=AnalysisDefaults.FIX_PDB_ADD_HYDROGENS,
+        default=ParametersDefault.FIX_PDB_ADD_HYDROGENS,
         help="Add missing hydrogen atoms (both OpenBabel and PDBFixer)",
     )
     fix_group.add_argument(
@@ -163,7 +163,7 @@ Examples:
     fix_group.add_argument(
         "--fix-keep-water",
         action="store_true",
-        default=AnalysisDefaults.FIX_PDB_KEEP_WATER,
+        default=ParametersDefault.FIX_PDB_KEEP_WATER,
         help="Keep water when removing heterogens (PDBFixer only)",
     )
 
@@ -301,49 +301,51 @@ def load_preset_file(preset_path: str) -> AnalysisParameters:
 
         return AnalysisParameters(
             hb_distance_cutoff=hb_params.get(
-                "h_a_distance_cutoff", AnalysisDefaults.HB_DISTANCE_CUTOFF
+                "h_a_distance_cutoff", ParametersDefault.HB_DISTANCE_CUTOFF
             ),
             hb_angle_cutoff=hb_params.get(
-                "dha_angle_cutoff", AnalysisDefaults.HB_ANGLE_CUTOFF
+                "dha_angle_cutoff", ParametersDefault.HB_ANGLE_CUTOFF
             ),
             hb_donor_acceptor_cutoff=hb_params.get(
-                "d_a_distance_cutoff", AnalysisDefaults.HB_DA_DISTANCE
+                "d_a_distance_cutoff", ParametersDefault.HB_DA_DISTANCE
             ),
             xb_distance_cutoff=xb_params.get(
-                "x_a_distance_cutoff", AnalysisDefaults.XB_DISTANCE_CUTOFF
+                "x_a_distance_cutoff", ParametersDefault.XB_DISTANCE_CUTOFF
             ),
             xb_angle_cutoff=xb_params.get(
-                "cxa_angle_cutoff", AnalysisDefaults.XB_ANGLE_CUTOFF
+                "cxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF
             ),
             pi_distance_cutoff=pi_params.get(
-                "h_pi_distance_cutoff", AnalysisDefaults.PI_DISTANCE_CUTOFF
+                "h_pi_distance_cutoff", ParametersDefault.PI_DISTANCE_CUTOFF
             ),
             pi_angle_cutoff=pi_params.get(
-                "dh_pi_angle_cutoff", AnalysisDefaults.PI_ANGLE_CUTOFF
+                "dh_pi_angle_cutoff", ParametersDefault.PI_ANGLE_CUTOFF
             ),
             covalent_cutoff_factor=general_params.get(
-                "covalent_cutoff_factor", AnalysisDefaults.COVALENT_CUTOFF_FACTOR
+                "covalent_cutoff_factor", ParametersDefault.COVALENT_CUTOFF_FACTOR
             ),
             analysis_mode=general_params.get(
-                "analysis_mode", AnalysisDefaults.ANALYSIS_MODE
+                "analysis_mode", ParametersDefault.ANALYSIS_MODE
             ),
             # PDB fixing parameters
-            fix_pdb_enabled=fix_params.get("enabled", AnalysisDefaults.FIX_PDB_ENABLED),
-            fix_pdb_method=fix_params.get("method", AnalysisDefaults.FIX_PDB_METHOD),
+            fix_pdb_enabled=fix_params.get(
+                "enabled", ParametersDefault.FIX_PDB_ENABLED
+            ),
+            fix_pdb_method=fix_params.get("method", ParametersDefault.FIX_PDB_METHOD),
             fix_pdb_add_hydrogens=fix_params.get(
-                "add_hydrogens", AnalysisDefaults.FIX_PDB_ADD_HYDROGENS
+                "add_hydrogens", ParametersDefault.FIX_PDB_ADD_HYDROGENS
             ),
             fix_pdb_add_heavy_atoms=fix_params.get(
-                "add_heavy_atoms", AnalysisDefaults.FIX_PDB_ADD_HEAVY_ATOMS
+                "add_heavy_atoms", ParametersDefault.FIX_PDB_ADD_HEAVY_ATOMS
             ),
             fix_pdb_replace_nonstandard=fix_params.get(
-                "replace_nonstandard", AnalysisDefaults.FIX_PDB_REPLACE_NONSTANDARD
+                "replace_nonstandard", ParametersDefault.FIX_PDB_REPLACE_NONSTANDARD
             ),
             fix_pdb_remove_heterogens=fix_params.get(
-                "remove_heterogens", AnalysisDefaults.FIX_PDB_REMOVE_HETEROGENS
+                "remove_heterogens", ParametersDefault.FIX_PDB_REMOVE_HETEROGENS
             ),
             fix_pdb_keep_water=fix_params.get(
-                "keep_water", AnalysisDefaults.FIX_PDB_KEEP_WATER
+                "keep_water", ParametersDefault.FIX_PDB_KEEP_WATER
             ),
         )
 

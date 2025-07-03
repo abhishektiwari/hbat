@@ -27,13 +27,21 @@ Graphical User Interface
    
    gui/index
 
-Constants and Utilities
------------------------
+Constants
+---------
 
 .. toctree::
    :maxdepth: 2
    
-   constants
+   constants/index
+
+Utilities
+---------
+
+.. toctree::
+   :maxdepth: 2
+   
+   utilities/index
 
 API Usage Examples
 ------------------
