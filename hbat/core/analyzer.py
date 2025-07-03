@@ -17,7 +17,6 @@ from ..constants import (
     HYDROGEN_ELEMENTS,
     RESIDUES_WITH_AROMATIC_RINGS,
     RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS,
-    AtomicData,
 )
 from ..constants.parameters import AnalysisParameters
 from .interactions import CooperativityChain, HalogenBond, HydrogenBond, PiInteraction
@@ -220,13 +219,8 @@ class HBondAnalyzer:
         # Check all donor-aromatic combinations
         for donor, hydrogen in donors:
             for aromatic_residue in aromatic_residues:
-                # Skip if same residue (for local mode)
-                if self.parameters.analysis_mode == "local" and self._same_residue(
-                    donor, aromatic_residue.atoms[0]
-                ):
-                    continue
-
                 # Check for π interaction
+                # (includes validation for bonding and different residues)
                 pi = self._check_pi_interaction(donor, hydrogen, aromatic_residue)
                 if pi is not None:
                     self.pi_interactions.append(pi)
@@ -459,15 +453,15 @@ class HBondAnalyzer:
         bond_type = f"{donor.element}-H...{acceptor.element}"
 
         return HydrogenBond(
-            donor=donor,
+            _donor=donor,
             hydrogen=hydrogen,
-            acceptor=acceptor,
+            _acceptor=acceptor,
             distance=h_a_distance,
             angle=angle,
-            donor_acceptor_distance=d_a_distance,
+            _donor_acceptor_distance=d_a_distance,
             bond_type=bond_type,
-            donor_residue=f"{donor.chain_id}{donor.res_seq}{donor.res_name}",
-            acceptor_residue=f"{acceptor.chain_id}{acceptor.res_seq}{acceptor.res_name}",
+            _donor_residue=f"{donor.chain_id}{donor.res_seq}{donor.res_name}",
+            _acceptor_residue=f"{acceptor.chain_id}{acceptor.res_seq}{acceptor.res_name}",
         )
 
     def _check_halogen_bond(
@@ -505,18 +499,41 @@ class HBondAnalyzer:
 
         return HalogenBond(
             halogen=halogen,
-            acceptor=acceptor,
+            _acceptor=acceptor,
             distance=x_a_distance,
             angle=angle,
             bond_type=bond_type,
-            halogen_residue=f"{halogen.chain_id}{halogen.res_seq}{halogen.res_name}",
-            acceptor_residue=f"{acceptor.chain_id}{acceptor.res_seq}{acceptor.res_name}",
+            _halogen_residue=f"{halogen.chain_id}{halogen.res_seq}{halogen.res_name}",
+            _acceptor_residue=f"{acceptor.chain_id}{acceptor.res_seq}{acceptor.res_name}",
         )
 
     def _check_pi_interaction(
         self, donor: Atom, hydrogen: Atom, pi_residue: Residue
     ) -> Optional[PiInteraction]:
-        """Check if donor-hydrogen forms π interaction with aromatic residue."""
+        """Check if donor-hydrogen forms π interaction with aromatic residue.
+
+        Validates two key requirements:
+        1. Hydrogen must be bonded to donor atom
+        2. Donor and π acceptor must be from different residues
+
+        :param donor: The hydrogen bond donor atom
+        :type donor: Atom
+        :param hydrogen: The hydrogen atom
+        :type hydrogen: Atom
+        :param pi_residue: The aromatic residue containing the π system
+        :type pi_residue: Residue
+        :returns: PiInteraction if valid, None otherwise
+        :rtype: Optional[PiInteraction]
+        """
+        # Validate bonding: hydrogen must be bonded to donor
+        bonded_serials = self.parser.get_bonded_atoms(hydrogen.serial)
+        if donor.serial not in bonded_serials:
+            return None  # Hydrogen not bonded to donor
+
+        # Validate different residues: donor and π acceptor must be different
+        if self._same_residue(donor, pi_residue.atoms[0]):
+            return None  # Same residue - not a valid π interaction
+
         # Calculate aromatic ring center
         pi_center = self._calculate_aromatic_center(pi_residue)
 
@@ -531,13 +548,13 @@ class HBondAnalyzer:
             return None
 
         return PiInteraction(
-            donor=donor,
+            _donor=donor,
             hydrogen=hydrogen,
             pi_center=pi_center,
             distance=distance,
             angle=angle,
-            donor_residue=f"{donor.chain_id}{donor.res_seq}{donor.res_name}",
-            pi_residue=f"{pi_residue.chain_id}{pi_residue.seq_num}{pi_residue.name}",
+            _donor_residue=f"{donor.chain_id}{donor.res_seq}{donor.res_name}",
+            _pi_residue=f"{pi_residue.chain_id}{pi_residue.seq_num}{pi_residue.name}",
         )
 
     def _calculate_aromatic_center(self, residue: Residue) -> Vec3D:

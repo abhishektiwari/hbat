@@ -22,6 +22,118 @@ class TestMolecularInteraction:
         """Test that MolecularInteraction cannot be instantiated directly."""
         with pytest.raises(TypeError):
             MolecularInteraction()
+    
+    def test_inheritance(self):
+        """Test that concrete classes inherit from MolecularInteraction."""
+        # Create sample atoms
+        donor = Atom(
+            serial=1, name="N", alt_loc="", res_name="ALA", chain_id="A",
+            res_seq=1, i_code="", coords=Vec3D(0, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="N", charge="", record_type="ATOM"
+        )
+        
+        hydrogen = Atom(
+            serial=2, name="H", alt_loc="", res_name="ALA", chain_id="A",
+            res_seq=1, i_code="", coords=Vec3D(1, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="H", charge="", record_type="ATOM"
+        )
+        
+        acceptor = Atom(
+            serial=3, name="O", alt_loc="", res_name="GLY", chain_id="A",
+            res_seq=2, i_code="", coords=Vec3D(3, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="O", charge="", record_type="ATOM"
+        )
+        
+        # Test HydrogenBond inheritance
+        hb = HydrogenBond(
+            _donor=donor, hydrogen=hydrogen, _acceptor=acceptor,
+            distance=2.5, angle=math.radians(160.0), _donor_acceptor_distance=3.2,
+            bond_type="N-H...O", _donor_residue="A1ALA", _acceptor_residue="A2GLY"
+        )
+        assert isinstance(hb, MolecularInteraction)
+        
+        # Test HalogenBond inheritance
+        halogen = Atom(
+            serial=4, name="CL", alt_loc="", res_name="TEST", chain_id="A",
+            res_seq=3, i_code="", coords=Vec3D(5, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="CL", charge="", record_type="ATOM"
+        )
+        
+        xb = HalogenBond(
+            halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
+            bond_type="C-CL...O", _halogen_residue="A3TEST", _acceptor_residue="A2GLY"
+        )
+        assert isinstance(xb, MolecularInteraction)
+        
+        # Test PiInteraction inheritance
+        pi = PiInteraction(
+            _donor=donor, hydrogen=hydrogen, pi_center=Vec3D(3, 0, 0),
+            distance=3.5, angle=math.radians(150.0),
+            _donor_residue="A1ALA", _pi_residue="A2PHE"
+        )
+        assert isinstance(pi, MolecularInteraction)
+        
+        # Test CooperativityChain inheritance
+        chain = CooperativityChain(
+            interactions=[hb, xb], chain_length=2, chain_type="H -> X"
+        )
+        assert isinstance(chain, MolecularInteraction)
+        
+    def test_bonding_validation(self):
+        """Test that all interactions validate bonding requirements."""
+        # Create sample atoms
+        donor = Atom(
+            serial=1, name="N", alt_loc="", res_name="ALA", chain_id="A",
+            res_seq=1, i_code="", coords=Vec3D(0, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="N", charge="", record_type="ATOM"
+        )
+        
+        hydrogen = Atom(
+            serial=2, name="H", alt_loc="", res_name="ALA", chain_id="A",
+            res_seq=1, i_code="", coords=Vec3D(1, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="H", charge="", record_type="ATOM"
+        )
+        
+        acceptor = Atom(
+            serial=3, name="O", alt_loc="", res_name="GLY", chain_id="A",
+            res_seq=2, i_code="", coords=Vec3D(3, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="O", charge="", record_type="ATOM"
+        )
+        
+        # Test HydrogenBond bonding validation
+        hb = HydrogenBond(
+            _donor=donor, hydrogen=hydrogen, _acceptor=acceptor,
+            distance=2.5, angle=math.radians(160.0), _donor_acceptor_distance=3.2,
+            bond_type="N-H...O", _donor_residue="A1ALA", _acceptor_residue="A2GLY"
+        )
+        assert hb.is_donor_interaction_bonded(), "Hydrogen bond should satisfy bonding requirement"
+        
+        # Test HalogenBond bonding validation
+        halogen = Atom(
+            serial=4, name="CL", alt_loc="", res_name="TEST", chain_id="A",
+            res_seq=3, i_code="", coords=Vec3D(5, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="CL", charge="", record_type="ATOM"
+        )
+        
+        xb = HalogenBond(
+            halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
+            bond_type="C-CL...O", _halogen_residue="A3TEST", _acceptor_residue="A2GLY"
+        )
+        assert xb.is_donor_interaction_bonded(), "Halogen bond should satisfy bonding requirement"
+        
+        # Test PiInteraction bonding validation
+        pi = PiInteraction(
+            _donor=donor, hydrogen=hydrogen, pi_center=Vec3D(3, 0, 0),
+            distance=3.5, angle=math.radians(150.0),
+            _donor_residue="A1ALA", _pi_residue="A2PHE"
+        )
+        assert pi.is_donor_interaction_bonded(), "Pi interaction should satisfy bonding requirement"
+        
+        # Test CooperativityChain bonding validation
+        chain = CooperativityChain(
+            interactions=[hb, xb], chain_length=2, chain_type="H -> X"
+        )
+        assert chain.is_donor_interaction_bonded(), "Cooperativity chain should satisfy bonding requirements"
 
 
 class TestHydrogenBond:
@@ -55,15 +167,15 @@ class TestHydrogenBond:
         donor, hydrogen, acceptor = sample_atoms
         
         hb = HydrogenBond(
-            donor=donor,
+            _donor=donor,
             hydrogen=hydrogen,
-            acceptor=acceptor,
+            _acceptor=acceptor,
             distance=2.5,
             angle=math.radians(160.0),
-            donor_acceptor_distance=3.2,
+            _donor_acceptor_distance=3.2,
             bond_type="N-H...O",
-            donor_residue="A1ALA",
-            acceptor_residue="A2GLY"
+            _donor_residue="A1ALA",
+            _acceptor_residue="A2GLY"
         )
         
         assert hb.donor == donor
@@ -81,15 +193,15 @@ class TestHydrogenBond:
         donor, hydrogen, acceptor = sample_atoms
         
         hb = HydrogenBond(
-            donor=donor,
+            _donor=donor,
             hydrogen=hydrogen,
-            acceptor=acceptor,
+            _acceptor=acceptor,
             distance=2.5,
             angle=math.radians(160.0),
-            donor_acceptor_distance=3.2,
+            _donor_acceptor_distance=3.2,
             bond_type="N-H...O",
-            donor_residue="A1ALA",
-            acceptor_residue="A2GLY"
+            _donor_residue="A1ALA",
+            _acceptor_residue="A2GLY"
         )
         
         # Test interface methods
@@ -104,15 +216,15 @@ class TestHydrogenBond:
         donor, hydrogen, acceptor = sample_atoms
         
         hb = HydrogenBond(
-            donor=donor,
+            _donor=donor,
             hydrogen=hydrogen,
-            acceptor=acceptor,
+            _acceptor=acceptor,
             distance=2.5,
             angle=math.radians(160.0),
-            donor_acceptor_distance=3.2,
+            _donor_acceptor_distance=3.2,
             bond_type="N-H...O",
-            donor_residue="A1ALA",
-            acceptor_residue="A2GLY"
+            _donor_residue="A1ALA",
+            _acceptor_residue="A2GLY"
         )
         
         str_repr = str(hb)
@@ -151,12 +263,12 @@ class TestHalogenBond:
         
         xb = HalogenBond(
             halogen=halogen,
-            acceptor=acceptor,
+            _acceptor=acceptor,
             distance=3.2,
             angle=math.radians(170.0),
             bond_type="C-CL...O",
-            halogen_residue="A1TEST",
-            acceptor_residue="A2GLY"
+            _halogen_residue="A1TEST",
+            _acceptor_residue="A2GLY"
         )
         
         assert xb.halogen == halogen
@@ -164,7 +276,7 @@ class TestHalogenBond:
         assert xb.distance == 3.2
         assert abs(xb.angle - math.radians(170.0)) < 1e-10
         assert xb.bond_type == "C-CL...O"
-        assert xb.halogen_residue == "A1TEST"
+        assert xb.donor_residue == "A1TEST"
         assert xb.acceptor_residue == "A2GLY"
     
     def test_halogen_bond_methods(self, sample_halogen_atoms):
@@ -173,12 +285,12 @@ class TestHalogenBond:
         
         xb = HalogenBond(
             halogen=halogen,
-            acceptor=acceptor,
+            _acceptor=acceptor,
             distance=3.2,
             angle=math.radians(170.0),
             bond_type="C-CL...O",
-            halogen_residue="A1TEST",
-            acceptor_residue="A2GLY"
+            _halogen_residue="A1TEST",
+            _acceptor_residue="A2GLY"
         )
         
         # Test interface methods
@@ -194,12 +306,12 @@ class TestHalogenBond:
         
         xb = HalogenBond(
             halogen=halogen,
-            acceptor=acceptor,
+            _acceptor=acceptor,
             distance=3.2,
             angle=math.radians(170.0),
             bond_type="C-CL...O",
-            halogen_residue="A1TEST",
-            acceptor_residue="A2GLY"
+            _halogen_residue="A1TEST",
+            _acceptor_residue="A2GLY"
         )
         
         str_repr = str(xb)
@@ -239,13 +351,13 @@ class TestPiInteraction:
         donor, hydrogen, pi_center = sample_pi_atoms
         
         pi = PiInteraction(
-            donor=donor,
+            _donor=donor,
             hydrogen=hydrogen,
             pi_center=pi_center,
             distance=3.5,
             angle=math.radians(150.0),
-            donor_residue="A1ALA",
-            pi_residue="A2PHE"
+            _donor_residue="A1ALA",
+            _pi_residue="A2PHE"
         )
         
         assert pi.donor == donor
@@ -254,20 +366,20 @@ class TestPiInteraction:
         assert pi.distance == 3.5
         assert abs(pi.angle - math.radians(150.0)) < 1e-10
         assert pi.donor_residue == "A1ALA"
-        assert pi.pi_residue == "A2PHE"
+        assert pi.acceptor_residue == "A2PHE"
     
     def test_pi_interaction_methods(self, sample_pi_atoms):
         """Test π interaction interface methods."""
         donor, hydrogen, pi_center = sample_pi_atoms
         
         pi = PiInteraction(
-            donor=donor,
+            _donor=donor,
             hydrogen=hydrogen,
             pi_center=pi_center,
             distance=3.5,
             angle=math.radians(150.0),
-            donor_residue="A1ALA",
-            pi_residue="A2PHE"
+            _donor_residue="A1ALA",
+            _pi_residue="A2PHE"
         )
         
         # Test interface methods
@@ -282,13 +394,13 @@ class TestPiInteraction:
         donor, hydrogen, pi_center = sample_pi_atoms
         
         pi = PiInteraction(
-            donor=donor,
+            _donor=donor,
             hydrogen=hydrogen,
             pi_center=pi_center,
             distance=3.5,
             angle=math.radians(150.0),
-            donor_residue="A1ALA",
-            pi_residue="A2PHE"
+            _donor_residue="A1ALA",
+            _pi_residue="A2PHE"
         )
         
         str_repr = str(pi)
@@ -339,25 +451,25 @@ class TestCooperativityChain:
         
         # Create interactions
         hb = HydrogenBond(
-            donor=donor1,
+            _donor=donor1,
             hydrogen=hydrogen1,
-            acceptor=acceptor1,
+            _acceptor=acceptor1,
             distance=2.5,
             angle=math.radians(160.0),
-            donor_acceptor_distance=3.2,
+            _donor_acceptor_distance=3.2,
             bond_type="N-H...O",
-            donor_residue="A1ALA",
-            acceptor_residue="A2GLY"
+            _donor_residue="A1ALA",
+            _acceptor_residue="A2GLY"
         )
         
         xb = HalogenBond(
             halogen=halogen,
-            acceptor=acceptor2,
+            _acceptor=acceptor2,
             distance=3.2,
             angle=math.radians(170.0),
             bond_type="C-CL...N",
-            halogen_residue="A3TEST",
-            acceptor_residue="A4VAL"
+            _halogen_residue="A3TEST",
+            _acceptor_residue="A4VAL"
         )
         
         return [hb, xb]
@@ -404,6 +516,17 @@ class TestCooperativityChain:
         str_repr = str(chain)
         assert "Empty chain" in str_repr
     
+    def test_bonding_requirements_documentation(self):
+        """Test that bonding requirements are properly documented."""
+        # Test that the abstract method exists
+        from hbat.core.interactions import MolecularInteraction
+        assert hasattr(MolecularInteraction, 'is_donor_interaction_bonded')
+        
+        # Test docstring describes bonding requirements
+        method = getattr(MolecularInteraction, 'is_donor_interaction_bonded')
+        assert 'bonded' in method.__doc__.lower()
+        assert 'donor' in method.__doc__.lower()
+        
     def test_interaction_symbols(self, sample_chain_interactions):
         """Test interaction symbol mapping."""
         interactions = sample_chain_interactions
@@ -446,15 +569,15 @@ class TestInteractionValidation:
         )
         
         hb = HydrogenBond(
-            donor=donor,
+            _donor=donor,
             hydrogen=hydrogen,
-            acceptor=acceptor,
+            _acceptor=acceptor,
             distance=2.5,
             angle=math.radians(160.0),
-            donor_acceptor_distance=3.2,
+            _donor_acceptor_distance=3.2,
             bond_type="N-H...O",
-            donor_residue="A1ALA",
-            acceptor_residue="A2GLY"
+            _donor_residue="A1ALA",
+            _acceptor_residue="A2GLY"
         )
         
         # Validate all required properties exist
@@ -490,12 +613,12 @@ class TestInteractionValidation:
         
         xb = HalogenBond(
             halogen=halogen,
-            acceptor=acceptor,
+            _acceptor=acceptor,
             distance=3.2,
             angle=math.radians(170.0),
             bond_type="C-CL...O",
-            halogen_residue="A1TEST",
-            acceptor_residue="A2GLY"
+            _halogen_residue="A1TEST",
+            _acceptor_residue="A2GLY"
         )
         
         # Validate all required properties exist
@@ -504,14 +627,14 @@ class TestInteractionValidation:
         assert hasattr(xb, 'distance')
         assert hasattr(xb, 'angle')
         assert hasattr(xb, 'bond_type')
-        assert hasattr(xb, 'halogen_residue')
+        assert hasattr(xb, 'donor_residue')
         assert hasattr(xb, 'acceptor_residue')
         
         # Validate reasonable values
         assert xb.distance > 0
         assert 0 <= xb.angle <= math.pi
         assert len(xb.bond_type) > 0
-        assert len(xb.halogen_residue) > 0
+        assert len(xb.donor_residue) > 0
         assert len(xb.acceptor_residue) > 0
     
     def test_pi_interaction_validation(self):
@@ -531,13 +654,13 @@ class TestInteractionValidation:
         pi_center = Vec3D(3, 0, 0)
         
         pi = PiInteraction(
-            donor=donor,
+            _donor=donor,
             hydrogen=hydrogen,
             pi_center=pi_center,
             distance=3.5,
             angle=math.radians(150.0),
-            donor_residue="A1ALA",
-            pi_residue="A2PHE"
+            _donor_residue="A1ALA",
+            _pi_residue="A2PHE"
         )
         
         # Validate all required properties exist
@@ -547,13 +670,13 @@ class TestInteractionValidation:
         assert hasattr(pi, 'distance')
         assert hasattr(pi, 'angle')
         assert hasattr(pi, 'donor_residue')
-        assert hasattr(pi, 'pi_residue')
+        assert hasattr(pi, 'acceptor_residue')
         
         # Validate reasonable values
         assert pi.distance > 0
         assert 0 <= pi.angle <= math.pi
         assert len(pi.donor_residue) > 0
-        assert len(pi.pi_residue) > 0
+        assert len(pi.acceptor_residue) > 0
         assert hasattr(pi.pi_center, 'x')
         assert hasattr(pi.pi_center, 'y')
         assert hasattr(pi.pi_center, 'z')
