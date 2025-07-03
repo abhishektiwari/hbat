@@ -504,28 +504,30 @@ pH Parameter (PDBFixer method)
 General Analysis Parameters
 ----------------------------
 
-Covalent Bond Detection Factor (Default: 1.2)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Covalent Bond Detection Factor (Default: 0.85)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Definition**: Multiplier applied to covalent radii for bond detection.
+**Definition**: Multiplier applied to Van der Waals radii sum for covalent bond detection.
 
 **Purpose**:
 
 - Distinguishes between covalent bonds and non-covalent interactions
-- Accounts for thermal motion and structural flexibility
+- Accounts for the difference between Van der Waals and covalent radii
 - Prevents false positive interactions between bonded atoms
 
 **Calculation**:
 
 .. code-block:: text
 
-   Covalent cutoff = (radius₁ + radius₂) × factor
+   Bond cutoff = (VdW radius₁ + VdW radius₂) × factor
+
+**Valid range**: 0.0 - 1.0
 
 **Typical values**:
 
-- **1.0**: Strict covalent bond detection
-- **1.2** (default): Standard with some flexibility
-- **1.5**: More permissive for low-resolution structures
+- **0.70**: Very strict covalent bond detection
+- **0.85** (default): Standard bond detection based on typical covalent/VdW ratio
+- **1.00**: Maximum permissive (uses full Van der Waals radii sum)
 
 Analysis Mode
 ~~~~~~~~~~~~~
@@ -734,7 +736,7 @@ HBAT presets are saved as JSON files with the following structure:
          "dh_pi_angle_cutoff": 90.0
        },
        "general": {
-         "covalent_cutoff_factor": 1.2,
+         "covalent_cutoff_factor": 0.85,
          "analysis_mode": "complete"
        },
        "pdb_fixing": {

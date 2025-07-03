@@ -5,6 +5,7 @@ Tests for PDB parsing functionality.
 import math
 import pytest
 from hbat.core.pdb_parser import PDBParser, Atom, Residue, Bond, _safe_int_convert, _safe_float_convert
+from hbat.constants import AnalysisDefaults
 from tests.conftest import ExpectedResults
 
 
@@ -153,7 +154,7 @@ class TestPDBParser:
         
         # Bond distance should be reasonable
         if bond.distance is not None:
-            assert 0.5 <= bond.distance <= 2.5, f"Bond distance {bond.distance} should be reasonable"
+            assert AnalysisDefaults.MIN_BOND_DISTANCE <= bond.distance <= AnalysisDefaults.MAX_BOND_DISTANCE, f"Bond distance {bond.distance} should be reasonable"
     
     def test_bond_retrieval_methods(self, sample_pdb_file):
         """Test bond retrieval methods."""
@@ -414,3 +415,58 @@ class TestNaNHandling:
         assert atom.coords.z == 2.0  # Normal z value
         assert atom.occupancy == 1.0  # Default for NaN occupancy
         assert atom.temp_factor == 20.0  # Normal b_factor
+
+
+class TestCovalentCutoffFactor:
+    """Test cases for covalent cutoff factor configuration."""
+    
+    def test_covalent_cutoff_factor_default(self):
+        """Test that the default covalent cutoff factor is correctly set."""
+        from hbat.constants import AnalysisDefaults, ParameterRanges
+        
+        # Check default value
+        assert AnalysisDefaults.COVALENT_CUTOFF_FACTOR == 0.85
+        
+        # Check that it's within valid range
+        assert ParameterRanges.MIN_COVALENT_FACTOR <= AnalysisDefaults.COVALENT_CUTOFF_FACTOR <= ParameterRanges.MAX_COVALENT_FACTOR
+    
+    def test_covalent_cutoff_factor_range(self):
+        """Test that the covalent cutoff factor range is restricted to 0-1."""
+        from hbat.constants import ParameterRanges
+        
+        assert ParameterRanges.MIN_COVALENT_FACTOR == 0.0
+        assert ParameterRanges.MAX_COVALENT_FACTOR == 1.0
+    
+    def test_pdb_parser_uses_covalent_cutoff_factor(self):
+        """Test that PDB parser uses the configurable covalent cutoff factor."""
+        from hbat.core.pdb_parser import PDBParser, Atom
+        from hbat.core.vector import Vec3D
+        from hbat.constants import AnalysisDefaults
+        
+        parser = PDBParser()
+        
+        # Create two test atoms that should be bonded with default factor
+        atom1 = Atom(
+            serial=1, name="C1", alt_loc="", res_name="TEST", chain_id="A",
+            res_seq=1, i_code="", coords=Vec3D(0, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="C", charge="", record_type="ATOM"
+        )
+        
+        atom2 = Atom(
+            serial=2, name="C2", alt_loc="", res_name="TEST", chain_id="A",
+            res_seq=1, i_code="", coords=Vec3D(1.5, 0, 0), occupancy=1.0,  # 1.5 Å apart
+            temp_factor=20.0, element="C", charge="", record_type="ATOM"
+        )
+        
+        # Calculate expected VdW cutoff using the constant
+        from hbat.constants import AtomicData
+        vdw_c = AtomicData.VDW_RADII.get("C", 1.7)
+        expected_cutoff = (vdw_c + vdw_c) * AnalysisDefaults.COVALENT_CUTOFF_FACTOR
+        
+        # Distance should be less than expected cutoff for atoms to be bonded
+        distance = 1.5
+        assert distance <= expected_cutoff, f"Test atoms should be within cutoff ({distance} <= {expected_cutoff})"
+        
+        # Test that the parser correctly identifies these as bonded
+        are_bonded = parser._are_atoms_bonded_with_distance(atom1, atom2, distance)
+        assert are_bonded, "Test atoms should be identified as bonded"

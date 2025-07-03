@@ -9,7 +9,7 @@ import math
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from ..constants import AtomicData
+from ..constants import AnalysisDefaults, AtomicData
 from .vector import Vec3D
 
 try:
@@ -22,7 +22,7 @@ except ImportError:
 
 def _safe_int_convert(value: Any, default: int = 0) -> int:
     """Safely convert a value to integer, handling NaN and None values.
-    
+
     :param value: Value to convert
     :type value: Any
     :param default: Default value to use if conversion fails
@@ -32,7 +32,7 @@ def _safe_int_convert(value: Any, default: int = 0) -> int:
     """
     if value is None:
         return default
-    
+
     try:
         # Check for NaN values
         if isinstance(value, float) and math.isnan(value):
@@ -44,7 +44,7 @@ def _safe_int_convert(value: Any, default: int = 0) -> int:
 
 def _safe_float_convert(value: Any, default: float = 0.0) -> float:
     """Safely convert a value to float, handling NaN and None values.
-    
+
     :param value: Value to convert
     :type value: Any
     :param default: Default value to use if conversion fails
@@ -54,7 +54,7 @@ def _safe_float_convert(value: Any, default: float = 0.0) -> float:
     """
     if value is None:
         return default
-    
+
     try:
         float_val = float(value)
         # Replace NaN with default
@@ -447,10 +447,12 @@ class PDBParser:
                 serial_val = atom_row.get("id", "unknown")
                 name_val = atom_row.get("name", "unknown")
                 res_name_val = atom_row.get("resname", "unknown")
-                row_info = f" (serial={serial_val}, name={name_val}, res={res_name_val})"
+                row_info = (
+                    f" (serial={serial_val}, name={name_val}, res={res_name_val})"
+                )
             except:
                 pass
-            
+
             print(f"Error converting atom row{row_info}: {e}")
             return None
 
@@ -709,11 +711,16 @@ class PDBParser:
         if len(self.atoms) < 2:
             return
 
-        # Sort atoms to check nearest neighbors first
+        # Maximum reasonable bond distance for early filtering
+
         for i, atom1 in enumerate(self.atoms):
-            for j, atom2 in enumerate(self.atoms[i + 1 :], i + 1):
-                if self._are_atoms_bonded(atom1, atom2):
-                    distance = atom1.coords.distance_to(atom2.coords)
+            for atom2 in self.atoms[i + 1 :]:
+                # Early distance check to avoid expensive VdW calculations
+                distance = atom1.coords.distance_to(atom2.coords)
+                if distance > AnalysisDefaults.MAX_BOND_DISTANCE:
+                    continue  # Skip atoms that are clearly too far apart
+
+                if self._are_atoms_bonded_with_distance(atom1, atom2, distance):
                     bond = Bond(
                         atom1_serial=atom1.serial,
                         atom2_serial=atom2.serial,
@@ -736,21 +743,42 @@ class PDBParser:
         if atom1.serial == atom2.serial:
             return False
 
+        # Calculate distance and use optimized function
+        distance = atom1.coords.distance_to(atom2.coords)
+        return self._are_atoms_bonded_with_distance(atom1, atom2, distance)
+
+    def _are_atoms_bonded_with_distance(
+        self, atom1: Atom, atom2: Atom, distance: float
+    ) -> bool:
+        """Check if two atoms are bonded using pre-calculated distance.
+
+        :param atom1: First atom
+        :type atom1: Atom
+        :param atom2: Second atom
+        :type atom2: Atom
+        :param distance: Pre-calculated distance between atoms
+        :type distance: float
+        :returns: True if atoms are likely bonded
+        :rtype: bool
+        """
+        # Skip same atom
+        if atom1.serial == atom2.serial:
+            return False
+
         # Get Van der Waals radii
         vdw1 = AtomicData.VDW_RADII.get(atom1.element.upper(), 1.7)
         vdw2 = AtomicData.VDW_RADII.get(atom2.element.upper(), 1.7)
 
-        # Calculate distance
-        distance = atom1.coords.distance_to(atom2.coords)
-
         # Atoms are bonded if distance is less than sum of VdW radii
         # Apply a factor to account for covalent vs Van der Waals contacts
-        vdw_cutoff = (vdw1 + vdw2) * 0.85  # 85% of VdW sum for covalent bonds
+        vdw_cutoff = (vdw1 + vdw2) * AnalysisDefaults.COVALENT_CUTOFF_FACTOR
 
         # Additional constraints for realistic bonds
-        max_bond_distance = 2.5  # Reasonable maximum for most covalent bonds
-        min_bond_distance = 0.5  # Minimum realistic bond distance
-        return min_bond_distance <= distance <= min(vdw_cutoff, max_bond_distance)
+        return (
+            AnalysisDefaults.MIN_BOND_DISTANCE
+            <= distance
+            <= min(vdw_cutoff, AnalysisDefaults.MAX_BOND_DISTANCE)
+        )
 
     def _bond_exists(self, new_bond: Bond) -> bool:
         """Check if a bond already exists.

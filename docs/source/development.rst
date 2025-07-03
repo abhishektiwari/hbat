@@ -371,7 +371,7 @@ To add a new parameter preset:
          "dh_pi_angle_cutoff": 90.0
        },
        "general": {
-         "covalent_cutoff_factor": 1.2,
+         "covalent_cutoff_factor": 0.85,
          "analysis_mode": "complete"
        }
      }

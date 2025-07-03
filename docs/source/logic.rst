@@ -82,17 +82,50 @@ From ``hbat/constants.py``:
      - 4.0 Å
      - Maximum D...A distance
    * - ``COVALENT_CUTOFF_FACTOR``
-     - 1.2
-     - Bond detection multiplier
+     - 0.85
+     - Van der Waals to covalent bond factor
+   * - ``MAX_BOND_DISTANCE``
+     - 2.5 Å
+     - Maximum covalent bond distance
+   * - ``MIN_BOND_DISTANCE``
+     - 0.5 Å
+     - Minimum realistic bond distance
 
 5. Covalent Bond Detection
 --------------------------
 
-Hydrogen-donor bonds are identified using:
+Bond Detection Priority
+~~~~~~~~~~~~~~~~~~~~~~~
 
-- **Covalent radii** from ``AtomicData.COVALENT_RADII``
-- **Distance formula**: ``distance ≤ (r1 + r2) × 1.2``
-- **Example**: H-N bond = (0.31 + 0.71) × 1.2 = 1.22 Å maximum
+The PDBParser follows this priority for bond detection:
+
+1. **CONECT Records** (if available):
+   
+   - Parses explicit bond information from CONECT records in the PDB file
+   - Creates bonds with ``bond_type="explicit"``
+   - Calculates actual distances between connected atoms
+   - Preferred method when available as it preserves author-specified connectivity
+
+2. **Distance-based Detection** (fallback):
+   
+   - Only used when no CONECT records are present or no bonds were found
+   - Uses ``_are_atoms_bonded_with_distance()`` method
+
+Distance-based Bond Criteria
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When detecting bonds by distance:
+
+- **Van der Waals radii** from ``AtomicData.VDW_RADII``
+- **Distance criteria**: ``MIN_BOND_DISTANCE ≤ distance ≤ min(vdw_cutoff, MAX_BOND_DISTANCE)``
+- **VdW cutoff formula**: ``vdw_cutoff = (vdw1 + vdw2) × COVALENT_CUTOFF_FACTOR``
+- **Example**: C-C bond = (1.70 + 1.70) × 0.85 = 2.89 Å maximum (but limited to 2.5 Å by MAX_BOND_DISTANCE)
+
+Bond Types
+~~~~~~~~~~
+
+- ``"explicit"``: Bonds from CONECT records
+- ``"covalent"``: Bonds detected by distance criteria
 
 6. Vector Mathematics
 ---------------------
