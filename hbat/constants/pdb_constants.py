@@ -658,6 +658,18 @@ that can interact with the positive electrostatic potential of the halogen.
 - S: Sulfur (lone pairs on thiol, sulfide groups, weaker than N/O)
 """
 
+PI_INTERACTION_DONOR: List[str] = ["C"]
+"""List[str]: Elements that can act as π-interaction donors.
+
+These atoms can participate in π-interactions when part of π-systems.
+Currently includes:
+- C: Carbon atoms
+"""
+
+PI_INTERACTION_ATOMS: List[str] = ["H", "F", "CL"]
+"""List[str]: Elements that can participate in π-interactions.
+"""
+
 RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS: Dict[str, List[str]] = {
     # Protein residues
     "PHE": ["CG", "CD1", "CD2", "CE1", "CE2", "CZ"],

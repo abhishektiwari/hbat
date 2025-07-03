@@ -15,6 +15,8 @@ from ..constants import (
     HYDROGEN_BOND_ACCEPTOR_ELEMENTS,
     HYDROGEN_BOND_DONOR_ELEMENTS,
     HYDROGEN_ELEMENTS,
+    PI_INTERACTION_ATOMS,
+    PI_INTERACTION_DONOR,
     RESIDUES_WITH_AROMATIC_RINGS,
     RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS,
 )
@@ -206,9 +208,9 @@ class MolecularInteractionAnalyzer:
         """Find π interactions in the structure."""
         self.pi_interactions.clear()
 
-        # Get hydrogen bond donors for π interactions
-        donors = self._get_hydrogen_bond_donors()
-        if not donors:
+        # Get interaction atoms (H, F, Cl) bonded to carbon for π interactions
+        interaction_pairs = self._get_interaction_atoms()
+        if not interaction_pairs:
             return
 
         # Get aromatic residues
@@ -217,11 +219,11 @@ class MolecularInteractionAnalyzer:
             return
 
         # Check all donor-aromatic combinations
-        for donor, hydrogen in donors:
+        for carbon, interaction_atom in interaction_pairs:
             for aromatic_residue in aromatic_residues:
                 # Check for π interaction
                 # (includes validation for bonding and different residues)
-                pi = self._check_pi_interaction(donor, hydrogen, aromatic_residue)
+                pi = self._check_pi_interaction(carbon, interaction_atom, aromatic_residue)
                 if pi is not None:
                     self.pi_interactions.append(pi)
 
@@ -415,6 +417,30 @@ class MolecularInteractionAnalyzer:
 
         return halogens
 
+    def _get_interaction_atoms(self) -> List[Tuple[Atom, Atom]]:
+        """Get interaction atoms (H, F, Cl) that are bonded to carbon.
+
+        For π interactions, we need C-X...π geometry, so only atoms
+        bonded to carbon are potential π interaction donors.
+        Returns list of tuples (carbon, interaction_atom).
+        """
+        interactions = []
+
+        # Create mapping from serial to atom for efficient lookup
+        atom_map = {atom.serial: atom for atom in self.parser.atoms}
+
+        for atom in self.parser.atoms:
+            if atom.element.upper() in PI_INTERACTION_ATOMS:
+                # Check if this atom is bonded to carbon
+                bonded_serials = self.parser.get_bonded_atoms(atom.serial)
+                for bonded_serial in bonded_serials:
+                    bonded_atom = atom_map.get(bonded_serial)
+                    if bonded_atom is not None and bonded_atom.element.upper() == "C":
+                        interactions.append((bonded_atom, atom))
+                        break  # Found at least one carbon, that's sufficient
+
+        return interactions
+
     def _get_halogen_bond_acceptors(self) -> List[Atom]:
         """Get potential halogen bond acceptors."""
         acceptors = []
@@ -434,7 +460,23 @@ class MolecularInteractionAnalyzer:
     def _check_hydrogen_bond(
         self, donor: Atom, hydrogen: Atom, acceptor: Atom
     ) -> Optional[HydrogenBond]:
-        """Check if three atoms form a hydrogen bond."""
+        """
+        Check if three atoms form a hydrogen bond.
+        Validates key requirements:
+        1. Hydrogen must be bonded to donor atom
+        2. Acceptor must be a valid hydrogen bond acceptor element
+        3. Distance criteria (H...A and D...A)
+        4. Angular criteria (D-H...A angle)
+
+        :param donor: The hydrogen bond donor atom
+        :type donor: Atom
+        :param hydrogen: The hydrogen atom
+        :type hydrogen: Atom
+        :param acceptor: The hydrogen bond acceptor atom
+        :type acceptor: Atom
+        :returns: HydrogenBond if valid, None otherwise
+        :rtype: Optional[HydrogenBond]
+        """
         # Distance criteria
         h_a_distance = hydrogen.coords.distance_to(acceptor.coords)
         if h_a_distance > self.parameters.hb_distance_cutoff:
@@ -467,7 +509,22 @@ class MolecularInteractionAnalyzer:
     def _check_halogen_bond(
         self, halogen: Atom, acceptor: Atom
     ) -> Optional[HalogenBond]:
-        """Check if halogen and acceptor form a halogen bond."""
+        """
+        Check if halogen and acceptor form a halogen bond.
+
+         Validates key requirements:
+         1. Halogen must be bonded to carbon
+         2. Acceptor must be a valid halogen bond acceptor element
+         3. Distance criteria (X...A)
+         4. Angular criteria (C-X...A angle)
+        
+        :param halogen: The halogen atom (F, Cl, Br, I)
+        :type halogen: Atom
+        :param acceptor: The acceptor atom (F, Cl, Br, I)
+        :type acceptor: Atom
+        :returns: HalogenBond if valid, None otherwise
+        :rtype: Optional[HalogenBond]  
+        """
         # Distance criteria
         x_a_distance = halogen.coords.distance_to(acceptor.coords)
         if x_a_distance > self.parameters.xb_distance_cutoff:
@@ -510,11 +567,15 @@ class MolecularInteractionAnalyzer:
     def _check_pi_interaction(
         self, donor: Atom, hydrogen: Atom, pi_residue: Residue
     ) -> Optional[PiInteraction]:
-        """Check if donor-hydrogen forms π interaction with aromatic residue.
+        """
+        Check if donor-hydrogen forms π interaction with aromatic residue.
 
-        Validates two key requirements:
+        Validates key requirements:
         1. Hydrogen must be bonded to donor atom
         2. Donor and π acceptor must be from different residues
+        3. Donor must be a listed element in PI_INTERACTION_DONOR
+        4. Distance criteria (H...π)
+        5. Angular criteria (D-H...π angle)
 
         :param donor: The hydrogen bond donor atom
         :type donor: Atom
@@ -533,6 +594,10 @@ class MolecularInteractionAnalyzer:
         # Validate different residues: donor and π acceptor must be different
         if self._same_residue(donor, pi_residue.atoms[0]):
             return None  # Same residue - not a valid π interaction
+
+        # Validate donor element: donor must be a listed element
+        if donor.element not in PI_INTERACTION_DONOR:
+            return None  # Donor element not in allowed list
 
         # Calculate aromatic ring center
         pi_center = self._calculate_aromatic_center(pi_residue)

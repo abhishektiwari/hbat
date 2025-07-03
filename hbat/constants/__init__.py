@@ -46,6 +46,8 @@ from .pdb_constants import (
     RNA_RESIDUES,
     SIDECHAIN_ATOMS,
     WATER_MOLECULES,
+    PI_INTERACTION_DONOR,
+    PI_INTERACTION_ATOMS,
 )
 
 __all__ = [
