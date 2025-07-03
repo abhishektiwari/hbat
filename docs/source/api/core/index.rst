@@ -31,7 +31,7 @@ Molecular Interaction Analyzer
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: hbat.core.analyzer.HBondAnalyzer
+.. autoclass:: hbat.core.analyzer.MolecularInteractionAnalyzerractionAnalyzer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -50,11 +50,11 @@ Molecular Interaction Analyzer
    
    .. code-block:: python
    
-      from hbat.core.analyzer import HBondAnalyzer
+      from hbat.core.analyzer import MolecularInteractionAnalyzerractionAnalyzer
       from hbat.constants import ParametersDefault
       
       # Initialize analyzer with default parameters
-      analyzer = HBondAnalyzer(ParametersDefault())
+      analyzer = MolecularInteractionAnalyzerractionAnalyzer(ParametersDefault())
       
       # Analyze PDB file
       results = analyzer.analyze_file("structure.pdb")
@@ -321,7 +321,7 @@ Analysis Module (Backward Compatibility)
    
    **Re-exported Classes:**
    
-   - `HBondAnalyzer` from `analyzer.py`
+   - `MolecularInteractionAnalyzerractionAnalyzer` from `analyzer.py`
    - `AnalysisParameters` from `constants.parameters`
    - All interaction classes from `interactions.py`
    
@@ -332,11 +332,11 @@ Analysis Module (Backward Compatibility)
    .. code-block:: python
    
       # Recommended for new code
-      from hbat.core.analyzer import HBondAnalyzer
+      from hbat.core.analyzer import MolecularInteractionAnalyzerractionAnalyzer
       from hbat.core.interactions import HydrogenBond
       
       # Still works (backward compatibility)
-      from hbat.core.analysis import HBondAnalyzer, HydrogenBond
+      from hbat.core.analysis import MolecularInteractionAnalyzerractionAnalyzer, HydrogenBond
 
 Performance Notes
 -----------------

@@ -1,7 +1,7 @@
 """
 Main molecular interaction analyzer for HBAT.
 
-This module contains the HBondAnalyzer class which is the primary engine for
+This module contains the MolecularInteractionAnalyzer class which is the primary engine for
 detecting and analyzing hydrogen bonds, halogen bonds, π interactions, and
 cooperativity chains in protein structures.
 """
@@ -24,7 +24,7 @@ from .pdb_parser import Atom, PDBParser, Residue
 from .vector import Vec3D, angle_between_vectors
 
 
-class HBondAnalyzer:
+class MolecularInteractionAnalyzer:
     """Main analyzer for molecular interactions.
 
     This is the primary class for analyzing molecular interactions in

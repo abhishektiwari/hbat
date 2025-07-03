@@ -13,7 +13,7 @@ from tkinter import filedialog, messagebox, scrolledtext, ttk
 from typing import Optional
 
 from ..constants import APP_NAME, APP_VERSION, GUIDefaults
-from ..core.analysis import AnalysisParameters, HBondAnalyzer
+from ..core.analysis import AnalysisParameters, MolecularInteractionAnalyzer
 from .parameter_panel import ParameterPanel
 from .results_panel import ResultsPanel
 
@@ -43,7 +43,7 @@ class MainWindow:
         self.root.minsize(GUIDefaults.MIN_WINDOW_WIDTH, GUIDefaults.MIN_WINDOW_HEIGHT)
 
         # Analysis components
-        self.analyzer: Optional[HBondAnalyzer] = None
+        self.analyzer: Optional[MolecularInteractionAnalyzer] = None
         self.current_file: Optional[str] = None
         self.analysis_thread: Optional[threading.Thread] = None
 
@@ -345,7 +345,7 @@ class MainWindow:
         """
         try:
             # Create analyzer
-            self.analyzer = HBondAnalyzer(params)
+            self.analyzer = MolecularInteractionAnalyzer(params)
 
             # Run analysis
             success = self.analyzer.analyze_file(self.current_file)

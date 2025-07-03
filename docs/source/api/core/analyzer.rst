@@ -14,10 +14,10 @@ Module Overview
 Classes
 -------
 
-HBondAnalyzer
+MolecularInteractionAnalyzerractionAnalyzer
 ~~~~~~~~~~~~~
 
-.. autoclass:: hbat.core.analyzer.HBondAnalyzer
+.. autoclass:: hbat.core.analyzer.MolecularInteractionAnalyzerractionAnalyzer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -45,11 +45,11 @@ HBondAnalyzer
 
    .. code-block:: python
 
-      from hbat.core.analyzer import HBondAnalyzer
+      from hbat.core.analyzer import MolecularInteractionAnalyzerractionAnalyzer
       from hbat.constants import ParametersDefault
 
       # Basic analysis
-      analyzer = HBondAnalyzer(ParametersDefault())
+      analyzer = MolecularInteractionAnalyzerractionAnalyzer(ParametersDefault())
       results = analyzer.analyze_file("protein.pdb")
 
       print(f"Hydrogen bonds: {len(results.hydrogen_bonds)}")
@@ -65,7 +65,7 @@ HBondAnalyzer
           halogen_bond_distance_cutoff=4.0
       )
       
-      analyzer = HBondAnalyzer(params)
+      analyzer = MolecularInteractionAnalyzerractionAnalyzer(params)
       results = analyzer.analyze_file("complex.pdb")
       
       # Get detailed statistics
@@ -79,7 +79,7 @@ HBondAnalyzer
 
    .. code-block:: python
 
-      from hbat.core.analyzer import HBondAnalyzer
+      from hbat.core.analyzer import MolecularInteractionAnalyzerractionAnalyzer
       from hbat.constants import AnalysisParameters
 
       # Analysis with automatic hydrogen addition
@@ -89,7 +89,7 @@ HBondAnalyzer
           fix_pdb_add_hydrogens=True
       )
       
-      analyzer = HBondAnalyzer(params)
+      analyzer = MolecularInteractionAnalyzerractionAnalyzer(params)
       results = analyzer.analyze_file("structure_without_hydrogens.pdb")
       
       # The analyzer automatically:
@@ -132,49 +132,49 @@ Methods
 Core Analysis Methods
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. automethod:: hbat.core.analyzer.HBondAnalyzer.analyze_file
+.. automethod:: hbat.core.analyzer.MolecularInteractionAnalyzerractionAnalyzer.analyze_file
 
    Main entry point for analyzing PDB files from disk.
 
-.. automethod:: hbat.core.analyzer.HBondAnalyzer.analyze_structure
+.. automethod:: hbat.core.analyzer.MolecularInteractionAnalyzerractionAnalyzer.analyze_structure
 
    Analyze pre-loaded molecular structure data.
 
-.. automethod:: hbat.core.analyzer.HBondAnalyzer.get_statistics
+.. automethod:: hbat.core.analyzer.MolecularInteractionAnalyzerractionAnalyzer.get_statistics
 
    Retrieve comprehensive analysis statistics and performance metrics.
 
 Interaction Detection Methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automethod:: hbat.core.analyzer.HBondAnalyzer._find_hydrogen_bonds
+.. automethod:: hbat.core.analyzer.MolecularInteractionAnalyzerractionAnalyzer._find_hydrogen_bonds
 
    Internal method for hydrogen bond detection using geometric criteria.
 
-.. automethod:: hbat.core.analyzer.HBondAnalyzer._find_halogen_bonds
+.. automethod:: hbat.core.analyzer.MolecularInteractionAnalyzerractionAnalyzer._find_halogen_bonds
 
    Internal method for halogen bond detection with σ-hole validation.
 
-.. automethod:: hbat.core.analyzer.HBondAnalyzer._find_pi_interactions
+.. automethod:: hbat.core.analyzer.MolecularInteractionAnalyzerractionAnalyzer._find_pi_interactions
 
    Internal method for π interaction detection including stacking and T-shaped contacts.
 
-.. automethod:: hbat.core.analyzer.HBondAnalyzer._find_cooperativity_chains
+.. automethod:: hbat.core.analyzer.MolecularInteractionAnalyzerractionAnalyzer._find_cooperativity_chains
 
    Internal method for identifying chains of cooperative molecular interactions.
 
 Utility Methods
 ~~~~~~~~~~~~~~~
 
-.. automethod:: hbat.core.analyzer.HBondAnalyzer._validate_interaction
+.. automethod:: hbat.core.analyzer.MolecularInteractionAnalyzerractionAnalyzer._validate_interaction
 
    Validate individual interactions against chemical and geometric criteria.
 
-.. automethod:: hbat.core.analyzer.HBondAnalyzer._calculate_interaction_energy
+.. automethod:: hbat.core.analyzer.MolecularInteractionAnalyzerractionAnalyzer._calculate_interaction_energy
 
    Estimate interaction energy based on geometric parameters.
 
-.. automethod:: hbat.core.analyzer.HBondAnalyzer._build_spatial_index
+.. automethod:: hbat.core.analyzer.MolecularInteractionAnalyzerractionAnalyzer._build_spatial_index
 
    Build efficient spatial data structures for neighbor searching.
 

@@ -2,7 +2,7 @@
 
 This package contains the core analysis functionality split into focused modules:
 - analysis.py: Main module with backward-compatible exports
-- analyzer.py: Main analysis engine (HBondAnalyzer)
+- analyzer.py: Main analysis engine (MolecularInteractionAnalyzer)
 - interactions.py: Interaction data classes
 - parameters.py: Analysis parameters
 - pdb_parser.py: PDB file parsing

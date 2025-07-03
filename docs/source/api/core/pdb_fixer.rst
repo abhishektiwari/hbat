@@ -407,7 +407,7 @@ Analysis Pipeline Integration
 
 .. code-block:: python
 
-   from hbat.core.analyzer import HBondAnalyzer
+   from hbat.core.analyzer import MolecularInteractionAnalyzerractionAnalyzer
    from hbat.core.pdb_fixer import PDBFixer
    from hbat.constants import PDBFixingModes, ParametersDefault
 
@@ -428,7 +428,7 @@ Analysis Pipeline Integration
        print(f"  Converted {fix_result.residues_converted} residues")
        
        # Step 2: Analyze fixed structure
-       analyzer = HBondAnalyzer(ParametersDefault())
+       analyzer = MolecularInteractionAnalyzerractionAnalyzer(ParametersDefault())
        results = analyzer.analyze_file(fixed_file)
        
        print(f"Analysis results:")

@@ -65,9 +65,9 @@ def pdb_fixing_test_file():
 
 @pytest.fixture
 def analyzer():
-    """Provide a configured HBondAnalyzer instance."""
-    from hbat.core.analysis import HBondAnalyzer
-    return HBondAnalyzer()
+    """Provide a configured MolecularInteractionAnalyzer instance."""
+    from hbat.core.analysis import MolecularInteractionAnalyzer
+    return MolecularInteractionAnalyzer()
 
 @pytest.fixture
 def analysis_parameters():

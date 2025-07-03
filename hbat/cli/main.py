@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 
 from .. import __version__
 from ..constants.parameters import ParametersDefault
-from ..core.analysis import AnalysisParameters, HBondAnalyzer
+from ..core.analysis import AnalysisParameters, MolecularInteractionAnalyzer
 from ..core.pdb_parser import PDBParser
 
 
@@ -530,7 +530,7 @@ def validate_input_file(filename: str) -> bool:
 
 
 def format_results_text(
-    analyzer: HBondAnalyzer, input_file: str, summary_only: bool = False
+    analyzer: MolecularInteractionAnalyzer, input_file: str, summary_only: bool = False
 ) -> str:
     """Format analysis results as text.
 
@@ -538,7 +538,7 @@ def format_results_text(
     with options for summary or detailed output.
 
     :param analyzer: Analysis results to format
-    :type analyzer: HBondAnalyzer
+    :type analyzer: MolecularInteractionAnalyzer
     :param input_file: Path to the input file analyzed
     :type input_file: str
     :param summary_only: Whether to include only summary statistics
@@ -598,14 +598,16 @@ def format_results_text(
     return "\n".join(lines)
 
 
-def export_to_json(analyzer: HBondAnalyzer, input_file: str, output_file: str) -> None:
+def export_to_json(
+    analyzer: MolecularInteractionAnalyzer, input_file: str, output_file: str
+) -> None:
     """Export results to JSON format.
 
     Exports complete analysis results to a structured JSON file
     with metadata, statistics, and detailed interaction data.
 
     :param analyzer: Analysis results to export
-    :type analyzer: HBondAnalyzer
+    :type analyzer: MolecularInteractionAnalyzer
     :param input_file: Path to the input file analyzed
     :type input_file: str
     :param output_file: Path to the JSON output file
@@ -716,14 +718,14 @@ def export_to_json(analyzer: HBondAnalyzer, input_file: str, output_file: str) -
         json.dump(data, f, indent=2)
 
 
-def export_to_csv(analyzer: HBondAnalyzer, output_file: str) -> None:
+def export_to_csv(analyzer: MolecularInteractionAnalyzer, output_file: str) -> None:
     """Export results to CSV format.
 
     Exports analysis results to a CSV file with separate sections
     for different interaction types.
 
     :param analyzer: Analysis results to export
-    :type analyzer: HBondAnalyzer
+    :type analyzer: MolecularInteractionAnalyzer
     :param output_file: Path to the CSV output file
     :type output_file: str
     :returns: None
@@ -849,7 +851,7 @@ def run_analysis(args: argparse.Namespace) -> int:
         print_progress(f"Analysis mode: {parameters.analysis_mode}", verbose)
 
         # Create analyzer
-        analyzer = HBondAnalyzer(parameters)
+        analyzer = MolecularInteractionAnalyzer(parameters)
 
         # Run analysis
         start_time = time.time()

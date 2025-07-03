@@ -282,7 +282,7 @@ Analysis Engine (``hbat.core.analysis``)
 
 Core analysis functionality:
 
-- ``HBondAnalyzer``: Main analysis class
+- ``MolecularInteractionAnalyzerractionAnalyzer``: Main analysis class
 - ``AnalysisParameters``: Configuration parameters
 - Detection algorithms for hydrogen bonds, halogen bonds, π interactions
 
@@ -323,7 +323,7 @@ New Interaction Types
 
 To add a new molecular interaction type:
 
-1. Add detection method to ``HBondAnalyzer``
+1. Add detection method to ``MolecularInteractionAnalyzerractionAnalyzer``
 2. Create corresponding data class (like ``HydrogenBond``)
 3. Update GUI results panel
 4. Add CLI export support

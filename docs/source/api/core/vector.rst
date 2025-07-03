@@ -442,7 +442,7 @@ The Vec3D class integrates seamlessly with the entire HBAT analysis pipeline:
 .. code-block:: python
 
    from hbat.core.pdb_parser import PDBParser
-   from hbat.core.analyzer import HBondAnalyzer
+   from hbat.core.analyzer import MolecularInteractionAnalyzerractionAnalyzer
 
    # Parse structure (automatically uses Vec3D for coordinates)
    parser = PDBParser()
@@ -454,7 +454,7 @@ The Vec3D class integrates seamlessly with the entire HBAT analysis pipeline:
    print(f"Distance to origin: {atom.coord.magnitude():.2f}")
    
    # Analysis automatically handles Vec3D objects
-   analyzer = HBondAnalyzer()
+   analyzer = MolecularInteractionAnalyzerractionAnalyzer()
    results = analyzer.analyze_structure(atoms, residues, bonds)
    
    # Results contain Vec3D geometric data

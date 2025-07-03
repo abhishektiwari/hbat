@@ -301,11 +301,11 @@ The parser integrates seamlessly with the analysis pipeline:
 
 .. code-block:: python
 
-   from hbat.core.analyzer import HBondAnalyzer
+   from hbat.core.analyzer import MolecularInteractionAnalyzerractionAnalyzer
    from hbat.core.pdb_parser import PDBParser
 
    # Direct integration
-   analyzer = HBondAnalyzer()
+   analyzer = MolecularInteractionAnalyzerractionAnalyzer()
    results = analyzer.analyze_file("protein.pdb")  # Uses parser internally
 
    # Manual parsing for custom processing

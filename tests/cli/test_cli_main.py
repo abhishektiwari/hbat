@@ -377,8 +377,8 @@ class TestCLIIntegration:
         assert params.hb_angle_cutoff == 140.0
         
         # Test that these parameters can be used with analyzer
-        from hbat.core.analysis import HBondAnalyzer
-        analyzer = HBondAnalyzer(params)
+        from hbat.core.analysis import MolecularInteractionAnalyzer
+        analyzer = MolecularInteractionAnalyzer(params)
         
         success = analyzer.analyze_file(sample_pdb_file)
         assert success, "Analysis with CLI parameters should succeed"
@@ -406,8 +406,8 @@ class TestCLIIntegration:
         assert params.fix_pdb_add_hydrogens is True
         
         # Test that these parameters can be used with analyzer
-        from hbat.core.analysis import HBondAnalyzer
-        analyzer = HBondAnalyzer(params)
+        from hbat.core.analysis import MolecularInteractionAnalyzer
+        analyzer = MolecularInteractionAnalyzer(params)
         
         success = analyzer.analyze_file(pdb_fixing_test_file)
         assert success, "Analysis with CLI PDB fixing parameters should succeed"

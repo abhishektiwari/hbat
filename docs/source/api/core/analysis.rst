@@ -22,22 +22,22 @@ Re-exported Classes
 Main Analyzer
 ~~~~~~~~~~~~~
 
-.. autoclass:: hbat.core.analysis.HBondAnalyzer
+.. autoclass:: hbat.core.analysis.MolecularInteractionAnalyzer
    :members:
    :undoc-members:
    :show-inheritance:
 
-   Re-exported from :class:`hbat.core.analyzer.HBondAnalyzer`.
+   Re-exported from :class:`hbat.core.analyzer.MolecularInteractionAnalyzer`.
    
    **Migration Note:**
    
    .. code-block:: python
    
       # Old import (still works)
-      from hbat.core.analysis import HBondAnalyzer
+      from hbat.core.analysis import MolecularInteractionAnalyzer
       
       # New recommended import
-      from hbat.core.analyzer import HBondAnalyzer
+      from hbat.core.analyzer import MolecularInteractionAnalyzer
 
 Analysis Parameters
 ~~~~~~~~~~~~~~~~~~~
@@ -108,10 +108,10 @@ For new code development, use the specific module imports:
 .. code-block:: python
 
    # Instead of importing from analysis module
-   from hbat.core.analysis import HBondAnalyzer, HydrogenBond, AnalysisParameters
+   from hbat.core.analysis import MolecularInteractionAnalyzer, HydrogenBond, AnalysisParameters
    
    # Use specific module imports
-   from hbat.core.analyzer import HBondAnalyzer
+   from hbat.core.analyzer import MolecularInteractionAnalyzer
    from hbat.core.interactions import HydrogenBond
    from hbat.constants import AnalysisParameters
 
@@ -138,24 +138,24 @@ Benefits of New Structure
 
    # Old style (still works)
    from hbat.core.analysis import (
-       HBondAnalyzer, 
+       MolecularInteractionAnalyzer, 
        HydrogenBond, 
        HalogenBond, 
        AnalysisParameters
    )
    
-   analyzer = HBondAnalyzer(AnalysisParameters())
+   analyzer = MolecularInteractionAnalyzer(AnalysisParameters())
    results = analyzer.analyze_file("protein.pdb")
    
    for hbond in results.hydrogen_bonds:
        print(f"H-bond: {hbond.distance_da:.2f} Å")
    
    # New style (recommended)
-   from hbat.core.analyzer import HBondAnalyzer
+   from hbat.core.analyzer import MolecularInteractionAnalyzer
    from hbat.core.interactions import HydrogenBond
    from hbat.constants import AnalysisParameters
    
-   analyzer = HBondAnalyzer(AnalysisParameters())
+   analyzer = MolecularInteractionAnalyzer(AnalysisParameters())
    results = analyzer.analyze_file("protein.pdb")
    
    for hbond in results.hydrogen_bonds:
@@ -196,14 +196,14 @@ To ensure your code works with both import styles:
        
        # Test old style imports
        try:
-           from hbat.core.analysis import HBondAnalyzer as OldAnalyzer
+           from hbat.core.analysis import MolecularInteractionAnalyzer as OldAnalyzer
            print("✓ Old style import works")
        except ImportError as e:
            print(f"✗ Old style import failed: {e}")
        
        # Test new style imports  
        try:
-           from hbat.core.analyzer import HBondAnalyzer as NewAnalyzer
+           from hbat.core.analyzer import MolecularInteractionAnalyzer as NewAnalyzer
            print("✓ New style import works")
        except ImportError as e:
            print(f"✗ New style import failed: {e}")
@@ -247,8 +247,8 @@ For optimal performance in new code:
    # Efficient imports for performance-critical code
    def analyze_structure_efficient(pdb_file):
        # Lazy import to minimize startup time
-       from hbat.core.analyzer import HBondAnalyzer
+       from hbat.core.analyzer import MolecularInteractionAnalyzer
        from hbat.constants import ParametersDefault
        
-       analyzer = HBondAnalyzer(ParametersDefault())
+       analyzer = MolecularInteractionAnalyzer(ParametersDefault())
        return analyzer.analyze_file(pdb_file)

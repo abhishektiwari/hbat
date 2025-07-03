@@ -17,7 +17,7 @@ try:
 except ImportError:
     VISUALIZATION_AVAILABLE = False
 
-from ..core.analysis import HBondAnalyzer
+from ..core.analysis import MolecularInteractionAnalyzer
 
 
 class ResultsPanel:
@@ -43,7 +43,7 @@ class ResultsPanel:
         :rtype: None
         """
         self.parent = parent
-        self.analyzer: Optional[HBondAnalyzer] = None
+        self.analyzer: Optional[MolecularInteractionAnalyzer] = None
         self._create_widgets()
 
     def _create_widgets(self):
@@ -449,14 +449,14 @@ class ResultsPanel:
             "number", foreground="red", font=("Courier", 12, "bold")
         )
 
-    def update_results(self, analyzer: HBondAnalyzer) -> None:
+    def update_results(self, analyzer: MolecularInteractionAnalyzer) -> None:
         """Update the results panel with new analysis results.
 
         Refreshes all result displays with data from the provided
         analyzer instance.
 
-        :param analyzer: HBondAnalyzer instance with results
-        :type analyzer: HBondAnalyzer
+        :param analyzer: MolecularInteractionAnalyzer instance with results
+        :type analyzer: MolecularInteractionAnalyzer
         :returns: None
         :rtype: None
         """

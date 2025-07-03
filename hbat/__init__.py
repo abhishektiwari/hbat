@@ -15,8 +15,8 @@ except ImportError:
     __version__ = "0.0.0+unknown"
 __author__ = "Abhishek Tiwari"
 
-from .core.analysis import HBondAnalyzer
+from .core.analysis import MolecularInteractionAnalyzer
 from .core.pdb_parser import PDBParser
 from .core.vector import Vec3D
 
-__all__ = ["HBondAnalyzer", "PDBParser", "Vec3D"]
+__all__ = ["MolecularInteractionAnalyzer", "PDBParser", "Vec3D"]

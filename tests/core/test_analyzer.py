@@ -1,10 +1,10 @@
 """
-Tests for the HBondAnalyzer class.
+Tests for the MolecularInteractionAnalyzer class.
 """
 
 import pytest
 import math
-from hbat.core.analyzer import HBondAnalyzer
+from hbat.core.analyzer import MolecularInteractionAnalyzer
 from hbat.constants.parameters import AnalysisParameters
 from tests.conftest import (
     ExpectedResults, 
@@ -15,19 +15,19 @@ from tests.conftest import (
 )
 
 
-class TestHBondAnalyzer:
-    """Test cases for HBondAnalyzer."""
+class TestMolecularInteractionAnalyzer:
+    """Test cases for MolecularInteractionAnalyzer."""
     
     def test_analyzer_creation(self):
         """Test analyzer creation with different parameters."""
         # Default parameters
-        analyzer = HBondAnalyzer()
+        analyzer = MolecularInteractionAnalyzer()
         assert analyzer is not None
         assert hasattr(analyzer, 'parameters')
         
         # Custom parameters
         params = AnalysisParameters(hb_distance_cutoff=3.0)
-        analyzer = HBondAnalyzer(params)
+        analyzer = MolecularInteractionAnalyzer(params)
         assert analyzer.parameters.hb_distance_cutoff == 3.0
     
     def test_analyzer_with_pdb_fixing_parameters(self):
@@ -39,7 +39,7 @@ class TestHBondAnalyzer:
             fix_pdb_add_hydrogens=True,
             fix_pdb_add_heavy_atoms=False
         )
-        analyzer = HBondAnalyzer(params)
+        analyzer = MolecularInteractionAnalyzer(params)
         assert analyzer.parameters.fix_pdb_enabled is True
         assert analyzer.parameters.fix_pdb_method == "pdbfixer"
         
@@ -49,11 +49,11 @@ class TestHBondAnalyzer:
             fix_pdb_method="invalid_method"
         )
         with pytest.raises(ValueError):
-            HBondAnalyzer(invalid_params)
+            MolecularInteractionAnalyzer(invalid_params)
     
     def test_analyzer_initial_state(self):
         """Test analyzer initial state."""
-        analyzer = HBondAnalyzer()
+        analyzer = MolecularInteractionAnalyzer()
         
         assert len(analyzer.hydrogen_bonds) == 0
         assert len(analyzer.halogen_bonds) == 0
@@ -72,7 +72,7 @@ class TestHBondAnalyzer:
     @pytest.mark.integration
     def test_complete_analysis_workflow(self, sample_pdb_file):
         """Test complete analysis workflow with real PDB file."""
-        analyzer = HBondAnalyzer()
+        analyzer = MolecularInteractionAnalyzer()
         
         # Run analysis
         success = analyzer.analyze_file(sample_pdb_file)
@@ -97,7 +97,7 @@ class TestHBondAnalyzer:
             fix_pdb_method="openbabel",
             fix_pdb_add_hydrogens=True
         )
-        analyzer_ob = HBondAnalyzer(params_ob)
+        analyzer_ob = MolecularInteractionAnalyzer(params_ob)
         
         success = analyzer_ob.analyze_file(pdb_fixing_test_file)
         assert success, "Analysis with OpenBabel PDB fixing should succeed"
@@ -114,7 +114,7 @@ class TestHBondAnalyzer:
             fix_pdb_add_hydrogens=True,
             fix_pdb_add_heavy_atoms=True
         )
-        analyzer_pdb = HBondAnalyzer(params_pdb)
+        analyzer_pdb = MolecularInteractionAnalyzer(params_pdb)
         
         success = analyzer_pdb.analyze_file(pdb_fixing_test_file)
         assert success, "Analysis with PDBFixer PDB fixing should succeed"
@@ -125,7 +125,7 @@ class TestHBondAnalyzer:
     @pytest.mark.integration
     def test_hydrogen_bond_analysis(self, sample_pdb_file):
         """Test hydrogen bond detection and validation."""
-        analyzer = HBondAnalyzer()
+        analyzer = MolecularInteractionAnalyzer()
         success = analyzer.analyze_file(sample_pdb_file)
         assert success
         
@@ -148,7 +148,7 @@ class TestHBondAnalyzer:
     
     def test_bond_based_hydrogen_donor_detection(self, sample_pdb_file):
         """Test that hydrogen bond donor detection uses pre-calculated bonds."""
-        analyzer = HBondAnalyzer()
+        analyzer = MolecularInteractionAnalyzer()
         success = analyzer.analyze_file(sample_pdb_file)
         assert success, "Analysis should succeed"
         
@@ -178,7 +178,7 @@ class TestHBondAnalyzer:
     @pytest.mark.integration
     def test_pi_interaction_analysis(self, sample_pdb_file):
         """Test π interaction detection and validation."""
-        analyzer = HBondAnalyzer()
+        analyzer = MolecularInteractionAnalyzer()
         success = analyzer.analyze_file(sample_pdb_file)
         assert success
         
@@ -201,7 +201,7 @@ class TestHBondAnalyzer:
     @pytest.mark.integration
     def test_cooperativity_analysis(self, sample_pdb_file):
         """Test cooperativity chain analysis."""
-        analyzer = HBondAnalyzer()
+        analyzer = MolecularInteractionAnalyzer()
         success = analyzer.analyze_file(sample_pdb_file)
         assert success
         
@@ -218,7 +218,7 @@ class TestHBondAnalyzer:
     
     def test_bond_based_halogen_detection(self, sample_pdb_file):
         """Test that halogen bond detection uses pre-calculated bonds."""
-        analyzer = HBondAnalyzer()
+        analyzer = MolecularInteractionAnalyzer()
         success = analyzer.analyze_file(sample_pdb_file)
         assert success, "Analysis should succeed"
         
@@ -271,7 +271,7 @@ class TestHBondAnalyzer:
     
     def test_halogen_bond_classification(self):
         """Test halogen bond classification via _check_halogen_bond method."""
-        analyzer = HBondAnalyzer()
+        analyzer = MolecularInteractionAnalyzer()
         
         # Create test atoms for different halogen bond types
         from hbat.core.pdb_parser import Atom
@@ -315,7 +315,7 @@ class TestHBondAnalyzer:
     @pytest.mark.integration
     def test_interaction_statistics(self, sample_pdb_file):
         """Test interaction statistics consistency."""
-        analyzer = HBondAnalyzer()
+        analyzer = MolecularInteractionAnalyzer()
         success = analyzer.analyze_file(sample_pdb_file)
         assert success
         
@@ -341,7 +341,7 @@ class TestHBondAnalyzer:
         """Test different analysis modes."""
         # Complete mode
         params_complete = AnalysisParameters(analysis_mode="complete")
-        analyzer_complete = HBondAnalyzer(params_complete)
+        analyzer_complete = MolecularInteractionAnalyzer(params_complete)
         success = analyzer_complete.analyze_file(sample_pdb_file)
         assert success
         
@@ -349,7 +349,7 @@ class TestHBondAnalyzer:
         
         # Local mode
         params_local = AnalysisParameters(analysis_mode="local")
-        analyzer_local = HBondAnalyzer(params_local)
+        analyzer_local = MolecularInteractionAnalyzer(params_local)
         success = analyzer_local.analyze_file(sample_pdb_file)
         assert success
         
@@ -367,7 +367,7 @@ class TestHBondAnalyzer:
             hb_distance_cutoff=3.0,
             hb_angle_cutoff=140.0
         )
-        analyzer_strict = HBondAnalyzer(strict_params)
+        analyzer_strict = MolecularInteractionAnalyzer(strict_params)
         success = analyzer_strict.analyze_file(sample_pdb_file)
         assert success
         
@@ -376,7 +376,7 @@ class TestHBondAnalyzer:
             hb_distance_cutoff=4.0,
             hb_angle_cutoff=110.0
         )
-        analyzer_permissive = HBondAnalyzer(permissive_params)
+        analyzer_permissive = MolecularInteractionAnalyzer(permissive_params)
         success = analyzer_permissive.analyze_file(sample_pdb_file)
         assert success
         
@@ -392,7 +392,7 @@ class TestHBondAnalyzer:
         """Test effects of PDB fixing on analysis results using 1ubi.pdb."""
         # Analysis without PDB fixing
         params_no_fix = AnalysisParameters(fix_pdb_enabled=False)
-        analyzer_no_fix = HBondAnalyzer(params_no_fix)
+        analyzer_no_fix = MolecularInteractionAnalyzer(params_no_fix)
         success = analyzer_no_fix.analyze_file(pdb_fixing_test_file)
         assert success
         
@@ -402,7 +402,7 @@ class TestHBondAnalyzer:
             fix_pdb_method="openbabel",
             fix_pdb_add_hydrogens=True
         )
-        analyzer_with_fix = HBondAnalyzer(params_with_fix)
+        analyzer_with_fix = MolecularInteractionAnalyzer(params_with_fix)
         success = analyzer_with_fix.analyze_file(pdb_fixing_test_file)
         assert success
         
@@ -423,7 +423,7 @@ class TestHBondAnalyzer:
     def test_specific_hydrogen_bond_measurements(self):
         """Test specific hydrogen bond measurements for 6RSA.pdb atom pairs."""
         # Use 6RSA.pdb for this test
-        analyzer = HBondAnalyzer()
+        analyzer = MolecularInteractionAnalyzer()
         success = analyzer.analyze_file("example_pdb_files/6rsa.pdb")
         assert success, "Analysis of 6RSA.pdb should succeed"
         
@@ -534,7 +534,7 @@ class TestPerformanceMetrics:
     @pytest.mark.slow
     def test_performance_benchmarks(self, sample_pdb_file):
         """Test that analysis meets performance expectations."""
-        analyzer = HBondAnalyzer()
+        analyzer = MolecularInteractionAnalyzer()
         
         import time
         start_time = time.time()
@@ -557,7 +557,7 @@ class TestPerformanceMetrics:
     @pytest.mark.integration
     def test_expected_results_documentation(self, sample_pdb_file):
         """Document expected results for 6RSA.pdb."""
-        analyzer = HBondAnalyzer()
+        analyzer = MolecularInteractionAnalyzer()
         success = analyzer.analyze_file(sample_pdb_file)
         assert success
         
@@ -585,7 +585,7 @@ class TestPerformanceMetrics:
             fix_pdb_method="openbabel",
             fix_pdb_add_hydrogens=True
         )
-        analyzer_ob = HBondAnalyzer(params_ob)
+        analyzer_ob = MolecularInteractionAnalyzer(params_ob)
         success = analyzer_ob.analyze_file(pdb_fixing_test_file)
         assert success
         
@@ -605,7 +605,7 @@ class TestPerformanceMetrics:
             fix_pdb_add_hydrogens=True,
             fix_pdb_add_heavy_atoms=True
         )
-        analyzer_pdb = HBondAnalyzer(params_pdb)
+        analyzer_pdb = MolecularInteractionAnalyzer(params_pdb)
         success = analyzer_pdb.analyze_file(pdb_fixing_test_file)
         assert success
         

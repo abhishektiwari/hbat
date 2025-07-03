@@ -15,7 +15,7 @@ This file maintains backward compatibility by re-exporting all classes.
 from ..constants.parameters import AnalysisParameters
 
 # Import all classes from the new split modules
-from .analyzer import HBondAnalyzer
+from .analyzer import MolecularInteractionAnalyzer
 from .interactions import (
     CooperativityChain,
     HalogenBond,
@@ -24,9 +24,13 @@ from .interactions import (
     PiInteraction,
 )
 
+# Backward compatibility alias
+HBondAnalyzer = MolecularInteractionAnalyzer
+
 # Re-export all classes for backward compatibility
 __all__ = [
-    "HBondAnalyzer",
+    "MolecularInteractionAnalyzer",
+    "HBondAnalyzer",  # Backward compatibility
     "AnalysisParameters",
     "MolecularInteraction",
     "HydrogenBond",
