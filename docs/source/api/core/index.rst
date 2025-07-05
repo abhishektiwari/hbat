@@ -4,20 +4,24 @@ Module Overview
 The core package is organized into specialized modules:
 
 - **analyzer**: Main molecular interaction analysis engine
+- **np_analyzer**: NumPy-optimized molecular interaction analysis engine
 - **interactions**: Data structures for molecular interactions
 - **pdb_parser**: PDB file parsing and structure handling
 - **pdb_fixer**: PDB structure enhancement and fixing
 - **vector**: 3D vector mathematics for molecular calculations
+- **np_vector**: NumPy-based 3D vector mathematics for high-performance calculations
 - **analysis**: Backward compatibility module (re-exports from other modules)
 
 .. toctree::
    :maxdepth: 2
 
    analyzer
+   np_analyzer
    interactions
    pdb_parser
    pdb_fixer
    vector
+   np_vector
    analysis
 
 Main Analysis Engine

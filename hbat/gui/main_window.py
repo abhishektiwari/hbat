@@ -13,7 +13,11 @@ from tkinter import filedialog, messagebox, scrolledtext, ttk
 from typing import Optional
 
 from ..constants import APP_NAME, APP_VERSION, GUIDefaults
-from ..core.analysis import AnalysisParameters, MolecularInteractionAnalyzer
+from ..core.analysis import (
+    AnalysisParameters,
+    MolecularInteractionAnalyzer,
+    NPMolecularInteractionAnalyzer,
+)
 from .parameter_panel import ParameterPanel
 from .results_panel import ResultsPanel
 
@@ -46,6 +50,9 @@ class MainWindow:
         self.analyzer: Optional[MolecularInteractionAnalyzer] = None
         self.current_file: Optional[str] = None
         self.analysis_thread: Optional[threading.Thread] = None
+        self.use_numpy_analyzer: bool = (
+            True  # Default to NumPy analyzer for better performance
+        )
 
         # Create UI components
         self._create_menu()
@@ -109,6 +116,17 @@ class MainWindow:
         settings_menu.add_command(
             label="Reset Parameters", command=self._reset_parameters
         )
+        settings_menu.add_separator()
+
+        # Analysis engine selection
+        self.numpy_analyzer_var = tk.BooleanVar(
+            master=self.root, value=self.use_numpy_analyzer
+        )
+        settings_menu.add_checkbutton(
+            label="Use NumPy Analyzer (High Performance)",
+            variable=self.numpy_analyzer_var,
+            command=self._toggle_analyzer_type,
+        )
 
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -126,8 +144,8 @@ class MainWindow:
     def _create_toolbar(self) -> None:
         """Create the toolbar.
 
-        Creates a toolbar with only a progress bar for showing operation status.
-        The progress bar is hidden by default and only shown during operations.
+        Creates a toolbar with progress bar and performance indicator.
+        The toolbar is hidden by default and only shown during operations.
 
         :returns: None
         :rtype: None
@@ -135,8 +153,19 @@ class MainWindow:
         self.toolbar = ttk.Frame(self.root)
         # Don't pack the toolbar initially - it will be shown when needed
 
+        # Performance indicator
+        self.performance_label = ttk.Label(
+            self.toolbar,
+            text=(
+                "⚡ NumPy High-Performance Mode"
+                if self.use_numpy_analyzer
+                else "🐌 Standard Mode"
+            ),
+            foreground="green" if self.use_numpy_analyzer else "orange",
+        )
+
         # Progress bar
-        self.progress_var = tk.DoubleVar()
+        self.progress_var = tk.DoubleVar(master=self.root)
         self.progress_bar = ttk.Progressbar(
             self.toolbar, variable=self.progress_var, mode="indeterminate"
         )
@@ -194,7 +223,7 @@ class MainWindow:
         :returns: None
         :rtype: None
         """
-        self.status_var = tk.StringVar()
+        self.status_var = tk.StringVar(master=self.root)
         self.status_var.set("Ready")
 
         status_frame = ttk.Frame(self.root)
@@ -327,6 +356,7 @@ class MainWindow:
         # Show toolbar and progress bar
         if not self.toolbar.winfo_ismapped():
             self.toolbar.pack(fill=tk.X, padx=5, pady=2)
+        self.performance_label.pack(side=tk.LEFT, padx=5)
         self.progress_bar.pack(fill=tk.BOTH, padx=5, expand=True)
         self.progress_bar.config(mode="indeterminate")
         self.progress_bar.start(GUIDefaults.PROGRESS_BAR_INTERVAL)
@@ -344,8 +374,18 @@ class MainWindow:
         :rtype: None
         """
         try:
-            # Create analyzer
-            self.analyzer = MolecularInteractionAnalyzer(params)
+            # Create analyzer based on user preference
+            if self.use_numpy_analyzer:
+                self.analyzer = NPMolecularInteractionAnalyzer(params)
+                analyzer_type = "NumPy-optimized"
+            else:
+                self.analyzer = MolecularInteractionAnalyzer(params)
+                analyzer_type = "Standard"
+
+            # Update status to show analyzer type
+            self.root.after(
+                0, lambda: self.status_var.set(f"Running {analyzer_type} analysis...")
+            )
 
             # Run analysis
             success = self.analyzer.analyze_file(self.current_file)
@@ -371,8 +411,9 @@ class MainWindow:
         self.progress_bar.stop()
         self.progress_bar.config(mode="determinate")
         self.progress_var.set(0)
-        # Hide progress bar and toolbar
+        # Hide progress bar, performance label, and toolbar
         self.progress_bar.pack_forget()
+        self.performance_label.pack_forget()
         self.toolbar.pack_forget()
         self.analysis_menu.entryconfig(self.run_analysis_index, state=tk.NORMAL)
 
@@ -381,12 +422,16 @@ class MainWindow:
 
         # Update status
         stats = self.analyzer.get_statistics()
+        analyzer_type = "NumPy-optimized" if self.use_numpy_analyzer else "Standard"
         self.status_var.set(
-            f"Analysis complete - H-bonds: {stats['hydrogen_bonds']}, "
+            f"{analyzer_type} analysis complete - H-bonds: {stats['hydrogen_bonds']}, "
             f"X-bonds: {stats['halogen_bonds']}, π-interactions: {stats['pi_interactions']}"
         )
 
-        messagebox.showinfo("Success", "Analysis completed successfully!")
+        performance_note = " (High-performance mode)" if self.use_numpy_analyzer else ""
+        messagebox.showinfo(
+            "Success", f"Analysis completed successfully!{performance_note}"
+        )
 
     def _analysis_error(self, error_msg: str) -> None:
         """Handle analysis error.
@@ -402,8 +447,9 @@ class MainWindow:
         self.progress_bar.stop()
         self.progress_bar.config(mode="determinate")
         self.progress_var.set(0)
-        # Hide progress bar and toolbar
+        # Hide progress bar, performance label, and toolbar
         self.progress_bar.pack_forget()
+        self.performance_label.pack_forget()
         self.toolbar.pack_forget()
         self.analysis_menu.entryconfig(self.run_analysis_index, state=tk.NORMAL)
         self.status_var.set("Analysis failed")
@@ -469,7 +515,11 @@ class MainWindow:
             f.write("=" * 50 + "\n\n")
 
             if self.current_file:
-                f.write(f"Input file: {self.current_file}\n\n")
+                f.write(f"Input file: {self.current_file}\n")
+
+            analyzer_type = "NumPy-optimized" if self.use_numpy_analyzer else "Standard"
+            f.write(f"Analysis engine: {analyzer_type}\n")
+            f.write(f"HBAT version: {APP_VERSION}\n\n")
 
             # Write summary
             stats = self.analyzer.get_statistics()
@@ -549,6 +599,43 @@ class MainWindow:
 
         self.status_var.set("Parameters reset to defaults")
 
+    def _toggle_analyzer_type(self) -> None:
+        """Toggle between standard and NumPy analyzers.
+
+        Updates the analyzer type preference and provides user feedback
+        about the performance implications of their choice.
+
+        :returns: None
+        :rtype: None
+        """
+        self.use_numpy_analyzer = self.numpy_analyzer_var.get()
+
+        if self.use_numpy_analyzer:
+            analyzer_name = "NumPy-optimized analyzer"
+            performance_note = "High performance mode enabled - significantly faster for large structures."
+        else:
+            analyzer_name = "Standard analyzer"
+            performance_note = "Standard mode - compatible with all systems but slower for large structures."
+
+        # Update performance indicator
+        self.performance_label.config(
+            text=(
+                "⚡ NumPy High-Performance Mode"
+                if self.use_numpy_analyzer
+                else "🐌 Standard Mode"
+            ),
+            foreground="green" if self.use_numpy_analyzer else "orange",
+        )
+
+        self.status_var.set(f"Switched to {analyzer_name}")
+
+        # Show informational message
+        messagebox.showinfo(
+            "Analyzer Changed",
+            f"Switched to {analyzer_name}.\n\n{performance_note}\n\n"
+            "The change will take effect on the next analysis run.",
+        )
+
     def _show_about(self) -> None:
         """Show about dialog.
 
@@ -560,6 +647,15 @@ class MainWindow:
         """
         about_text = f"""
 {APP_NAME} v{APP_VERSION}
+
+A high-performance tool for analyzing molecular interactions in protein structures.
+
+Features:
+• Hydrogen bond detection
+• Halogen bond analysis  
+• π-interaction identification
+• NumPy-optimized engine for enhanced performance
+• Comprehensive visualization and export options
 
 Author: Abhishek Tiwari
         """

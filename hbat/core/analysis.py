@@ -23,6 +23,7 @@ from .interactions import (
     MolecularInteraction,
     PiInteraction,
 )
+from .np_analyzer import NPMolecularInteractionAnalyzer
 
 # Backward compatibility alias
 HBondAnalyzer = MolecularInteractionAnalyzer
@@ -30,6 +31,7 @@ HBondAnalyzer = MolecularInteractionAnalyzer
 # Re-export all classes for backward compatibility
 __all__ = [
     "MolecularInteractionAnalyzer",
+    "NPMolecularInteractionAnalyzer",
     "HBondAnalyzer",  # Backward compatibility
     "AnalysisParameters",
     "MolecularInteraction",

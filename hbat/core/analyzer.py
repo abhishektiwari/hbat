@@ -223,7 +223,9 @@ class MolecularInteractionAnalyzer:
             for aromatic_residue in aromatic_residues:
                 # Check for π interaction
                 # (includes validation for bonding and different residues)
-                pi = self._check_pi_interaction(carbon, interaction_atom, aromatic_residue)
+                pi = self._check_pi_interaction(
+                    carbon, interaction_atom, aromatic_residue
+                )
                 if pi is not None:
                     self.pi_interactions.append(pi)
 
@@ -517,13 +519,13 @@ class MolecularInteractionAnalyzer:
          2. Acceptor must be a valid halogen bond acceptor element
          3. Distance criteria (X...A)
          4. Angular criteria (C-X...A angle)
-        
+
         :param halogen: The halogen atom (F, Cl, Br, I)
         :type halogen: Atom
         :param acceptor: The acceptor atom (F, Cl, Br, I)
         :type acceptor: Atom
         :returns: HalogenBond if valid, None otherwise
-        :rtype: Optional[HalogenBond]  
+        :rtype: Optional[HalogenBond]
         """
         # Distance criteria
         x_a_distance = halogen.coords.distance_to(acceptor.coords)
