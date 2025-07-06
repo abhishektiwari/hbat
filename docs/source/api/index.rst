@@ -3,7 +3,7 @@ API Reference
 
 This section contains the complete API documentation for HBAT.
 
-Core Modules
+Core Package
 ------------
 
 .. toctree::

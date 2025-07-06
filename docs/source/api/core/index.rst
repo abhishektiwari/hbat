@@ -3,7 +3,7 @@ Module Overview
 
 The core package is organized into specialized modules:
 
-- **np_analyzer**: NumPy-optimized molecular interaction analysis engine
+- **np_analyzer**: Molecular interaction analysis engine
 - **interactions**: Data structures for molecular interactions  
 - **structure**: Molecular structure classes (Atom, Bond, Residue)
 - **pdb_parser**: PDB file parsing and structure handling
@@ -23,7 +23,7 @@ The core package is organized into specialized modules:
 Main Analysis Engine
 --------------------
 
-NumPy Molecular Interaction Analyzer
+Molecular Interaction Analyzer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: hbat.core.np_analyzer

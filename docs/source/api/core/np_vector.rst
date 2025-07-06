@@ -1,5 +1,5 @@
-np_vector module
-================
+Vecctor Support
+===============
 
 .. automodule:: hbat.core.np_vector
    :members:

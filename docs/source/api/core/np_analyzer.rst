@@ -1,5 +1,5 @@
-np_analyzer module
-==================
+Molecular Interaction Analyzer
+==============================
 
 .. automodule:: hbat.core.np_analyzer
    :members:

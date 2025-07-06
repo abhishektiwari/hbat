@@ -1,5 +1,5 @@
-PDB Structure Enhancement
-=========================
+PDB Structure Fixer
+===================
 
 Comprehensive PDB structure fixing and enhancement utilities for preparing molecular structures for analysis.
 

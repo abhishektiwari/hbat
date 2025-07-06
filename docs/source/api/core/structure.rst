@@ -1,5 +1,5 @@
-structure
-=========
+Core Data Structures
+====================
 
 .. module:: hbat.core.structure
 

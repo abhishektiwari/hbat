@@ -109,6 +109,7 @@ clean:
 	rm -rf docs/build/
 	find . -name "*.pyc" -delete
 	find . -name "*.pyo" -delete
+	rm -rf conda-build-output/
 
 # Documentation
 docs:
