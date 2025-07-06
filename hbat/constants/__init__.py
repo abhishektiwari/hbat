@@ -50,6 +50,18 @@ from .pdb_constants import (
     WATER_MOLECULES,
 )
 
+# Import residue bond information
+from .residue_bonds import (
+    AROMATIC_RESIDUES_COUNT,
+    RESIDUE_BONDS,
+    RESIDUES_WITH_BOND_DATA,
+    TOTAL_BONDS_COUNT,
+    TOTAL_RESIDUES_WITH_BONDS,
+    get_residue_bond_count,
+    get_residue_bonds,
+    has_aromatic_bonds,
+)
+
 __all__ = [
     # Main constants
     "APP_VERSION",
@@ -87,4 +99,13 @@ __all__ = [
     "PDB_ATOM_TO_ELEMENT",
     "get_element_from_pdb_atom",
     "pdb_atom_to_element",
+    # Residue bond constants
+    "RESIDUE_BONDS",
+    "RESIDUES_WITH_BOND_DATA",
+    "TOTAL_RESIDUES_WITH_BONDS",
+    "AROMATIC_RESIDUES_COUNT",
+    "TOTAL_BONDS_COUNT",
+    "get_residue_bonds",
+    "get_residue_bond_count",
+    "has_aromatic_bonds",
 ]

@@ -20,6 +20,12 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "integration: marks tests that require sample files"
     )
+    config.addinivalue_line(
+        "markers", "ccd: marks tests that require CCD data files"
+    )
+    config.addinivalue_line(
+        "markers", "performance: marks performance benchmark tests"
+    )
 
 def find_sample_pdb_file():
     """Find the sample PDB file regardless of working directory."""

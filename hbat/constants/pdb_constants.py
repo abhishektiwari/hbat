@@ -234,17 +234,7 @@ Used for nucleic acid chain identification and DNA structure analysis.
 The 'D' prefix distinguishes DNA nucleotides from RNA nucleotides.
 """
 
-RESIDUES: List[str] = PROTEIN_RESIDUES + DNA_RESIDUES + RNA_RESIDUES
-"""List[str]: Combined list of all standard residue codes for proteins, DNA, and RNA.
 
-This list is the combination of PROTEIN_RESIDUES, DNA_RESIDUES, and RNA_RESIDUES,
-providing a comprehensive set of standard residues found in biomolecular structures.
-
-Used for:
-    - General residue type validation
-    - Distinguishing standard residues from heterogens
-    - Biomolecule type identification
-"""
 
 
 # Pre-computed mapping for common PDB atoms (for performance)
@@ -540,6 +530,18 @@ Used for:
     - Solvent exclusion during analysis
     - Water-mediated interaction detection
     - Hydration shell analysis
+"""
+
+RESIDUES: List[str] = PROTEIN_RESIDUES + DNA_RESIDUES + RNA_RESIDUES + WATER_MOLECULES
+"""List[str]: Combined list of all standard residue codes for proteins, DNA, and RNA.
+
+This list is the combination of PROTEIN_RESIDUES, DNA_RESIDUES, WATER_MOLECULES, and RNA_RESIDUES,
+providing a comprehensive set of standard residues found in biomolecular structures.
+
+Used for:
+    - General residue type validation
+    - Distinguishing standard residues from heterogens
+    - Biomolecule type identification
 """
 
 RESIDUES_WITH_AROMATIC_RINGS: List[str] = [

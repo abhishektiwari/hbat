@@ -40,6 +40,14 @@ class MainWindow:
         :returns: None
         :rtype: None
         """
+        # Initialize HBAT environment first
+        try:
+            from ..core.app_config import initialize_hbat_environment, get_hbat_config
+            initialize_hbat_environment(verbose=True)
+            self.hbat_config = get_hbat_config()
+        except ImportError:
+            self.hbat_config = None
+        
         self.root = tk.Tk()
         self.root.title(f"{APP_NAME} v{APP_VERSION}")
         self.root.geometry(f"{GUIDefaults.WINDOW_WIDTH}x{GUIDefaults.WINDOW_HEIGHT}")
@@ -286,6 +294,10 @@ class MainWindow:
 
             # Highlight ATOM and HETATM lines
             self._highlight_pdb_records()
+            
+            # Add to recent files if config is available
+            if self.hbat_config:
+                self.hbat_config.add_recent_file(filename)
 
         except Exception as e:
             raise Exception(f"Cannot read file: {e}")

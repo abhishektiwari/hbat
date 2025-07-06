@@ -918,8 +918,29 @@ def main() -> int:
     :returns: Exit code (0 for success, non-zero for failure)
     :rtype: int
     """
+    # Initialize HBAT environment first
+    try:
+        from ..core.app_config import initialize_hbat_environment
+        initialize_hbat_environment(verbose=False)  # We'll handle verbosity based on args
+    except ImportError:
+        pass  # Continue without app config if import fails
+    
     parser = create_parser()
     args = parser.parse_args()
+    
+    # Show HBAT environment info if verbose
+    if hasattr(args, 'verbose') and args.verbose:
+        try:
+            from ..core.app_config import get_hbat_config
+            config = get_hbat_config()
+            info = config.get_info()
+            print(f"📁 HBAT data directory: {info['hbat_directory']}")
+            if info['ccd_files_present']:
+                print(f"✅ CCD data available")
+            else:
+                print(f"⚠️  CCD data will be downloaded as needed")
+        except ImportError:
+            pass
 
     # Handle preset listing first
     if hasattr(args, "list_presets") and args.list_presets:
