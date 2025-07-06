@@ -266,11 +266,13 @@ For distance-based bond detection, HBAT uses a spatial grid algorithm:
 8. Vector Mathematics
 ---------------------
 
-The ``Vec3D`` class (``hbat/core/vector.py``) provides:
+The ``NPVec3D`` class (``hbat/core/np_vector.py``) provides NumPy-based vector operations:
 
-- **3D coordinates**: ``Vec3D(x, y, z)``
-- **Distance calculation**: ``√[(x₂-x₁)² + (y₂-y₁)² + (z₂-z₁)²]``
-- **Angle calculation**: ``arccos(dot_product / (mag1 × mag2))``
+- **3D coordinates**: ``NPVec3D(x, y, z)`` or ``NPVec3D(np.array([x, y, z]))``
+- **Batch operations**: Support for multiple vectors simultaneously ``NPVec3D(np.array([[x1,y1,z1], [x2,y2,z2]]))``
+- **Distance calculation**: ``√[(x₂-x₁)² + (y₂-y₁)² + (z₂-z₁)²]`` with vectorized operations
+- **Angle calculation**: ``arccos(dot_product / (mag1 × mag2))`` using NumPy for efficiency
+- **Performance**: Leverages NumPy's optimized C implementations for mathematical operations
 
 9. Enhanced Analysis Flow
 ------------------------
