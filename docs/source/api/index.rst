@@ -11,6 +11,14 @@ Core Package
    
    core/index
 
+CCD Package
+-----------
+
+.. toctree::
+   :maxdepth: 2
+   
+   ccd/index
+
 Command Line Interface
 ----------------------
 
