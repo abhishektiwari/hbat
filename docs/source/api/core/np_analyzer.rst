@@ -63,6 +63,12 @@ Getting Summary Statistics::
     
     print(f"Average H-bond distance: {summary['hydrogen_bonds']['average_distance']:.2f} Å")
     print(f"Average H-bond angle: {summary['hydrogen_bonds']['average_angle']:.1f}°")
+    
+    # Check bond detection method breakdown
+    bond_stats = summary['bond_detection']
+    print(f"Total bonds detected: {bond_stats['total_bonds']}")
+    for method, stats in bond_stats['breakdown'].items():
+        print(f"  {method}: {stats['count']} ({stats['percentage']}%)")
 
 Migration from MolecularInteractionAnalyzer
 --------------------------------------------

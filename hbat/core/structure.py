@@ -14,6 +14,7 @@ from ..constants import (
     RESIDUES_WITH_AROMATIC_RINGS,
     RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS,
     AtomicData,
+    BondDetectionMethods,
 )
 from .np_vector import NPVec3D
 
@@ -32,6 +33,8 @@ class Bond:
     :type bond_type: str
     :param distance: Distance between bonded atoms in Angstroms
     :type distance: Optional[float]
+    :param detection_method: Method used to detect this bond
+    :type detection_method: str
     """
 
     def __init__(
@@ -40,6 +43,7 @@ class Bond:
         atom2_serial: int,
         bond_type: str = "covalent",
         distance: Optional[float] = None,
+        detection_method: str = BondDetectionMethods.DISTANCE_BASED,
     ) -> None:
         """Initialize a Bond object.
 
@@ -51,6 +55,8 @@ class Bond:
         :type bond_type: str
         :param distance: Distance between bonded atoms in Angstroms
         :type distance: Optional[float]
+        :param detection_method: Method used to detect this bond
+        :type detection_method: str
         """
         # Ensure atom serials are ordered consistently
         if atom1_serial > atom2_serial:
@@ -60,6 +66,7 @@ class Bond:
         self.atom2_serial = atom2_serial
         self.bond_type = bond_type
         self.distance = distance
+        self.detection_method = detection_method
 
     def involves_atom(self, serial: int) -> bool:
         """Check if bond involves the specified atom.
@@ -95,6 +102,7 @@ class Bond:
         yield ("atom2_serial", self.atom2_serial)
         yield ("bond_type", self.bond_type)
         yield ("distance", self.distance)
+        yield ("detection_method", self.detection_method)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert bond to dictionary.
@@ -111,11 +119,17 @@ class Bond:
         :returns: List of field names
         :rtype: List[str]
         """
-        return ["atom1_serial", "atom2_serial", "bond_type", "distance"]
+        return [
+            "atom1_serial",
+            "atom2_serial",
+            "bond_type",
+            "distance",
+            "detection_method",
+        ]
 
     def __repr__(self) -> str:
         """String representation of the bond."""
-        return f"Bond(atom1_serial={self.atom1_serial}, atom2_serial={self.atom2_serial}, bond_type='{self.bond_type}', distance={self.distance})"
+        return f"Bond(atom1_serial={self.atom1_serial}, atom2_serial={self.atom2_serial}, bond_type='{self.bond_type}', distance={self.distance}, detection_method='{self.detection_method}')"
 
     def __eq__(self, other: object) -> bool:
         """Check equality with another Bond."""
@@ -126,6 +140,7 @@ class Bond:
             and self.atom2_serial == other.atom2_serial
             and self.bond_type == other.bond_type
             and self.distance == other.distance
+            and self.detection_method == other.detection_method
         )
 
 

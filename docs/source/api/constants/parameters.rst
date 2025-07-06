@@ -53,3 +53,11 @@ Analysis Modes
    :members:
    :undoc-members:
    :show-inheritance:
+
+Bond Detection Methods
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: hbat.constants.parameters.BondDetectionMethods
+   :members:
+   :undoc-members:
+   :show-inheritance:

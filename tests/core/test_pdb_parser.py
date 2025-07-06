@@ -7,6 +7,7 @@ from hbat.core.pdb_parser import PDBParser, _safe_int_convert, _safe_float_conve
 from hbat.core.structure import Atom, Residue, Bond
 from hbat.core.np_vector import NPVec3D
 from hbat.constants.parameters import ParametersDefault
+from hbat.constants import BondDetectionMethods
 from tests.conftest import ExpectedResults
 
 
@@ -152,6 +153,7 @@ class TestPDBParser:
         assert hasattr(bond, 'atom2_serial'), "Bond should have atom2_serial"
         assert hasattr(bond, 'bond_type'), "Bond should have bond_type"
         assert hasattr(bond, 'distance'), "Bond should have distance"
+        assert hasattr(bond, 'detection_method'), "Bond should have detection_method"
         
         # Bond distance should be reasonable
         if bond.distance is not None:
@@ -177,6 +179,27 @@ class TestPDBParser:
         # If atom has bonds, bonded_atoms should not be empty
         if len(atom_bonds) > 0:
             assert len(bonded_atoms) > 0, "If atom has bonds, should have bonded atoms"
+    
+    def test_bond_detection_statistics(self, sample_pdb_file):
+        """Test bond detection statistics reporting."""
+        parser = PDBParser()
+        parser.parse_file(sample_pdb_file)
+        
+        stats = parser.get_bond_detection_statistics()
+        
+        # Should have statistics for all detection methods
+        assert BondDetectionMethods.CONECT_RECORDS in stats
+        assert BondDetectionMethods.RESIDUE_LOOKUP in stats
+        assert BondDetectionMethods.DISTANCE_BASED in stats
+        
+        # All counts should be non-negative
+        for method, count in stats.items():
+            assert count >= 0, f"Detection method {method} should have non-negative count"
+        
+        # Total bonds should match sum of detection method counts
+        total_detected = sum(stats.values())
+        total_bonds = len(parser.get_bonds())
+        assert total_detected == total_bonds, f"Sum of detection methods ({total_detected}) should equal total bonds ({total_bonds})"
     
     def test_error_handling(self):
         """Test error handling for invalid files."""
@@ -346,6 +369,32 @@ class TestBond:
         assert bond.atom2_serial == 2
         assert bond.bond_type == "covalent"
         assert bond.distance == 1.5
+        assert bond.detection_method == BondDetectionMethods.DISTANCE_BASED
+    
+    def test_bond_detection_method_assignment(self):
+        """Test that bonds are assigned the correct detection method."""
+        # Test explicit creation with detection method
+        bond_conect = Bond(
+            atom1_serial=1,
+            atom2_serial=2,
+            bond_type="explicit",
+            distance=1.5,
+            detection_method=BondDetectionMethods.CONECT_RECORDS
+        )
+        assert bond_conect.detection_method == BondDetectionMethods.CONECT_RECORDS
+        
+        bond_residue = Bond(
+            atom1_serial=3,
+            atom2_serial=4,
+            bond_type="covalent",
+            distance=1.2,
+            detection_method=BondDetectionMethods.RESIDUE_LOOKUP
+        )
+        assert bond_residue.detection_method == BondDetectionMethods.RESIDUE_LOOKUP
+        
+        # Test default detection method
+        bond_default = Bond(atom1_serial=5, atom2_serial=6)
+        assert bond_default.detection_method == BondDetectionMethods.DISTANCE_BASED
     
     def test_bond_serial_ordering(self):
         """Test that bond serials are ordered consistently."""
@@ -384,6 +433,7 @@ class TestBond:
         assert "1" in string_repr
         assert "2" in string_repr
         assert "covalent" in string_repr
+        assert "distance_based" in string_repr
 
 
 class TestNaNHandling:

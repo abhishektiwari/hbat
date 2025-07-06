@@ -78,6 +78,7 @@ class NPMolecularInteractionAnalyzer:
         self._analysis_start_time = time.time()
         self._pdb_fixing_info = {}
 
+        # Should we move this after the PDB fixing?
         if not self.parser.parse_file(pdb_file):
             return False
 
@@ -145,7 +146,7 @@ class NPMolecularInteractionAnalyzer:
         self.pi_interactions = []
         self.cooperativity_chains = []
 
-        # Analyze interactions using NumPy
+        # Analyze interactions
         self._find_hydrogen_bonds_vectorized()
         self._find_halogen_bonds_vectorized()
         self._find_pi_interactions_vectorized()

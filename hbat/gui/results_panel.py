@@ -513,6 +513,23 @@ class ResultsPanel:
             tk.END, f"  Total Interactions: {summary['total_interactions']}\n\n"
         )
 
+        # Bond detection statistics
+        if "bond_detection" in summary:
+            bond_stats = summary["bond_detection"]
+            self.summary_text.insert(tk.END, "Bond Detection:\n", "subheader")
+            self.summary_text.insert(
+                tk.END, f"  Total Bonds Detected: {bond_stats['total_bonds']}\n"
+            )
+            if bond_stats["breakdown"]:
+                self.summary_text.insert(tk.END, "  Detection Methods:\n")
+                for method, stats in bond_stats["breakdown"].items():
+                    method_name = method.replace("_", " ").title()
+                    self.summary_text.insert(
+                        tk.END,
+                        f"    {method_name}: {stats['count']} ({stats['percentage']}%)\n",
+                    )
+            self.summary_text.insert(tk.END, "\n")
+
         # Detailed interaction statistics
         if summary["hydrogen_bonds"]["count"] > 0:
             self.summary_text.insert(tk.END, "Hydrogen Bond Statistics:\n", "subheader")

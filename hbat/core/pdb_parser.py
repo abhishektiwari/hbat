@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from ..constants import AtomicData
+from ..constants import AtomicData, BondDetectionMethods, get_residue_bonds
 from ..constants.parameters import ParametersDefault
 from ..utilities import pdb_atom_to_element
 from .np_vector import NPVec3D
@@ -135,13 +135,15 @@ class PDBParser:
             # Process CONECT records if available
             if "CONECT" in structure and len(structure["CONECT"]) > 0:
                 self._parse_conect_records(structure["CONECT"])
+                # Build adjacency map after CONECT processing
+                # self._build_bond_adjacency_map()
 
-            # Detect bonds based on distances if no CONECT records
+            # Detect bonds using three-step approach if no CONECT records
             if not self.bonds:
                 import time
 
                 bond_start = time.time()
-                self._detect_covalent_bonds()
+                self._detect_bonds_three_step()
                 bond_time = time.time() - bond_start
                 print(
                     f"Bond detection completed in {bond_time:.3f} seconds ({len(self.bonds)} bonds found)"
@@ -200,13 +202,15 @@ class PDBParser:
             # Process CONECT records if available
             if "CONECT" in structure and len(structure["CONECT"]) > 0:
                 self._parse_conect_records(structure["CONECT"])
+                # Build adjacency map after CONECT processing
+                # self._build_bond_adjacency_map()
 
-            # Detect bonds based on distances if no CONECT records
+            # Detect bonds using three-step approach if no CONECT records
             if not self.bonds:
                 import time
 
                 bond_start = time.time()
-                self._detect_covalent_bonds()
+                self._detect_bonds_three_step()
                 bond_time = time.time() - bond_start
                 print(
                     f"Bond detection completed in {bond_time:.3f} seconds ({len(self.bonds)} bonds found)"
@@ -425,14 +429,115 @@ class PDBParser:
                             atom2_serial=bonded_id,
                             bond_type="explicit",
                             distance=distance,
+                            detection_method=BondDetectionMethods.CONECT_RECORDS,
                         )
 
                         # Avoid duplicate bonds
                         if not self._bond_exists(bond):
                             self.bonds.append(bond)
+                            self._build_bond_adjacency_map()
 
         except Exception as e:
             print(f"Error parsing CONECT records: {e}")
+
+    def _detect_bonds_three_step(self) -> None:
+        """Detect bonds using three-step approach: residue lookup, then distance-based."""
+        if len(self.atoms) < 2:
+            return
+
+        # Step 1: Try residue-based bond detection
+        residue_bonds_found = self._detect_bonds_from_residue_lookup()
+
+        # Step 2: If residue lookup didn't find enough bonds, try distance-based detection
+        # within same residue to improve performance
+        if (
+            residue_bonds_found < len(self.atoms) / 4
+        ):  # Heuristic: expect ~25% of atoms to be in bonds
+            self._detect_bonds_within_residues()
+
+        # Step 3: If still not enough bonds, use full distance-based detection
+        if len(self.bonds) < len(self.atoms) / 4:
+            self._detect_bonds_with_spatial_grid()
+
+        # Build bond adjacency map for fast lookups
+        self._build_bond_adjacency_map()
+
+    def _detect_bonds_from_residue_lookup(self) -> int:
+        """Detect bonds using residue bond information from CCD data.
+
+        Returns the number of bonds found using this method.
+        """
+        bonds_found = 0
+
+        for residue in self.get_residue_list():
+            # Get bond information for this residue type
+            residue_bonds = get_residue_bonds(residue.name)
+            if not residue_bonds:
+                continue
+
+            # Create atom name to atom mapping for this residue
+            atom_map = {}
+            for atom in residue.atoms:
+                atom_map[atom.name.strip()] = atom
+
+            # Process bonds from CCD data
+            for bond_info in residue_bonds:
+                atom1_name = bond_info.get("atom1", "").strip()
+                atom2_name = bond_info.get("atom2", "").strip()
+
+                # Check if both atoms exist in this residue
+                if atom1_name in atom_map and atom2_name in atom_map:
+                    atom1 = atom_map[atom1_name]
+                    atom2 = atom_map[atom2_name]
+
+                    # Calculate distance
+                    distance = atom1.coords.distance_to(atom2.coords)
+
+                    # Create bond
+                    bond = Bond(
+                        atom1_serial=atom1.serial,
+                        atom2_serial=atom2.serial,
+                        bond_type="covalent",
+                        distance=distance,
+                        detection_method=BondDetectionMethods.RESIDUE_LOOKUP,
+                    )
+
+                    # Avoid duplicate bonds
+                    if not self._bond_exists(bond):
+                        self.bonds.append(bond)
+                        bonds_found += 1
+
+        return bonds_found
+
+    def _detect_bonds_within_residues(self) -> None:
+        """Detect bonds within individual residues using distance-based approach."""
+        for residue in self.get_residue_list():
+            atoms = residue.atoms
+            if len(atoms) < 2:
+                continue
+
+            # Check bonds only between atoms in the same residue
+            for i in range(len(atoms)):
+                for j in range(i + 1, len(atoms)):
+                    atom1, atom2 = atoms[i], atoms[j]
+
+                    # Fast distance check
+                    distance = atom1.coords.distance_to(atom2.coords)
+                    if distance > ParametersDefault.MAX_BOND_DISTANCE:
+                        continue
+
+                    if self._are_atoms_bonded_with_distance(atom1, atom2, distance):
+                        bond = Bond(
+                            atom1_serial=atom1.serial,
+                            atom2_serial=atom2.serial,
+                            bond_type="covalent",
+                            distance=distance,
+                            detection_method=BondDetectionMethods.DISTANCE_BASED,
+                        )
+
+                        # Avoid duplicate bonds
+                        if not self._bond_exists(bond):
+                            self.bonds.append(bond)
 
     def _detect_covalent_bonds(self) -> None:
         """Detect covalent bonds using spatial grid optimization."""
@@ -497,6 +602,7 @@ class PDBParser:
                 atom2_serial=atom2.serial,
                 bond_type="covalent",
                 distance=distance,
+                detection_method=BondDetectionMethods.DISTANCE_BASED,
             )
             self.bonds.append(bond)
 
@@ -605,3 +711,21 @@ class PDBParser:
         :rtype: List[int]
         """
         return self._bond_adjacency.get(serial, [])
+
+    def get_bond_detection_statistics(self) -> Dict[str, int]:
+        """Get statistics about bond detection methods used.
+
+        Returns a dictionary with counts of bonds detected by each method.
+        """
+        stats = {
+            BondDetectionMethods.CONECT_RECORDS: 0,
+            BondDetectionMethods.RESIDUE_LOOKUP: 0,
+            BondDetectionMethods.DISTANCE_BASED: 0,
+        }
+
+        for bond in self.bonds:
+            method = bond.detection_method
+            if method in stats:
+                stats[method] += 1
+
+        return stats

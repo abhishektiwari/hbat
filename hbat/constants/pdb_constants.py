@@ -235,8 +235,6 @@ The 'D' prefix distinguishes DNA nucleotides from RNA nucleotides.
 """
 
 
-
-
 # Pre-computed mapping for common PDB atoms (for performance)
 _COMMON_PDB_ATOMS: Dict[str, str] = {
     # Protein backbone

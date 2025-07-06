@@ -297,3 +297,14 @@ class AnalysisModes:
     LOCAL = "local"
 
     ALL_MODES = [COMPLETE, LOCAL]
+
+
+# Bond detection method constants
+class BondDetectionMethods:
+    """Available bond detection methods."""
+
+    CONECT_RECORDS = "conect_records"
+    RESIDUE_LOOKUP = "residue_lookup"
+    DISTANCE_BASED = "distance_based"
+
+    ALL_METHODS = [CONECT_RECORDS, RESIDUE_LOOKUP, DISTANCE_BASED]

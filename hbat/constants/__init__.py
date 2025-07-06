@@ -19,6 +19,7 @@ from .misc import (
 from .parameters import (
     AnalysisModes,
     AnalysisParameters,
+    BondDetectionMethods,
     ParameterRanges,
     ParametersDefault,
     PDBFixingModes,
@@ -71,6 +72,7 @@ __all__ = [
     "VectorDefaults",
     "FileFormats",
     "AnalysisModes",
+    "BondDetectionMethods",
     "PDBFixingModes",
     "ParameterRanges",
     # Parameters

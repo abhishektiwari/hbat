@@ -205,6 +205,61 @@ class TestNPAnalyzer:
         assert summary['halogen_bonds']['count'] == len(analyzer.halogen_bonds)
         assert summary['pi_interactions']['count'] == len(analyzer.pi_interactions)
         assert summary['cooperativity_chains']['count'] == len(analyzer.cooperativity_chains)
+        
+        # Check bond detection statistics
+        assert 'bond_detection' in summary, "Summary should include bond detection statistics"
+        bond_stats = summary['bond_detection']
+        assert 'total_bonds' in bond_stats, "Bond stats should include total bonds"
+        assert 'methods' in bond_stats, "Bond stats should include methods breakdown"
+        assert 'breakdown' in bond_stats, "Bond stats should include percentage breakdown"
+        
+        # Verify bond detection method counts
+        methods = bond_stats['methods']
+        from hbat.constants import BondDetectionMethods
+        for method in BondDetectionMethods.ALL_METHODS:
+            assert method in methods, f"Bond stats should include {method} method"
+            assert isinstance(methods[method], int), f"{method} count should be integer"
+            assert methods[method] >= 0, f"{method} count should be non-negative"
+        
+        # Verify total matches sum of individual methods
+        total_from_methods = sum(methods.values())
+        assert bond_stats['total_bonds'] == total_from_methods, "Total bonds should equal sum of method counts"
+    
+    def test_bond_detection_breakdown(self, test_pdb_dir):
+        """Test bond detection method breakdown functionality."""
+        pdb_file = os.path.join(test_pdb_dir, "6RSA.pdb")
+        
+        if not os.path.exists(pdb_file):
+            pytest.skip(f"Test PDB file not found: {pdb_file}")
+        
+        params = AnalysisParameters()
+        analyzer = NPMolecularInteractionAnalyzer(params)
+        
+        success = analyzer.analyze_file(pdb_file)
+        assert success
+        
+        summary = analyzer.get_summary()
+        bond_stats = summary['bond_detection']
+        
+        # If bonds were detected, check breakdown percentages
+        if bond_stats['total_bonds'] > 0:
+            breakdown = bond_stats['breakdown']
+            
+            # Verify each method in breakdown has correct structure
+            for method, stats in breakdown.items():
+                assert 'count' in stats, f"Breakdown for {method} should include count"
+                assert 'percentage' in stats, f"Breakdown for {method} should include percentage"
+                assert isinstance(stats['count'], int), f"{method} count should be integer"
+                assert isinstance(stats['percentage'], (int, float)), f"{method} percentage should be numeric"
+                assert 0 <= stats['percentage'] <= 100, f"{method} percentage should be 0-100"
+            
+            # Verify percentages sum to approximately 100% (allowing for rounding)
+            total_percentage = sum(stats['percentage'] for stats in breakdown.values())
+            assert abs(total_percentage - 100.0) < 0.5, f"Percentages should sum to ~100%, got {total_percentage}"
+            
+            # Verify counts in breakdown match methods counts
+            for method, stats in breakdown.items():
+                assert stats['count'] == bond_stats['methods'][method], f"Breakdown count for {method} should match methods count"
     
     def test_analysis_modes(self, test_pdb_dir):
         """Test different analysis modes."""
