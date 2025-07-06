@@ -43,30 +43,73 @@ class AtomicData:
 
     # Van der Waals radii in Angstroms
     VDW_RADII = {
-        # Main biomolecule elements
-        "H": 1.09,  # Hydrogen
-        "D": 1.09,  # Deuterium (same as H)
-        "C": 1.70,  # Carbon
-        "N": 1.55,  # Nitrogen
-        "O": 1.52,  # Oxygen
-        "P": 1.80,  # Phosphorus (DNA/RNA backbone)
-        "S": 1.80,  # Sulfur (Cys, Met)
-        # Halogens
-        "F": 1.47,  # Fluorine
-        "CL": 1.75,  # Chlorine
-        "BR": 1.85,  # Bromine
-        "I": 1.98,  # Iodine
-        # Common metals in proteins
-        "NA": 2.27,  # Sodium
-        "MG": 1.73,  # Magnesium
-        "K": 2.75,  # Potassium
-        "CA": 2.31,  # Calcium
-        "MN": 2.05,  # Manganese
-        "FE": 2.04,  # Iron
-        "CO": 2.00,  # Cobalt
-        "NI": 1.63,  # Nickel
-        "CU": 1.40,  # Copper
-        "ZN": 1.39,  # Zinc
+        # Main group
+        # Row 1 (Period 1)
+        "H": 1.10,
+        "HE": 1.40,
+        # Row 2 (Period 2)
+        "LI": 1.81,
+        "BE": 1.53,
+        "B": 1.92,
+        "C": 1.70,
+        "N": 1.55,
+        "O": 1.52,
+        "F": 1.47,
+        "NE": 1.54,
+        # Row 3 (Period 3)
+        "NA": 2.27,
+        "MG": 1.73,
+        "AL": 1.84,
+        "SI": 2.10,
+        "P": 1.80,
+        "S": 1.80,
+        "CL": 1.75,
+        "AR": 1.88,
+        # Row 4 (Period 4)
+        "K": 2.75,
+        "CA": 2.31,
+        "GA": 1.87,
+        "GE": 2.11,
+        "AS": 1.85,
+        "SE": 1.90,
+        "BR": 1.83,
+        "KR": 2.02,
+        # Row 5 (Period 5)
+        "RB": 3.03,
+        "SR": 2.49,
+        "IN": 1.93,
+        "SN": 2.17,
+        "SB": 2.06,
+        "TE": 2.06,
+        "I": 1.98,
+        "XE": 2.16,
+        # Row 6 (Period 6)
+        "CS": 3.43,
+        "BA": 2.68,
+        "TL": 1.96,
+        "PB": 2.02,
+        "BI": 2.07,
+        "PO": 1.97,
+        "AT": 2.02,
+        "RN": 2.20,
+        # Row 7 (Period 7)
+        "FR": 3.48,
+        "RA": 2.83,
+        # Transition metals (relevant ones only)
+        # Row 1
+        "FE": 2.05,
+        "CU": 2.00,
+        "ZN": 2.10,
+        "MN": 2.05,
+        "CO": 2.00,
+        "NI": 2.00,
+        # Row 2
+        "MO": 2.10,
+        "RU": 2.05,
+        # Row 3
+        "W": 2.10,
+        "PT": 2.05,
+        "AU": 2.10,
     }
 
     # Electronegativity values (Pauling scale)
@@ -130,3 +173,6 @@ class AtomicData:
 
     # Hydrogen detection threshold
     MIN_HYDROGEN_RATIO = 0.25  # 25% of atoms must be hydrogen
+
+    # Metal elements
+    METAL_ELEMENTS = {"NA", "MG", "K", "CA", "MN", "FE", "CO", "NI", "CU", "ZN"}

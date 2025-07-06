@@ -24,9 +24,12 @@
 
 4. Requirements management
 
+    - Activate pyenv environment by running `pyenv activate hbat`
     - After installing new packages add them to requirements files
 
 5. For testing use following pdb files in example_pdb_files folder
     - 6RSA.pdb and 2IZF.pdb for general hydrogen bonds. 6RSA and 2IZF come with Hydrogen atoms so no PDB fixing required.
     - 4X21.pdb, 4LAZ.pdb and 4UB7.pdb for halogen bonds - they provide <5 Halogen bonds.
     - 1UBI.pdb and 1BHL.pdb lack hydrogen atoms. Add missing hydrogen atoms (i.e. PDB fixing) and then perform hydrogen bond analysis. Test both OpenBabel and PDB fixer for fixing missing hydrogen atoms.
+
+6. Store all debugging and experimental scripts and utilities in `experiments` folder

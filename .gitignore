@@ -223,3 +223,11 @@ conda-build-output/
 # Include requirements files
 !requirements.txt
 !requirements-dev.txt
+
+# Experiments
+experiments/*
+!experiments/.gitkeep
+
+# CCD
+ccd/
+!ccd/.gitkeep

@@ -26,7 +26,7 @@ class ParametersDefault:
     PI_ANGLE_CUTOFF = 90.0  # degrees - D-H...π angle cutoff
 
     # General analysis parameters
-    COVALENT_CUTOFF_FACTOR = 0.85  # Covalent bond detection factor (0.0-1.0)
+    COVALENT_CUTOFF_FACTOR = 0.6  # Covalent bond detection factor (0.0-1.0)
     ANALYSIS_MODE = "complete"  # Analysis mode: "complete" or "local"
 
     # Bond distance thresholds
@@ -34,7 +34,7 @@ class ParametersDefault:
     MIN_BOND_DISTANCE = 0.5  # Minimum realistic bond distance (Angstroms)
 
     # PDB structure fixing parameters
-    FIX_PDB_ENABLED = False  # Enable PDB structure fixing
+    FIX_PDB_ENABLED = True  # Enable PDB structure fixing
     FIX_PDB_METHOD = "openbabel"  # Method: "openbabel" or "pdbfixer"
 
     # Fixing operations (explicit control)

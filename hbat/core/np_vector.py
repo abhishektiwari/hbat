@@ -1,7 +1,7 @@
 """
 NumPy-based 3D vector mathematics for molecular analysis.
 
-This module provides NumPy-optimized vector operations for high-performance
+This module provides efficient vector operations for high-performance
 molecular geometry calculations, supporting both single vectors and
 batch operations on multiple vectors simultaneously.
 """

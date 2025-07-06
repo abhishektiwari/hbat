@@ -118,7 +118,7 @@ Core Parameters
      - Type
      - Description
    * - ``fix_pdb_enabled``
-     - False
+     - True
      - Boolean
      - Enable/disable PDB structure fixing
    * - ``fix_pdb_method``
@@ -365,15 +365,22 @@ HBAT's PDB fixing implementation follows these principles:
 
 .. code-block:: text
 
-   HBAT Atoms → PDB Format → External Tool → PDB Format → HBAT Atoms
-        ↓             ↓            ↓             ↓            ↓
-   Internal       Temporary    Processing    Enhanced     Updated
-   structure      file         tool          structure    analysis
+   Original PDB → External Tool → Fixed PDB → HBAT Parser → Updated Analysis
+        ↓             ↓              ↓            ↓              ↓
+   Input file    Processing      Enhanced     Complete       Analysis with
+                 tool            structure    atom set       fixed structure
+
+**Direct File Processing**:
+
+- **File-to-file processing**: Direct PDB file enhancement preserving formatting
+- **Preserved structure**: Original PDB formatting and metadata maintained  
+- **Efficient workflow**: No intermediate atom-to-PDB conversion needed
+- **Quality preservation**: Professional-grade structure output
 
 **Memory Management**:
 
-- Temporary files for tool communication
-- Automatic cleanup on completion
+- Direct file processing with minimal memory overhead
+- Automatic cleanup of intermediate files  
 - Error handling with resource protection
 - Memory-efficient processing for large structures
 
@@ -609,18 +616,24 @@ The PDB fixing functionality integrates seamlessly with HBAT's analysis pipeline
 
 .. code-block:: text
 
-   Load PDB → Fix Structure → Parse Atoms → Analyze Interactions → Generate Results
-       ↓           ↓             ↓              ↓                    ↓
-   Original    Enhanced      Complete       Accurate             Comprehensive
-   structure   structure     atom set       detection            interaction map
+   Load PDB → Fix Structure → Parse Fixed PDB → Analyze Interactions → Generate Results
+       ↓           ↓                 ↓                  ↓                    ↓
+   Original    Enhanced          Complete           Accurate             Comprehensive
+   structure   PDB file          atom set           detection            interaction map
+                    ↓
+              Fixed PDB Tab
+              (GUI Display)
 
 **Benefits for Analysis**:
 
 - **More complete hydrogen bond networks**
-- **Better interaction geometry**
+- **Better interaction geometry**  
 - **Standardized residue names**
 - **Cleaner structural environment**
 - **More reliable cooperativity detection**
+- **Preserved PDB formatting in output**
+- **Performance metrics and timing information**
+- **GUI integration with Fixed PDB display**
 
 Example Analysis Comparison
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

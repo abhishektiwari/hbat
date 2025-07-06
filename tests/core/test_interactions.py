@@ -11,8 +11,8 @@ from hbat.core.interactions import (
     CooperativityChain,
     MolecularInteraction
 )
-from hbat.core.pdb_parser import Atom
-from hbat.core.vector import Vec3D
+from hbat.core.structure import Atom
+from hbat.core.np_vector import NPVec3D
 
 
 class TestMolecularInteraction:
@@ -28,19 +28,19 @@ class TestMolecularInteraction:
         # Create sample atoms
         donor = Atom(
             serial=1, name="N", alt_loc="", res_name="ALA", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(0, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="N", charge="", record_type="ATOM"
         )
         
         hydrogen = Atom(
             serial=2, name="H", alt_loc="", res_name="ALA", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(1, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(1, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="H", charge="", record_type="ATOM"
         )
         
         acceptor = Atom(
             serial=3, name="O", alt_loc="", res_name="GLY", chain_id="A",
-            res_seq=2, i_code="", coords=Vec3D(3, 0, 0), occupancy=1.0,
+            res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="O", charge="", record_type="ATOM"
         )
         
@@ -55,7 +55,7 @@ class TestMolecularInteraction:
         # Test HalogenBond inheritance
         halogen = Atom(
             serial=4, name="CL", alt_loc="", res_name="TEST", chain_id="A",
-            res_seq=3, i_code="", coords=Vec3D(5, 0, 0), occupancy=1.0,
+            res_seq=3, i_code="", coords=NPVec3D(5, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="CL", charge="", record_type="ATOM"
         )
         
@@ -67,7 +67,7 @@ class TestMolecularInteraction:
         
         # Test PiInteraction inheritance
         pi = PiInteraction(
-            _donor=donor, hydrogen=hydrogen, pi_center=Vec3D(3, 0, 0),
+            _donor=donor, hydrogen=hydrogen, pi_center=NPVec3D(3, 0, 0),
             distance=3.5, angle=math.radians(150.0),
             _donor_residue="A1ALA", _pi_residue="A2PHE"
         )
@@ -84,19 +84,19 @@ class TestMolecularInteraction:
         # Create sample atoms
         donor = Atom(
             serial=1, name="N", alt_loc="", res_name="ALA", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(0, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="N", charge="", record_type="ATOM"
         )
         
         hydrogen = Atom(
             serial=2, name="H", alt_loc="", res_name="ALA", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(1, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(1, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="H", charge="", record_type="ATOM"
         )
         
         acceptor = Atom(
             serial=3, name="O", alt_loc="", res_name="GLY", chain_id="A",
-            res_seq=2, i_code="", coords=Vec3D(3, 0, 0), occupancy=1.0,
+            res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="O", charge="", record_type="ATOM"
         )
         
@@ -111,7 +111,7 @@ class TestMolecularInteraction:
         # Test HalogenBond bonding validation
         halogen = Atom(
             serial=4, name="CL", alt_loc="", res_name="TEST", chain_id="A",
-            res_seq=3, i_code="", coords=Vec3D(5, 0, 0), occupancy=1.0,
+            res_seq=3, i_code="", coords=NPVec3D(5, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="CL", charge="", record_type="ATOM"
         )
         
@@ -123,7 +123,7 @@ class TestMolecularInteraction:
         
         # Test PiInteraction bonding validation
         pi = PiInteraction(
-            _donor=donor, hydrogen=hydrogen, pi_center=Vec3D(3, 0, 0),
+            _donor=donor, hydrogen=hydrogen, pi_center=NPVec3D(3, 0, 0),
             distance=3.5, angle=math.radians(150.0),
             _donor_residue="A1ALA", _pi_residue="A2PHE"
         )
@@ -144,19 +144,19 @@ class TestHydrogenBond:
         """Create sample atoms for testing."""
         donor = Atom(
             serial=1, name="N", alt_loc="", res_name="ALA", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(0, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="N", charge="", record_type="ATOM"
         )
         
         hydrogen = Atom(
             serial=2, name="H", alt_loc="", res_name="ALA", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(1, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(1, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="H", charge="", record_type="ATOM"
         )
         
         acceptor = Atom(
             serial=3, name="O", alt_loc="", res_name="GLY", chain_id="A",
-            res_seq=2, i_code="", coords=Vec3D(3, 0, 0), occupancy=1.0,
+            res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="O", charge="", record_type="ATOM"
         )
         
@@ -245,13 +245,13 @@ class TestHalogenBond:
         """Create sample atoms for halogen bond testing."""
         halogen = Atom(
             serial=1, name="CL", alt_loc="", res_name="TEST", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(0, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="CL", charge="", record_type="ATOM"
         )
         
         acceptor = Atom(
             serial=2, name="O", alt_loc="", res_name="GLY", chain_id="A",
-            res_seq=2, i_code="", coords=Vec3D(3, 0, 0), occupancy=1.0,
+            res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="O", charge="", record_type="ATOM"
         )
         
@@ -332,17 +332,17 @@ class TestPiInteraction:
         """Create sample atoms for π interaction testing."""
         donor = Atom(
             serial=1, name="N", alt_loc="", res_name="ALA", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(0, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="N", charge="", record_type="ATOM"
         )
         
         hydrogen = Atom(
             serial=2, name="H", alt_loc="", res_name="ALA", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(1, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(1, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="H", charge="", record_type="ATOM"
         )
         
-        pi_center = Vec3D(3, 0, 0)
+        pi_center = NPVec3D(3, 0, 0)
         
         return donor, hydrogen, pi_center
     
@@ -421,31 +421,31 @@ class TestCooperativityChain:
         # Create atoms
         donor1 = Atom(
             serial=1, name="N", alt_loc="", res_name="ALA", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(0, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="N", charge="", record_type="ATOM"
         )
         
         hydrogen1 = Atom(
             serial=2, name="H", alt_loc="", res_name="ALA", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(1, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(1, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="H", charge="", record_type="ATOM"
         )
         
         acceptor1 = Atom(
             serial=3, name="O", alt_loc="", res_name="GLY", chain_id="A",
-            res_seq=2, i_code="", coords=Vec3D(3, 0, 0), occupancy=1.0,
+            res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="O", charge="", record_type="ATOM"
         )
         
         halogen = Atom(
             serial=4, name="CL", alt_loc="", res_name="TEST", chain_id="A",
-            res_seq=3, i_code="", coords=Vec3D(5, 0, 0), occupancy=1.0,
+            res_seq=3, i_code="", coords=NPVec3D(5, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="CL", charge="", record_type="ATOM"
         )
         
         acceptor2 = Atom(
             serial=5, name="N", alt_loc="", res_name="VAL", chain_id="A",
-            res_seq=4, i_code="", coords=Vec3D(8, 0, 0), occupancy=1.0,
+            res_seq=4, i_code="", coords=NPVec3D(8, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="N", charge="", record_type="ATOM"
         )
         
@@ -552,19 +552,19 @@ class TestInteractionValidation:
         # Create minimal valid hydrogen bond
         donor = Atom(
             serial=1, name="N", alt_loc="", res_name="ALA", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(0, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="N", charge="", record_type="ATOM"
         )
         
         hydrogen = Atom(
             serial=2, name="H", alt_loc="", res_name="ALA", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(1, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(1, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="H", charge="", record_type="ATOM"
         )
         
         acceptor = Atom(
             serial=3, name="O", alt_loc="", res_name="GLY", chain_id="A",
-            res_seq=2, i_code="", coords=Vec3D(3, 0, 0), occupancy=1.0,
+            res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="O", charge="", record_type="ATOM"
         )
         
@@ -601,13 +601,13 @@ class TestInteractionValidation:
         """Test that halogen bonds have required properties."""
         halogen = Atom(
             serial=1, name="CL", alt_loc="", res_name="TEST", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(0, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="CL", charge="", record_type="ATOM"
         )
         
         acceptor = Atom(
             serial=2, name="O", alt_loc="", res_name="GLY", chain_id="A",
-            res_seq=2, i_code="", coords=Vec3D(3, 0, 0), occupancy=1.0,
+            res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="O", charge="", record_type="ATOM"
         )
         
@@ -641,17 +641,17 @@ class TestInteractionValidation:
         """Test that π interactions have required properties."""
         donor = Atom(
             serial=1, name="N", alt_loc="", res_name="ALA", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(0, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="N", charge="", record_type="ATOM"
         )
         
         hydrogen = Atom(
             serial=2, name="H", alt_loc="", res_name="ALA", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(1, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(1, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="H", charge="", record_type="ATOM"
         )
         
-        pi_center = Vec3D(3, 0, 0)
+        pi_center = NPVec3D(3, 0, 0)
         
         pi = PiInteraction(
             _donor=donor,

@@ -1,11 +1,12 @@
 """
-NumPy-optimized molecular interaction analyzer for HBAT.
+High-performance molecular interaction analyzer for HBAT.
 
-This module provides a high-performance analyzer using NumPy for vectorized
+This module provides the main analyzer using NumPy for vectorized
 calculations of molecular interactions in protein structures.
 """
 
 import math
+import time
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import numpy as np
@@ -19,19 +20,18 @@ from ..constants import (
     PI_INTERACTION_ATOMS,
     PI_INTERACTION_DONOR,
     RESIDUES_WITH_AROMATIC_RINGS,
-    RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS,
 )
 from ..constants.parameters import AnalysisParameters
 from .interactions import CooperativityChain, HalogenBond, HydrogenBond, PiInteraction
 from .np_vector import NPVec3D, batch_angle_between, compute_distance_matrix
-from .pdb_parser import Atom, PDBParser, Residue
-from .vector import Vec3D
+from .pdb_parser import PDBParser
+from .structure import Atom, Residue
 
 
 class NPMolecularInteractionAnalyzer:
-    """NumPy-optimized analyzer for molecular interactions.
+    """High-performance analyzer for molecular interactions.
 
-    This analyzer uses vectorized NumPy operations for high-performance
+    This analyzer uses vectorized NumPy operations for efficient
     analysis of molecular interactions in protein structures.
 
     :param parameters: Analysis parameters to use
@@ -60,34 +60,77 @@ class NPMolecularInteractionAnalyzer:
         self._atom_coords: Optional[np.ndarray] = None
         self._atom_indices: Dict[str, List[int]] = {}
 
+        # Cached atom mappings to avoid repeated creation
+        self._atom_map: Dict[int, Atom] = {}
+        self._serial_to_idx: Dict[int, int] = {}
+
         # Optimized residue indexing for fast same-residue filtering
         self._residue_to_atoms: Dict[Tuple[str, int, str], List[int]] = {}
         self._atom_to_residue: Dict[int, Tuple[str, int, str]] = {}
 
+        # Timing and PDB fixing information
+        self._analysis_start_time: Optional[float] = None
+        self._analysis_end_time: Optional[float] = None
+        self._pdb_fixing_info: Dict[str, Any] = {}
+
     def analyze_file(self, pdb_file: str) -> bool:
-        """Analyze a PDB file for molecular interactions using NumPy optimization."""
+        """Analyze a PDB file for molecular interactions."""
+        self._analysis_start_time = time.time()
+        self._pdb_fixing_info = {}
+
         if not self.parser.parse_file(pdb_file):
             return False
 
         # Apply PDB fixing if enabled
         if self.parameters.fix_pdb_enabled:
             try:
-                fixed_atoms = self._apply_pdb_fixing(self.parser.atoms)
-                # Update parser with fixed atoms
-                self.parser.atoms = fixed_atoms
-                # Rebuild residue information
-                self.parser.residues = {}
-                for atom in fixed_atoms:
-                    self.parser._add_atom_to_residue(atom)
-                # Re-detect bonds after PDB fixing
-                self.parser.bonds = []
-                self.parser._detect_covalent_bonds()
-                print(f"PDB fixing applied using {self.parameters.fix_pdb_method}")
-                print(f"Structure now has {len(fixed_atoms)} atoms")
-                print(f"Re-detected {len(self.parser.bonds)} bonds")
+                original_atoms_count = len(self.parser.atoms)
+                original_bonds_count = len(self.parser.bonds)
+                original_hydrogens_count = len(
+                    [a for a in self.parser.atoms if a.is_hydrogen()]
+                )
+
+                # Fix the PDB file and get path to fixed file
+                fixed_file_path = self._apply_pdb_fixing(pdb_file)
+
+                # Parse the fixed structure
+                if self.parser.parse_file(fixed_file_path):
+                    new_atoms_count = len(self.parser.atoms)
+                    new_bonds_count = len(self.parser.bonds)
+                    new_hydrogens_count = len(
+                        [a for a in self.parser.atoms if a.is_hydrogen()]
+                    )
+
+                    # Store PDB fixing information including file path
+                    self._pdb_fixing_info = {
+                        "method": self.parameters.fix_pdb_method,
+                        "original_atoms": original_atoms_count,
+                        "fixed_atoms": new_atoms_count,
+                        "original_hydrogens": original_hydrogens_count,
+                        "fixed_hydrogens": new_hydrogens_count,
+                        "added_hydrogens": new_hydrogens_count
+                        - original_hydrogens_count,
+                        "original_bonds": original_bonds_count,
+                        "redetected_bonds": new_bonds_count,
+                        "fixed_file_path": fixed_file_path,
+                        "applied": True,
+                    }
+
+                    print(f"PDB fixing applied using {self.parameters.fix_pdb_method}")
+                    print(f"Fixed PDB saved to: {fixed_file_path}")
+                    print(f"Structure now has {new_atoms_count} atoms")
+                    print(f"Re-detected {new_bonds_count} bonds")
+                else:
+                    raise Exception(
+                        f"Failed to parse fixed PDB file: {fixed_file_path}"
+                    )
+
             except Exception as e:
+                self._pdb_fixing_info = {"applied": False, "error": str(e)}
                 print(f"Warning: PDB fixing failed: {e}")
                 print("Continuing with original structure")
+        else:
+            self._pdb_fixing_info = {"applied": False}
 
         if not self.parser.has_hydrogens():
             print("Warning: PDB file appears to lack hydrogen atoms")
@@ -110,6 +153,7 @@ class NPMolecularInteractionAnalyzer:
         # Find cooperativity chains (still uses graph-based approach)
         self._find_cooperativity_chains()
 
+        self._analysis_end_time = time.time()
         return True
 
     def _prepare_vectorized_data(self) -> None:
@@ -158,6 +202,9 @@ class NPMolecularInteractionAnalyzer:
         # Build optimized residue indexing for fast same-residue filtering
         self._build_residue_indices()
 
+        # Cache atom mappings for efficient lookups
+        self._build_atom_mappings()
+
     def _build_residue_indices(self) -> None:
         """Build optimized residue indexing for fast same-residue filtering."""
         self._residue_to_atoms.clear()
@@ -173,6 +220,15 @@ class NPMolecularInteractionAnalyzer:
 
             # Map atom to residue
             self._atom_to_residue[i] = residue_key
+
+    def _build_atom_mappings(self) -> None:
+        """Build cached atom mappings for efficient lookups."""
+        self._atom_map.clear()
+        self._serial_to_idx.clear()
+
+        for i, atom in enumerate(self.parser.atoms):
+            self._atom_map[atom.serial] = atom
+            self._serial_to_idx[atom.serial] = i
 
     def _are_same_residue(self, atom1_idx: int, atom2_idx: int) -> bool:
         """Fast same-residue check using pre-computed indices."""
@@ -270,10 +326,6 @@ class NPMolecularInteractionAnalyzer:
         """
         donors = []
 
-        # Create mapping from serial to atom and index for efficient lookup
-        atom_map = {atom.serial: atom for atom in self.parser.atoms}
-        serial_to_idx = {atom.serial: i for i, atom in enumerate(self.parser.atoms)}
-
         # Find hydrogen atoms and their bonded heavy atoms
         for h_idx, h_atom in enumerate(self.parser.atoms):
             if h_atom.element.upper() not in HYDROGEN_ELEMENTS:
@@ -283,13 +335,13 @@ class NPMolecularInteractionAnalyzer:
             bonded_serials = self.parser.get_bonded_atoms(h_atom.serial)
 
             for bonded_serial in bonded_serials:
-                bonded_atom = atom_map.get(bonded_serial)
+                bonded_atom = self._atom_map.get(bonded_serial)
                 if bonded_atom is None:
                     continue
 
                 # Check if heavy atom can be donor (N, O, S)
                 if bonded_atom.element.upper() in HYDROGEN_BOND_DONOR_ELEMENTS:
-                    donor_idx = serial_to_idx[bonded_serial]
+                    donor_idx = self._serial_to_idx[bonded_serial]
                     donors.append((bonded_atom, h_atom, donor_idx, h_idx))
                     break  # Each hydrogen should only bond to one heavy atom
 
@@ -401,20 +453,17 @@ class NPMolecularInteractionAnalyzer:
 
                 # Skip same residue (for local mode) - optimized check
                 if self.parameters.analysis_mode == "local":
-                    carbon_idx = next(
-                        i
-                        for i, atom in enumerate(self.parser.atoms)
-                        if atom.serial == carbon.serial
-                    )
-                    # Create residue key for aromatic center
-                    aromatic_residue_key = (
-                        center_info["residue"].chain_id,
-                        center_info["residue"].seq_num,
-                        center_info["residue"].name,
-                    )
-                    carbon_residue_key = self._atom_to_residue.get(carbon_idx)
-                    if carbon_residue_key == aromatic_residue_key:
-                        continue
+                    carbon_idx = self._serial_to_idx.get(carbon.serial)
+                    if carbon_idx is not None:
+                        # Create residue key for aromatic center
+                        aromatic_residue_key = (
+                            center_info["residue"].chain_id,
+                            center_info["residue"].seq_num,
+                            center_info["residue"].name,
+                        )
+                        carbon_residue_key = self._atom_to_residue.get(carbon_idx)
+                        if carbon_residue_key == aromatic_residue_key:
+                            continue
 
                 # Calculate angle
                 donor_vec = NPVec3D(carbon.coords.x, carbon.coords.y, carbon.coords.z)
@@ -433,12 +482,8 @@ class NPMolecularInteractionAnalyzer:
                     )
                     pi_residue = f"{center_info['residue'].chain_id}{center_info['residue'].seq_num}{center_info['residue'].name}"
 
-                    # Convert NPVec3D to Vec3D for compatibility
-                    pi_center_vec3d = Vec3D(
-                        center_info["center"].x,
-                        center_info["center"].y,
-                        center_info["center"].z,
-                    )
+                    # Use NPVec3D directly
+                    pi_center_vec3d = center_info["center"]
 
                     pi_int = PiInteraction(
                         _donor=carbon,
@@ -460,15 +505,14 @@ class NPMolecularInteractionAnalyzer:
         """
         interactions = []
 
-        # Create mapping from serial to atom for efficient lookup
-        atom_map = {atom.serial: atom for atom in self.parser.atoms}
+        # Use cached atom mapping
 
         for atom in self.parser.atoms:
             if atom.element.upper() in PI_INTERACTION_ATOMS:
                 # Check if this atom is bonded to carbon
                 bonded_serials = self.parser.get_bonded_atoms(atom.serial)
                 for bonded_serial in bonded_serials:
-                    bonded_atom = atom_map.get(bonded_serial)
+                    bonded_atom = self._atom_map.get(bonded_serial)
                     if bonded_atom is not None and bonded_atom.element.upper() == "C":
                         interactions.append((bonded_atom, atom))
                         break  # Found at least one carbon, that's sufficient
@@ -525,25 +569,9 @@ class NPMolecularInteractionAnalyzer:
         centers = []
 
         for residue in self.parser.residues.values():
-            if residue.name not in self._aromatic_residues:
-                continue
-
-            ring_atoms = RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS.get(
-                residue.name, []
-            )
-            ring_coords = []
-
-            for atom in residue.atoms:
-                if atom.name in ring_atoms:
-                    ring_coords.append([atom.coords.x, atom.coords.y, atom.coords.z])
-
-            if len(ring_coords) >= 5:  # Need at least 5 atoms for aromatic ring
-                # Calculate centroid using NumPy
-                coords_array = np.array(ring_coords)
-                centroid = np.mean(coords_array, axis=0)
-
-                centers.append({"residue": residue, "center": NPVec3D(centroid)})
-
+            aromatic_center = residue.get_aromatic_center()
+            if aromatic_center is not None:
+                centers.append({"residue": residue, "center": aromatic_center})
         return centers
 
     def _find_cooperativity_chains(self) -> None:
@@ -751,36 +779,52 @@ class NPMolecularInteractionAnalyzer:
         else:
             return "Mixed chain"
 
-    def _apply_pdb_fixing(self, atoms: List[Atom]) -> List[Atom]:
-        """Apply PDB fixing to add missing atoms."""
+    def _apply_pdb_fixing(self, pdb_file_path: str) -> str:
+        """Apply PDB fixing by processing the original file and saving to a new file.
+
+        :param pdb_file_path: Path to the original PDB file
+        :type pdb_file_path: str
+        :returns: Path to the fixed PDB file
+        :rtype: str
+        """
+        import os
+
         from .pdb_fixer import PDBFixer
 
         fixer = PDBFixer()
-        fixed_atoms = atoms
 
-        # Apply each requested fixing operation in sequence
-        if self.parameters.fix_pdb_add_hydrogens:
-            fixed_atoms = fixer.add_missing_hydrogens(
-                fixed_atoms, method=self.parameters.fix_pdb_method
-            )
+        # Generate output filename (e.g., 6rsa.pdb -> 6rsa_fixed.pdb)
+        base_dir = os.path.dirname(pdb_file_path)
+        base_name = os.path.basename(pdb_file_path)
+        name, ext = os.path.splitext(base_name)
+        fixed_file_path = os.path.join(base_dir, f"{name}_fixed{ext}")
 
-        # PDBFixer-only operations
-        if self.parameters.fix_pdb_method == "pdbfixer":
-            if self.parameters.fix_pdb_add_heavy_atoms:
-                fixed_atoms = fixer.add_missing_heavy_atoms(fixed_atoms)
+        # Use the new file-to-file fixing method
+        success = fixer.fix_pdb_file_to_file(
+            input_pdb_path=pdb_file_path,
+            output_pdb_path=fixed_file_path,
+            method=self.parameters.fix_pdb_method,
+            add_hydrogens=self.parameters.fix_pdb_add_hydrogens,
+            add_heavy_atoms=self.parameters.fix_pdb_add_heavy_atoms,
+            convert_nonstandard=self.parameters.fix_pdb_replace_nonstandard,
+            remove_heterogens=self.parameters.fix_pdb_remove_heterogens,
+            keep_water=self.parameters.fix_pdb_keep_water,
+        )
 
-            if self.parameters.fix_pdb_replace_nonstandard:
-                fixed_atoms = fixer.convert_nonstandard_residues(fixed_atoms)
+        if not success:
+            raise Exception(f"Failed to fix PDB file: {pdb_file_path}")
 
-            if self.parameters.fix_pdb_remove_heterogens:
-                fixed_atoms = fixer.remove_heterogens(
-                    fixed_atoms, keep_water=self.parameters.fix_pdb_keep_water
-                )
-
-        return fixed_atoms
+        return fixed_file_path
 
     def get_summary(self) -> Dict[str, Any]:
-        """Get analysis summary with statistics."""
+        """Get comprehensive analysis summary with statistics, PDB fixing info, and timing.
+
+        Returns a dictionary containing interaction counts, averages, bond type distributions,
+        PDB fixing information (if applied), and analysis timing.
+
+        :returns: Dictionary containing comprehensive analysis summary
+        :rtype: Dict[str, Any]
+        """
         summary = {
             "hydrogen_bonds": {
                 "count": len(self.hydrogen_bonds),
@@ -790,7 +834,7 @@ class NPMolecularInteractionAnalyzer:
                     else 0
                 ),
                 "average_angle": (
-                    np.mean([hb.angle for hb in self.hydrogen_bonds])
+                    np.mean([math.degrees(hb.angle) for hb in self.hydrogen_bonds])
                     if self.hydrogen_bonds
                     else 0
                 ),
@@ -803,7 +847,7 @@ class NPMolecularInteractionAnalyzer:
                     else 0
                 ),
                 "average_angle": (
-                    np.mean([xb.angle for xb in self.halogen_bonds])
+                    np.mean([math.degrees(xb.angle) for xb in self.halogen_bonds])
                     if self.halogen_bonds
                     else 0
                 ),
@@ -816,7 +860,7 @@ class NPMolecularInteractionAnalyzer:
                     else 0
                 ),
                 "average_angle": (
-                    np.mean([pi.angle for pi in self.pi_interactions])
+                    np.mean([math.degrees(pi.angle) for pi in self.pi_interactions])
                     if self.pi_interactions
                     else 0
                 ),
@@ -825,74 +869,48 @@ class NPMolecularInteractionAnalyzer:
                 "count": len(self.cooperativity_chains),
                 "types": [chain.chain_type for chain in self.cooperativity_chains],
             },
-        }
-
-        return summary
-
-    def get_statistics(self) -> Dict[str, Any]:
-        """Get comprehensive analysis statistics.
-
-        Returns a dictionary containing counts, averages, and other
-        statistical measures for all detected interactions.
-
-        This method provides compatibility with the original analyzer interface.
-
-        :returns: Dictionary containing analysis statistics
-        :rtype: Dict[str, Any]
-        """
-        stats: Dict[str, Any] = {
-            "hydrogen_bonds": len(self.hydrogen_bonds),
-            "halogen_bonds": len(self.halogen_bonds),
-            "pi_interactions": len(self.pi_interactions),
-            "cooperativity_chains": len(self.cooperativity_chains),
             "total_interactions": len(self.hydrogen_bonds)
             + len(self.halogen_bonds)
             + len(self.pi_interactions),
         }
 
-        # Average distances and angles
+        # Add detailed statistics from original get_statistics method
+        # Round averages for better presentation
         if self.hydrogen_bonds:
-            avg_hb_distance = sum(hb.distance for hb in self.hydrogen_bonds) / len(
-                self.hydrogen_bonds
+            summary["hydrogen_bonds"]["average_distance"] = round(
+                summary["hydrogen_bonds"]["average_distance"], 2
             )
-            avg_hb_angle = sum(
-                math.degrees(hb.angle) for hb in self.hydrogen_bonds
-            ) / len(self.hydrogen_bonds)
-            stats["avg_hb_distance"] = round(avg_hb_distance, 2)
-            stats["avg_hb_angle"] = round(avg_hb_angle, 1)
-
-        if self.halogen_bonds:
-            avg_xb_distance = sum(xb.distance for xb in self.halogen_bonds) / len(
-                self.halogen_bonds
+            summary["hydrogen_bonds"]["average_angle"] = round(
+                summary["hydrogen_bonds"]["average_angle"], 1
             )
-            avg_xb_angle = sum(
-                math.degrees(xb.angle) for xb in self.halogen_bonds
-            ) / len(self.halogen_bonds)
-            stats["avg_xb_distance"] = round(avg_xb_distance, 2)
-            stats["avg_xb_angle"] = round(avg_xb_angle, 1)
 
-        if self.pi_interactions:
-            avg_pi_distance = sum(pi.distance for pi in self.pi_interactions) / len(
-                self.pi_interactions
-            )
-            avg_pi_angle = sum(
-                math.degrees(pi.angle) for pi in self.pi_interactions
-            ) / len(self.pi_interactions)
-            stats["avg_pi_distance"] = round(avg_pi_distance, 2)
-            stats["avg_pi_angle"] = round(avg_pi_angle, 1)
-
-        # Bond type distributions
-        if self.hydrogen_bonds:
+            # Bond type distribution
             hb_types: Dict[str, int] = {}
             for hb in self.hydrogen_bonds:
                 hb_types[hb.bond_type] = hb_types.get(hb.bond_type, 0) + 1
-            stats["hb_types"] = hb_types
+            summary["hydrogen_bonds"]["bond_types"] = hb_types
 
         if self.halogen_bonds:
+            summary["halogen_bonds"]["average_distance"] = round(
+                summary["halogen_bonds"]["average_distance"], 2
+            )
+            summary["halogen_bonds"]["average_angle"] = round(
+                summary["halogen_bonds"]["average_angle"], 1
+            )
+
+            # Bond type distribution
             xb_types: Dict[str, int] = {}
             for xb in self.halogen_bonds:
                 xb_types[xb.bond_type] = xb_types.get(xb.bond_type, 0) + 1
-            stats["xb_types"] = xb_types
+            summary["halogen_bonds"]["bond_types"] = xb_types
+
+        if self.pi_interactions:
+            summary["pi_interactions"]["average_distance"] = round(
+                summary["pi_interactions"]["average_distance"], 2
+            )
+            summary["pi_interactions"]["average_angle"] = round(
+                summary["pi_interactions"]["average_angle"], 1
+            )
 
         # Chain length distribution
         if self.cooperativity_chains:
@@ -900,6 +918,22 @@ class NPMolecularInteractionAnalyzer:
             for chain in self.cooperativity_chains:
                 length = chain.chain_length
                 chain_lengths[length] = chain_lengths.get(length, 0) + 1
-            stats["chain_lengths"] = chain_lengths
+            summary["cooperativity_chains"]["chain_lengths"] = chain_lengths
 
-        return stats
+        # Add PDB fixing information if available
+        if self._pdb_fixing_info:
+            summary["pdb_fixing"] = self._pdb_fixing_info.copy()
+
+        # Add timing information
+        if (
+            self._analysis_start_time is not None
+            and self._analysis_end_time is not None
+        ):
+            analysis_time = self._analysis_end_time - self._analysis_start_time
+            summary["timing"] = {
+                "analysis_duration_seconds": round(analysis_time, 3),
+                "start_time": self._analysis_start_time,
+                "end_time": self._analysis_end_time,
+            }
+
+        return summary

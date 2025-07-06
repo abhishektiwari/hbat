@@ -6,13 +6,16 @@ and extract atomic coordinates and molecular information using the pdbreader lib
 """
 
 import math
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from collections import defaultdict
+from typing import Any, Dict, List, Optional, Tuple
 
-from ..constants import HYDROGEN_ELEMENTS, AtomicData
+import numpy as np
+
+from ..constants import AtomicData
 from ..constants.parameters import ParametersDefault
 from ..utilities import pdb_atom_to_element
-from .vector import Vec3D
+from .np_vector import NPVec3D
+from .structure import Atom, Bond, Residue
 
 try:
     import pdbreader  # type: ignore
@@ -67,201 +70,6 @@ def _safe_float_convert(value: Any, default: float = 0.0) -> float:
         return default
 
 
-@dataclass
-class Bond:
-    """Represents a chemical bond between two atoms.
-
-    This class stores information about atomic bonds, including
-    the atoms involved and bond type/origin.
-
-    :param atom1_serial: Serial number of first atom
-    :type atom1_serial: int
-    :param atom2_serial: Serial number of second atom
-    :type atom2_serial: int
-    :param bond_type: Type of bond ('covalent', 'explicit', etc.)
-    :type bond_type: str
-    :param distance: Distance between bonded atoms in Angstroms
-    :type distance: Optional[float]
-    """
-
-    atom1_serial: int
-    atom2_serial: int
-    bond_type: str = "covalent"  # 'covalent', 'explicit' (from CONECT)
-    distance: Optional[float] = None
-
-    def __post_init__(self) -> None:
-        """Ensure atom serials are ordered consistently."""
-        if self.atom1_serial > self.atom2_serial:
-            self.atom1_serial, self.atom2_serial = self.atom2_serial, self.atom1_serial
-
-    def involves_atom(self, serial: int) -> bool:
-        """Check if bond involves the specified atom.
-
-        :param serial: Atom serial number
-        :type serial: int
-        :returns: True if bond involves this atom
-        :rtype: bool
-        """
-        return serial in (self.atom1_serial, self.atom2_serial)
-
-    def get_partner(self, serial: int) -> Optional[int]:
-        """Get the bonding partner of the specified atom.
-
-        :param serial: Atom serial number
-        :type serial: int
-        :returns: Serial number of bonding partner, None if atom not in bond
-        :rtype: Optional[int]
-        """
-        if serial == self.atom1_serial:
-            return self.atom2_serial
-        elif serial == self.atom2_serial:
-            return self.atom1_serial
-        return None
-
-
-@dataclass
-class Atom:
-    """Represents an atom from a PDB file.
-
-    This class stores all atomic information parsed from PDB format
-    including coordinates, properties, and residue information.
-
-    :param serial: Atom serial number
-    :type serial: int
-    :param name: Atom name
-    :type name: str
-    :param alt_loc: Alternate location indicator
-    :type alt_loc: str
-    :param res_name: Residue name
-    :type res_name: str
-    :param chain_id: Chain identifier
-    :type chain_id: str
-    :param res_seq: Residue sequence number
-    :type res_seq: int
-    :param i_code: Insertion code
-    :type i_code: str
-    :param coords: 3D coordinates
-    :type coords: Vec3D
-    :param occupancy: Occupancy factor
-    :type occupancy: float
-    :param temp_factor: Temperature factor
-    :type temp_factor: float
-    :param element: Element symbol
-    :type element: str
-    :param charge: Formal charge
-    :type charge: str
-    :param record_type: PDB record type (ATOM or HETATM)
-    :type record_type: str
-    """
-
-    serial: int
-    name: str
-    alt_loc: str
-    res_name: str
-    chain_id: str
-    res_seq: int
-    i_code: str
-    coords: Vec3D
-    occupancy: float
-    temp_factor: float
-    element: str
-    charge: str
-    record_type: str  # ATOM or HETATM
-
-    def is_hydrogen(self) -> bool:
-        """Check if atom is hydrogen.
-
-        :returns: True if atom is hydrogen or deuterium
-        :rtype: bool
-        """
-        return self.element.upper() in HYDROGEN_ELEMENTS
-
-    def is_metal(self) -> bool:
-        """Check if atom is a metal.
-
-        :returns: True if atom is a common metal ion
-        :rtype: bool
-        """
-        metals = {"NA", "MG", "K", "CA", "MN", "FE", "CO", "NI", "CU", "ZN"}
-        return self.element.upper() in metals
-
-
-@dataclass
-class Residue:
-    """Represents a residue containing multiple atoms.
-
-    This class groups atoms belonging to the same residue and provides
-    methods for accessing and analyzing residue-level information.
-
-    :param name: Residue name (e.g., 'ALA', 'GLY')
-    :type name: str
-    :param chain_id: Chain identifier
-    :type chain_id: str
-    :param seq_num: Residue sequence number
-    :type seq_num: int
-    :param i_code: Insertion code
-    :type i_code: str
-    :param atoms: List of atoms in this residue
-    :type atoms: List[Atom]
-    """
-
-    name: str
-    chain_id: str
-    seq_num: int
-    i_code: str
-    atoms: List[Atom]
-
-    def get_atom(self, atom_name: str) -> Optional[Atom]:
-        """Get specific atom by name.
-
-        :param atom_name: Name of the atom to find
-        :type atom_name: str
-        :returns: The atom if found, None otherwise
-        :rtype: Optional[Atom]
-        """
-        for atom in self.atoms:
-            if atom.name.strip() == atom_name.strip():
-                return atom
-        return None
-
-    def get_atoms_by_element(self, element: str) -> List[Atom]:
-        """Get all atoms of specific element.
-
-        :param element: Element symbol (e.g., 'C', 'N', 'O')
-        :type element: str
-        :returns: List of atoms matching the element
-        :rtype: List[Atom]
-        """
-        return [atom for atom in self.atoms if atom.element.upper() == element.upper()]
-
-    def center_of_mass(self) -> Vec3D:
-        """Calculate center of mass of residue.
-
-        Computes the mass-weighted centroid of all atoms in the residue.
-
-        :returns: Center of mass coordinates
-        :rtype: Vec3D
-        """
-        if not self.atoms:
-            return Vec3D(0, 0, 0)
-
-        total_mass = 0.0
-        weighted_pos = Vec3D(0, 0, 0)
-
-        for atom in self.atoms:
-            mass = self._get_atomic_mass(atom.element)
-            total_mass += mass
-            weighted_pos = weighted_pos + (atom.coords * mass)
-
-        return weighted_pos / total_mass if total_mass > 0 else Vec3D(0, 0, 0)
-
-    def _get_atomic_mass(self, element: str) -> float:
-        """Get approximate atomic mass for element."""
-        return AtomicData.ATOMIC_MASSES.get(
-            element.upper(), AtomicData.DEFAULT_ATOMIC_MASS
-        )
-
-
 class PDBParser:
     """Parser for PDB format files using pdbreader.
 
@@ -282,6 +90,7 @@ class PDBParser:
         self.header: str = ""
         self.pdb_id: str = ""
         self._atom_serial_map: Dict[int, int] = {}  # serial -> index mapping
+        self._bond_adjacency: Dict[int, List[int]] = {}  # Fast bond lookups
 
     def parse_file(self, filename: str) -> bool:
         """Parse a PDB file.
@@ -302,6 +111,7 @@ class PDBParser:
             self.atoms = []
             self.residues = {}
             self.bonds = []
+            self._bond_adjacency = {}
 
             # Process ATOM records
             if "ATOM" in structure and len(structure["ATOM"]) > 0:
@@ -328,7 +138,14 @@ class PDBParser:
 
             # Detect bonds based on distances if no CONECT records
             if not self.bonds:
+                import time
+
+                bond_start = time.time()
                 self._detect_covalent_bonds()
+                bond_time = time.time() - bond_start
+                print(
+                    f"Bond detection completed in {bond_time:.3f} seconds ({len(self.bonds)} bonds found)"
+                )
 
             return len(self.atoms) > 0
 
@@ -359,6 +176,7 @@ class PDBParser:
             self.atoms = []
             self.residues = {}
             self.bonds = []
+            self._bond_adjacency = {}
 
             # Process ATOM records
             if "ATOM" in structure and len(structure["ATOM"]) > 0:
@@ -385,7 +203,14 @@ class PDBParser:
 
             # Detect bonds based on distances if no CONECT records
             if not self.bonds:
+                import time
+
+                bond_start = time.time()
                 self._detect_covalent_bonds()
+                bond_time = time.time() - bond_start
+                print(
+                    f"Bond detection completed in {bond_time:.3f} seconds ({len(self.bonds)} bonds found)"
+                )
 
             return len(self.atoms) > 0
 
@@ -414,7 +239,7 @@ class PDBParser:
             x = _safe_float_convert(atom_row.get("x"), 0.0)
             y = _safe_float_convert(atom_row.get("y"), 0.0)
             z = _safe_float_convert(atom_row.get("z"), 0.0)
-            coords = Vec3D(x, y, z)
+            coords = NPVec3D(x, y, z)
 
             # Other properties - handle None and NaN values
             occupancy = _safe_float_convert(atom_row.get("occupancy"), 1.0)
@@ -610,27 +435,85 @@ class PDBParser:
             print(f"Error parsing CONECT records: {e}")
 
     def _detect_covalent_bonds(self) -> None:
-        """Detect covalent bonds based on distance and Van der Waals radii."""
+        """Detect covalent bonds using spatial grid optimization."""
         if len(self.atoms) < 2:
             return
 
-        # Maximum reasonable bond distance for early filtering
+        # Use spatial grid for O(n) bond detection instead of O(n²)
+        self._detect_bonds_with_spatial_grid()
 
-        for i, atom1 in enumerate(self.atoms):
-            for atom2 in self.atoms[i + 1 :]:
-                # Early distance check to avoid expensive VdW calculations
-                distance = atom1.coords.distance_to(atom2.coords)
-                if distance > ParametersDefault.MAX_BOND_DISTANCE:
-                    continue  # Skip atoms that are clearly too far apart
+        # Build bond adjacency map for fast lookups
+        self._build_bond_adjacency_map()
 
-                if self._are_atoms_bonded_with_distance(atom1, atom2, distance):
-                    bond = Bond(
-                        atom1_serial=atom1.serial,
-                        atom2_serial=atom2.serial,
-                        bond_type="covalent",
-                        distance=distance,
-                    )
-                    self.bonds.append(bond)
+    def _detect_bonds_with_spatial_grid(self) -> None:
+        """Optimized bond detection using spatial grid partitioning."""
+        # Grid cell size based on maximum bond distance
+        grid_size = ParametersDefault.MAX_BOND_DISTANCE
+
+        # Create spatial grid
+        grid: Dict[Tuple[int, int, int], List[int]] = defaultdict(list)
+
+        # Add atoms to grid cells
+        for i, atom in enumerate(self.atoms):
+            grid_x = int(atom.coords.x / grid_size)
+            grid_y = int(atom.coords.y / grid_size)
+            grid_z = int(atom.coords.z / grid_size)
+            grid[(grid_x, grid_y, grid_z)].append(i)
+
+        # Check bonds only within neighboring grid cells
+        processed_pairs = set()
+
+        for (gx, gy, gz), atom_indices in grid.items():
+            # Check current cell and 26 neighboring cells (3x3x3 - 1)
+            for dx in [-1, 0, 1]:
+                for dy in [-1, 0, 1]:
+                    for dz in [-1, 0, 1]:
+                        neighbor_cell = (gx + dx, gy + dy, gz + dz)
+                        if neighbor_cell in grid:
+                            neighbor_indices = grid[neighbor_cell]
+
+                            # Check bonds between atoms in current and neighbor cells
+                            for i in atom_indices:
+                                start_j = 0 if neighbor_cell != (gx, gy, gz) else i + 1
+                                for j in neighbor_indices[start_j:]:
+                                    if i != j:
+                                        pair = (min(i, j), max(i, j))
+                                        if pair not in processed_pairs:
+                                            processed_pairs.add(pair)
+                                            self._check_bond_between_atoms(i, j)
+
+    def _check_bond_between_atoms(self, i: int, j: int) -> None:
+        """Check if two atoms should be bonded."""
+        atom1, atom2 = self.atoms[i], self.atoms[j]
+
+        # Fast distance check
+        distance = atom1.coords.distance_to(atom2.coords)
+        if distance > ParametersDefault.MAX_BOND_DISTANCE:
+            return
+
+        if self._are_atoms_bonded_with_distance(atom1, atom2, distance):
+            bond = Bond(
+                atom1_serial=atom1.serial,
+                atom2_serial=atom2.serial,
+                bond_type="covalent",
+                distance=distance,
+            )
+            self.bonds.append(bond)
+
+    def _build_bond_adjacency_map(self) -> None:
+        """Build fast bond lookup adjacency map."""
+        self._bond_adjacency.clear()
+
+        for bond in self.bonds:
+            # Initialize lists if not present
+            if bond.atom1_serial not in self._bond_adjacency:
+                self._bond_adjacency[bond.atom1_serial] = []
+            if bond.atom2_serial not in self._bond_adjacency:
+                self._bond_adjacency[bond.atom2_serial] = []
+
+            # Add bidirectional adjacency
+            self._bond_adjacency[bond.atom1_serial].append(bond.atom2_serial)
+            self._bond_adjacency[bond.atom2_serial].append(bond.atom1_serial)
 
     def _are_atoms_bonded(self, atom1: Atom, atom2: Atom) -> bool:
         """Check if two atoms are bonded based on distance and VdW radii.
@@ -677,11 +560,7 @@ class PDBParser:
         vdw_cutoff = (vdw1 + vdw2) * ParametersDefault.COVALENT_CUTOFF_FACTOR
 
         # Additional constraints for realistic bonds
-        return (
-            ParametersDefault.MIN_BOND_DISTANCE
-            <= distance
-            <= min(vdw_cutoff, ParametersDefault.MAX_BOND_DISTANCE)
-        )
+        return ParametersDefault.MIN_BOND_DISTANCE <= distance <= vdw_cutoff
 
     def _bond_exists(self, new_bond: Bond) -> bool:
         """Check if a bond already exists.
@@ -725,9 +604,4 @@ class PDBParser:
         :returns: List of bonded atom serial numbers
         :rtype: List[int]
         """
-        bonded = []
-        for bond in self.bonds:
-            partner = bond.get_partner(serial)
-            if partner is not None:
-                bonded.append(partner)
-        return bonded
+        return self._bond_adjacency.get(serial, [])

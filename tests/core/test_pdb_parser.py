@@ -3,7 +3,9 @@ Tests for PDB parsing functionality.
 """
 
 import pytest
-from hbat.core.pdb_parser import PDBParser, Atom, Residue, Bond, _safe_int_convert, _safe_float_convert
+from hbat.core.pdb_parser import PDBParser, _safe_int_convert, _safe_float_convert
+from hbat.core.structure import Atom, Residue, Bond
+from hbat.core.np_vector import NPVec3D
 from hbat.constants.parameters import ParametersDefault
 from tests.conftest import ExpectedResults
 
@@ -194,9 +196,9 @@ class TestAtom:
     
     def test_atom_creation(self):
         """Test atom creation with basic properties."""
-        from hbat.core.vector import Vec3D
+        from hbat.core.np_vector import NPNPVec3D
         
-        coords = Vec3D(1.0, 2.0, 3.0)
+        coords = NPVec3D(1.0, 2.0, 3.0)
         atom = Atom(
             serial=1,
             name="CA",
@@ -222,9 +224,9 @@ class TestAtom:
     
     def test_atom_string_representation(self):
         """Test atom string representation."""
-        from hbat.core.vector import Vec3D
+        from hbat.core.np_vector import NPNPVec3D
         
-        coords = Vec3D(1.0, 2.0, 3.0)
+        coords = NPVec3D(1.0, 2.0, 3.0)
         atom = Atom(
             serial=1,
             name="CA",
@@ -268,6 +270,64 @@ class TestResidue:
         assert "ALA" in string_repr
         assert "1" in string_repr
         assert "A" in string_repr
+
+    def test_get_aromatic_center_non_aromatic(self):
+        """Test aromatic center calculation for non-aromatic residue."""
+        residue = Residue(name="ALA", chain_id="A", seq_num=1, i_code="", atoms=[])
+        center = residue.get_aromatic_center()
+        assert center is None
+
+    def test_get_aromatic_center_phenylalanine(self):
+        """Test aromatic center calculation for phenylalanine."""
+        # Create atoms for phenylalanine aromatic ring
+        atoms = [
+            Atom(serial=1, name="CG", alt_loc="", res_name="PHE", chain_id="A", res_seq=1, 
+                 i_code="", coords=NPVec3D(0.0, 0.0, 0.0), occupancy=1.0, temp_factor=0.0, 
+                 element="C", charge="", record_type="ATOM"),
+            Atom(serial=2, name="CD1", alt_loc="", res_name="PHE", chain_id="A", res_seq=1, 
+                 i_code="", coords=NPVec3D(1.0, 0.0, 0.0), occupancy=1.0, temp_factor=0.0, 
+                 element="C", charge="", record_type="ATOM"),
+            Atom(serial=3, name="CD2", alt_loc="", res_name="PHE", chain_id="A", res_seq=1, 
+                 i_code="", coords=NPVec3D(-1.0, 0.0, 0.0), occupancy=1.0, temp_factor=0.0, 
+                 element="C", charge="", record_type="ATOM"),
+            Atom(serial=4, name="CE1", alt_loc="", res_name="PHE", chain_id="A", res_seq=1, 
+                 i_code="", coords=NPVec3D(1.0, 1.0, 0.0), occupancy=1.0, temp_factor=0.0, 
+                 element="C", charge="", record_type="ATOM"),
+            Atom(serial=5, name="CE2", alt_loc="", res_name="PHE", chain_id="A", res_seq=1, 
+                 i_code="", coords=NPVec3D(-1.0, 1.0, 0.0), occupancy=1.0, temp_factor=0.0, 
+                 element="C", charge="", record_type="ATOM"),
+            Atom(serial=6, name="CZ", alt_loc="", res_name="PHE", chain_id="A", res_seq=1, 
+                 i_code="", coords=NPVec3D(0.0, 1.0, 0.0), occupancy=1.0, temp_factor=0.0, 
+                 element="C", charge="", record_type="ATOM"),
+        ]
+        
+        residue = Residue(name="PHE", chain_id="A", seq_num=1, i_code="", atoms=atoms)
+        center = residue.get_aromatic_center()
+        
+        assert center is not None
+        # The center should be approximately at (0, 0.5, 0)
+        assert abs(center.x - 0.0) < 0.01
+        assert abs(center.y - 0.5) < 0.01
+        assert abs(center.z - 0.0) < 0.01
+
+    def test_get_aromatic_center_insufficient_atoms(self):
+        """Test aromatic center calculation with insufficient ring atoms."""
+        # Create only 3 atoms (less than required 5)
+        atoms = [
+            Atom(serial=1, name="CG", alt_loc="", res_name="PHE", chain_id="A", res_seq=1, 
+                 i_code="", coords=NPVec3D(0.0, 0.0, 0.0), occupancy=1.0, temp_factor=0.0, 
+                 element="C", charge="", record_type="ATOM"),
+            Atom(serial=2, name="CD1", alt_loc="", res_name="PHE", chain_id="A", res_seq=1, 
+                 i_code="", coords=NPVec3D(1.0, 0.0, 0.0), occupancy=1.0, temp_factor=0.0, 
+                 element="C", charge="", record_type="ATOM"),
+            Atom(serial=3, name="CD2", alt_loc="", res_name="PHE", chain_id="A", res_seq=1, 
+                 i_code="", coords=NPVec3D(-1.0, 0.0, 0.0), occupancy=1.0, temp_factor=0.0, 
+                 element="C", charge="", record_type="ATOM"),
+        ]
+        
+        residue = Residue(name="PHE", chain_id="A", seq_num=1, i_code="", atoms=atoms)
+        center = residue.get_aromatic_center()
+        assert center is None
 
 
 class TestBond:
@@ -438,8 +498,9 @@ class TestCovalentCutoffFactor:
     
     def test_pdb_parser_uses_covalent_cutoff_factor(self):
         """Test that PDB parser uses the configurable covalent cutoff factor."""
-        from hbat.core.pdb_parser import PDBParser, Atom
-        from hbat.core.vector import Vec3D
+        from hbat.core.pdb_parser import PDBParser
+        from hbat.core.structure import Atom
+        from hbat.core.np_vector import NPNPVec3D
         from hbat.constants.parameters import ParametersDefault
         
         parser = PDBParser()
@@ -447,13 +508,13 @@ class TestCovalentCutoffFactor:
         # Create two test atoms that should be bonded with default factor
         atom1 = Atom(
             serial=1, name="C1", alt_loc="", res_name="TEST", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(0, 0, 0), occupancy=1.0,
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="C", charge="", record_type="ATOM"
         )
         
         atom2 = Atom(
             serial=2, name="C2", alt_loc="", res_name="TEST", chain_id="A",
-            res_seq=1, i_code="", coords=Vec3D(1.5, 0, 0), occupancy=1.0,  # 1.5 Å apart
+            res_seq=1, i_code="", coords=NPVec3D(1.5, 0, 0), occupancy=1.0,  # 1.5 Å apart
             temp_factor=20.0, element="C", charge="", record_type="ATOM"
         )
         

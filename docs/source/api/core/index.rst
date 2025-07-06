@@ -3,44 +3,40 @@ Module Overview
 
 The core package is organized into specialized modules:
 
-- **analyzer**: Main molecular interaction analysis engine
 - **np_analyzer**: NumPy-optimized molecular interaction analysis engine
-- **interactions**: Data structures for molecular interactions
+- **interactions**: Data structures for molecular interactions  
+- **structure**: Molecular structure classes (Atom, Bond, Residue)
 - **pdb_parser**: PDB file parsing and structure handling
 - **pdb_fixer**: PDB structure enhancement and fixing
-- **vector**: 3D vector mathematics for molecular calculations
 - **np_vector**: NumPy-based 3D vector mathematics for high-performance calculations
-- **analysis**: Backward compatibility module (re-exports from other modules)
 
 .. toctree::
    :maxdepth: 2
 
-   analyzer
    np_analyzer
    interactions
+   structure
    pdb_parser
    pdb_fixer
-   vector
    np_vector
-   analysis
 
 Main Analysis Engine
 --------------------
 
-Molecular Interaction Analyzer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+NumPy Molecular Interaction Analyzer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: hbat.core.analyzer
+.. automodule:: hbat.core.np_analyzer
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: hbat.core.analyzer.MolecularInteractionAnalyzerractionAnalyzer
+.. autoclass:: hbat.core.np_analyzer.NPMolecularInteractionAnalyzer
    :members:
    :undoc-members:
    :show-inheritance:
 
-   The main analysis engine for detecting molecular interactions in PDB structures.
+   High-performance molecular interaction analysis engine using vectorized NumPy operations.
    
    **Key Features:**
    
@@ -48,24 +44,28 @@ Molecular Interaction Analyzer
    - Halogen bond identification with σ-hole directionality
    - π-π stacking and X-H...π interaction analysis
    - Cooperative interaction chain detection
-   - Comprehensive statistics and validation
+   - Comprehensive statistics and PDB fixing integration
+   - 35x performance improvement through spatial grid optimization
    
    **Usage Example:**
    
    .. code-block:: python
    
-      from hbat.core.analyzer import MolecularInteractionAnalyzerractionAnalyzer
-      from hbat.constants import ParametersDefault
+      from hbat.core.np_analyzer import NPMolecularInteractionAnalyzer
+      from hbat.constants.parameters import AnalysisParameters
       
-      # Initialize analyzer with default parameters
-      analyzer = MolecularInteractionAnalyzerractionAnalyzer(ParametersDefault())
+      # Initialize analyzer with parameters
+      params = AnalysisParameters()
+      params.fix_pdb_enabled = True
+      analyzer = NPMolecularInteractionAnalyzer(params)
       
-      # Analyze PDB file
-      results = analyzer.analyze_file("structure.pdb")
+      # Analyze PDB file (includes optional PDB fixing)
+      success = analyzer.analyze_file("structure.pdb")
       
-      # Get statistics
-      stats = analyzer.get_statistics()
-      print(f"Found {len(results.hydrogen_bonds)} hydrogen bonds")
+      # Get comprehensive summary with statistics and timing
+      summary = analyzer.get_summary()
+      print(f"Found {summary['hydrogen_bonds']['count']} hydrogen bonds")
+      print(f"Analysis completed in {summary['timing']['analysis_duration_seconds']} seconds")
 
 Interaction Data Structures
 ----------------------------
@@ -185,26 +185,29 @@ PDB File Parser
 Molecular Data Structures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: hbat.core.pdb_parser.Atom
+.. autoclass:: hbat.core.structure.Atom
    :members:
    :undoc-members:
    :show-inheritance:
 
-   Dataclass representing an atom with comprehensive PDB information and calculated properties.
+   Class representing an atom with comprehensive PDB information and calculated properties.
+   Supports iteration, dictionary conversion, and field introspection.
 
-.. autoclass:: hbat.core.pdb_parser.Residue
+.. autoclass:: hbat.core.structure.Residue
    :members:
    :undoc-members:
    :show-inheritance:
 
-   Dataclass representing a residue with atom collections and residue-level properties.
+   Class representing a residue with atom collections and residue-level properties.
+   Includes aromatic center calculation and atom management.
 
-.. autoclass:: hbat.core.pdb_parser.Bond
+.. autoclass:: hbat.core.structure.Bond
    :members:
    :undoc-members:
    :show-inheritance:
 
-   Dataclass representing a chemical bond between two atoms with bond properties.
+   Class representing a chemical bond between two atoms with bond properties.
+   Provides methods for bond analysis and atom involvement checking.
 
 PDB Structure Enhancement
 -------------------------
@@ -226,28 +229,31 @@ PDB Structure Fixer
    
    **Fixing Capabilities:**
    
-   - Missing hydrogen atom addition
-   - Missing heavy atom reconstruction
-   - Non-standard residue conversion
-   - Hetrogen removal and filtering
-   - Structure validation and repair
+   - Missing hydrogen atom addition (OpenBabel/PDBFixer)
+   - Missing heavy atom reconstruction (PDBFixer only)
+   - Non-standard residue conversion (PDBFixer only)
+   - Hetrogen removal and filtering (PDBFixer only)
+   - Direct file-to-file processing for preserved formatting
    
    **Usage Example:**
    
    .. code-block:: python
    
       from hbat.core.pdb_fixer import PDBFixer
-      from hbat.constants import PDBFixingModes
       
       # Initialize fixer
       fixer = PDBFixer()
       
-      # Fix structure with multiple operations
-      fixer.fix_structure_file(
-          "input.pdb", 
-          "output.pdb",
-          mode=PDBFixingModes.ADD_HYDROGENS_AND_CONVERT_RESIDUES
+      # Fix structure directly from file to file
+      success = fixer.fix_pdb_file_to_file(
+          input_pdb_path="input.pdb",
+          output_pdb_path="input_fixed.pdb", 
+          method="openbabel",
+          add_hydrogens=True
       )
+      
+      # Or use atom-based processing
+      fixed_atoms = fixer.add_missing_hydrogens(atoms, method="pdbfixer")
 
 .. autoclass:: hbat.core.pdb_fixer.PDBFixerError
    :members:
@@ -259,56 +265,53 @@ PDB Structure Fixer
 3D Vector Mathematics
 ---------------------
 
-Vector Operations
-~~~~~~~~~~~~~~~~~
+NumPy Vector Operations
+~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: hbat.core.vector
+.. automodule:: hbat.core.np_vector
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: hbat.core.vector.Vec3D
+.. autoclass:: hbat.core.np_vector.NPVec3D
    :members:
    :undoc-members:
    :show-inheritance:
 
-   Comprehensive 3D vector class optimized for molecular geometry calculations.
+   High-performance 3D vector class using NumPy for molecular geometry calculations.
    
    **Mathematical Operations:**
    
    - Standard arithmetic: addition, subtraction, multiplication, division
    - Vector operations: dot product, cross product, normalization
    - Geometric calculations: distances, angles, projections
-   - Conversion utilities: list/tuple interfaces
+   - NumPy array compatibility and vectorized operations
    
    **Usage Example:**
    
    .. code-block:: python
    
-      from hbat.core.vector import Vec3D
+      from hbat.core.np_vector import NPVec3D
       
       # Create vectors
-      v1 = Vec3D(1.0, 0.0, 0.0)
-      v2 = Vec3D(0.0, 1.0, 0.0)
+      v1 = NPVec3D(1.0, 0.0, 0.0)
+      v2 = NPVec3D(0.0, 1.0, 0.0)
       
       # Vector operations
-      cross_product = v1.cross(v2)  # Returns Vec3D(0.0, 0.0, 1.0)
+      cross_product = v1.cross(v2)  # Returns NPVec3D(0.0, 0.0, 1.0)
       angle = v1.angle_to(v2)       # Returns π/2 radians
+      distance = v1.distance_to(v2) # Returns √2
 
 Utility Functions
 ~~~~~~~~~~~~~~~~~
 
-.. autofunction:: hbat.core.vector.unit_vector_between
+.. autofunction:: hbat.core.np_vector.compute_distance_matrix
 
-   Calculate unit vector between two points with robust normalization.
+   Compute distance matrix between two sets of coordinates using vectorized operations.
 
-.. autofunction:: hbat.core.vector.angle_between_vectors
+.. autofunction:: hbat.core.np_vector.batch_angle_between
 
-   Calculate angle between vectors with numerical stability checks.
-
-.. autofunction:: hbat.core.vector.dihedral_angle
-
-   Calculate dihedral angle between four points using proper geometric algorithms.
+   Calculate angle between three points with vectorized NumPy operations.
 
 Legacy Compatibility
 ---------------------
@@ -325,7 +328,7 @@ Analysis Module (Backward Compatibility)
    
    **Re-exported Classes:**
    
-   - `MolecularInteractionAnalyzerractionAnalyzer` from `analyzer.py`
+   - `NPMolecularInteractionAnalyzer` from `np_analyzer.py`
    - `AnalysisParameters` from `constants.parameters`
    - All interaction classes from `interactions.py`
    
@@ -336,11 +339,11 @@ Analysis Module (Backward Compatibility)
    .. code-block:: python
    
       # Recommended for new code
-      from hbat.core.analyzer import MolecularInteractionAnalyzerractionAnalyzer
+      from hbat.core.np_analyzer import NPMolecularInteractionAnalyzer
       from hbat.core.interactions import HydrogenBond
       
       # Still works (backward compatibility)
-      from hbat.core.analysis import MolecularInteractionAnalyzerractionAnalyzer, HydrogenBond
+      from hbat.core.analysis import NPMolecularInteractionAnalyzer, HydrogenBond
 
 Performance Notes
 -----------------
@@ -348,14 +351,15 @@ Performance Notes
 **Optimization Features:**
 
 - **Efficient Parsing**: pdbreader integration for fast PDB processing
-- **Spatial Indexing**: Optimized neighbor searching for interaction detection
-- **Memory Management**: Dataclass structures with minimal overhead
-- **Vectorized Operations**: NumPy-compatible vector mathematics
-- **Caching**: Computed property caching for expensive calculations
+- **Spatial Grid**: O(n) bond detection using spatial grid partitioning (35x speedup)
+- **Memory Management**: Class structures optimized for large-scale analysis
+- **Vectorized Operations**: NumPy-accelerated vector mathematics and distance calculations
+- **Direct File Processing**: PDB fixing with preserved formatting
+- **Bond Adjacency Maps**: O(1) bond lookups for interaction analysis
 
 **Scalability:**
 
 - Handles large protein complexes (>100k atoms)
-- Memory-efficient data structures
-- Parallel-friendly algorithms
-- Incremental analysis capabilities
+- Memory-efficient data structures with optimized indexing
+- Spatial partitioning for sub-linear interaction detection
+- Comprehensive timing and performance metrics

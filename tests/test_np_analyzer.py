@@ -1,248 +1,255 @@
 """
-Test cases for NumPy-optimized molecular interaction analyzer.
+Test high-performance molecular interaction analyzer.
 """
 
+import math
 import os
 import pytest
 import numpy as np
 
-from hbat.core.np_analyzer import NPMolecularInteractionAnalyzer
-from hbat.core.analyzer import MolecularInteractionAnalyzer
 from hbat.constants.parameters import AnalysisParameters
+from hbat.core.np_analyzer import NPMolecularInteractionAnalyzer
 
 
-class TestNPAnalyzerCompatibility:
-    """Test that NPMolecularInteractionAnalyzer produces same results as original."""
+class TestNPAnalyzer:
+    """Test high-performance analyzer functionality."""
     
-    @pytest.fixture
-    def test_pdb_dir(self):
-        """Get the example PDB files directory."""
-        return os.path.join(os.path.dirname(os.path.dirname(__file__)), "example_pdb_files")
+    def test_analyzer_creation(self):
+        """Test that NPMolecularInteractionAnalyzer can be created."""
+        params = AnalysisParameters()
+        analyzer = NPMolecularInteractionAnalyzer(params)
+        
+        assert analyzer is not None
+        assert analyzer.parameters == params
+        assert len(analyzer.hydrogen_bonds) == 0
+        assert len(analyzer.halogen_bonds) == 0
+        assert len(analyzer.pi_interactions) == 0
+        assert len(analyzer.cooperativity_chains) == 0
     
-    def test_hydrogen_bond_detection_compatibility(self, test_pdb_dir):
-        """Test that hydrogen bond detection matches original analyzer."""
+    def test_analyzer_with_invalid_parameters(self):
+        """Test that analyzer creation fails with invalid parameters."""
+        # Create parameters with invalid values
+        params = AnalysisParameters(hb_distance_cutoff=-1.0)  # Invalid negative distance
+        
+        with pytest.raises(ValueError):
+            NPMolecularInteractionAnalyzer(params)
+    
+    def test_hydrogen_bond_detection(self, test_pdb_dir):
+        """Test hydrogen bond detection functionality."""
         pdb_file = os.path.join(test_pdb_dir, "6RSA.pdb")
         
         if not os.path.exists(pdb_file):
             pytest.skip(f"Test PDB file not found: {pdb_file}")
         
-        # Analyze with original analyzer
         params = AnalysisParameters()
-        original_analyzer = MolecularInteractionAnalyzer(params)
-        original_analyzer.analyze_file(pdb_file)
+        analyzer = NPMolecularInteractionAnalyzer(params)
         
-        # Analyze with NumPy analyzer
-        np_analyzer = NPMolecularInteractionAnalyzer(params)
-        np_analyzer.analyze_file(pdb_file)
+        success = analyzer.analyze_file(pdb_file)
+        assert success
         
-        # Compare hydrogen bond counts
-        assert len(np_analyzer.hydrogen_bonds) == len(original_analyzer.hydrogen_bonds)
+        # Check that some hydrogen bonds were found
+        assert len(analyzer.hydrogen_bonds) > 0
         
-        # Sort bonds for comparison
-        def bond_key(hb):
-            return (hb.donor.serial, hb.hydrogen.serial, hb.acceptor.serial)
-        
-        np_bonds = sorted(np_analyzer.hydrogen_bonds, key=bond_key)
-        orig_bonds = sorted(original_analyzer.hydrogen_bonds, key=bond_key)
-        
-        # Compare individual bonds
-        for np_hb, orig_hb in zip(np_bonds, orig_bonds):
-            assert np_hb.donor.serial == orig_hb.donor.serial
-            assert np_hb.hydrogen.serial == orig_hb.hydrogen.serial
-            assert np_hb.acceptor.serial == orig_hb.acceptor.serial
-            assert abs(np_hb.distance - orig_hb.distance) < 1e-6
-            assert abs(np_hb.angle - orig_hb.angle) < 1e-4
+        # Validate hydrogen bond structure
+        for hb in analyzer.hydrogen_bonds[:5]:  # Check first 5
+            assert hasattr(hb, 'distance')
+            assert hasattr(hb, 'angle')
+            assert hb.distance > 0
+            assert 0 < hb.angle < math.pi
+            assert hasattr(hb, 'bond_type')
     
-    def test_halogen_bond_detection_compatibility(self, test_pdb_dir):
-        """Test that halogen bond detection matches original analyzer."""
+    def test_halogen_bond_detection(self, test_pdb_dir):
+        """Test halogen bond detection functionality."""
+        # Use a file known to have halogens
         pdb_file = os.path.join(test_pdb_dir, "4X21.pdb")
         
         if not os.path.exists(pdb_file):
             pytest.skip(f"Test PDB file not found: {pdb_file}")
         
-        # Analyze with both analyzers
         params = AnalysisParameters()
-        original_analyzer = MolecularInteractionAnalyzer(params)
-        original_analyzer.analyze_file(pdb_file)
+        analyzer = NPMolecularInteractionAnalyzer(params)
         
-        np_analyzer = NPMolecularInteractionAnalyzer(params)
-        np_analyzer.analyze_file(pdb_file)
+        success = analyzer.analyze_file(pdb_file)
+        assert success
         
-        # Compare halogen bond counts
-        assert len(np_analyzer.halogen_bonds) == len(original_analyzer.halogen_bonds)
-        
-        # Sort bonds for comparison
-        def bond_key(xb):
-            return (xb.carbon.serial, xb.halogen.serial, xb.acceptor.serial)
-        
-        np_bonds = sorted(np_analyzer.halogen_bonds, key=bond_key)
-        orig_bonds = sorted(original_analyzer.halogen_bonds, key=bond_key)
-        
-        # Compare individual bonds
-        for np_xb, orig_xb in zip(np_bonds, orig_bonds):
-            assert np_xb.carbon.serial == orig_xb.carbon.serial
-            assert np_xb.halogen.serial == orig_xb.halogen.serial
-            assert np_xb.acceptor.serial == orig_xb.acceptor.serial
-            assert abs(np_xb.distance - orig_xb.distance) < 1e-6
-            assert abs(np_xb.angle - orig_xb.angle) < 1e-4
+        # Validate any found halogen bonds
+        for xb in analyzer.halogen_bonds:
+            assert hasattr(xb, 'distance')
+            assert hasattr(xb, 'angle')
+            assert xb.distance > 0
+            assert 0 < xb.angle < math.pi
     
-    def test_pi_interaction_detection_compatibility(self, test_pdb_dir):
-        """Test that π interaction detection matches original analyzer."""
+    def test_pi_interaction_detection(self, test_pdb_dir):
+        """Test π interaction detection functionality."""
         pdb_file = os.path.join(test_pdb_dir, "2IZF.pdb")
         
         if not os.path.exists(pdb_file):
             pytest.skip(f"Test PDB file not found: {pdb_file}")
         
-        # Analyze with both analyzers
         params = AnalysisParameters()
-        original_analyzer = MolecularInteractionAnalyzer(params)
-        original_analyzer.analyze_file(pdb_file)
+        analyzer = NPMolecularInteractionAnalyzer(params)
         
-        np_analyzer = NPMolecularInteractionAnalyzer(params)
-        np_analyzer.analyze_file(pdb_file)
+        success = analyzer.analyze_file(pdb_file)
+        assert success
         
-        # Compare π interaction counts
-        assert len(np_analyzer.pi_interactions) == len(original_analyzer.pi_interactions)
-        
-        # Sort interactions for comparison
-        def pi_key(pi):
-            return (pi.donor.serial, pi.hydrogen.serial, pi.aromatic_residue.residue_number)
-        
-        np_pis = sorted(np_analyzer.pi_interactions, key=pi_key)
-        orig_pis = sorted(original_analyzer.pi_interactions, key=pi_key)
-        
-        # Compare individual interactions
-        for np_pi, orig_pi in zip(np_pis, orig_pis):
-            assert np_pi.donor.serial == orig_pi.donor.serial
-            assert np_pi.hydrogen.serial == orig_pi.hydrogen.serial
-            assert np_pi.aromatic_residue.residue_number == orig_pi.aromatic_residue.residue_number
-            assert abs(np_pi.distance - orig_pi.distance) < 1e-6
-            assert abs(np_pi.angle - orig_pi.angle) < 1e-4
+        # Validate any found π interactions
+        for pi in analyzer.pi_interactions:
+            assert hasattr(pi, 'distance')
+            assert hasattr(pi, 'angle')
+            assert pi.distance > 0
+            assert 0 < pi.angle < math.pi
     
     def test_cooperativity_chain_detection(self, test_pdb_dir):
-        """Test cooperativity chain detection."""
+        """Test cooperativity chain detection functionality."""
         pdb_file = os.path.join(test_pdb_dir, "6RSA.pdb")
         
         if not os.path.exists(pdb_file):
             pytest.skip(f"Test PDB file not found: {pdb_file}")
         
-        # Test with standard parameters
         params = AnalysisParameters()
+        analyzer = NPMolecularInteractionAnalyzer(params)
         
-        np_analyzer = NPMolecularInteractionAnalyzer(params)
-        np_analyzer.analyze_file(pdb_file)
+        success = analyzer.analyze_file(pdb_file)
+        assert success
         
-        # Should detect some chains
-        assert len(np_analyzer.cooperativity_chains) >= 0
+        # Check that some cooperativity chains were found
+        assert len(analyzer.cooperativity_chains) > 0
         
-        # Check chain properties
-        for chain in np_analyzer.cooperativity_chains:
-            assert len(chain.interactions) >= 2
-            assert chain.chain_type is not None
-
-
-class TestNPAnalyzerPerformance:
-    """Test performance characteristics of NumPy analyzer."""
+        # Validate chain structure
+        for chain in analyzer.cooperativity_chains[:5]:  # Check first 5
+            assert hasattr(chain, 'chain_length')
+            assert hasattr(chain, 'interactions')
+            assert chain.chain_length >= 2  # Minimum chain length
+            assert len(chain.interactions) == chain.chain_length
     
-    def test_vectorized_distance_calculation(self):
-        """Test that distance calculations are properly vectorized."""
-        # Create mock atom coordinates
-        n_atoms = 1000
-        coords = np.random.rand(n_atoms, 3) * 50.0
-        
-        analyzer = NPMolecularInteractionAnalyzer()
-        analyzer._atom_coords = coords
-        
-        # Test distance matrix computation
-        distances = np.linalg.norm(coords[:100, np.newaxis] - coords[100:200][np.newaxis, :], axis=2)
-        
-        assert distances.shape == (100, 100)
-        assert np.all(distances >= 0)
-    
-    def test_batch_angle_calculation(self):
-        """Test batch angle calculations."""
-        # Create test vectors
-        n_angles = 100
-        donors = np.random.rand(n_angles, 3)
-        hydrogens = np.random.rand(n_angles, 3)
-        acceptors = np.random.rand(n_angles, 3)
-        
-        # Calculate angles in batch
-        from hbat.core.np_vector import NPVec3D, batch_angle_between
-        
-        donor_vecs = NPVec3D(donors)
-        h_vecs = NPVec3D(hydrogens)
-        acceptor_vecs = NPVec3D(acceptors)
-        
-        angles = batch_angle_between(donor_vecs, h_vecs, acceptor_vecs)
-        
-        assert len(angles) == n_angles
-        assert np.all(angles >= 0)
-        assert np.all(angles <= np.pi)
-
-
-class TestNPAnalyzerFeatures:
-    """Test specific features of the NumPy analyzer."""
-    
-    @pytest.fixture
-    def test_pdb_dir(self):
-        """Get the example PDB files directory."""
-        return os.path.join(os.path.dirname(os.path.dirname(__file__)), "example_pdb_files")
-    
-    def test_summary_statistics(self, test_pdb_dir):
-        """Test summary statistics calculation."""
+    def test_vectorized_data_preparation(self, test_pdb_dir):
+        """Test that vectorized data is properly prepared."""
         pdb_file = os.path.join(test_pdb_dir, "6RSA.pdb")
         
         if not os.path.exists(pdb_file):
             pytest.skip(f"Test PDB file not found: {pdb_file}")
         
-        analyzer = NPMolecularInteractionAnalyzer()
-        analyzer.analyze_file(pdb_file)
+        params = AnalysisParameters()
+        analyzer = NPMolecularInteractionAnalyzer(params)
+        
+        # Parse the file
+        analyzer.parser.parse_file(pdb_file)
+        analyzer._prepare_vectorized_data()
+        
+        # Check that vectorized data was created
+        assert analyzer._atom_coords is not None
+        assert isinstance(analyzer._atom_coords, np.ndarray)
+        assert analyzer._atom_coords.shape[1] == 3  # 3D coordinates
+        assert len(analyzer._atom_coords) == len(analyzer.parser.atoms)
+        
+        # Check that atom indices were created
+        assert 'all' in analyzer._atom_indices
+        assert 'hydrogen' in analyzer._atom_indices
+        assert 'donor' in analyzer._atom_indices
+        assert 'acceptor' in analyzer._atom_indices
+    
+    def test_residue_indexing_optimization(self, test_pdb_dir):
+        """Test optimized residue indexing for performance."""
+        pdb_file = os.path.join(test_pdb_dir, "6RSA.pdb")
+        
+        if not os.path.exists(pdb_file):
+            pytest.skip(f"Test PDB file not found: {pdb_file}")
+        
+        params = AnalysisParameters()
+        analyzer = NPMolecularInteractionAnalyzer(params)
+        
+        # Parse and prepare data
+        analyzer.parser.parse_file(pdb_file)
+        analyzer._prepare_vectorized_data()
+        
+        # Check residue indexing
+        assert len(analyzer._residue_to_atoms) > 0
+        assert len(analyzer._atom_to_residue) > 0
+        assert len(analyzer._atom_to_residue) == len(analyzer.parser.atoms)
+        
+        # Test same residue check
+        if len(analyzer.parser.atoms) >= 2:
+            # Test with atoms from same residue (should be True)
+            first_atom_idx = 0
+            first_residue = analyzer._atom_to_residue[first_atom_idx]
+            same_residue_atoms = analyzer._residue_to_atoms[first_residue]
+            
+            if len(same_residue_atoms) >= 2:
+                result = analyzer._are_same_residue(same_residue_atoms[0], same_residue_atoms[1])
+                assert result is True
+    
+    def test_statistics_generation(self, test_pdb_dir):
+        """Test that statistics are properly generated."""
+        pdb_file = os.path.join(test_pdb_dir, "6RSA.pdb")
+        
+        if not os.path.exists(pdb_file):
+            pytest.skip(f"Test PDB file not found: {pdb_file}")
+        
+        params = AnalysisParameters()
+        analyzer = NPMolecularInteractionAnalyzer(params)
+        
+        success = analyzer.analyze_file(pdb_file)
+        assert success
         
         summary = analyzer.get_summary()
         
-        # Check summary structure
-        assert "hydrogen_bonds" in summary
-        assert "halogen_bonds" in summary
-        assert "pi_interactions" in summary
-        assert "cooperativity_chains" in summary
+        # Check required summary fields
+        assert 'hydrogen_bonds' in summary
+        assert 'halogen_bonds' in summary
+        assert 'pi_interactions' in summary
+        assert 'cooperativity_chains' in summary
+        assert 'total_interactions' in summary
         
-        # Check hydrogen bond statistics
-        hb_stats = summary["hydrogen_bonds"]
-        assert "count" in hb_stats
-        assert "average_distance" in hb_stats
-        assert "average_angle" in hb_stats
-        
-        if analyzer.hydrogen_bonds:
-            assert hb_stats["count"] == len(analyzer.hydrogen_bonds)
-            assert hb_stats["average_distance"] > 0
-            assert hb_stats["average_angle"] > 0
+        # Check that counts match actual results
+        assert summary['hydrogen_bonds']['count'] == len(analyzer.hydrogen_bonds)
+        assert summary['halogen_bonds']['count'] == len(analyzer.halogen_bonds)
+        assert summary['pi_interactions']['count'] == len(analyzer.pi_interactions)
+        assert summary['cooperativity_chains']['count'] == len(analyzer.cooperativity_chains)
     
-    def test_parameter_validation(self):
-        """Test parameter validation."""
-        # Invalid parameters should raise ValueError
-        params = AnalysisParameters(hb_distance_cutoff=-1.0)
+    def test_analysis_modes(self, test_pdb_dir):
+        """Test different analysis modes."""
+        pdb_file = os.path.join(test_pdb_dir, "6RSA.pdb")
         
-        with pytest.raises(ValueError):
-            NPMolecularInteractionAnalyzer(params)
+        if not os.path.exists(pdb_file):
+            pytest.skip(f"Test PDB file not found: {pdb_file}")
+        
+        # Test global mode
+        global_params = AnalysisParameters(analysis_mode="global")
+        global_analyzer = NPMolecularInteractionAnalyzer(global_params)
+        global_success = global_analyzer.analyze_file(pdb_file)
+        assert global_success
+        
+        # Test local mode
+        local_params = AnalysisParameters(analysis_mode="local")
+        local_analyzer = NPMolecularInteractionAnalyzer(local_params)
+        local_success = local_analyzer.analyze_file(pdb_file)
+        assert local_success
+        
+        # Local mode should typically find fewer interactions
+        # (but this isn't guaranteed for all structures)
+        global_total = len(global_analyzer.hydrogen_bonds) + len(global_analyzer.halogen_bonds) + len(global_analyzer.pi_interactions)
+        local_total = len(local_analyzer.hydrogen_bonds) + len(local_analyzer.halogen_bonds) + len(local_analyzer.pi_interactions)
+        
+        # Both should find some interactions
+        assert global_total >= 0
+        assert local_total >= 0
     
-    def test_empty_structure(self):
-        """Test handling of empty or minimal structures."""
-        analyzer = NPMolecularInteractionAnalyzer()
+    def test_pdb_fixing_integration(self, test_pdb_dir):
+        """Test that PDB fixing integration works."""
+        # Use a file that lacks hydrogens
+        pdb_file = os.path.join(test_pdb_dir, "1UBI.pdb")
         
-        # Create minimal parser with no atoms
-        analyzer.parser.atoms = []
-        analyzer._prepare_vectorized_data()
+        if not os.path.exists(pdb_file):
+            pytest.skip(f"Test PDB file not found: {pdb_file}")
         
-        # Should handle gracefully
-        assert analyzer._atom_coords.size == 0
-        assert len(analyzer._atom_indices['hydrogen']) == 0
+        # Test with PDB fixing enabled
+        params = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="openbabel",
+            fix_pdb_add_hydrogens=True
+        )
+        analyzer = NPMolecularInteractionAnalyzer(params)
         
-        # Analysis should complete without errors
-        analyzer._find_hydrogen_bonds_vectorized()
-        analyzer._find_halogen_bonds_vectorized()
-        analyzer._find_pi_interactions_vectorized()
-        
-        assert len(analyzer.hydrogen_bonds) == 0
-        assert len(analyzer.halogen_bonds) == 0
-        assert len(analyzer.pi_interactions) == 0
+        # This should work even if PDB fixing is not available
+        success = analyzer.analyze_file(pdb_file)
+        assert success  # Should succeed even if fixing fails

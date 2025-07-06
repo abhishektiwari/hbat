@@ -65,9 +65,23 @@ def pdb_fixing_test_file():
 
 @pytest.fixture
 def analyzer():
-    """Provide a configured MolecularInteractionAnalyzer instance."""
-    from hbat.core.analysis import MolecularInteractionAnalyzer
-    return MolecularInteractionAnalyzer()
+    """Provide a configured NPMolecularInteractionAnalyzer instance."""
+    from hbat.core.analysis import NPMolecularInteractionAnalyzer
+    return NPMolecularInteractionAnalyzer()
+
+@pytest.fixture
+def test_pdb_dir():
+    """Provide path to test PDB files directory."""
+    pdb_dir_paths = [
+        os.path.join(os.path.dirname(__file__), "..", "example_pdb_files"),
+        "../example_pdb_files",  # When running from tests/
+        "example_pdb_files",     # When running from project root
+    ]
+    
+    for path in pdb_dir_paths:
+        if os.path.exists(path):
+            return path
+    pytest.skip("Test PDB files directory not found")
 
 @pytest.fixture
 def analysis_parameters():
@@ -179,16 +193,20 @@ def validate_cooperativity_chain(chain):
     assert len(chain.interactions) > 0, "Chain should have at least one interaction"
     assert chain.chain_length == len(chain.interactions), "Length should match interactions count"
     
-    # Validate chain_type format - should be like "H-Bond -> X-Bond" or "H-Bond -> H-Bond"
+    # Validate chain_type format - supports both old format and NumPy analyzer format
     valid_components = {"H-Bond", "X-Bond", "π-Int", "Unknown", "Empty"}
+    valid_chain_types = {"H-bond chain", "X-bond chain", "π-bond chain", "Mixed chain", "Empty"}
     
     if chain.chain_type == "Empty":
         assert len(chain.interactions) == 0, "Empty chain should have no interactions"
+    elif chain.chain_type in valid_chain_types:
+        # NumPy analyzer format - descriptive chain types
+        assert len(chain.interactions) >= 2, "Non-empty chain should have at least 2 interactions"
     else:
-        # Split by " -> " and validate each component
+        # Original format - arrow-separated components
         components = chain.chain_type.split(" -> ")
         assert all(comp in valid_components for comp in components), \
-            f"Invalid chain type components in '{chain.chain_type}'. Valid components: {valid_components}"
+            f"Invalid chain type components in '{chain.chain_type}'. Valid: {valid_components} or {valid_chain_types}"
         assert len(components) == len(chain.interactions), \
             f"Chain type components ({len(components)}) should match number of interactions ({len(chain.interactions)})"
     

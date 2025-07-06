@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 
 from .. import __version__
 from ..constants.parameters import ParametersDefault
-from ..core.analysis import AnalysisParameters, MolecularInteractionAnalyzer
+from ..core.analysis import AnalysisParameters, NPMolecularInteractionAnalyzer
 from ..core.pdb_parser import PDBParser
 
 
@@ -530,7 +530,9 @@ def validate_input_file(filename: str) -> bool:
 
 
 def format_results_text(
-    analyzer: MolecularInteractionAnalyzer, input_file: str, summary_only: bool = False
+    analyzer: NPMolecularInteractionAnalyzer,
+    input_file: str,
+    summary_only: bool = False,
 ) -> str:
     """Format analysis results as text.
 
@@ -554,13 +556,13 @@ def format_results_text(
     lines.append("")
 
     # Statistics summary
-    stats = analyzer.get_statistics()
+    summary = analyzer.get_summary()
     lines.append("Summary:")
-    lines.append(f"  Hydrogen bonds: {stats['hydrogen_bonds']}")
-    lines.append(f"  Halogen bonds: {stats['halogen_bonds']}")
-    lines.append(f"  π interactions: {stats['pi_interactions']}")
-    lines.append(f"  Cooperativity chains: {stats.get('cooperativity_chains', 0)}")
-    lines.append(f"  Total interactions: {stats['total_interactions']}")
+    lines.append(f"  Hydrogen bonds: {summary['hydrogen_bonds']['count']}")
+    lines.append(f"  Halogen bonds: {summary['halogen_bonds']['count']}")
+    lines.append(f"  π interactions: {summary['pi_interactions']['count']}")
+    lines.append(f"  Cooperativity chains: {summary['cooperativity_chains']['count']}")
+    lines.append(f"  Total interactions: {summary['total_interactions']}")
     lines.append("")
 
     if summary_only:
@@ -599,7 +601,7 @@ def format_results_text(
 
 
 def export_to_json(
-    analyzer: MolecularInteractionAnalyzer, input_file: str, output_file: str
+    analyzer: NPMolecularInteractionAnalyzer, input_file: str, output_file: str
 ) -> None:
     """Export results to JSON format.
 
@@ -623,7 +625,7 @@ def export_to_json(
             "analysis_time": time.strftime("%Y-%m-%d %H:%M:%S"),
             "hbat_version": __version__,
         },
-        "statistics": analyzer.get_statistics(),
+        "summary": analyzer.get_summary(),
         "hydrogen_bonds": [],
         "halogen_bonds": [],
         "pi_interactions": [],
@@ -718,7 +720,7 @@ def export_to_json(
         json.dump(data, f, indent=2)
 
 
-def export_to_csv(analyzer: MolecularInteractionAnalyzer, output_file: str) -> None:
+def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) -> None:
     """Export results to CSV format.
 
     Exports analysis results to a CSV file with separate sections
@@ -851,7 +853,7 @@ def run_analysis(args: argparse.Namespace) -> int:
         print_progress(f"Analysis mode: {parameters.analysis_mode}", verbose)
 
         # Create analyzer
-        analyzer = MolecularInteractionAnalyzer(parameters)
+        analyzer = NPMolecularInteractionAnalyzer(parameters)
 
         # Run analysis
         start_time = time.time()
@@ -865,14 +867,14 @@ def run_analysis(args: argparse.Namespace) -> int:
         print_progress(f"Analysis completed in {analysis_time:.2f} seconds", verbose)
 
         # Get results
-        stats = analyzer.get_statistics()
+        summary = analyzer.get_summary()
 
         if not args.quiet:
             print(
-                f"Found {stats['hydrogen_bonds']} hydrogen bonds, "
-                f"{stats['halogen_bonds']} halogen bonds, "
-                f"{stats['pi_interactions']} π interactions, "
-                f"{stats.get('cooperativity_chains', 0)} cooperativity chains"
+                f"Found {summary['hydrogen_bonds']['count']} hydrogen bonds, "
+                f"{summary['halogen_bonds']['count']} halogen bonds, "
+                f"{summary['pi_interactions']['count']} π interactions, "
+                f"{summary['cooperativity_chains']['count']} cooperativity chains"
             )
 
         # Output results

@@ -67,9 +67,6 @@ class ResultsPanel:
         # Cooperativity chains tab
         self._create_cooperativity_chains_tab()
 
-        # Statistics tab
-        self._create_statistics_tab()
-
     def _create_summary_tab(self):
         """Create summary results tab."""
         summary_frame = ttk.Frame(self.notebook)
@@ -422,33 +419,6 @@ class ResultsPanel:
                 command=self._visualize_selected_chain,
             ).pack(side=tk.RIGHT, padx=5)
 
-    def _create_statistics_tab(self):
-        """Create statistics tab."""
-        stats_frame = ttk.Frame(self.notebook)
-        self.notebook.add(stats_frame, text="Statistics")
-
-        # Create text widget for statistics
-        text_frame = ttk.Frame(stats_frame)
-        text_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        self.stats_text = tk.Text(text_frame, wrap=tk.WORD, font=("Courier", 12))
-        stats_scrollbar = ttk.Scrollbar(
-            text_frame, orient=tk.VERTICAL, command=self.stats_text.yview
-        )
-        self.stats_text.configure(yscrollcommand=stats_scrollbar.set)
-
-        self.stats_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        stats_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        # Configure text tags
-        self.stats_text.tag_configure(
-            "header", font=("Courier", 12, "bold"), foreground="blue"
-        )
-        self.stats_text.tag_configure("subheader", font=("Courier", 12, "bold"))
-        self.stats_text.tag_configure(
-            "number", foreground="red", font=("Courier", 12, "bold")
-        )
-
     def update_results(self, analyzer: MolecularInteractionAnalyzer) -> None:
         """Update the results panel with new analysis results.
 
@@ -468,7 +438,6 @@ class ResultsPanel:
         self._update_halogen_bonds()
         self._update_pi_interactions()
         self._update_cooperativity_chains()
-        self._update_statistics()
 
     def _update_summary(self):
         """Update the summary tab."""
@@ -481,38 +450,143 @@ class ResultsPanel:
         self.summary_text.insert(tk.END, "HBAT Analysis Summary\n", "header")
         self.summary_text.insert(tk.END, "=" * 50 + "\n\n")
 
-        # Get statistics
-        stats = self.analyzer.get_statistics()
+        # Get summary
+        summary = self.analyzer.get_summary()
+
+        # Timing information
+        if "timing" in summary:
+            self.summary_text.insert(tk.END, "Analysis Performance:\n", "subheader")
+            timing = summary["timing"]
+            self.summary_text.insert(
+                tk.END,
+                f"  Analysis Duration: {timing['analysis_duration_seconds']:.3f} seconds\n\n",
+            )
+
+        # PDB fixing information
+        if "pdb_fixing" in summary:
+            pdb_info = summary["pdb_fixing"]
+            self.summary_text.insert(tk.END, "PDB Structure Processing:\n", "subheader")
+
+            if pdb_info.get("applied", False):
+                self.summary_text.insert(
+                    tk.END, f"  PDB Fixing: Applied using {pdb_info['method']}\n"
+                )
+                self.summary_text.insert(
+                    tk.END, f"  Original Atoms: {pdb_info['original_atoms']}\n"
+                )
+                self.summary_text.insert(
+                    tk.END, f"  Fixed Atoms: {pdb_info['fixed_atoms']}\n"
+                )
+                if pdb_info.get("added_hydrogens", 0) > 0:
+                    self.summary_text.insert(
+                        tk.END,
+                        f"  Added Hydrogens: {pdb_info['added_hydrogens']} "
+                        f"({pdb_info['original_hydrogens']} → {pdb_info['fixed_hydrogens']})\n",
+                    )
+                self.summary_text.insert(
+                    tk.END, f"  Re-detected Bonds: {pdb_info['redetected_bonds']}\n"
+                )
+            elif "error" in pdb_info:
+                self.summary_text.insert(
+                    tk.END, f"  PDB Fixing: Failed ({pdb_info['error']})\n"
+                )
+            else:
+                self.summary_text.insert(tk.END, "  PDB Fixing: Not applied\n")
+            self.summary_text.insert(tk.END, "\n")
 
         # Insert summary statistics
         self.summary_text.insert(tk.END, "Interaction Counts:\n", "subheader")
         self.summary_text.insert(
-            tk.END, f"  Hydrogen Bonds: {stats['hydrogen_bonds']}\n"
-        )
-        self.summary_text.insert(tk.END, f"  Halogen Bonds: {stats['halogen_bonds']}\n")
-        self.summary_text.insert(
-            tk.END, f"  π Interactions: {stats['pi_interactions']}\n"
+            tk.END, f"  Hydrogen Bonds: {summary['hydrogen_bonds']['count']}\n"
         )
         self.summary_text.insert(
-            tk.END, f"  Cooperativity Chains: {stats.get('cooperativity_chains', 0)}\n"
+            tk.END, f"  Halogen Bonds: {summary['halogen_bonds']['count']}\n"
         )
         self.summary_text.insert(
-            tk.END, f"  Total Interactions: {stats['total_interactions']}\n\n"
+            tk.END, f"  π Interactions: {summary['pi_interactions']['count']}\n"
+        )
+        self.summary_text.insert(
+            tk.END,
+            f"  Cooperativity Chains: {summary['cooperativity_chains']['count']}\n",
+        )
+        self.summary_text.insert(
+            tk.END, f"  Total Interactions: {summary['total_interactions']}\n\n"
         )
 
-        # Add hydrogen bond details if available
-        if stats.get("hb_avg_distance"):
+        # Detailed interaction statistics
+        if summary["hydrogen_bonds"]["count"] > 0:
             self.summary_text.insert(tk.END, "Hydrogen Bond Statistics:\n", "subheader")
-            self.summary_text.insert(
-                tk.END, f"  Average H...A Distance: {stats['hb_avg_distance']:.2f} Å\n"
-            )
-            self.summary_text.insert(
-                tk.END, f"  Average Angle: {stats['hb_avg_angle']:.1f}°\n"
-            )
+            hb_data = summary["hydrogen_bonds"]
             self.summary_text.insert(
                 tk.END,
-                f"  Distance Range: {stats['hb_min_distance']:.2f} - {stats['hb_max_distance']:.2f} Å\n\n",
+                f"  Average H...A Distance: {hb_data['average_distance']:.2f} Å\n",
             )
+            self.summary_text.insert(
+                tk.END, f"  Average Angle: {hb_data['average_angle']:.1f}°\n"
+            )
+
+            # Bond type distribution
+            if "bond_types" in hb_data:
+                self.summary_text.insert(tk.END, f"  Bond Types:\n")
+                for bond_type, count in sorted(hb_data["bond_types"].items()):
+                    self.summary_text.insert(tk.END, f"    {bond_type}: {count}\n")
+            self.summary_text.insert(tk.END, "\n")
+
+        if summary["halogen_bonds"]["count"] > 0:
+            self.summary_text.insert(tk.END, "Halogen Bond Statistics:\n", "subheader")
+            xb_data = summary["halogen_bonds"]
+            self.summary_text.insert(
+                tk.END,
+                f"  Average X...A Distance: {xb_data['average_distance']:.2f} Å\n",
+            )
+            self.summary_text.insert(
+                tk.END, f"  Average Angle: {xb_data['average_angle']:.1f}°\n"
+            )
+
+            # Bond type distribution
+            if "bond_types" in xb_data:
+                self.summary_text.insert(tk.END, f"  Bond Types:\n")
+                for bond_type, count in sorted(xb_data["bond_types"].items()):
+                    self.summary_text.insert(tk.END, f"    {bond_type}: {count}\n")
+            self.summary_text.insert(tk.END, "\n")
+
+        if summary["pi_interactions"]["count"] > 0:
+            self.summary_text.insert(tk.END, "π Interaction Statistics:\n", "subheader")
+            pi_data = summary["pi_interactions"]
+            self.summary_text.insert(
+                tk.END,
+                f"  Average H...π Distance: {pi_data['average_distance']:.2f} Å\n",
+            )
+            self.summary_text.insert(
+                tk.END, f"  Average Angle: {pi_data['average_angle']:.1f}°\n\n"
+            )
+
+        # Cooperativity chain statistics
+        if summary["cooperativity_chains"]["count"] > 0:
+            self.summary_text.insert(
+                tk.END, "Cooperativity Chain Statistics:\n", "subheader"
+            )
+            coop_data = summary["cooperativity_chains"]
+            self.summary_text.insert(tk.END, f"  Total Chains: {coop_data['count']}\n")
+
+            # Chain types
+            if "types" in coop_data and coop_data["types"]:
+                type_counts = {}
+                for chain_type in coop_data["types"]:
+                    type_counts[chain_type] = type_counts.get(chain_type, 0) + 1
+
+                self.summary_text.insert(tk.END, f"  Chain Types:\n")
+                for chain_type, count in sorted(type_counts.items()):
+                    self.summary_text.insert(tk.END, f"    {chain_type}: {count}\n")
+
+            # Chain length distribution
+            if "chain_lengths" in coop_data:
+                self.summary_text.insert(tk.END, f"  Chain Length Distribution:\n")
+                for length, count in sorted(coop_data["chain_lengths"].items()):
+                    self.summary_text.insert(
+                        tk.END, f"    Length {length}: {count} chains\n"
+                    )
+            self.summary_text.insert(tk.END, "\n")
 
         # Add some example interactions
         if self.analyzer.hydrogen_bonds:
@@ -521,7 +595,26 @@ class ResultsPanel:
                 self.summary_text.insert(tk.END, f"  {i+1}. {hb}\n")
             if len(self.analyzer.hydrogen_bonds) > 5:
                 self.summary_text.insert(
-                    tk.END, f"  ... and {len(self.analyzer.hydrogen_bonds) - 5} more\n"
+                    tk.END,
+                    f"  ... and {len(self.analyzer.hydrogen_bonds) - 5} more\n\n",
+                )
+
+        if self.analyzer.halogen_bonds:
+            self.summary_text.insert(tk.END, "Sample Halogen Bonds:\n", "subheader")
+            for i, xb in enumerate(self.analyzer.halogen_bonds[:3]):
+                self.summary_text.insert(tk.END, f"  {i+1}. {xb}\n")
+            if len(self.analyzer.halogen_bonds) > 3:
+                self.summary_text.insert(
+                    tk.END, f"  ... and {len(self.analyzer.halogen_bonds) - 3} more\n\n"
+                )
+
+        if self.analyzer.pi_interactions:
+            self.summary_text.insert(tk.END, "Sample π Interactions:\n", "subheader")
+            for i, pi in enumerate(self.analyzer.pi_interactions[:3]):
+                self.summary_text.insert(tk.END, f"  {i+1}. {pi}\n")
+            if len(self.analyzer.pi_interactions) > 3:
+                self.summary_text.insert(
+                    tk.END, f"  ... and {len(self.analyzer.pi_interactions) - 3} more\n"
                 )
 
     def _update_hydrogen_bonds(self):
@@ -653,93 +746,6 @@ class ResultsPanel:
 
         return "".join(parts)
 
-    def _update_statistics(self):
-        """Update the statistics tab."""
-        if not self.analyzer:
-            return
-
-        self.stats_text.delete(1.0, tk.END)
-
-        # Insert header
-        self.stats_text.insert(tk.END, "Detailed Statistics\n", "header")
-        self.stats_text.insert(tk.END, "=" * 50 + "\n\n")
-
-        stats = self.analyzer.get_statistics()
-
-        # Interaction counts
-        self.stats_text.insert(tk.END, "Interaction Counts:\n", "subheader")
-        self.stats_text.insert(tk.END, f"  Hydrogen Bonds: ")
-        self.stats_text.insert(tk.END, f"{stats['hydrogen_bonds']}\n", "number")
-        self.stats_text.insert(tk.END, f"  Halogen Bonds: ")
-        self.stats_text.insert(tk.END, f"{stats['halogen_bonds']}\n", "number")
-        self.stats_text.insert(tk.END, f"  π Interactions: ")
-        self.stats_text.insert(tk.END, f"{stats['pi_interactions']}\n", "number")
-        self.stats_text.insert(tk.END, f"  Cooperativity Chains: ")
-        self.stats_text.insert(
-            tk.END, f"{stats.get('cooperativity_chains', 0)}\n", "number"
-        )
-        self.stats_text.insert(tk.END, f"  Total: ")
-        self.stats_text.insert(tk.END, f"{stats['total_interactions']}\n\n", "number")
-
-        # Hydrogen bond type distribution
-        if self.analyzer.hydrogen_bonds:
-            hb_types = {}
-            for hb in self.analyzer.hydrogen_bonds:
-                hb_types[hb.bond_type] = hb_types.get(hb.bond_type, 0) + 1
-
-            self.stats_text.insert(tk.END, "Hydrogen Bond Types:\n", "subheader")
-            for bond_type, count in sorted(hb_types.items()):
-                self.stats_text.insert(tk.END, f"  {bond_type}: ")
-                self.stats_text.insert(tk.END, f"{count}\n", "number")
-            self.stats_text.insert(tk.END, "\n")
-
-        # Distance and angle distributions
-        if self.analyzer.hydrogen_bonds:
-            distances = [hb.distance for hb in self.analyzer.hydrogen_bonds]
-            angles = [math.degrees(hb.angle) for hb in self.analyzer.hydrogen_bonds]
-
-            self.stats_text.insert(tk.END, "Hydrogen Bond Geometry:\n", "subheader")
-            self.stats_text.insert(tk.END, f"  Distance Statistics (Å):\n")
-            self.stats_text.insert(
-                tk.END, f"    Mean: {sum(distances)/len(distances):.2f}\n"
-            )
-            self.stats_text.insert(tk.END, f"    Min: {min(distances):.2f}\n")
-            self.stats_text.insert(tk.END, f"    Max: {max(distances):.2f}\n")
-
-            self.stats_text.insert(tk.END, f"  Angle Statistics (°):\n")
-            self.stats_text.insert(tk.END, f"    Mean: {sum(angles)/len(angles):.1f}\n")
-            self.stats_text.insert(tk.END, f"    Min: {min(angles):.1f}\n")
-            self.stats_text.insert(tk.END, f"    Max: {max(angles):.1f}\n")
-
-        # Cooperativity statistics
-        if self.analyzer.cooperativity_chains:
-            self.stats_text.insert(
-                tk.END, f"\nCooperativity Statistics:\n", "subheader"
-            )
-            self.stats_text.insert(tk.END, f"  Total Chains: ")
-            self.stats_text.insert(
-                tk.END, f"{len(self.analyzer.cooperativity_chains)}\n", "number"
-            )
-
-            chain_lengths = [
-                chain.chain_length for chain in self.analyzer.cooperativity_chains
-            ]
-            self.stats_text.insert(
-                tk.END,
-                f"  Average Chain Length: {sum(chain_lengths)/len(chain_lengths):.1f}\n",
-            )
-            self.stats_text.insert(tk.END, f"  Longest Chain: {max(chain_lengths)}\n")
-
-            # Count chain types
-            chain_types = {}
-            for chain in self.analyzer.cooperativity_chains:
-                chain_types[chain.chain_type] = chain_types.get(chain.chain_type, 0) + 1
-
-            self.stats_text.insert(tk.END, f"  Chain Types:\n")
-            for chain_type, count in sorted(chain_types.items()):
-                self.stats_text.insert(tk.END, f"    {chain_type}: ")
-                self.stats_text.insert(tk.END, f"{count}\n", "number")
-
     def _filter_results(self, tree, search_term):
         """Filter tree results based on search term."""
         if not search_term:
@@ -779,7 +785,6 @@ class ResultsPanel:
 
         # Clear text widgets
         self.summary_text.delete(1.0, tk.END)
-        self.stats_text.delete(1.0, tk.END)
 
         # Clear treeviews
         for item in self.hb_tree.get_children():
@@ -804,11 +809,6 @@ class ResultsPanel:
         self.summary_text.insert(tk.END, "No analysis results available.\n\n")
         self.summary_text.insert(
             tk.END, "Please load a PDB file and run analysis to see results."
-        )
-
-        self.stats_text.insert(tk.END, "No statistics available.\n\n")
-        self.stats_text.insert(
-            tk.END, "Please run analysis to see detailed statistics."
         )
 
     def _visualize_selected_chain(self):

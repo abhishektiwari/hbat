@@ -304,7 +304,7 @@ HBAT includes comprehensive PDB structure fixing capabilities to enhance analysi
 Core PDB Fixing Parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-fix_pdb_enabled (Default: False)
+fix_pdb_enabled (Default: True)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Definition**: Enable or disable automatic PDB structure fixing.
