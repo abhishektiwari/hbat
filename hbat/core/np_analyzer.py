@@ -78,10 +78,6 @@ class NPMolecularInteractionAnalyzer:
         self._analysis_start_time = time.time()
         self._pdb_fixing_info = {}
 
-        # Should we move this after the PDB fixing?
-        if not self.parser.parse_file(pdb_file):
-            return False
-
         # Apply PDB fixing if enabled
         if self.parameters.fix_pdb_enabled:
             try:
@@ -131,6 +127,8 @@ class NPMolecularInteractionAnalyzer:
                 print(f"Warning: PDB fixing failed: {e}")
                 print("Continuing with original structure")
         else:
+            if not self.parser.parse_file(pdb_file):
+                return False
             self._pdb_fixing_info = {"applied": False}
 
         if not self.parser.has_hydrogens():
@@ -920,6 +918,24 @@ class NPMolecularInteractionAnalyzer:
                 length = chain.chain_length
                 chain_lengths[length] = chain_lengths.get(length, 0) + 1
             summary["cooperativity_chains"]["chain_lengths"] = chain_lengths
+
+        # Add bond detection method breakdown
+        bond_detection_stats = self.parser.get_bond_detection_statistics()
+        total_bonds = sum(bond_detection_stats.values())
+        summary["bond_detection"] = {
+            "total_bonds": total_bonds,
+            "methods": bond_detection_stats,
+            "breakdown": {},
+        }
+
+        # Calculate percentages for each method
+        if total_bonds > 0:
+            for method, count in bond_detection_stats.items():
+                percentage = (count / total_bonds) * 100
+                summary["bond_detection"]["breakdown"][method] = {
+                    "count": count,
+                    "percentage": round(percentage, 1),
+                }
 
         # Add PDB fixing information if available
         if self._pdb_fixing_info:

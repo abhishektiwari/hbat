@@ -135,19 +135,15 @@ class PDBParser:
             # Process CONECT records if available
             if "CONECT" in structure and len(structure["CONECT"]) > 0:
                 self._parse_conect_records(structure["CONECT"])
-                # Build adjacency map after CONECT processing
-                # self._build_bond_adjacency_map()
 
-            # Detect bonds using three-step approach if no CONECT records
-            if not self.bonds:
-                import time
-
-                bond_start = time.time()
-                self._detect_bonds_three_step()
-                bond_time = time.time() - bond_start
-                print(
-                    f"Bond detection completed in {bond_time:.3f} seconds ({len(self.bonds)} bonds found)"
-                )
+            # Always run three-step bond detection to find bonds not in CONECT records
+            import time
+            bond_start = time.time()
+            self._detect_bonds_three_step()
+            bond_time = time.time() - bond_start
+            print(
+                f"Bond detection completed in {bond_time:.3f} seconds ({len(self.bonds)} bonds found)"
+            )
 
             return len(self.atoms) > 0
 
@@ -202,19 +198,15 @@ class PDBParser:
             # Process CONECT records if available
             if "CONECT" in structure and len(structure["CONECT"]) > 0:
                 self._parse_conect_records(structure["CONECT"])
-                # Build adjacency map after CONECT processing
-                # self._build_bond_adjacency_map()
 
-            # Detect bonds using three-step approach if no CONECT records
-            if not self.bonds:
-                import time
-
-                bond_start = time.time()
-                self._detect_bonds_three_step()
-                bond_time = time.time() - bond_start
-                print(
-                    f"Bond detection completed in {bond_time:.3f} seconds ({len(self.bonds)} bonds found)"
-                )
+            # Always run three-step bond detection to find bonds not in CONECT records
+            import time
+            bond_start = time.time()
+            self._detect_bonds_three_step()
+            bond_time = time.time() - bond_start
+            print(
+                f"Bond detection completed in {bond_time:.3f} seconds ({len(self.bonds)} bonds found)"
+            )
 
             return len(self.atoms) > 0
 
@@ -403,16 +395,15 @@ class PDBParser:
         """
         try:
             for _, conect_row in conect_data.iterrows():
-                # CONECT record format: atom_id followed by bonded atom_ids
-                atom_id = int(conect_row.get("atom_id", 0))
+                # Handle pdbreader CONECT format: parent atom with list of bonded atoms
+                atom_id = int(conect_row.get("parent", 0))
 
-                # Get bonded atoms (columns vary by pdbreader implementation)
-                bonded_atoms = []
-                for col in ["bonded1", "bonded2", "bonded3", "bonded4"]:
-                    if col in conect_row and conect_row[col] is not None:
-                        bonded_id = int(conect_row[col])
-                        if bonded_id > 0:  # Valid atom ID
-                            bonded_atoms.append(bonded_id)
+                # Get bonded atoms from bonds list
+                bonded_atoms = conect_row.get("bonds", [])
+                if isinstance(bonded_atoms, list):
+                    bonded_atoms = [int(x) for x in bonded_atoms if x is not None]
+                else:
+                    bonded_atoms = []
 
                 # Create bonds
                 for bonded_id in bonded_atoms:
@@ -435,7 +426,6 @@ class PDBParser:
                         # Avoid duplicate bonds
                         if not self._bond_exists(bond):
                             self.bonds.append(bond)
-                            self._build_bond_adjacency_map()
 
         except Exception as e:
             print(f"Error parsing CONECT records: {e}")
@@ -492,7 +482,7 @@ class PDBParser:
 
                     # Calculate distance
                     distance = atom1.coords.distance_to(atom2.coords)
-
+        
                     # Create bond
                     bond = Bond(
                         atom1_serial=atom1.serial,
@@ -501,9 +491,9 @@ class PDBParser:
                         distance=distance,
                         detection_method=BondDetectionMethods.RESIDUE_LOOKUP,
                     )
-
                     # Avoid duplicate bonds
                     if not self._bond_exists(bond):
+                        print(residue.name, residue.chain_id, residue.seq_num, atom1_name, atom1.serial, atom2_name, atom2.serial)
                         self.bonds.append(bond)
                         bonds_found += 1
 
