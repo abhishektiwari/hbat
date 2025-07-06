@@ -3,13 +3,21 @@ API Reference
 
 This section contains the complete API documentation for HBAT.
 
-Core Modules
+Core Package
 ------------
 
 .. toctree::
    :maxdepth: 2
    
    core/index
+
+CCD Package
+-----------
+
+.. toctree::
+   :maxdepth: 2
+   
+   ccd/index
 
 Command Line Interface
 ----------------------
@@ -27,13 +35,21 @@ Graphical User Interface
    
    gui/index
 
-Constants and Utilities
------------------------
+Constants
+---------
 
 .. toctree::
    :maxdepth: 2
    
-   constants
+   constants/index
+
+Utilities
+---------
+
+.. toctree::
+   :maxdepth: 2
+   
+   utilities/index
 
 API Usage Examples
 ------------------

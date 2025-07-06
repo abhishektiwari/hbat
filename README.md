@@ -13,6 +13,10 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 ![PyPI - Status](https://img.shields.io/pypi/status/hbat)
 ![Conda Version](https://img.shields.io/conda/v/hbat/hbat)
 ![License](https://img.shields.io/github/license/abhishektiwari/hbat)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/abhishektiwari/hbat/total?label=GitHub%20Downloads)
+![SourceForge Downloads](https://img.shields.io/sourceforge/dt/hbat?label=SourceForge%20Downloads)
+
+
 
 ## Background
 

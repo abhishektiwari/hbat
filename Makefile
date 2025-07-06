@@ -1,6 +1,6 @@
 # HBAT Development Makefile
 
-.PHONY: help install install-dev test test-fast test-legacy test-pytest test-core test-cli test-gui test-coverage clean lint format type-check docs
+.PHONY: help install install-dev test test-fast test-legacy test-pytest test-core test-cli test-gui test-coverage test-ccd clean lint format type-check docs generate-ccd-bonds
 
 # Default target
 help:
@@ -17,6 +17,7 @@ help:
 	@echo "  test-cli      Run CLI tests only"
 	@echo "  test-gui      Run GUI tests only (requires display)"
 	@echo "  test-coverage Generate test coverage report"
+	@echo "  test-ccd      Run CCD performance tests only"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  lint          Run code linting"
@@ -33,6 +34,7 @@ help:
 	@echo "  docs          Build documentation"
 	@echo "  run-gui       Launch GUI application"
 	@echo "  run-cli       Run CLI with test file"
+	@echo "  generate-ccd-bonds Generate residue bond constants from CCD files"
 
 # Installation
 install:
@@ -71,6 +73,10 @@ test-gui:
 	@echo "Running GUI tests..."
 	cd tests && python run_tests.py --gui --fast
 
+test-ccd:
+	@echo "Running CCD performance tests..."
+	pytest tests/core/test_ccd_performance.py -v -m "ccd"
+
 # Code quality
 lint:
 	@echo "Running flake8..."
@@ -103,6 +109,7 @@ clean:
 	rm -rf docs/build/
 	find . -name "*.pyc" -delete
 	find . -name "*.pyo" -delete
+	rm -rf conda-build-output/
 
 # Documentation
 docs:
@@ -124,6 +131,12 @@ run-gui:
 
 run-cli:
 	python hbat_cli.py example_pdb_files/6RSA.pdb --verbose --summary-only
+
+# CCD Bond Data Generation
+generate-ccd-bonds:
+	@echo "Generating CCD bond constants from BinaryCIF files..."
+	@echo "Note: CCD files will be automatically downloaded if not present"
+	python -m hbat.ccd.generate_ccd_constants
 
 # Example analysis
 example:

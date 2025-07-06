@@ -18,8 +18,17 @@
       "dh_pi_angle_cutoff": 90.0
     },
     "general": {
-      "covalent_cutoff_factor": 1.2,
+      "covalent_cutoff_factor": 0.85,
       "analysis_mode": "complete"
+    },
+    "pdb_fixing": {
+      "enabled": false,
+      "method": "openbabel",
+      "add_hydrogens": true,
+      "add_heavy_atoms": false,
+      "replace_nonstandard": false,
+      "remove_heterogens": false,
+      "keep_water": true
     }
   }
 }

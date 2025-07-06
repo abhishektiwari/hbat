@@ -4,7 +4,15 @@ Algorithm & Calculation Logic
 1. Algorithm Overview
 ---------------------
 
-HBAT uses a geometric approach to identify hydrogen bonds by analyzing distance and angular criteria between donor-hydrogen-acceptor triplets. The main calculation is performed in the ``_check_hydrogen_bond()`` method in ``hbat/core/analysis.py``.
+HBAT uses a geometric approach to identify hydrogen bonds by analyzing distance and angular criteria between donor-hydrogen-acceptor triplets. The main calculation is performed by the ``NPMolecularInteractionAnalyzer`` class in ``hbat/core/np_analyzer.py``, which provides enhanced performance through NumPy vectorization.
+
+**Module Structure (Updated)**:
+
+- ``hbat/core/analyzer.py``: Main analysis engine interface
+- ``hbat/core/np_analyzer.py``: High-performance NumPy-based implementation  
+- ``hbat/core/interactions.py``: Interaction data classes and structures
+- ``hbat/core/parameters.py``: Analysis parameters and constants
+- ``hbat/ccd/ccd_analyzer.py``: CCD data management and BinaryCIF parsing
 
 2. Core Calculation Steps
 -------------------------
@@ -22,19 +30,19 @@ Two distance checks are performed:
 
 1. **H...A Distance**: Hydrogen to acceptor distance
 
-   - **Cutoff**: 3.5 Å (default from ``AnalysisDefaults.HB_DISTANCE_CUTOFF``)
+   - **Cutoff**: 3.5 Å (default from ``ParametersDefault.HB_DISTANCE_CUTOFF``)
    - **Calculated**: Using 3D Euclidean distance via ``Vec3D.distance_to()``
 
 2. **D...A Distance**: Donor to acceptor distance
 
-   - **Cutoff**: 4.0 Å (default from ``AnalysisDefaults.HB_DA_DISTANCE``)
+   - **Cutoff**: 4.0 Å (default from ``ParametersDefault.HB_DA_DISTANCE``)
    - **Purpose**: Ensures realistic hydrogen bond geometry
 
 Step 3: Angular Criteria
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 - **Angle**: D-H...A angle using ``angle_between_vectors()`` from ``hbat/core/vector.py``
-- **Cutoff**: 120° minimum (default from ``AnalysisDefaults.HB_ANGLE_CUTOFF``)
+- **Cutoff**: 120° minimum (default from ``ParametersDefault.HB_ANGLE_CUTOFF``)
 - **Calculation**: Uses vector dot product formula: ``cos(θ) = (BA·BC)/(|BA||BC|)``
 
 3. Geometric Validation Process
@@ -63,7 +71,7 @@ Step 3: Angular Criteria
 4. Key Parameters and Defaults
 ------------------------------
 
-From ``hbat/constants.py``:
+From ``hbat/constants/parameters`` (``ParametersDefault`` class):
 
 .. list-table::
    :header-rows: 1
@@ -82,48 +90,229 @@ From ``hbat/constants.py``:
      - 4.0 Å
      - Maximum D...A distance
    * - ``COVALENT_CUTOFF_FACTOR``
-     - 1.2
-     - Bond detection multiplier
+     - 0.6
+     - Van der Waals to covalent bond factor
+   * - ``MAX_BOND_DISTANCE``
+     - 2.5 Å
+     - Maximum covalent bond distance
+   * - ``MIN_BOND_DISTANCE``
+     - 0.5 Å
+     - Minimum realistic bond distance
 
-5. Covalent Bond Detection
---------------------------
+5. PDB Structure Fixing and Preprocessing
+-----------------------------------------
 
-Hydrogen-donor bonds are identified using:
+Missing Hydrogen Atom Detection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- **Covalent radii** from ``AtomicData.COVALENT_RADII``
-- **Distance formula**: ``distance ≤ (r1 + r2) × 1.2``
-- **Example**: H-N bond = (0.31 + 0.71) × 1.2 = 1.22 Å maximum
+HBAT now includes automatic PDB structure fixing capabilities to handle structures with missing hydrogen atoms:
 
-6. Vector Mathematics
+**PDB Fixing Methods**:
+
+1. **OpenBabel Method** (default):
+   - Uses OpenBabel's built-in hydrogen addition functionality
+   - Fast and efficient for standard residues
+   - Preserves original atom coordinates
+
+2. **PDBFixer Method**:
+   - Uses PDBFixer library with OpenMM
+   - More comprehensive fixing capabilities
+   - Can add missing heavy atoms and replace nonstandard residues
+
+**PDB Fixing Parameters**:
+
+From ``ParametersDefault`` class:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 20 55
+
+   * - Parameter
+     - Default Value
+     - Description
+   * - ``FIX_PDB_ENABLED``
+     - True
+     - Enable/disable PDB structure fixing
+   * - ``FIX_PDB_METHOD``
+     - "openbabel"
+     - Choose fixing method ("openbabel" or "pdbfixer")
+   * - ``FIX_PDB_ADD_HYDROGENS``
+     - True
+     - Add missing hydrogen atoms
+   * - ``FIX_PDB_ADD_HEAVY_ATOMS``
+     - False
+     - Add missing heavy atoms (PDBFixer only)
+   * - ``FIX_PDB_REPLACE_NONSTANDARD``
+     - False
+     - Replace nonstandard residues
+   * - ``FIX_PDB_REMOVE_HETEROGENS``
+     - False
+     - Remove heterogens
+   * - ``FIX_PDB_KEEP_WATER``
+     - True
+     - Keep water when removing heterogens
+
+**Workflow Process**:
+
+1. **Input validation**: Check if PDB fixing is enabled and needed
+2. **Method selection**: Choose between OpenBabel or PDBFixer
+3. **Structure fixing**: Add missing atoms and fix structural issues
+4. **Output generation**: Create fixed PDB file (e.g., ``structure_fixed.pdb``)
+5. **Analysis continuation**: Use fixed structure for interaction analysis
+
+6. CCD Data Integration and Bond Detection
+------------------------------------------
+
+Chemical Component Dictionary (CCD) Integration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+HBAT now integrates with the RCSB Chemical Component Dictionary (CCD) for accurate bond information:
+
+**CCD Data Manager**:
+
+- Automatically downloads CCD BinaryCIF files from RCSB
+- **Atom data**: ``cca.bcif`` containing atomic properties
+- **Bond data**: ``ccb.bcif`` containing bond connectivity information  
+- **Storage location**: ``~/.hbat/ccd-data/`` directory
+- **Auto-download**: Files are downloaded on first use and cached locally
+
+Bond Detection Priority (Updated)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The enhanced bond detection follows this priority:
+
+1. **RESIDUE_LOOKUP** (new, preferred):
+   
+   - Uses pre-defined bond information from CCD for standard residues
+   - Provides chemically accurate bond connectivity
+   - Includes bond order (single/double) and aromaticity information
+   - Covers all standard amino acids and nucleotides
+
+2. **CONECT Records** (if available):
+   
+   - Parses explicit bond information from CONECT records in the PDB file
+   - Creates bonds with ``bond_type="explicit"``
+   - Preserves author-specified connectivity
+
+3. **Distance-based Detection** (fallback):
+   
+   - Only used when no CONECT records are present or no bonds were found
+   - Uses optimized spatial grid algorithm for large structures
+   - Implements ``_are_atoms_bonded_with_distance()`` method
+
+Distance-based Bond Criteria
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When detecting bonds by distance:
+
+- **Van der Waals radii** from ``AtomicData.VDW_RADII``
+- **Distance criteria**: ``MIN_BOND_DISTANCE ≤ distance ≤ min(vdw_cutoff, MAX_BOND_DISTANCE)``
+- **VdW cutoff formula**: ``vdw_cutoff = (vdw1 + vdw2) × COVALENT_CUTOFF_FACTOR``
+- **Example**: C-C bond = (1.70 + 1.70) × 0.6 = 2.04 Å maximum (but limited to 2.5 Å by MAX_BOND_DISTANCE)
+
+Bond Types
+~~~~~~~~~~
+
+- ``"residue_lookup"``: Bonds from CCD residue definitions
+- ``"explicit"``: Bonds from CONECT records
+- ``"covalent"``: Bonds detected by distance criteria
+
+7. Performance Optimization and Vectorization
+---------------------------------------------
+
+NumPy-based High-Performance Analyzer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+HBAT now uses a high-performance NumPy-based analyzer (``NPMolecularInteractionAnalyzer``) for enhanced computational efficiency:
+
+**Key Optimizations**:
+
+1. **Vectorized Distance Calculations**:
+   - Uses ``compute_distance_matrix()`` for batch distance calculations
+   - Replaces nested loops with NumPy array operations
+   - Reduces computational complexity from O(n²) to O(n) for many operations
+
+2. **Spatial Indexing**:
+   - Pre-computed atom indices by type (hydrogen, donor, acceptor)
+   - Optimized residue indexing for fast same-residue filtering
+   - Grid-based spatial partitioning for bond detection
+
+3. **Batch Processing**:
+   - Vectorized angle calculations using NumPy operations
+   - Simultaneous processing of multiple atom pairs
+   - Optimized memory access patterns
+
+**Performance Benefits**:
+
+- **Large structures**: Significant speedup for structures with >1000 atoms
+- **Memory efficiency**: Reduced memory allocation overhead
+- **Scalability**: Better performance scaling with structure size
+
+Spatial Grid Algorithm
+~~~~~~~~~~~~~~~~~~~~~~
+
+For distance-based bond detection, HBAT uses a spatial grid algorithm:
+
+**Grid Setup**:
+- Grid cell size based on ``MAX_BOND_DISTANCE`` (2.5 Å)
+- Atoms are assigned to grid cells based on coordinates
+- Only neighboring cells are checked for potential bonds
+
+**Benefits**:
+- Reduces bond detection complexity from O(n²) to approximately O(n)
+- Particularly effective for large molecular systems
+- Maintains accuracy while improving performance
+
+8. Vector Mathematics
 ---------------------
 
-The ``Vec3D`` class (``hbat/core/vector.py``) provides:
+The ``NPVec3D`` class (``hbat/core/np_vector.py``) provides NumPy-based vector operations:
 
-- **3D coordinates**: ``Vec3D(x, y, z)``
-- **Distance calculation**: ``√[(x₂-x₁)² + (y₂-y₁)² + (z₂-z₁)²]``
-- **Angle calculation**: ``arccos(dot_product / (mag1 × mag2))``
+- **3D coordinates**: ``NPVec3D(x, y, z)`` or ``NPVec3D(np.array([x, y, z]))``
+- **Batch operations**: Support for multiple vectors simultaneously ``NPVec3D(np.array([[x1,y1,z1], [x2,y2,z2]]))``
+- **Distance calculation**: ``√[(x₂-x₁)² + (y₂-y₁)² + (z₂-z₁)²]`` with vectorized operations
+- **Angle calculation**: ``arccos(dot_product / (mag1 × mag2))`` using NumPy for efficiency
+- **Performance**: Leverages NumPy's optimized C implementations for mathematical operations
 
-7. Analysis Flow
-----------------
+9. Enhanced Analysis Flow
+------------------------
 
-1. **Parse PDB file** → Extract atomic coordinates
-2. **Identify donors** → Find N/O/S atoms bonded to H
-3. **Identify acceptors** → Find N/O/S/F/Cl atoms
-4. **Distance screening** → Apply H...A and D...A cutoffs
-5. **Angular validation** → Check D-H...A geometry
-6. **Bond classification** → Determine bond type (e.g., "N-H...O")
+**Updated Analysis Process**:
 
-8. Output Structure
--------------------
+1. **Structure preprocessing** → PDB fixing if enabled (add missing H atoms)
+2. **CCD data loading** → Download/load chemical component dictionary
+3. **Parse PDB file** → Extract atomic coordinates from fixed structure
+4. **Bond detection** → Apply RESIDUE_LOOKUP → CONECT → Distance-based priority
+5. **Identify donors** → Find N/O/S atoms bonded to H
+6. **Identify acceptors** → Find N/O/S/F/Cl atoms
+7. **Distance screening** → Apply H...A and D...A cutoffs (vectorized)
+8. **Angular validation** → Check D-H...A geometry (batch processing)
+9. **Bond classification** → Determine bond type (e.g., "N-H...O")
+10. **Cooperativity analysis** → Identify interaction chains
 
-Each detected hydrogen bond is stored as a ``HydrogenBond`` dataclass containing:
+10. Output Structure and Analysis Summary
+----------------------------------------
 
-- Donor, hydrogen, and acceptor atoms
-- H...A distance and D-H...A angle
-- Bond type classification
-- Residue identifiers
+**Enhanced Analysis Summary**:
 
-9. Additional Features
+The analysis now provides comprehensive summary information including:
+
+- **Structure Information**: Original vs. fixed structure statistics
+- **PDB Fixing Details**: Atoms added, bonds created, method used
+- **Bond Detection Statistics**: Counts by detection method (residue_lookup, explicit, covalent)
+- **Performance Metrics**: Analysis timing information
+- **Interaction Counts**: Detailed breakdown by interaction type
+
+**Interaction Data Classes**:
+
+Each detected interaction is stored with enhanced information:
+
+- **HydrogenBond**: Donor, hydrogen, acceptor atoms with geometric parameters
+- **HalogenBond**: Halogen, carbon, acceptor atoms with X-bond specifics
+- **PiInteraction**: Donor, hydrogen, aromatic ring center coordinates
+- **CooperativityChain**: Linked interaction sequences
+
+11. Additional Features
 ----------------------
 
 Halogen Bonds
@@ -179,12 +368,12 @@ Once the aromatic center is calculated:
 
 1. **Distance Check**: H...π center distance
 
-   - **Cutoff**: ≤ 4.5 Å (from ``AnalysisDefaults.PI_DISTANCE_CUTOFF``)
+   - **Cutoff**: ≤ 4.5 Å (from ``ParametersDefault.PI_DISTANCE_CUTOFF``)
    - **Calculation**: 3D Euclidean distance from hydrogen to ring centroid
 
 2. **Angular Check**: D-H...π angle
 
-   - **Cutoff**: ≥ 90° (from ``AnalysisDefaults.PI_ANGLE_CUTOFF``)
+   - **Cutoff**: ≥ 90° (from ``ParametersDefault.PI_ANGLE_CUTOFF``)
    - **Calculation**: Angle between donor-hydrogen vector and hydrogen-π_center vector
    - Uses same ``angle_between_vectors()`` function as regular hydrogen bonds
 

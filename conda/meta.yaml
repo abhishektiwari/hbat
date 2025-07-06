@@ -29,12 +29,19 @@ requirements:
     - networkx >=2.5.0
     - matplotlib-base >=3.3.0
     - tk  # For GUI support
-    # pdbreader will be installed via pip as part of the package installation
+    # pdbreader, pdbfixer, and mmcif packages will be installed via pip as part of the package installation
 
 test:
-  # Skip imports test since pdbreader is installed via pip
+  # Skip imports test since pdbreader, pdbfixer, and mmcif packages are installed via pip
   commands:
     - pip list | grep pdbreader || pip install pdbreader>=0.1.0
+    - pip list | grep pdbfixer || pip install "pdbfixer @ git+https://github.com/openmm/pdbfixer.git"
+    - pip list | grep mmcif || pip install mmcif>=0.92.0
+    - pip list | grep mmcif-pdbx || pip install mmcif-pdbx>=2.0.1
+    - python -c "import pdbreader; print('pdbreader:', pdbreader)"
+    - python -c "import pdbfixer; print('pdbfixer:', pdbfixer)"
+    - python -c "import mmcif; print('mmcif:', mmcif)"
+    - python -c "import mmcif; print('mmcif:', mmcif.__version__)"
     - python -c "import hbat; print(hbat.__version__)"
     - hbat --help
     - hbat --version

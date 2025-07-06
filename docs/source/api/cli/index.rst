@@ -1,8 +1,3 @@
-Command Line Interface
-----------------------
-
-The CLI module provides command-line tools for HBAT.
-
 Main CLI Module
 ---------------
 

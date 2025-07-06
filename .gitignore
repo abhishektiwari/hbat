@@ -176,7 +176,16 @@ results/
 
 # Example PDB files
 *.pdb
-!example_pdb_files/*.pdb
+example_pdb_files/*.pdb
+!example_pdb_files/1bhl.pdb
+!example_pdb_files/1gai.pdb
+!example_pdb_files/1ubi.pdb
+!example_pdb_files/2izf.pdb
+!example_pdb_files/4jsv.pdb 
+!example_pdb_files/4laz.pdb
+!example_pdb_files/4ub7.pdb
+!example_pdb_files/4x21.pdb
+!example_pdb_files/6rsa.pdb
 
 
 # Temporary files
@@ -223,3 +232,12 @@ conda-build-output/
 # Include requirements files
 !requirements.txt
 !requirements-dev.txt
+
+# Experiments
+experiments/*
+!experiments/.gitkeep
+
+# CCD
+ccd-data/*
+!ccd-data/.gitkeep
+!ccd-data/README.md

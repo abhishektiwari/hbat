@@ -47,9 +47,14 @@ Project Structure
 
    hbat/
    ├── hbat/                   # Main package
+   │   ├── constants/         # Constants and defaults
+   │   │   ├── __init__.py    # Constants package interface
+   │   │   ├── constants.py   # Analysis defaults and atomic data
+   │   │   └── pdb_constants.py # PDB structure constants, residue mappings, and aromatic ring definitions
    │   ├── core/              # Core analysis logic
-   │   │   ├── vector.py      # 3D vector mathematics
+   │   │   ├── np_vector.py   # NumPy-based 3D vector mathematics
    │   │   ├── pdb_parser.py  # PDB file parsing
+   │   │   ├── pdb_fixer.py   # PDB structure fixing and enhancement
    │   │   └── analysis.py    # Main analysis engine
    │   ├── gui/               # GUI components
    │   │   ├── main_window.py # Main application window
@@ -68,7 +73,7 @@ Project Structure
    │   ├── conftest.py       # Pytest configuration and fixtures
    │   ├── run_tests.py      # Main test runner script
    │   ├── core/             # Core module tests
-   │   │   ├── test_vector.py       # Vector mathematics tests
+   │   │   ├── test_np_vector.py    # NumPy vector mathematics tests
    │   │   ├── test_pdb_parser.py   # PDB parsing tests
    │   │   └── test_analysis.py     # Analysis engine tests
    │   ├── cli/              # CLI module tests
@@ -154,8 +159,9 @@ The test suite follows a modular architecture with clear separation of concerns:
    ├── run_tests.py               # Custom test runner with advanced options
    ├── README.md                  # Comprehensive test documentation
    ├── core/                      # Core functionality tests
-   │   ├── test_vector.py         # 3D vector mathematics, geometric calculations
+   │   ├── test_np_vector.py      # NumPy 3D vector mathematics, geometric calculations
    │   ├── test_pdb_parser.py     # PDB file parsing, atom/residue handling
+   │   ├── test_pdb_fixer.py      # PDB structure fixing and enhancement
    │   └── test_analysis.py       # Analysis algorithms, interaction detection
    ├── cli/                       # Command-line interface tests
    │   └── test_cli_main.py       # Argument parsing, preset management, integration
@@ -177,6 +183,10 @@ The test suite follows a modular architecture with clear separation of concerns:
    │   ├── index.rst              # Documentation home page
    │   ├── installation.rst       # Installation guide
    │   ├── quickstart.rst         # Quick start tutorial
+   │   ├── cli.rst                # Command-line interface guide
+   │   ├── parameters.rst         # Analysis parameters documentation
+   │   ├── pdbfixing.rst          # PDB structure fixing guide
+   │   ├── logic.rst              # Algorithm and calculation logic
    │   ├── examples.rst           # Usage examples
    │   └── development.rst        # Development guide
    ├── build/                     # Generated documentation (HTML, PDF)
@@ -187,7 +197,7 @@ The test suite follows a modular architecture with clear separation of concerns:
 
 **Module Test Coverage:**
 
-- **Core Tests** (``tests/core/``): Vector operations, PDB parsing, hydrogen bond detection, π-interactions, cooperativity analysis
+- **Core Tests** (``tests/core/``): Vector operations, PDB parsing, PDB structure fixing, hydrogen bond detection, π-interactions, cooperativity analysis
 - **CLI Tests** (``tests/cli/``): Command-line argument validation, preset loading/saving, parameter overrides, output formatting
 - **GUI Tests** (``tests/gui/``): Parameter panels, results display, chain visualization, preset management
 - **Integration Tests**: End-to-end workflows using real PDB structures (6RSA.pdb, 2IZF.pdb)
@@ -248,15 +258,7 @@ Building and Distribution
 Core Components
 ---------------
 
-Vector Mathematics (``hbat.core.vector``)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``Vec3D`` class provides 3D vector operations:
-
-- Basic arithmetic (addition, subtraction, scalar multiplication)
-- Dot and cross products
-- Distance and angle calculations
-- Normalization and unit vectors
 
 PDB Parser (``hbat.core.pdb_parser``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -272,7 +274,7 @@ Analysis Engine (``hbat.core.analysis``)
 
 Core analysis functionality:
 
-- ``HBondAnalyzer``: Main analysis class
+- ``NPMolecularInteractionAnalyzer``: Main analysis class
 - ``AnalysisParameters``: Configuration parameters
 - Detection algorithms for hydrogen bonds, halogen bonds, π interactions
 
@@ -313,7 +315,7 @@ New Interaction Types
 
 To add a new molecular interaction type:
 
-1. Add detection method to ``HBondAnalyzer``
+1. Add detection method to ``NPMolecularInteractionAnalyzer``
 2. Create corresponding data class (like ``HydrogenBond``)
 3. Update GUI results panel
 4. Add CLI export support
@@ -364,7 +366,7 @@ To add a new parameter preset:
          "dh_pi_angle_cutoff": 90.0
        },
        "general": {
-         "covalent_cutoff_factor": 1.2,
+         "covalent_cutoff_factor": 0.85,
          "analysis_mode": "complete"
        }
      }

@@ -13,8 +13,8 @@ import time
 from typing import Any, Dict, List, Optional
 
 from .. import __version__
-from ..constants import AnalysisDefaults
-from ..core.analysis import AnalysisParameters, HBondAnalyzer
+from ..constants.parameters import ParametersDefault
+from ..core.analysis import AnalysisParameters, NPMolecularInteractionAnalyzer
 from ..core.pdb_parser import PDBParser
 
 
@@ -72,58 +72,99 @@ Examples:
     param_group.add_argument(
         "--hb-distance",
         type=float,
-        default=AnalysisDefaults.HB_DISTANCE_CUTOFF,
-        help=f"Hydrogen bond H...A distance cutoff in Å (default: {AnalysisDefaults.HB_DISTANCE_CUTOFF})",
+        default=ParametersDefault.HB_DISTANCE_CUTOFF,
+        help=f"Hydrogen bond H...A distance cutoff in Å (default: {ParametersDefault.HB_DISTANCE_CUTOFF})",
     )
     param_group.add_argument(
         "--hb-angle",
         type=float,
-        default=AnalysisDefaults.HB_ANGLE_CUTOFF,
-        help=f"Hydrogen bond D-H...A angle cutoff in degrees (default: {AnalysisDefaults.HB_ANGLE_CUTOFF})",
+        default=ParametersDefault.HB_ANGLE_CUTOFF,
+        help=f"Hydrogen bond D-H...A angle cutoff in degrees (default: {ParametersDefault.HB_ANGLE_CUTOFF})",
     )
     param_group.add_argument(
         "--da-distance",
         type=float,
-        default=AnalysisDefaults.HB_DA_DISTANCE,
-        help=f"Donor-acceptor distance cutoff in Å (default: {AnalysisDefaults.HB_DA_DISTANCE})",
+        default=ParametersDefault.HB_DA_DISTANCE,
+        help=f"Donor-acceptor distance cutoff in Å (default: {ParametersDefault.HB_DA_DISTANCE})",
     )
     param_group.add_argument(
         "--xb-distance",
         type=float,
-        default=AnalysisDefaults.XB_DISTANCE_CUTOFF,
-        help=f"Halogen bond X...A distance cutoff in Å (default: {AnalysisDefaults.XB_DISTANCE_CUTOFF})",
+        default=ParametersDefault.XB_DISTANCE_CUTOFF,
+        help=f"Halogen bond X...A distance cutoff in Å (default: {ParametersDefault.XB_DISTANCE_CUTOFF})",
     )
     param_group.add_argument(
         "--xb-angle",
         type=float,
-        default=AnalysisDefaults.XB_ANGLE_CUTOFF,
-        help=f"Halogen bond C-X...A angle cutoff in degrees (default: {AnalysisDefaults.XB_ANGLE_CUTOFF})",
+        default=ParametersDefault.XB_ANGLE_CUTOFF,
+        help=f"Halogen bond C-X...A angle cutoff in degrees (default: {ParametersDefault.XB_ANGLE_CUTOFF})",
     )
     param_group.add_argument(
         "--pi-distance",
         type=float,
-        default=AnalysisDefaults.PI_DISTANCE_CUTOFF,
-        help=f"π interaction H...π distance cutoff in Å (default: {AnalysisDefaults.PI_DISTANCE_CUTOFF})",
+        default=ParametersDefault.PI_DISTANCE_CUTOFF,
+        help=f"π interaction H...π distance cutoff in Å (default: {ParametersDefault.PI_DISTANCE_CUTOFF})",
     )
     param_group.add_argument(
         "--pi-angle",
         type=float,
-        default=AnalysisDefaults.PI_ANGLE_CUTOFF,
-        help=f"π interaction D-H...π angle cutoff in degrees (default: {AnalysisDefaults.PI_ANGLE_CUTOFF})",
+        default=ParametersDefault.PI_ANGLE_CUTOFF,
+        help=f"π interaction D-H...π angle cutoff in degrees (default: {ParametersDefault.PI_ANGLE_CUTOFF})",
     )
     param_group.add_argument(
         "--covalent-factor",
         type=float,
-        default=AnalysisDefaults.COVALENT_CUTOFF_FACTOR,
-        help=f"Covalent bond detection factor (default: {AnalysisDefaults.COVALENT_CUTOFF_FACTOR})",
+        default=ParametersDefault.COVALENT_CUTOFF_FACTOR,
+        help=f"Covalent bond detection factor (default: {ParametersDefault.COVALENT_CUTOFF_FACTOR})",
     )
 
     # Analysis mode
     param_group.add_argument(
         "--mode",
         choices=["complete", "local"],
-        default=AnalysisDefaults.ANALYSIS_MODE,
+        default=ParametersDefault.ANALYSIS_MODE,
         help="Analysis mode: complete (all interactions) or local (intra-residue only)",
+    )
+
+    # PDB structure fixing options
+    fix_group = parser.add_argument_group("PDB Structure Fixing")
+    fix_group.add_argument(
+        "--fix-pdb",
+        action="store_true",
+        help="Enable PDB structure fixing",
+    )
+    fix_group.add_argument(
+        "--fix-method",
+        choices=["openbabel", "pdbfixer"],
+        default=ParametersDefault.FIX_PDB_METHOD,
+        help=f"PDB fixing method: openbabel or pdbfixer (default: {ParametersDefault.FIX_PDB_METHOD})",
+    )
+    fix_group.add_argument(
+        "--fix-add-hydrogens",
+        action="store_true",
+        default=ParametersDefault.FIX_PDB_ADD_HYDROGENS,
+        help="Add missing hydrogen atoms (both OpenBabel and PDBFixer)",
+    )
+    fix_group.add_argument(
+        "--fix-add-heavy-atoms",
+        action="store_true",
+        help="Add missing heavy atoms (PDBFixer only)",
+    )
+    fix_group.add_argument(
+        "--fix-replace-nonstandard",
+        action="store_true",
+        help="Replace nonstandard residues (PDBFixer only)",
+    )
+    fix_group.add_argument(
+        "--fix-remove-heterogens",
+        action="store_true",
+        help="Remove heterogens (PDBFixer only)",
+    )
+    fix_group.add_argument(
+        "--fix-keep-water",
+        action="store_true",
+        default=ParametersDefault.FIX_PDB_KEEP_WATER,
+        help="Keep water when removing heterogens (PDBFixer only)",
     )
 
     # Output control
@@ -256,34 +297,55 @@ def load_preset_file(preset_path: str) -> AnalysisParameters:
         xb_params = params.get("halogen_bonds", {})
         pi_params = params.get("pi_interactions", {})
         general_params = params.get("general", {})
+        fix_params = params.get("pdb_fixing", {})
 
         return AnalysisParameters(
             hb_distance_cutoff=hb_params.get(
-                "h_a_distance_cutoff", AnalysisDefaults.HB_DISTANCE_CUTOFF
+                "h_a_distance_cutoff", ParametersDefault.HB_DISTANCE_CUTOFF
             ),
             hb_angle_cutoff=hb_params.get(
-                "dha_angle_cutoff", AnalysisDefaults.HB_ANGLE_CUTOFF
+                "dha_angle_cutoff", ParametersDefault.HB_ANGLE_CUTOFF
             ),
             hb_donor_acceptor_cutoff=hb_params.get(
-                "d_a_distance_cutoff", AnalysisDefaults.HB_DA_DISTANCE
+                "d_a_distance_cutoff", ParametersDefault.HB_DA_DISTANCE
             ),
             xb_distance_cutoff=xb_params.get(
-                "x_a_distance_cutoff", AnalysisDefaults.XB_DISTANCE_CUTOFF
+                "x_a_distance_cutoff", ParametersDefault.XB_DISTANCE_CUTOFF
             ),
             xb_angle_cutoff=xb_params.get(
-                "cxa_angle_cutoff", AnalysisDefaults.XB_ANGLE_CUTOFF
+                "cxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF
             ),
             pi_distance_cutoff=pi_params.get(
-                "h_pi_distance_cutoff", AnalysisDefaults.PI_DISTANCE_CUTOFF
+                "h_pi_distance_cutoff", ParametersDefault.PI_DISTANCE_CUTOFF
             ),
             pi_angle_cutoff=pi_params.get(
-                "dh_pi_angle_cutoff", AnalysisDefaults.PI_ANGLE_CUTOFF
+                "dh_pi_angle_cutoff", ParametersDefault.PI_ANGLE_CUTOFF
             ),
             covalent_cutoff_factor=general_params.get(
-                "covalent_cutoff_factor", AnalysisDefaults.COVALENT_CUTOFF_FACTOR
+                "covalent_cutoff_factor", ParametersDefault.COVALENT_CUTOFF_FACTOR
             ),
             analysis_mode=general_params.get(
-                "analysis_mode", AnalysisDefaults.ANALYSIS_MODE
+                "analysis_mode", ParametersDefault.ANALYSIS_MODE
+            ),
+            # PDB fixing parameters
+            fix_pdb_enabled=fix_params.get(
+                "enabled", ParametersDefault.FIX_PDB_ENABLED
+            ),
+            fix_pdb_method=fix_params.get("method", ParametersDefault.FIX_PDB_METHOD),
+            fix_pdb_add_hydrogens=fix_params.get(
+                "add_hydrogens", ParametersDefault.FIX_PDB_ADD_HYDROGENS
+            ),
+            fix_pdb_add_heavy_atoms=fix_params.get(
+                "add_heavy_atoms", ParametersDefault.FIX_PDB_ADD_HEAVY_ATOMS
+            ),
+            fix_pdb_replace_nonstandard=fix_params.get(
+                "replace_nonstandard", ParametersDefault.FIX_PDB_REPLACE_NONSTANDARD
+            ),
+            fix_pdb_remove_heterogens=fix_params.get(
+                "remove_heterogens", ParametersDefault.FIX_PDB_REMOVE_HETEROGENS
+            ),
+            fix_pdb_keep_water=fix_params.get(
+                "keep_water", ParametersDefault.FIX_PDB_KEEP_WATER
             ),
         )
 
@@ -392,6 +454,14 @@ def load_parameters_from_args(args: argparse.Namespace) -> AnalysisParameters:
             pi_angle_cutoff=args.pi_angle,
             covalent_cutoff_factor=args.covalent_factor,
             analysis_mode=args.mode,
+            # PDB fixing parameters
+            fix_pdb_enabled=args.fix_pdb,
+            fix_pdb_method=args.fix_method,
+            fix_pdb_add_hydrogens=args.fix_add_hydrogens,
+            fix_pdb_add_heavy_atoms=args.fix_add_heavy_atoms,
+            fix_pdb_replace_nonstandard=args.fix_replace_nonstandard,
+            fix_pdb_remove_heterogens=args.fix_remove_heterogens,
+            fix_pdb_keep_water=args.fix_keep_water,
         )
 
 
@@ -460,7 +530,9 @@ def validate_input_file(filename: str) -> bool:
 
 
 def format_results_text(
-    analyzer: HBondAnalyzer, input_file: str, summary_only: bool = False
+    analyzer: NPMolecularInteractionAnalyzer,
+    input_file: str,
+    summary_only: bool = False,
 ) -> str:
     """Format analysis results as text.
 
@@ -468,7 +540,7 @@ def format_results_text(
     with options for summary or detailed output.
 
     :param analyzer: Analysis results to format
-    :type analyzer: HBondAnalyzer
+    :type analyzer: MolecularInteractionAnalyzer
     :param input_file: Path to the input file analyzed
     :type input_file: str
     :param summary_only: Whether to include only summary statistics
@@ -484,14 +556,27 @@ def format_results_text(
     lines.append("")
 
     # Statistics summary
-    stats = analyzer.get_statistics()
+    summary = analyzer.get_summary()
     lines.append("Summary:")
-    lines.append(f"  Hydrogen bonds: {stats['hydrogen_bonds']}")
-    lines.append(f"  Halogen bonds: {stats['halogen_bonds']}")
-    lines.append(f"  π interactions: {stats['pi_interactions']}")
-    lines.append(f"  Cooperativity chains: {stats.get('cooperativity_chains', 0)}")
-    lines.append(f"  Total interactions: {stats['total_interactions']}")
+    lines.append(f"  Hydrogen bonds: {summary['hydrogen_bonds']['count']}")
+    lines.append(f"  Halogen bonds: {summary['halogen_bonds']['count']}")
+    lines.append(f"  π interactions: {summary['pi_interactions']['count']}")
+    lines.append(f"  Cooperativity chains: {summary['cooperativity_chains']['count']}")
+    lines.append(f"  Total interactions: {summary['total_interactions']}")
     lines.append("")
+
+    # Bond detection statistics
+    if "bond_detection" in summary:
+        bond_stats = summary["bond_detection"]
+        lines.append("Bond Detection:")
+        lines.append(f"  Total bonds detected: {bond_stats['total_bonds']}")
+        if bond_stats["breakdown"]:
+            for method, stats in bond_stats["breakdown"].items():
+                method_name = method.replace("_", " ").title()
+                lines.append(
+                    f"    {method_name}: {stats['count']} ({stats['percentage']}%)"
+                )
+        lines.append("")
 
     if summary_only:
         return "\n".join(lines)
@@ -528,14 +613,16 @@ def format_results_text(
     return "\n".join(lines)
 
 
-def export_to_json(analyzer: HBondAnalyzer, input_file: str, output_file: str) -> None:
+def export_to_json(
+    analyzer: NPMolecularInteractionAnalyzer, input_file: str, output_file: str
+) -> None:
     """Export results to JSON format.
 
     Exports complete analysis results to a structured JSON file
     with metadata, statistics, and detailed interaction data.
 
     :param analyzer: Analysis results to export
-    :type analyzer: HBondAnalyzer
+    :type analyzer: MolecularInteractionAnalyzer
     :param input_file: Path to the input file analyzed
     :type input_file: str
     :param output_file: Path to the JSON output file
@@ -551,7 +638,7 @@ def export_to_json(analyzer: HBondAnalyzer, input_file: str, output_file: str) -
             "analysis_time": time.strftime("%Y-%m-%d %H:%M:%S"),
             "hbat_version": __version__,
         },
-        "statistics": analyzer.get_statistics(),
+        "summary": analyzer.get_summary(),
         "hydrogen_bonds": [],
         "halogen_bonds": [],
         "pi_interactions": [],
@@ -646,14 +733,14 @@ def export_to_json(analyzer: HBondAnalyzer, input_file: str, output_file: str) -
         json.dump(data, f, indent=2)
 
 
-def export_to_csv(analyzer: HBondAnalyzer, output_file: str) -> None:
+def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) -> None:
     """Export results to CSV format.
 
     Exports analysis results to a CSV file with separate sections
     for different interaction types.
 
     :param analyzer: Analysis results to export
-    :type analyzer: HBondAnalyzer
+    :type analyzer: MolecularInteractionAnalyzer
     :param output_file: Path to the CSV output file
     :type output_file: str
     :returns: None
@@ -779,7 +866,7 @@ def run_analysis(args: argparse.Namespace) -> int:
         print_progress(f"Analysis mode: {parameters.analysis_mode}", verbose)
 
         # Create analyzer
-        analyzer = HBondAnalyzer(parameters)
+        analyzer = NPMolecularInteractionAnalyzer(parameters)
 
         # Run analysis
         start_time = time.time()
@@ -793,14 +880,14 @@ def run_analysis(args: argparse.Namespace) -> int:
         print_progress(f"Analysis completed in {analysis_time:.2f} seconds", verbose)
 
         # Get results
-        stats = analyzer.get_statistics()
+        summary = analyzer.get_summary()
 
         if not args.quiet:
             print(
-                f"Found {stats['hydrogen_bonds']} hydrogen bonds, "
-                f"{stats['halogen_bonds']} halogen bonds, "
-                f"{stats['pi_interactions']} π interactions, "
-                f"{stats.get('cooperativity_chains', 0)} cooperativity chains"
+                f"Found {summary['hydrogen_bonds']['count']} hydrogen bonds, "
+                f"{summary['halogen_bonds']['count']} halogen bonds, "
+                f"{summary['pi_interactions']['count']} π interactions, "
+                f"{summary['cooperativity_chains']['count']} cooperativity chains"
             )
 
         # Output results
@@ -844,8 +931,33 @@ def main() -> int:
     :returns: Exit code (0 for success, non-zero for failure)
     :rtype: int
     """
+    # Initialize HBAT environment first
+    try:
+        from ..core.app_config import initialize_hbat_environment
+
+        initialize_hbat_environment(
+            verbose=False
+        )  # We'll handle verbosity based on args
+    except ImportError:
+        pass  # Continue without app config if import fails
+
     parser = create_parser()
     args = parser.parse_args()
+
+    # Show HBAT environment info if verbose
+    if hasattr(args, "verbose") and args.verbose:
+        try:
+            from ..core.app_config import get_hbat_config
+
+            config = get_hbat_config()
+            info = config.get_info()
+            print(f"📁 HBAT data directory: {info['hbat_directory']}")
+            if info["ccd_files_present"]:
+                print(f"✅ CCD data available")
+            else:
+                print(f"⚠️  CCD data will be downloaded as needed")
+        except ImportError:
+            pass
 
     # Handle preset listing first
     if hasattr(args, "list_presets") and args.list_presets:
