@@ -493,7 +493,7 @@ class PDBParser:
                     )
                     # Avoid duplicate bonds
                     if not self._bond_exists(bond):
-                        print(residue.name, residue.chain_id, residue.seq_num, atom1_name, atom1.serial, atom2_name, atom2.serial)
+                        # print(residue.name, residue.chain_id, residue.seq_num, atom1_name, atom1.serial, atom2_name, atom2.serial)
                         self.bonds.append(bond)
                         bonds_found += 1
 
