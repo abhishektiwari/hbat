@@ -186,6 +186,17 @@ build-standalone:
 	@echo "Building standalone executables with PyInstaller..."
 	python build_standalone.py
 
+build-standalone-windows:
+	@echo "Building Windows standalone executables..."
+	python build_standalone_windows.py
+
+build-standalone-linux:
+	@echo "Building Linux standalone executables..."
+	python build_standalone_linux.py
+
+build-standalone-all: build-standalone build-standalone-windows build-standalone-linux
+	@echo "All standalone builds completed"
+
 # Package validation
 check:
 	@echo "Checking package..."
