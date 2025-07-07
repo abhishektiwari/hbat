@@ -129,14 +129,14 @@ def build_cli():
 def create_installer():
     """Create Windows installer package."""
     print("\nCreating Windows installer...")
-    
+
     # Check if NSIS is available
     nsis_path = shutil.which("makensis")
     if not nsis_path:
         print("NSIS not found. Skipping installer creation.")
         print("To create installers, install NSIS from https://nsis.sourceforge.io/")
         return False
-    
+
     # Create NSIS script
     nsis_script = """
 !define PRODUCT_NAME "HBAT"
@@ -172,10 +172,10 @@ Section "Uninstall"
     RMDir "$INSTDIR"
 SectionEnd
 """
-    
+
     with open("installer.nsi", "w") as f:
         f.write(nsis_script)
-    
+
     try:
         subprocess.run(["makensis", "installer.nsi"], check=True)
         os.remove("installer.nsi")
@@ -234,7 +234,7 @@ def main():
         print("✓ CLI: dist/windows/hbat.exe")
     else:
         print("✗ CLI build failed")
-        
+
     if installer_success:
         print("✓ Installer: dist/HBAT-Setup.exe")
     else:

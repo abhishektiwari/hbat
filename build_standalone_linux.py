@@ -129,30 +129,42 @@ def build_cli():
 def create_appimage():
     """Create AppImage for better Linux distribution."""
     print("\nCreating AppImage...")
-    
+
     # Create AppDir structure
     appdir = Path("HBAT.AppDir")
     if appdir.exists():
         shutil.rmtree(appdir)
-    
+
     appdir.mkdir()
     (appdir / "usr" / "bin").mkdir(parents=True)
     (appdir / "usr" / "share" / "applications").mkdir(parents=True)
-    (appdir / "usr" / "share" / "icons" / "hicolor" / "256x256" / "apps").mkdir(parents=True)
-    
+    (appdir / "usr" / "share" / "icons" / "hicolor" / "256x256" / "apps").mkdir(
+        parents=True
+    )
+
     # Copy executables
     if os.path.exists("dist/linux/HBAT-GUI"):
         shutil.copy2("dist/linux/HBAT-GUI", appdir / "usr" / "bin" / "HBAT-GUI")
         os.chmod(appdir / "usr" / "bin" / "HBAT-GUI", 0o755)
-    
+
     if os.path.exists("dist/linux/hbat"):
         shutil.copy2("dist/linux/hbat", appdir / "usr" / "bin" / "hbat")
         os.chmod(appdir / "usr" / "bin" / "hbat", 0o755)
-    
+
     # Copy icon
     if os.path.exists("hbat.png"):
-        shutil.copy2("hbat.png", appdir / "usr" / "share" / "icons" / "hicolor" / "256x256" / "apps" / "hbat.png")
-    
+        shutil.copy2(
+            "hbat.png",
+            appdir
+            / "usr"
+            / "share"
+            / "icons"
+            / "hicolor"
+            / "256x256"
+            / "apps"
+            / "hbat.png",
+        )
+
     # Create desktop file
     desktop_content = """[Desktop Entry]
 Name=HBAT
@@ -163,10 +175,10 @@ Type=Application
 Categories=Science;Chemistry;
 Terminal=false
 """
-    
+
     with open(appdir / "usr" / "share" / "applications" / "hbat.desktop", "w") as f:
         f.write(desktop_content)
-    
+
     # Create AppRun script
     apprun_content = """#!/bin/bash
 SELF=$(readlink -f "$0")
@@ -180,11 +192,11 @@ else
     exec "${HERE}/usr/bin/HBAT-GUI" "$@"
 fi
 """
-    
+
     with open(appdir / "AppRun", "w") as f:
         f.write(apprun_content)
     os.chmod(appdir / "AppRun", 0o755)
-    
+
     # Download appimagetool if not present
     appimagetool = "appimagetool-x86_64.AppImage"
     if not os.path.exists(appimagetool):
@@ -192,18 +204,22 @@ fi
         try:
             urllib.request.urlretrieve(
                 "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage",
-                appimagetool
+                appimagetool,
             )
             os.chmod(appimagetool, 0o755)
         except Exception as e:
             print(f"Failed to download appimagetool: {e}")
             return False
-    
+
     # Build AppImage
     try:
         env = os.environ.copy()
         env["ARCH"] = "x86_64"
-        subprocess.run([f"./{appimagetool}", "HBAT.AppDir", "dist/HBAT-x86_64.AppImage"], check=True, env=env)
+        subprocess.run(
+            [f"./{appimagetool}", "HBAT.AppDir", "dist/HBAT-x86_64.AppImage"],
+            check=True,
+            env=env,
+        )
         shutil.rmtree(appdir)
         print("✓ AppImage created successfully")
         return True
@@ -215,31 +231,43 @@ fi
 def create_deb_package():
     """Create .deb package for Debian/Ubuntu."""
     print("\nCreating .deb package...")
-    
+
     # Create debian package structure
     debdir = Path("hbat-deb")
     if debdir.exists():
         shutil.rmtree(debdir)
-    
+
     # Create directory structure
     (debdir / "DEBIAN").mkdir(parents=True)
     (debdir / "usr" / "bin").mkdir(parents=True)
     (debdir / "usr" / "share" / "applications").mkdir(parents=True)
-    (debdir / "usr" / "share" / "icons" / "hicolor" / "256x256" / "apps").mkdir(parents=True)
-    
+    (debdir / "usr" / "share" / "icons" / "hicolor" / "256x256" / "apps").mkdir(
+        parents=True
+    )
+
     # Copy executables
     if os.path.exists("dist/linux/HBAT-GUI"):
         shutil.copy2("dist/linux/HBAT-GUI", debdir / "usr" / "bin" / "hbat-gui")
         os.chmod(debdir / "usr" / "bin" / "hbat-gui", 0o755)
-    
+
     if os.path.exists("dist/linux/hbat"):
         shutil.copy2("dist/linux/hbat", debdir / "usr" / "bin" / "hbat")
         os.chmod(debdir / "usr" / "bin" / "hbat", 0o755)
-    
+
     # Copy icon
     if os.path.exists("hbat.png"):
-        shutil.copy2("hbat.png", debdir / "usr" / "share" / "icons" / "hicolor" / "256x256" / "apps" / "hbat.png")
-    
+        shutil.copy2(
+            "hbat.png",
+            debdir
+            / "usr"
+            / "share"
+            / "icons"
+            / "hicolor"
+            / "256x256"
+            / "apps"
+            / "hbat.png",
+        )
+
     # Create desktop file
     desktop_content = """[Desktop Entry]
 Name=HBAT
@@ -250,10 +278,10 @@ Type=Application
 Categories=Science;Chemistry;
 Terminal=false
 """
-    
+
     with open(debdir / "usr" / "share" / "applications" / "hbat.desktop", "w") as f:
         f.write(desktop_content)
-    
+
     # Create control file
     control_content = """Package: hbat
 Version: 1.0.0
@@ -264,13 +292,15 @@ Maintainer: HBAT Team
 Description: Hydrogen Bond Analysis Tool
  A comprehensive tool for analyzing hydrogen bonds in molecular structures.
 """
-    
+
     with open(debdir / "DEBIAN" / "control", "w") as f:
         f.write(control_content)
-    
+
     # Build .deb package
     try:
-        subprocess.run(["dpkg-deb", "--build", "hbat-deb", "dist/hbat_1.0.0_amd64.deb"], check=True)
+        subprocess.run(
+            ["dpkg-deb", "--build", "hbat-deb", "dist/hbat_1.0.0_amd64.deb"], check=True
+        )
         shutil.rmtree(debdir)
         print("✓ .deb package created successfully")
         return True
@@ -328,12 +358,12 @@ def main():
         print("✓ CLI: dist/linux/hbat")
     else:
         print("✗ CLI build failed")
-        
+
     if appimage_success:
         print("✓ AppImage: dist/HBAT-x86_64.AppImage")
     else:
         print("✗ AppImage creation skipped/failed")
-        
+
     if deb_success:
         print("✓ DEB Package: dist/hbat_1.0.0_amd64.deb")
     else:
