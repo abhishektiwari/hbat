@@ -223,7 +223,8 @@ jobs:
         path: |
           dist/linux/HBAT-GUI
           dist/linux/hbat
-          dist/hbat-*.AppImage
+          dist/HBAT-x86_64.AppImage
+          dist/hbat_*.deb
         if-no-files-found: warn
         retention-days: 30
 
@@ -397,7 +398,7 @@ jobs:
           
           ### Standalone Applications
           - **macOS**: `hbat-${{ needs.generate-version.outputs.version }}.dmg`
-          - **Linux**: `HBAT-GUI`, `hbat`, `hbat-*.AppImage`
+          - **Linux**: `HBAT-GUI`, `hbat`, `HBAT-x86_64.AppImage`, `hbat_*.deb`
           
           ### Conda Package
           - `hbat-${{ needs.generate-version.outputs.version }}.tar.bz2` or `.conda`
@@ -439,7 +440,7 @@ jobs:
           ### Available Artifacts
           - **Python**: wheel and source distribution
           - **macOS**: DMG installer
-          - **Linux**: AppImage and standalone executables
+          - **Linux**: AppImage, DEB package, and standalone executables
           - **Conda**: conda package
           - **Documentation**: HTML documentation zip file
           
