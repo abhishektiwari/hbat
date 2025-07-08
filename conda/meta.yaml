@@ -33,7 +33,7 @@ requirements:
 
 test:
   source_files:
-    - example_pdb_files/6RSA.pdb
+    - example_pdb_files/6rsa.pdb
   commands:
     - pip install pdbreader>=0.1.0 mmcif>=0.92.0 mmcif-pdbx>=2.0.1 openbabel-wheel>=3.1.1.22 pybel>=0.15.5 "pdbfixer @ git+https://github.com/openmm/pdbfixer.git"
     - python -c "import hbat; print(hbat.__version__)"
@@ -46,7 +46,7 @@ test:
     - hbat --help
     - hbat --version
     # Test hydrogen bond analysis with 6RSA.pdb
-    - hbat example_pdb_files/6RSA.pdb --summary-only
+    - hbat example_pdb_files/6rsa.pdb --summary-only
     - python -c "from hbat.core.np_analyzer import NPMolecularInteractionAnalyzer as HBAnalyzer; print('HBAnalyzer:', HBAnalyzer)"
   requires:
     - pip
