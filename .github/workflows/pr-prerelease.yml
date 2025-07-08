@@ -267,8 +267,9 @@ jobs:
         PACKAGE_PATH=$(find conda-build-output -name "hbat-*.tar.bz2" -o -name "hbat-*.conda" | head -n 1)
         if [ -n "$PACKAGE_PATH" ]; then
           echo "Package details:"
-          conda info "$PACKAGE_PATH"
           echo "Package file: $PACKAGE_PATH"
+          echo "Package size: $(du -h "$PACKAGE_PATH" | cut -f1)"
+          echo "File type: $(file "$PACKAGE_PATH")"
         else
           echo "Warning: No package found!"
           ls -la conda-build-output/
