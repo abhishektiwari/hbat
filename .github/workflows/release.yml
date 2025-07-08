@@ -214,6 +214,8 @@ jobs:
         git tag -a "${{ needs.generate-version.outputs.version_tag }}" -m "Release ${{ needs.generate-version.outputs.version_tag }}"
     
     - name: Build standalone Linux executables
+      env:
+        HBAT_VERSION: ${{ needs.generate-version.outputs.version }}
       run: python build_standalone_linux.py
     
     - name: Upload Linux artifacts
@@ -247,6 +249,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v3
       with:
         auto-update-conda: true
+        auto-activate-base: false
         python-version: 3.11
         channels: conda-forge,defaults
         channel-priority: true

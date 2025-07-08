@@ -231,6 +231,9 @@ fi
 def create_deb_package():
     """Create .deb package for Debian/Ubuntu."""
     print("\nCreating .deb package...")
+    
+    # Get version from environment or use default
+    version = os.environ.get('HBAT_VERSION', '2.0.0')
 
     # Create debian package structure
     debdir = Path("hbat-deb")
@@ -283,8 +286,8 @@ Terminal=false
         f.write(desktop_content)
 
     # Create control file
-    control_content = """Package: hbat
-Version: 1.0.0
+    control_content = f"""Package: hbat
+Version: {version}
 Section: science
 Priority: optional
 Architecture: amd64
@@ -299,10 +302,10 @@ Description: Hydrogen Bond Analysis Tool
     # Build .deb package
     try:
         subprocess.run(
-            ["dpkg-deb", "--build", "hbat-deb", "dist/hbat_1.0.0_amd64.deb"], check=True
+            ["dpkg-deb", "--build", "hbat-deb", f"dist/hbat_{version}_amd64.deb"], check=True
         )
         shutil.rmtree(debdir)
-        print("✓ .deb package created successfully")
+        print(f"✓ .deb package created successfully: hbat_{version}_amd64.deb")
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("✗ Failed to create .deb package (dpkg-deb not found)")
@@ -315,6 +318,10 @@ def main():
     """Main build function."""
     print("HBAT Linux Build Script")
     print("=" * 40)
+    
+    # Get version from environment or use default
+    version = os.environ.get('HBAT_VERSION', '2.0.0')
+    print(f"Building version: {version}")
 
     # Check we're in the right directory
     if not os.path.exists("hbat_gui.py"):
@@ -365,7 +372,7 @@ def main():
         print("✗ AppImage creation skipped/failed")
 
     if deb_success:
-        print("✓ DEB Package: dist/hbat_1.0.0_amd64.deb")
+        print(f"✓ DEB Package: dist/hbat_{version}_amd64.deb")
     else:
         print("✗ DEB package creation skipped/failed")
 
