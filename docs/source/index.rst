@@ -78,6 +78,12 @@ Install HBAT:
 
    pip install hbat
 
+**Recommended**: Install PDBFixer if you prefer over OpenBabel for fixing missing H atoms.
+
+.. code-block:: bash
+
+   pip install git+https://github.com/openmm/pdbfixer.git
+
 Basic usage:
 
 .. code-block:: bash

@@ -52,12 +52,24 @@ pip install hbat
 
 Run HBAT Command-Line Interface (CLI) using `hbat` or launch HBAT GUI using `hbat-gui`.
 
+**Recommended**: Install PDBFixer if you prefer over OpenBabel for fixing missing H atoms.
+
+```bash
+pip install git+https://github.com/openmm/pdbfixer.git
+```
+
 ### Option 2: Install from Source
 
 ```bash
 git clone https://github.com/abhishektiwari/hbat.git
 cd hbat
 pip install -e .
+```
+
+Alternatively,  
+
+```bash
+pip install git+https://github.com/abhishektiwari/hbat.git
 ```
 
 Run HBAT Command-Line Interface (CLI) using `hbat` or launch HBAT GUI using `hbat-gui`.

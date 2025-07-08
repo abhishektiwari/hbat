@@ -255,10 +255,14 @@ test-build:
 	if [ -f "./hbat-test-build/bin/pip" ]; then \
 		./hbat-test-build/bin/pip install --upgrade pip && \
 		./hbat-test-build/bin/pip install "$$WHEEL_FILE" && \
+		echo "Installing pdbfixer from Git..." && \
+		./hbat-test-build/bin/pip install git+https://github.com/openmm/pdbfixer.git && \
 		HBAT_CMD="./hbat-test-build/bin/hbat"; \
 	else \
 		./hbat-test-build/Scripts/pip.exe install --upgrade pip && \
 		./hbat-test-build/Scripts/pip.exe install "$$WHEEL_FILE" && \
+		echo "Installing pdbfixer from Git..." && \
+		./hbat-test-build/Scripts/pip.exe install git+https://github.com/openmm/pdbfixer.git && \
 		HBAT_CMD="./hbat-test-build/Scripts/hbat.exe"; \
 	fi; \
 	echo "\nTesting package imports..."; \
@@ -268,6 +272,7 @@ test-build:
 		PYTHON_CMD="./hbat-test-build/Scripts/python.exe"; \
 	fi; \
 	$$PYTHON_CMD -c "import pdbreader; print('✓ pdbreader:', pdbreader)" && \
+	$$PYTHON_CMD -c "import openbabel; print('✓ openbabel:', openbabel)" && \
 	$$PYTHON_CMD -c "import pdbfixer; print('✓ pdbfixer:', pdbfixer)" && \
 	$$PYTHON_CMD -c "import mmcif; print('✓ mmcif:', mmcif)" && \
 	$$PYTHON_CMD -c "import mmcif; print('  mmcif version:', mmcif.__version__)" && \

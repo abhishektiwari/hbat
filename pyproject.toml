@@ -35,7 +35,6 @@ dependencies = [
     "pybel>=0.15.5",
     "mmcif-pdbx>=2.0.1",
     "mmcif>=0.92.0",
-    "pdbfixer @ git+https://github.com/openmm/pdbfixer@master",
 ]
 dynamic = ["version"]
 
@@ -54,7 +53,6 @@ dev = [
     "types-requests>=2.0.0",
     "types-Pillow>=8.0.0",
     "pandas-stubs>=1.0.0",
-    "python-type-stubs @ git+https://github.com/microsoft/python-type-stubs@main",
 ]
 build = [
     "build>=0.8.0",
