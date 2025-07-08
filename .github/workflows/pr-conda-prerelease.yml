@@ -19,29 +19,35 @@ jobs:
         ref: ${{ github.event.workflow_run.head_sha }}
         fetch-depth: 0
     
-    - name: Get PR information and find corresponding pre-release tag
+    - name: Get PR information from triggering workflow and find pre-release tag
       id: get_release_tag
       uses: actions/github-script@v7
       with:
         script: |
-          // Get PR information from the triggering workflow
-          const { data: pullRequests } = await github.rest.pulls.list({
+          // Get the triggering workflow run details
+          const triggeringRun = context.payload.workflow_run;
+          console.log(`Triggered by workflow: ${triggeringRun.name} (${triggeringRun.id})`);
+          console.log(`Triggering event: ${triggeringRun.event}`);
+          console.log(`Head branch: ${triggeringRun.head_branch}`);
+          console.log(`Head SHA: ${triggeringRun.head_sha}`);
+          
+          // Get the PR number from the triggering workflow run
+          const { data: triggeringWorkflow } = await github.rest.actions.getWorkflowRun({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            head: `${context.repo.owner}:${context.payload.workflow_run.head_branch}`,
-            state: 'open'
+            run_id: triggeringRun.id
           });
           
-          if (pullRequests.length === 0) {
-            core.setFailed('No open PR found for this branch');
+          // Extract PR number from the triggering workflow's pull_requests
+          if (!triggeringWorkflow.pull_requests || triggeringWorkflow.pull_requests.length === 0) {
+            core.setFailed('No PR information found in triggering workflow run');
             return;
           }
           
-          const pr = pullRequests[0];
-          const prNumber = pr.number;
-          const commitSha = context.payload.workflow_run.head_sha.substring(0, 7);
+          const prNumber = triggeringWorkflow.pull_requests[0].number;
+          const commitSha = triggeringRun.head_sha.substring(0, 7);
           
-          console.log(`Found PR #${prNumber} with commit ${commitSha}`);
+          console.log(`PR #${prNumber} triggered the workflow with commit ${commitSha}`);
           
           // Find the specific pre-release tag for this PR and commit
           const { data: tags } = await github.rest.repos.listTags({
