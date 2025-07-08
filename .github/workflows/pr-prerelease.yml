@@ -1,55 +1,25 @@
 name: PR Pre-release
 
 on:
-  workflow_run:
-    workflows: ["Tests"]
-    types:
-      - completed
+  pull_request:
+    types: [opened, synchronize, reopened]
     branches: [ main ]
 
 jobs:
   generate-prerelease-tag:
     runs-on: ubuntu-latest
-    # Only run if the test workflow succeeded and it was triggered by a PR
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request' }}
     outputs:
       prerelease_tag: ${{ steps.generate_tag.outputs.prerelease_tag }}
       version: ${{ steps.generate_tag.outputs.version }}
-      pr_number: ${{ steps.get_pr.outputs.pr_number }}
-      pr_head_sha: ${{ steps.get_pr.outputs.pr_head_sha }}
-      pr_title: ${{ steps.get_pr.outputs.pr_title }}
-      pr_head_ref: ${{ steps.get_pr.outputs.pr_head_ref }}
+      pr_number: ${{ github.event.number }}
+      pr_head_sha: ${{ github.event.pull_request.head.sha }}
+      pr_title: ${{ github.event.pull_request.title }}
+      pr_head_ref: ${{ github.event.pull_request.head.ref }}
     
     steps:
     - uses: actions/checkout@v4
       with:
-        ref: ${{ github.event.workflow_run.head_sha }}
         fetch-depth: 0
-    
-    - name: Get PR information
-      id: get_pr
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const { data: pullRequests } = await github.rest.pulls.list({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            head: `${context.repo.owner}:${context.payload.workflow_run.head_branch}`,
-            state: 'open'
-          });
-          
-          if (pullRequests.length === 0) {
-            core.setFailed('No open PR found for this branch');
-            return;
-          }
-          
-          const pr = pullRequests[0];
-          core.setOutput('pr_number', pr.number);
-          core.setOutput('pr_head_sha', pr.head.sha);
-          core.setOutput('pr_title', pr.title);
-          core.setOutput('pr_head_ref', pr.head.ref);
-          
-          console.log(`Found PR #${pr.number}: ${pr.title}`);
     
     - name: Generate pre-release tag
       id: generate_tag
@@ -59,7 +29,7 @@ jobs:
         
         # Generate pre-release version with PR number and short SHA
         SHORT_SHA=$(git rev-parse --short HEAD)
-        PR_NUMBER=${{ steps.get_pr.outputs.pr_number }}
+        PR_NUMBER=${{ github.event.number }}
         PRERELEASE_VERSION="${BASE_VERSION}-pr${PR_NUMBER}.${SHORT_SHA}"
         PRERELEASE_TAG="v${PRERELEASE_VERSION}"
         
