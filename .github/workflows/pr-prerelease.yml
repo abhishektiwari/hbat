@@ -280,7 +280,7 @@ jobs:
       with:
         auto-update-conda: true
         python-version: 3.11
-        environment-name: test-env
+        activate-environment: test-env
         channels: conda-forge,defaults
         channel-priority: true
         
