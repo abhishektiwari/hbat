@@ -23,6 +23,13 @@ From PyPI (Recommended)
 
    pip install hbat
 
+**Recommended**: For fixing missing Hydrogen Atoms, install PDBFixer (preferred over OpenBabel). See :doc:`pdbfixing` for details.
+
+.. code-block:: bash
+
+   pip install git+https://github.com/openmm/pdbfixer.git
+
+
 From Source
 ~~~~~~~~~~~
 
@@ -31,6 +38,13 @@ From Source
    git clone https://github.com/abhishektiwari/hbat.git
    cd hbat
    pip install -e .
+
+
+Alternatively,  
+
+.. code-block:: bash
+
+   pip install git+https://github.com/abhishektiwari/hbat.git
 
 
 From Conda
