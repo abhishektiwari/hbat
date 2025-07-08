@@ -19,28 +19,55 @@ jobs:
         ref: ${{ github.event.workflow_run.head_sha }}
         fetch-depth: 0
     
-    - name: Get latest pre-release tag (created by PR Pre-release workflow)
+    - name: Get PR information and find corresponding pre-release tag
       id: get_release_tag
-      run: |
-        # Get the latest pre-release tag (should be the one just created by pr-prerelease.yml)
-        PRERELEASE_TAG=$(git tag -l "v*-pr*" --sort=-version:refname | head -n 1)
-        
-        if [ -z "$PRERELEASE_TAG" ]; then
-          echo "Error: No pre-release tag found!"
-          exit 1
-        fi
-        
-        PRERELEASE_VERSION=$(echo "$PRERELEASE_TAG" | sed 's/^v//')
-        
-        echo "Using existing pre-release tag: $PRERELEASE_TAG"
-        echo "Pre-release version: $PRERELEASE_VERSION"
-        
-        # Extract PR number from tag
-        PR_NUMBER=$(echo "$PRERELEASE_VERSION" | sed -n 's/.*-pr\([0-9]*\)\..*/\1/p')
-        
-        echo "prerelease_tag=$PRERELEASE_TAG" >> $GITHUB_OUTPUT
-        echo "version=$PRERELEASE_VERSION" >> $GITHUB_OUTPUT
-        echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+      uses: actions/github-script@v7
+      with:
+        script: |
+          // Get PR information from the triggering workflow
+          const { data: pullRequests } = await github.rest.pulls.list({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            head: `${context.repo.owner}:${context.payload.workflow_run.head_branch}`,
+            state: 'open'
+          });
+          
+          if (pullRequests.length === 0) {
+            core.setFailed('No open PR found for this branch');
+            return;
+          }
+          
+          const pr = pullRequests[0];
+          const prNumber = pr.number;
+          const commitSha = context.payload.workflow_run.head_sha.substring(0, 7);
+          
+          console.log(`Found PR #${prNumber} with commit ${commitSha}`);
+          
+          // Find the specific pre-release tag for this PR and commit
+          const { data: tags } = await github.rest.repos.listTags({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            per_page: 100
+          });
+          
+          // Look for tag pattern: v{version}-pr{PR_NUMBER}.{SHORT_SHA}
+          const tagPattern = new RegExp(`^v.*-pr${prNumber}\\.${commitSha}$`);
+          const matchingTag = tags.find(tag => tagPattern.test(tag.name));
+          
+          if (!matchingTag) {
+            core.setFailed(`No pre-release tag found for PR #${prNumber} with commit ${commitSha}. Expected pattern: v*-pr${prNumber}.${commitSha}`);
+            return;
+          }
+          
+          const preReleaseTag = matchingTag.name;
+          const preReleaseVersion = preReleaseTag.replace(/^v/, '');
+          
+          console.log(`Found matching pre-release tag: ${preReleaseTag}`);
+          console.log(`Pre-release version: ${preReleaseVersion}`);
+          
+          core.setOutput('prerelease_tag', preReleaseTag);
+          core.setOutput('version', preReleaseVersion);
+          core.setOutput('pr_number', prNumber);
     
     - name: Setup Miniconda
       uses: conda-incubator/setup-miniconda@v3
