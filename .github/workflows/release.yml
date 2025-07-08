@@ -199,7 +199,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3-tk
+        sudo apt-get install -y python3-tk libfuse2 fuse
     
     - name: Install Python dependencies
       run: |
@@ -225,7 +225,7 @@ jobs:
         path: |
           dist/linux/HBAT-GUI
           dist/linux/hbat
-          dist/HBAT-x86_64.AppImage
+          dist/HBAT-*-x86_64.AppImage
           dist/hbat_*.deb
         if-no-files-found: warn
         retention-days: 30
@@ -401,7 +401,7 @@ jobs:
           
           ### Standalone Applications
           - **macOS**: `hbat-${{ needs.generate-version.outputs.version }}.dmg`
-          - **Linux**: `HBAT-GUI`, `hbat`, `HBAT-x86_64.AppImage`, `hbat_*.deb`
+          - **Linux**: `HBAT-GUI`, `hbat`, `HBAT-${{ needs.generate-version.outputs.version }}-x86_64.AppImage`, `hbat_${{ needs.generate-version.outputs.version }}_amd64.deb`
           
           ### Conda Package
           - `hbat-${{ needs.generate-version.outputs.version }}.tar.bz2` or `.conda`

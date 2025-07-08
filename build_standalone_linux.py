@@ -129,6 +129,9 @@ def build_cli():
 def create_appimage():
     """Create AppImage for better Linux distribution."""
     print("\nCreating AppImage...")
+    
+    # Get version from environment or use default
+    version = os.environ.get('HBAT_VERSION', '2.0.0')
 
     # Create AppDir structure
     appdir = Path("HBAT.AppDir")
@@ -215,13 +218,14 @@ fi
     try:
         env = os.environ.copy()
         env["ARCH"] = "x86_64"
+        appimage_name = f"dist/HBAT-{version}-x86_64.AppImage"
         subprocess.run(
-            [f"./{appimagetool}", "HBAT.AppDir", "dist/HBAT-x86_64.AppImage"],
+            [f"./{appimagetool}", "HBAT.AppDir", appimage_name],
             check=True,
             env=env,
         )
         shutil.rmtree(appdir)
-        print("✓ AppImage created successfully")
+        print(f"✓ AppImage created successfully: HBAT-{version}-x86_64.AppImage")
         return True
     except subprocess.CalledProcessError:
         print("✗ Failed to create AppImage")
@@ -367,7 +371,7 @@ def main():
         print("✗ CLI build failed")
 
     if appimage_success:
-        print("✓ AppImage: dist/HBAT-x86_64.AppImage")
+        print(f"✓ AppImage: dist/HBAT-{version}-x86_64.AppImage")
     else:
         print("✗ AppImage creation skipped/failed")
 
@@ -382,7 +386,7 @@ def main():
     if cli_success:
         print("  CLI: ./dist/linux/hbat")
     if appimage_success:
-        print("  AppImage: ./dist/HBAT-x86_64.AppImage")
+        print(f"  AppImage: ./dist/HBAT-{version}-x86_64.AppImage")
 
     return 0
 
