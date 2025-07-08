@@ -29,22 +29,25 @@ requirements:
     - networkx >=2.5.0
     - matplotlib-base >=3.3.0
     - tk  # For GUI support
-    # pdbreader, pdbfixer, and mmcif packages will be installed via pip as part of the package installation
+    - numpy >=1.20.0
 
 test:
-  # Skip imports test since pdbreader, pdbfixer, and mmcif packages are installed via pip
+  source_files:
+    - example_pdb_files/6RSA.pdb
   commands:
-    - pip list | grep pdbreader || pip install pdbreader>=0.1.0
-    - pip list | grep pdbfixer || pip install "pdbfixer @ git+https://github.com/openmm/pdbfixer.git"
-    - pip list | grep mmcif || pip install mmcif>=0.92.0
-    - pip list | grep mmcif-pdbx || pip install mmcif-pdbx>=2.0.1
+    - pip install pdbreader>=0.1.0 mmcif>=0.92.0 mmcif-pdbx>=2.0.1 openbabel-wheel>=3.1.1.22 pybel>=0.15.5 "pdbfixer @ git+https://github.com/openmm/pdbfixer.git"
+    - python -c "import hbat; print(hbat.__version__)"
     - python -c "import pdbreader; print('pdbreader:', pdbreader)"
     - python -c "import pdbfixer; print('pdbfixer:', pdbfixer)"
     - python -c "import mmcif; print('mmcif:', mmcif)"
-    - python -c "import mmcif; print('mmcif:', mmcif.__version__)"
-    - python -c "import hbat; print(hbat.__version__)"
+    - python -c "import networkx; print('networkx:', networkx)"
+    - python -c "import matplotlib; print('matplotlib:', matplotlib)"
+    - python -c "import numpy; print('numpy:', numpy)"
     - hbat --help
     - hbat --version
+    # Test hydrogen bond analysis with 6RSA.pdb
+    - hbat example_pdb_files/6RSA.pdb --summary-only
+    - python -c "from hbat.core.np_analyzer import NPMolecularInteractionAnalyzer as HBAnalyzer; print('HBAnalyzer:', HBAnalyzer)"
   requires:
     - pip
     - pytest
