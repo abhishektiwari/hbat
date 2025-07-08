@@ -282,12 +282,14 @@ jobs:
         
         if [ -n "$PACKAGE_PATH" ]; then
           echo "Testing conda package installation..."
+          echo "Package path: $PACKAGE_PATH"
+          
           # Create test environment
           conda create -n test-env python=3.11 -y
           conda activate test-env
           
-          # Install the built package
-          conda install -c file://$(pwd)/conda-build-output hbat -y
+          # Install the built package using the full path
+          conda install "$PACKAGE_PATH" -y
           
           # Test import
           python -c "import hbat; print('✓ HBAT conda package installed successfully')"
