@@ -1,0 +1,228 @@
+name: PR Pre-release
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main ]
+
+jobs:
+  generate-prerelease-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      prerelease_tag: ${{ steps.generate_tag.outputs.prerelease_tag }}
+      version: ${{ steps.generate_tag.outputs.version }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Generate pre-release tag
+      id: generate_tag
+      run: |
+        # Get base version from latest tag or default to 0.0.0
+        BASE_VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "0.0.0")
+        
+        # Generate pre-release version with PR number and short SHA
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        PR_NUMBER=${{ github.event.number }}
+        PRERELEASE_VERSION="${BASE_VERSION}-pr${PR_NUMBER}.${SHORT_SHA}"
+        PRERELEASE_TAG="v${PRERELEASE_VERSION}"
+        
+        echo "Base version: $BASE_VERSION"
+        echo "Pre-release version: $PRERELEASE_VERSION"
+        echo "Pre-release tag: $PRERELEASE_TAG"
+        
+        echo "prerelease_tag=$PRERELEASE_TAG" >> $GITHUB_OUTPUT
+        echo "version=$PRERELEASE_VERSION" >> $GITHUB_OUTPUT
+
+  build-prerelease:
+    needs: generate-prerelease-tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
+        pip install -e .
+    
+    - name: Set version for setuptools-scm
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        # Create a temporary tag for building
+        git tag -a "${{ needs.generate-prerelease-tag.outputs.prerelease_tag }}" -m "Pre-release ${{ needs.generate-prerelease-tag.outputs.prerelease_tag }}"
+        echo "Created temporary tag: ${{ needs.generate-prerelease-tag.outputs.prerelease_tag }}"
+    
+    - name: Build package
+      run: make build
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: prerelease-build-artifacts-${{ github.event.number }}
+        path: dist/*
+        retention-days: 30
+    
+    - name: Create pre-release
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+            dist/hbat-${{ needs.generate-prerelease-tag.outputs.version }}-py3-none-any.whl
+            dist/hbat-${{ needs.generate-prerelease-tag.outputs.version }}.tar.gz
+        tag_name: ${{ needs.generate-prerelease-tag.outputs.prerelease_tag }}
+        name: Pre-release ${{ needs.generate-prerelease-tag.outputs.prerelease_tag }}
+        body: |
+          🚧 **Pre-release build for PR #${{ github.event.number }}**
+          
+          **Branch:** `${{ github.head_ref }}`
+          **Commit:** ${{ github.event.pull_request.head.sha }}
+          **Title:** ${{ github.event.pull_request.title }}
+          
+          This is an automated pre-release build. Use for testing purposes only.
+          
+          **Install with pip:**
+          ```bash
+          pip install https://github.com/${{ github.repository }}/releases/download/${{ needs.generate-prerelease-tag.outputs.prerelease_tag }}/hbat-${{ needs.generate-prerelease-tag.outputs.version }}-py3-none-any.whl
+          ```
+        prerelease: true
+        draft: false
+    
+    - name: Comment on PR
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const prNumber = context.issue.number;
+          const tag = '${{ needs.generate-prerelease-tag.outputs.prerelease_tag }}';
+          const version = '${{ needs.generate-prerelease-tag.outputs.version }}';
+          
+          const comment = `## 🚧 Pre-release Ready
+          
+          A pre-release has been created for this PR: **${tag}**
+          
+          ### Quick Install
+          \`\`\`bash
+          pip install https://github.com/${{ github.repository }}/releases/download/${tag}/hbat-${version}-py3-none-any.whl
+          \`\`\`
+          
+          ### Available Artifacts
+          - Python wheel: \`hbat-${version}-py3-none-any.whl\`
+          - Source distribution: \`hbat-${version}.tar.gz\`
+          
+          View all artifacts at: https://github.com/${{ github.repository }}/releases/tag/${tag}
+          `;
+          
+          github.rest.issues.createComment({
+            issue_number: prNumber,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  build-macos-prerelease:
+    needs: generate-prerelease-tag
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
+        pip install -e .
+        # Install tkinter on macOS
+        brew install python-tk create-dmg
+    
+    - name: Set version for setuptools-scm
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git tag -a "${{ needs.generate-prerelease-tag.outputs.prerelease_tag }}" -m "Pre-release ${{ needs.generate-prerelease-tag.outputs.prerelease_tag }}"
+        echo "Created temporary tag: ${{ needs.generate-prerelease-tag.outputs.prerelease_tag }}"
+    
+    - name: Build standalone macOS app
+      run: make build-standalone
+
+    - name: Ad-hoc sign the app
+      run: |
+        echo "Signing app with ad-hoc signature..."
+        codesign --force --deep --sign - dist/HBAT-GUI.app
+        codesign --verify --verbose dist/HBAT-GUI.app
+
+    - name: Remove HBAT-GUI folder
+      run: |
+        echo "Contents of dist directory:"
+        ls -la dist/
+        cd dist && rm -rf HBAT-GUI
+    
+    - name: Create DMG installer
+      run: |
+        create-dmg \
+          --volname "HBAT Pre-release Installer" \
+          --window-pos 200 120 \
+          --window-size 800 400 \
+          --icon-size 100 \
+          --icon "HBAT-GUI.app" 200 190 \
+          --hide-extension "HBAT-GUI.app" \
+          --app-drop-link 600 185 \
+          "hbat-${{ needs.generate-prerelease-tag.outputs.version }}.dmg" \
+          "dist/"
+        mv hbat-${{ needs.generate-prerelease-tag.outputs.version }}.dmg dist/
+    
+    - name: Upload macOS app artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: prerelease-macos-app-${{ github.event.number }}
+        path: dist/hbat-${{ needs.generate-prerelease-tag.outputs.version }}.dmg
+        retention-days: 30
+
+  update-prerelease:
+    needs: [generate-prerelease-tag, build-prerelease, build-macos-prerelease]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: prerelease-build-artifacts-${{ github.event.number }}
+        path: dist/
+    
+    - name: Download macOS app
+      uses: actions/download-artifact@v4
+      with:
+        name: prerelease-macos-app-${{ github.event.number }}
+        path: dist/
+    
+    - name: List dist directory contents
+      run: |
+        echo "Contents of dist directory:"
+        ls -la dist/
+    
+    - name: Update pre-release with macOS artifacts
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+            dist/hbat-${{ needs.generate-prerelease-tag.outputs.version }}.dmg
+        tag_name: ${{ needs.generate-prerelease-tag.outputs.prerelease_tag }}
+        prerelease: true
