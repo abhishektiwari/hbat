@@ -29,14 +29,80 @@ jobs:
         minor_pattern: "(MINOR)"
         version_format: "${major}.${minor}.${patch}"
         bump_each_commit: true
+  
+  generate-wheels-matrix:
+    name: "Generate wheels matrix"
+    runs-on: "ubuntu-latest"
+    outputs:
+      include: ${{ steps.set-matrix.outputs.include }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cibuildwheel
+        # MAKE SURE THIS STAYS IN SYNC WITH THE LOWER GHA cibuildwheel
+        run: pipx install cibuildwheel==2.23.3
+      - id: set-matrix
+        run: |
+          MATRIX=$(
+            {
+              cibuildwheel --print-build-identifiers --platform linux \
+              | jq -nRc '{"dist": inputs, "os": "ubuntu-latest"}' \
+              && cibuildwheel --print-build-identifiers --platform macos \
+              | jq -nRc '{"dist": inputs, "os": "macos-latest"}' \
+              && cibuildwheel --print-build-identifiers --platform windows \
+              | jq -nRc '{"dist": inputs, "os": "windows-latest"}'
+            } | jq -sc
+          )
+          echo "include=$MATRIX" | tee -a $GITHUB_OUTPUT
+        env:
+          CIBW_ARCHS_LINUX: "x86_64"
+          CIBW_ARCHS_MACOS: "x86_64 arm64"
+          CIBW_ARCHS_WINDOWS: "x86 AMD64"
+          # Skip musllinux because it takes too long to compile on GHA
+          # since it is emulated. (6+ hours)
+          # *note* most of the build time is actually numpy for musllinux
+          CIBW_SKIP: "*musllinux* *-manylinux_i686 *-musllinux_i686 *-win32 pp*"
 
-  release:
+  test-and-build:
+    name: "Build & Test"
+    needs:
+      - generate-wheels-matrix
+      - generate-tag
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.generate-wheels-matrix.outputs.include) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set version for setuptools-scm
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag -a "${{ needs.generate-tag.outputs.release_tag }}" -m "Release ${{ needs.generate-tag.outputs.release_tag }}"
+          echo "Created tag: ${{ needs.generate-tag.outputs.release_tag }}"
+
+      # QEMU enables building/testing for non-native architectures (ie arm64)
+      # at the cost of speed
+      - name: Set up QEMU
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+
+      - name: Build & (optionally) test wheels
+        # MAKE SURE THIS STAYS IN SYNC WITH THE UPPER pipx call to cibuildwheel
+        uses: pypa/cibuildwheel@v2.23.3
+        with:
+          only: ${{ matrix.dist }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.dist }}
+          path: ./wheelhouse/*.whl
+  
+  build-sdist:
     needs: generate-tag
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-      attestations: write
     
     steps:
     - uses: actions/checkout@v4
@@ -49,8 +115,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
-        pip install -e .
+        pip install build
     
     - name: Set version for setuptools-scm
       run: |
@@ -59,14 +124,41 @@ jobs:
         git tag -a "${{ needs.generate-tag.outputs.release_tag }}" -m "Release ${{ needs.generate-tag.outputs.release_tag }}"
         echo "Created tag: ${{ needs.generate-tag.outputs.release_tag }}"
     
-    - name: Build package
-      run: make build
+    - name: Build source distribution
+      run: python -m build --sdist
     
-    - name: Upload build artifacts
+    - name: Upload sdist artifact
       uses: actions/upload-artifact@v4
       with:
-        name: build-artifacts
-        path: dist/*
+        name: sdist
+        path: dist/*.tar.gz
+  
+  publish-to-pypi:
+    needs: [generate-tag, test-and-build, build-sdist]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        pattern: release-*
+        path: dist/
+        merge-multiple: true
+    
+    - name: Download sdist
+      uses: actions/download-artifact@v4
+      with:
+        name: sdist
+        path: dist/
+    
+    - name: List distribution files
+      run: |
+        echo "Contents of dist directory:"
+        ls -la dist/
     
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
@@ -104,6 +196,94 @@ jobs:
     - name: Build standalone macOS app
       run: make build-standalone
 
+  build-windows:
+    needs: generate-tag
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
+        pip install -e .
+    
+    - name: Set version for setuptools-scm
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git tag -a "${{ needs.generate-tag.outputs.release_tag }}" -m "Release ${{ needs.generate-tag.outputs.release_tag }}"
+        echo "Created tag: ${{ needs.generate-tag.outputs.release_tag }}"
+    
+    - name: Build standalone Windows executables
+      run: python build_standalone_windows.py
+    
+    - name: Install NSIS
+      uses: repolevedavaj/install-nsis@v1.0.2
+      with:
+        nsis-version: 3.09
+    
+    - name: Create Windows installer
+      run: |
+        # Re-run the script to create installer now that NSIS is available
+        python build_standalone_windows.py
+    
+    - name: Upload Windows artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-executables
+        path: |
+          dist/windows/*.exe
+          dist/HBAT-Setup.exe
+
+  build-linux:
+    needs: generate-tag
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-tk dpkg-dev
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
+        pip install -e .
+    
+    - name: Set version for setuptools-scm
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git tag -a "${{ needs.generate-tag.outputs.release_tag }}" -m "Release ${{ needs.generate-tag.outputs.release_tag }}"
+        echo "Created tag: ${{ needs.generate-tag.outputs.release_tag }}"
+    
+    - name: Build standalone Linux executables
+      run: python build_standalone_linux.py
+    
+    - name: Upload Linux artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-executables
+        path: |
+          dist/linux/*
+          dist/*.AppImage
+          dist/*.deb
+
     - name: Ad-hoc sign the app
       run: |
         echo "Signing app with ad-hoc signature..."
@@ -137,20 +317,39 @@ jobs:
         path: dist/hbat-${{ needs.generate-tag.outputs.version }}.dmg
   
   create-release:
-    needs: [generate-tag, release, build-macos]
+    needs: [generate-tag, test-and-build, build-sdist, build-macos, build-windows, build-linux]
     runs-on: ubuntu-latest
     
     steps:
-    - name: Download build artifacts
+    - name: Download all wheel artifacts
       uses: actions/download-artifact@v4
       with:
-        name: build-artifacts
+        pattern: release-*
+        path: dist/
+        merge-multiple: true
+    
+    - name: Download sdist
+      uses: actions/download-artifact@v4
+      with:
+        name: sdist
         path: dist/
     
     - name: Download macOS app
       uses: actions/download-artifact@v4
       with:
         name: macos-app
+        path: dist/
+    
+    - name: Download Windows executables
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-executables
+        path: dist/
+    
+    - name: Download Linux executables
+      uses: actions/download-artifact@v4
+      with:
+        name: linux-executables
         path: dist/
     
     - name: List dist directory contents
@@ -163,9 +362,14 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
-            dist/hbat-${{ needs.generate-tag.outputs.version }}-py3-none-any.whl
-            dist/hbat-${{ needs.generate-tag.outputs.version }}.tar.gz
-            dist/hbat-${{ needs.generate-tag.outputs.version }}.dmg
+            dist/*.whl
+            dist/*.tar.gz
+            dist/*.dmg
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.exe
+            dist/windows/*.exe
+            dist/linux/*
         tag_name: ${{ needs.generate-tag.outputs.release_tag }}
         name: Release ${{ needs.generate-tag.outputs.release_tag }}
         body: ${{ github.event.head_commit.message }}

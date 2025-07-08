@@ -186,12 +186,99 @@ build-standalone:
 	@echo "Building standalone executables with PyInstaller..."
 	python build_standalone.py
 
+build-standalone-windows:
+	@echo "Building Windows standalone executables..."
+	python build_standalone_windows.py
+
+build-standalone-linux:
+	@echo "Building Linux standalone executables..."
+	python build_standalone_linux.py
+
+build-standalone-all: build-standalone build-standalone-windows build-standalone-linux
+	@echo "All standalone builds completed"
+
 # Package validation
 check:
 	@echo "Checking package..."
 	-twine check dist/*
 	@echo "Package structure:"
 	@find dist/ -name "*.whl" -exec unzip -l {} \; 2>/dev/null | head -20
+
+# Test built package
+test-build:
+	@echo "Building and testing package in isolated environment..."
+	@# Clean up any existing environments
+	@if [ -d "hbat-build" ]; then rm -rf hbat-build; fi
+	@if [ -d "hbat-test-build" ]; then rm -rf hbat-test-build; fi
+	
+	@# Create fresh build environment
+	@echo "Creating build environment..."
+	@python -m venv hbat-build
+	@echo "Host Python: $$(which python)"
+	@echo "Build environment: ./hbat-build"
+	
+	@# Install build dependencies
+	@echo "Installing build dependencies..."
+	@if [ -f "./hbat-build/bin/pip" ]; then \
+		./hbat-build/bin/pip install --upgrade pip && \
+		./hbat-build/bin/pip install build setuptools wheel setuptools-scm; \
+	else \
+		./hbat-build/Scripts/pip.exe install --upgrade pip && \
+		./hbat-build/Scripts/pip.exe install build setuptools wheel setuptools-scm; \
+	fi
+	
+	@# Build the package
+	@echo "Building package..."
+	@if [ -f "./hbat-build/bin/python" ]; then \
+		./hbat-build/bin/python -m build; \
+	else \
+		./hbat-build/Scripts/python.exe -m build; \
+	fi
+	@echo "✓ Package built successfully!"
+	
+	@# Clean up build environment
+	@rm -rf hbat-build
+	
+	@# Create fresh test environment
+	@echo "\nCreating test environment..."
+	@python -m venv hbat-test-build
+	@echo "Test environment: ./hbat-test-build"
+	
+	@# Install the built package
+	@echo "Installing built package..."
+	@WHEEL_FILE=$$(ls -t dist/*.whl 2>/dev/null | head -1); \
+	if [ -z "$$WHEEL_FILE" ]; then \
+		echo "Error: No wheel file found in dist/."; \
+		exit 1; \
+	fi; \
+	echo "Installing $$WHEEL_FILE..."; \
+	if [ -f "./hbat-test-build/bin/pip" ]; then \
+		./hbat-test-build/bin/pip install --upgrade pip && \
+		./hbat-test-build/bin/pip install "$$WHEEL_FILE" && \
+		HBAT_CMD="./hbat-test-build/bin/hbat"; \
+	else \
+		./hbat-test-build/Scripts/pip.exe install --upgrade pip && \
+		./hbat-test-build/Scripts/pip.exe install "$$WHEEL_FILE" && \
+		HBAT_CMD="./hbat-test-build/Scripts/hbat.exe"; \
+	fi; \
+	echo "\nTesting package imports..."; \
+	if [ -f "./hbat-test-build/bin/python" ]; then \
+		PYTHON_CMD="./hbat-test-build/bin/python"; \
+	else \
+		PYTHON_CMD="./hbat-test-build/Scripts/python.exe"; \
+	fi; \
+	$$PYTHON_CMD -c "import pdbreader; print('✓ pdbreader:', pdbreader)" && \
+	$$PYTHON_CMD -c "import pdbfixer; print('✓ pdbfixer:', pdbfixer)" && \
+	$$PYTHON_CMD -c "import mmcif; print('✓ mmcif:', mmcif)" && \
+	$$PYTHON_CMD -c "import mmcif; print('  mmcif version:', mmcif.__version__)" && \
+	$$PYTHON_CMD -c "import hbat; print('✓ hbat version:', hbat.__version__)" && \
+	echo "\nTesting hbat CLI with 6RSA.pdb..."; \
+	$$HBAT_CMD example_pdb_files/6RSA.pdb --summary-only
+	
+	@echo "\n✓ Package build and installation test passed!"
+	@echo "Cleaning up test environment..."
+	@rm -rf hbat-test-build
+	@echo "Test completed successfully!"
 
 # Upload to test PyPI
 upload-test:

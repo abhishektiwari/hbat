@@ -138,6 +138,7 @@ class PDBParser:
 
             # Always run three-step bond detection to find bonds not in CONECT records
             import time
+
             bond_start = time.time()
             self._detect_bonds_three_step()
             bond_time = time.time() - bond_start
@@ -201,6 +202,7 @@ class PDBParser:
 
             # Always run three-step bond detection to find bonds not in CONECT records
             import time
+
             bond_start = time.time()
             self._detect_bonds_three_step()
             bond_time = time.time() - bond_start
@@ -482,7 +484,7 @@ class PDBParser:
 
                     # Calculate distance
                     distance = atom1.coords.distance_to(atom2.coords)
-        
+
                     # Create bond
                     bond = Bond(
                         atom1_serial=atom1.serial,
@@ -493,7 +495,7 @@ class PDBParser:
                     )
                     # Avoid duplicate bonds
                     if not self._bond_exists(bond):
-                        print(residue.name, residue.chain_id, residue.seq_num, atom1_name, atom1.serial, atom2_name, atom2.serial)
+                        # print(residue.name, residue.chain_id, residue.seq_num, atom1_name, atom1.serial, atom2_name, atom2.serial)
                         self.bonds.append(bond)
                         bonds_found += 1
 

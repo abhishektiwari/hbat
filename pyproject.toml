@@ -9,25 +9,33 @@ authors = [
 ]
 description = "Hydrogen Bond Analysis Tool for PDB structures"
 readme = "README.md"
-license = {text = "MIT"}
-requires-python = ">=3.7"
+license = "MIT"
+requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Topic :: Scientific/Engineering :: Chemistry",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
 ]
-keywords = ["bioinformatics", "chemistry", "hydrogen bonds", "protein structure"]
+keywords = ["bioinformatics", "chemistry", "hydrogen bonds", "halogen bonds", "protein structure", "PDB", "mmCIF"]
 dependencies = [
     "pdbreader>=0.1.0",
+    "numpy>=1.20.0",
     "networkx>=2.5.0",
     "matplotlib>=3.3.0",
+    "openbabel-wheel>=3.1.1.22",
+    "pybel>=0.15.5",
+    "mmcif-pdbx>=2.0.1",
+    "mmcif>=0.92.0",
+    "pdbfixer @ git+https://github.com/openmm/pdbfixer@master",
 ]
 dynamic = ["version"]
 
@@ -38,9 +46,15 @@ dev = [
     "pytest-mock>=3.0.0",
     "black>=21.0.0",
     "flake8>=3.8.0",
+    "isort>=5.0.0",
     "mypy>=0.800",
     "pre-commit>=2.10.0",
     "coverage>=5.0.0",
+    "types-setuptools>=57.0.0",
+    "types-requests>=2.0.0",
+    "types-Pillow>=8.0.0",
+    "pandas-stubs>=1.0.0",
+    "python-type-stubs @ git+https://github.com/microsoft/python-type-stubs@main",
 ]
 build = [
     "build>=0.8.0",
@@ -48,12 +62,19 @@ build = [
     "pyinstaller>=5.0.0",
     "setuptools-scm>=6.2.0",
 ]
+docs = [
+    "sphinx>=3.0.0",
+    "sphinx-rtd-theme>=0.5.0",
+    "sphinx-toolbox>=4.0.0",
+    "sphinxcontrib-bibtex>=2.0.0",
+    "sphinx-sitemap>=2.7.2",
+    "sphinx-autodoc-typehints>=1.10.0",
+]
 gui = [
-    "tkinter; python_version>='3.7'",
+    "tkinter; python_version>='3.8'",
 ]
 advanced-viz = [
     "seaborn>=0.11.0",
-    "numpy>=1.19.0",
     "plotly>=5.0.0",
 ]
 export = [
@@ -62,7 +83,7 @@ export = [
     "xlwt>=1.3.0",
 ]
 all = [
-    "hbat[gui,advanced-viz,export]",
+    "hbat[gui,advanced-viz,export,docs]",
 ]
 
 [project.scripts]
@@ -90,7 +111,7 @@ local_scheme = "no-local-version"
 
 [tool.black]
 line-length = 88
-target-version = ['py39', 'py310', 'py311']
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312', 'py313']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
