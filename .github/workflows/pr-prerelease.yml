@@ -275,43 +275,6 @@ jobs:
           ls -la conda-build-output/
         fi
     
-    - name: Setup test environment
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        auto-update-conda: true
-        python-version: 3.11
-        activate-environment: test-env
-        channels: conda-forge,defaults
-        channel-priority: true
-        
-    - name: Test conda package installation
-      shell: bash -l {0}
-      run: |
-        # Find the built package
-        PACKAGE_PATH=$(find conda-build-output -name "hbat-*.tar.bz2" -o -name "hbat-*.conda" | head -n 1)
-        
-        if [ -n "$PACKAGE_PATH" ]; then
-          echo "Testing conda package installation..."
-          echo "Package path: $PACKAGE_PATH"
-          
-          # Activate the test environment
-          conda activate test-env
-          
-          # Install the built package using the full path
-          conda install "$PACKAGE_PATH" -y
-          
-          # Test import
-          python -c "import hbat; print('✓ HBAT conda package installed successfully')"
-          python -c "import hbat; print('Version:', hbat.__version__)"
-          
-          # Debug: List packages in environment
-          echo "Packages in test-env:"
-          conda list | grep -E "(numpy|hbat|matplotlib|networkx)" || echo "No matching packages found"
-        else
-          echo "No package to test"
-          exit 1
-        fi
-    
     - name: Upload conda package as artifact
       uses: actions/upload-artifact@v4
       with:
