@@ -1,0 +1,147 @@
+name: PR Conda Pre-release
+
+on:
+  workflow_run:
+    workflows: ["PR Pre-release"]
+    types:
+      - completed
+    branches: [ main ]
+
+jobs:
+  build-conda-prerelease:
+    runs-on: ubuntu-latest
+    # Only run if the PR pre-release workflow succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.workflow_run.head_sha }}
+        fetch-depth: 0
+    
+    - name: Get latest pre-release tag (created by PR Pre-release workflow)
+      id: get_release_tag
+      run: |
+        # Get the latest pre-release tag (should be the one just created by pr-prerelease.yml)
+        PRERELEASE_TAG=$(git tag -l "v*-pr*" --sort=-version:refname | head -n 1)
+        
+        if [ -z "$PRERELEASE_TAG" ]; then
+          echo "Error: No pre-release tag found!"
+          exit 1
+        fi
+        
+        PRERELEASE_VERSION=$(echo "$PRERELEASE_TAG" | sed 's/^v//')
+        
+        echo "Using existing pre-release tag: $PRERELEASE_TAG"
+        echo "Pre-release version: $PRERELEASE_VERSION"
+        
+        # Extract PR number from tag
+        PR_NUMBER=$(echo "$PRERELEASE_VERSION" | sed -n 's/.*-pr\([0-9]*\)\..*/\1/p')
+        
+        echo "prerelease_tag=$PRERELEASE_TAG" >> $GITHUB_OUTPUT
+        echo "version=$PRERELEASE_VERSION" >> $GITHUB_OUTPUT
+        echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+    
+    - name: Setup Miniconda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        auto-update-conda: true
+        python-version: 3.11
+        channels: conda-forge,defaults
+        channel-priority: true
+    
+    - name: Install conda-build and dependencies
+      shell: bash -l {0}
+      run: |
+        conda install -y conda-build conda-verify
+        # Disable automatic upload (simulate main process without uploading)
+        conda config --set anaconda_upload no
+    
+    - name: Build conda package (simulate conda-release.yml workflow)
+      shell: bash -l {0}
+      run: |
+        # Export the pre-release tag (same as main conda-release workflow process)
+        export GIT_DESCRIBE_TAG=${{ steps.get_release_tag.outputs.prerelease_tag }}
+        echo "Building conda package with version: ${GIT_DESCRIBE_TAG}"
+        echo "Simulating conda-release.yml workflow without uploading to conda channels"
+        
+        # Use same build command as conda-release workflow
+        conda build conda --output-folder conda-build-output
+        
+        # List built packages
+        echo "Built conda packages:"
+        ls -la conda-build-output/noarch/
+        
+        # Show package info for verification
+        PACKAGE_PATH=$(find conda-build-output -name "hbat-*.tar.bz2" -o -name "hbat-*.conda" | head -n 1)
+        if [ -n "$PACKAGE_PATH" ]; then
+          echo "Package details:"
+          conda info "$PACKAGE_PATH"
+          echo "Package file: $PACKAGE_PATH"
+        else
+          echo "Warning: No package found!"
+          ls -la conda-build-output/
+        fi
+    
+    - name: Test conda package installation
+      shell: bash -l {0}
+      run: |
+        # Find the built package
+        PACKAGE_PATH=$(find conda-build-output -name "hbat-*.tar.bz2" -o -name "hbat-*.conda" | head -n 1)
+        
+        if [ -n "$PACKAGE_PATH" ]; then
+          echo "Testing conda package installation..."
+          # Create test environment
+          conda create -n test-env python=3.11 -y
+          conda activate test-env
+          
+          # Install the built package
+          conda install -c file://$(pwd)/conda-build-output hbat -y
+          
+          # Test import
+          python -c "import hbat; print('✓ HBAT conda package installed successfully')"
+          python -c "import hbat; print('Version:', hbat.__version__)"
+        else
+          echo "No package to test"
+          exit 1
+        fi
+    
+    - name: Upload conda package as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pr-conda-package-${{ steps.get_release_tag.outputs.pr_number }}
+        path: conda-build-output/noarch/hbat-*.*
+        retention-days: 30
+    
+    - name: Comment on PR with conda info
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const prNumber = ${{ steps.get_release_tag.outputs.pr_number }};
+          const tag = '${{ steps.get_release_tag.outputs.prerelease_tag }}';
+          const version = '${{ steps.get_release_tag.outputs.version }}';
+          
+          const comment = `## 🐍 Conda Pre-release Ready
+          
+          A conda pre-release package has been built for this PR: **${tag}**
+          
+          ### Package Info
+          - **Version**: \`${version}\`
+          - **Built using**: Same process as conda-release.yml workflow
+          - **Pre-release tag**: Uses tag created by PR Pre-release workflow
+          - **Artifact**: Available in GitHub Actions artifacts
+          
+          ### Installation Test
+          ✅ Package was successfully built and tested in a clean conda environment.
+          
+          **Note**: This build simulates the conda-release.yml workflow without uploading to conda channels.
+          
+          Download artifacts at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          `;
+          
+          github.rest.issues.createComment({
+            issue_number: prNumber,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });

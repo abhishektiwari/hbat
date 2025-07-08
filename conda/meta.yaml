@@ -46,7 +46,7 @@ test:
     - hbat --help
     - hbat --version
     # Test hydrogen bond analysis with 6RSA.pdb
-    - hbat example_pdb_files/6RSA.pdb --summary-only
+    - hbat example_pdb_files/6rsa.pdb --summary-only
     - python -c "from hbat.core.np_analyzer import NPMolecularInteractionAnalyzer as HBAnalyzer; print('HBAnalyzer:', HBAnalyzer)"
   requires:
     - pip
