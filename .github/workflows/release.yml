@@ -376,6 +376,18 @@ jobs:
         name: docs-artifacts
         path: dist/
     
+    - name: Create Linux binaries archive
+      run: |
+        cd dist
+        # Create versioned zip of Linux binaries
+        if [ -f "linux/HBAT-GUI" ] && [ -f "linux/hbat" ]; then
+          zip -j hbat-linux-binaries-${{ needs.generate-version.outputs.version }}.zip linux/HBAT-GUI linux/hbat
+          echo "Created Linux binaries archive"
+          # Remove the individual files since we have them in the zip
+          rm -rf linux/
+        fi
+        cd ..
+    
     - name: List all artifacts
       run: |
         echo "Contents of dist directory:"
@@ -401,7 +413,10 @@ jobs:
           
           ### Standalone Applications
           - **macOS**: `hbat-${{ needs.generate-version.outputs.version }}.dmg`
-          - **Linux**: `HBAT-GUI`, `hbat`, `HBAT-${{ needs.generate-version.outputs.version }}-x86_64.AppImage`, `hbat_${{ needs.generate-version.outputs.version }}_amd64.deb`
+          - **Linux**: 
+            - `hbat-linux-binaries-${{ needs.generate-version.outputs.version }}.zip` - Standalone executables (HBAT-GUI and hbat)
+            - `HBAT-${{ needs.generate-version.outputs.version }}-x86_64.AppImage` - AppImage package
+            - `hbat_${{ needs.generate-version.outputs.version }}_amd64.deb` - Debian package
           
           ### Conda Package
           - `hbat-${{ needs.generate-version.outputs.version }}.tar.bz2` or `.conda`
