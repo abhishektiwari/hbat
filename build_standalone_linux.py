@@ -220,9 +220,16 @@ fi
         # Extract appimagetool to avoid FUSE requirement
         print("Extracting appimagetool...")
         try:
-            subprocess.run([f"./{appimagetool}", "--appimage-extract"], check=True)
+            # Extract quietly to avoid verbose output
+            result = subprocess.run([f"./{appimagetool}", "--appimage-extract"], 
+                                  capture_output=True, text=True)
+            if result.returncode != 0 and "squashfs-root" not in result.stdout:
+                print(f"Failed to extract appimagetool: {result.stderr}")
+                return False
             # Move extracted content to a cleaner directory name
             if os.path.exists("squashfs-root"):
+                if os.path.exists(appimagetool_dir):
+                    shutil.rmtree(appimagetool_dir)
                 shutil.move("squashfs-root", appimagetool_dir)
         except subprocess.CalledProcessError as e:
             print(f"Failed to extract appimagetool: {e}")
@@ -233,17 +240,32 @@ fi
         env = os.environ.copy()
         env["ARCH"] = "x86_64"
         appimage_name = f"dist/HBAT-{version}-x86_64.AppImage"
+        
+        # Check if desktop file exists
+        desktop_file = appdir / "usr" / "share" / "applications" / "hbat.desktop"
+        if not desktop_file.exists():
+            print(f"Error: Desktop file not found at {desktop_file}")
+            return False
+            
         # Use the extracted AppRun instead of the AppImage
-        subprocess.run(
+        print(f"Building AppImage with {appimagetool_dir}/AppRun...")
+        result = subprocess.run(
             [f"./{appimagetool_dir}/AppRun", "HBAT.AppDir", appimage_name],
-            check=True,
+            capture_output=True,
+            text=True,
             env=env,
         )
+        
+        if result.returncode != 0:
+            print(f"AppImage build failed: {result.stderr}")
+            print(f"stdout: {result.stdout}")
+            return False
+            
         shutil.rmtree(appdir)
         print(f"✓ AppImage created successfully: HBAT-{version}-x86_64.AppImage")
         return True
-    except subprocess.CalledProcessError:
-        print("✗ Failed to create AppImage")
+    except Exception as e:
+        print(f"✗ Failed to create AppImage: {e}")
         return False
 
 
