@@ -38,7 +38,7 @@ def install_dependencies():
 def clean_build():
     """Clean previous build artifacts."""
     print("Cleaning previous builds...")
-    paths_to_clean = ["build", "dist", "__pycache__"]
+    paths_to_clean = ["build", "dist", "__pycache__", "appimagetool-extracted", "squashfs-root"]
 
     for path in paths_to_clean:
         if os.path.exists(path):
@@ -200,27 +200,42 @@ fi
         f.write(apprun_content)
     os.chmod(appdir / "AppRun", 0o755)
 
-    # Download appimagetool if not present
+    # Download and extract appimagetool if not present
     appimagetool = "appimagetool-x86_64.AppImage"
-    if not os.path.exists(appimagetool):
-        print("Downloading appimagetool...")
+    appimagetool_dir = "appimagetool-extracted"
+    
+    if not os.path.exists(appimagetool_dir):
+        if not os.path.exists(appimagetool):
+            print("Downloading appimagetool...")
+            try:
+                urllib.request.urlretrieve(
+                    "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage",
+                    appimagetool,
+                )
+                os.chmod(appimagetool, 0o755)
+            except Exception as e:
+                print(f"Failed to download appimagetool: {e}")
+                return False
+        
+        # Extract appimagetool to avoid FUSE requirement
+        print("Extracting appimagetool...")
         try:
-            urllib.request.urlretrieve(
-                "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage",
-                appimagetool,
-            )
-            os.chmod(appimagetool, 0o755)
-        except Exception as e:
-            print(f"Failed to download appimagetool: {e}")
+            subprocess.run([f"./{appimagetool}", "--appimage-extract"], check=True)
+            # Move extracted content to a cleaner directory name
+            if os.path.exists("squashfs-root"):
+                shutil.move("squashfs-root", appimagetool_dir)
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to extract appimagetool: {e}")
             return False
 
-    # Build AppImage
+    # Build AppImage using extracted appimagetool
     try:
         env = os.environ.copy()
         env["ARCH"] = "x86_64"
         appimage_name = f"dist/HBAT-{version}-x86_64.AppImage"
+        # Use the extracted AppRun instead of the AppImage
         subprocess.run(
-            [f"./{appimagetool}", "HBAT.AppDir", appimage_name],
+            [f"./{appimagetool_dir}/AppRun", "HBAT.AppDir", appimage_name],
             check=True,
             env=env,
         )
