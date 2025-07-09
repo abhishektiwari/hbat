@@ -167,6 +167,8 @@ def create_appimage():
             / "apps"
             / "hbat.png",
         )
+        # Also copy icon to root for appimagetool
+        shutil.copy2("hbat.png", appdir / "hbat.png")
 
     # Create desktop file
     desktop_content = """[Desktop Entry]
@@ -180,6 +182,10 @@ Terminal=false
 """
 
     with open(appdir / "usr" / "share" / "applications" / "hbat.desktop", "w") as f:
+        f.write(desktop_content)
+    
+    # Also create desktop file at root for appimagetool
+    with open(appdir / "hbat.desktop", "w") as f:
         f.write(desktop_content)
 
     # Create AppRun script
@@ -241,8 +247,8 @@ fi
         env["ARCH"] = "x86_64"
         appimage_name = f"dist/HBAT-{version}-x86_64.AppImage"
         
-        # Check if desktop file exists
-        desktop_file = appdir / "usr" / "share" / "applications" / "hbat.desktop"
+        # Check if desktop file exists at root (required by appimagetool)
+        desktop_file = appdir / "hbat.desktop"
         if not desktop_file.exists():
             print(f"Error: Desktop file not found at {desktop_file}")
             return False
