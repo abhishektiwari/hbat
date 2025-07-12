@@ -18,6 +18,47 @@ from ..core.analysis import AnalysisParameters, NPMolecularInteractionAnalyzer
 from ..core.pdb_parser import PDBParser
 
 
+class ProgressBar:
+    """Simple CLI progress bar for analysis operations."""
+
+    def __init__(self, width: int = 50):
+        """Initialize progress bar.
+
+        :param width: Width of the progress bar in characters
+        :type width: int
+        """
+        self.width = width
+        self.current_step = ""
+        self.last_progress = -1
+
+    def update(self, message: str, progress: Optional[int] = None) -> None:
+        """Update progress bar with new message and optional percentage.
+
+        :param message: Current operation message
+        :type message: str
+        :param progress: Progress percentage (0-100), optional
+        :type progress: Optional[int]
+        """
+        # Clear previous line and print new status
+        print(f"\r\033[K[INFO] {message}", end="", flush=True)
+
+        if progress is not None and progress != self.last_progress:
+            # Add progress bar for percentage updates
+            filled_width = int(self.width * progress / 100)
+            bar = "█" * filled_width + "░" * (self.width - filled_width)
+            print(f" [{bar}] {progress}%", end="", flush=True)
+            self.last_progress = progress
+
+    def finish(self, message: str) -> None:
+        """Finish progress bar with final message.
+
+        :param message: Final completion message
+        :type message: str
+        """
+        print(f"\r\033[K[INFO] {message}")
+        self.last_progress = -1
+
+
 def create_parser() -> argparse.ArgumentParser:
     """Create command-line argument parser.
 
@@ -868,16 +909,50 @@ def run_analysis(args: argparse.Namespace) -> int:
         # Create analyzer
         analyzer = NPMolecularInteractionAnalyzer(parameters)
 
+        # Set up progress tracking for verbose mode
+        progress_bar = None
+        if verbose and not args.quiet:
+            progress_bar = ProgressBar()
+
+            def cli_progress_callback(message: str) -> None:
+                """Progress callback for CLI updates."""
+                if progress_bar:
+                    # Extract percentage if present in message
+                    if "%" in message:
+                        try:
+                            percent_str = (
+                                message.split("...")[-1].strip().replace("%", "")
+                            )
+                            if percent_str.isdigit():
+                                progress = int(percent_str)
+                                step_name = message.split("...")[0]
+                                progress_bar.update(step_name, progress)
+                            else:
+                                progress_bar.update(message)
+                        except (ValueError, IndexError):
+                            progress_bar.update(message)
+                    else:
+                        progress_bar.update(message)
+
+            analyzer.progress_callback = cli_progress_callback
+
         # Run analysis
         start_time = time.time()
         success = analyzer.analyze_file(args.input)
         analysis_time = time.time() - start_time
 
         if not success:
+            if progress_bar:
+                progress_bar.finish("Analysis failed")
             print_error("Analysis failed")
             return 1
 
-        print_progress(f"Analysis completed in {analysis_time:.2f} seconds", verbose)
+        if progress_bar:
+            progress_bar.finish(f"Analysis completed in {analysis_time:.2f} seconds")
+        else:
+            print_progress(
+                f"Analysis completed in {analysis_time:.2f} seconds", verbose
+            )
 
         # Get results
         summary = analyzer.get_summary()

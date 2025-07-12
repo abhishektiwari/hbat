@@ -73,13 +73,24 @@ class NPMolecularInteractionAnalyzer:
         self._analysis_end_time: Optional[float] = None
         self._pdb_fixing_info: Dict[str, Any] = {}
 
+        # Progress callback for GUI updates
+        self.progress_callback = None
+
     def analyze_file(self, pdb_file: str) -> bool:
         """Analyze a PDB file for molecular interactions."""
         self._analysis_start_time = time.time()
         self._pdb_fixing_info = {}
 
+        # Progress update helper
+        def update_progress(message: str) -> None:
+            if self.progress_callback:
+                self.progress_callback(message)
+
+        update_progress("Parsing PDB structure...")
+
         # Apply PDB fixing if enabled
         if self.parameters.fix_pdb_enabled:
+            update_progress("Applying PDB fixing...")
             try:
                 original_atoms_count = len(self.parser.atoms)
                 original_bonds_count = len(self.parser.bonds)
@@ -135,6 +146,7 @@ class NPMolecularInteractionAnalyzer:
             print("Warning: PDB file appears to lack hydrogen atoms")
             print("Consider enabling PDB fixing or adding hydrogens manually")
 
+        update_progress("Preparing analysis data...")
         # Prepare vectorized data
         self._prepare_vectorized_data()
 
@@ -144,14 +156,21 @@ class NPMolecularInteractionAnalyzer:
         self.pi_interactions = []
         self.cooperativity_chains = []
 
-        # Analyze interactions
+        # Analyze interactions with progress updates
+        update_progress("Finding hydrogen bonds...")
         self._find_hydrogen_bonds_vectorized()
+
+        update_progress("Finding halogen bonds...")
         self._find_halogen_bonds_vectorized()
+
+        update_progress("Finding π interactions...")
         self._find_pi_interactions_vectorized()
 
+        update_progress("Analyzing cooperativity...")
         # Find cooperativity chains (still uses graph-based approach)
         self._find_cooperativity_chains()
 
+        update_progress("Analysis complete")
         self._analysis_end_time = time.time()
         return True
 
@@ -265,58 +284,78 @@ class NPMolecularInteractionAnalyzer:
         # Find pairs within distance cutoff
         h_indices, a_indices = np.where(distances <= self.parameters.hb_distance_cutoff)
 
-        # Process each potential hydrogen bond
-        for h_idx, a_idx in zip(h_indices, a_indices):
-            donor_atom, h_atom, donor_idx, h_atom_idx = donors[h_idx]
-            a_atom = self.parser.atoms[self._atom_indices["acceptor"][a_idx]]
+        # Process pairs in chunks for large datasets
+        total_pairs = len(h_indices)
+        chunk_size = 1000  # Process 1000 pairs at a time
 
-            # Skip if same atom
-            if donor_atom.serial == a_atom.serial:
-                continue
+        for chunk_start in range(0, total_pairs, chunk_size):
+            chunk_end = min(chunk_start + chunk_size, total_pairs)
 
-            # Skip if same residue (for local mode) - optimized check
-            if self.parameters.analysis_mode == "local":
-                acceptor_idx = self._atom_indices["acceptor"][a_idx]
-                if self._are_same_residue(donor_idx, acceptor_idx):
+            # Progress update for large datasets
+            if total_pairs > chunk_size and self.progress_callback:
+                progress = int((chunk_start / total_pairs) * 100)
+                self.progress_callback(f"Finding hydrogen bonds... {progress}%")
+                # Small delay to allow GUI updates
+                time.sleep(0.01)
+
+            # Process chunk
+            for i in range(chunk_start, chunk_end):
+                h_idx, a_idx = h_indices[i], a_indices[i]
+                donor_atom, h_atom, donor_idx, h_atom_idx = donors[h_idx]
+                a_atom = self.parser.atoms[self._atom_indices["acceptor"][a_idx]]
+
+                # Skip if same atom
+                if donor_atom.serial == a_atom.serial:
                     continue
 
-            # Calculate angle using NPVec3D
-            donor_vec = NPVec3D(
-                donor_atom.coords.x, donor_atom.coords.y, donor_atom.coords.z
-            )
-            h_vec = NPVec3D(h_atom.coords.x, h_atom.coords.y, h_atom.coords.z)
-            a_vec = NPVec3D(a_atom.coords.x, a_atom.coords.y, a_atom.coords.z)
+                # Skip if same residue (for local mode) - optimized check
+                if self.parameters.analysis_mode == "local":
+                    acceptor_idx = self._atom_indices["acceptor"][a_idx]
+                    if self._are_same_residue(donor_idx, acceptor_idx):
+                        continue
 
-            angle_rad = batch_angle_between(donor_vec, h_vec, a_vec)
-            angle_deg = math.degrees(float(angle_rad))
-
-            # Check angle cutoff
-            if angle_deg >= self.parameters.hb_angle_cutoff:
-                distance = float(distances[h_idx, a_idx])
-                donor_acceptor_distance = donor_atom.coords.distance_to(a_atom.coords)
-
-                # Check donor-acceptor distance cutoff (like original analyzer)
-                if donor_acceptor_distance > self.parameters.hb_donor_acceptor_cutoff:
-                    continue
-
-                bond_type = f"{donor_atom.element}-H...{a_atom.element}"
-                donor_residue = (
-                    f"{donor_atom.chain_id}{donor_atom.res_seq}{donor_atom.res_name}"
+                # Calculate angle using NPVec3D
+                donor_vec = NPVec3D(
+                    donor_atom.coords.x, donor_atom.coords.y, donor_atom.coords.z
                 )
-                acceptor_residue = f"{a_atom.chain_id}{a_atom.res_seq}{a_atom.res_name}"
+                h_vec = NPVec3D(h_atom.coords.x, h_atom.coords.y, h_atom.coords.z)
+                a_vec = NPVec3D(a_atom.coords.x, a_atom.coords.y, a_atom.coords.z)
 
-                hbond = HydrogenBond(
-                    _donor=donor_atom,
-                    hydrogen=h_atom,
-                    _acceptor=a_atom,
-                    distance=distance,
-                    angle=float(angle_rad),
-                    _donor_acceptor_distance=donor_acceptor_distance,
-                    bond_type=bond_type,
-                    _donor_residue=donor_residue,
-                    _acceptor_residue=acceptor_residue,
-                )
-                self.hydrogen_bonds.append(hbond)
+                angle_rad = batch_angle_between(donor_vec, h_vec, a_vec)
+                angle_deg = math.degrees(float(angle_rad))
+
+                # Check angle cutoff
+                if angle_deg >= self.parameters.hb_angle_cutoff:
+                    distance = float(distances[h_idx, a_idx])
+                    donor_acceptor_distance = donor_atom.coords.distance_to(
+                        a_atom.coords
+                    )
+
+                    # Check donor-acceptor distance cutoff (like original analyzer)
+                    if (
+                        donor_acceptor_distance
+                        > self.parameters.hb_donor_acceptor_cutoff
+                    ):
+                        continue
+
+                    bond_type = f"{donor_atom.element}-H...{a_atom.element}"
+                    donor_residue = f"{donor_atom.chain_id}{donor_atom.res_seq}{donor_atom.res_name}"
+                    acceptor_residue = (
+                        f"{a_atom.chain_id}{a_atom.res_seq}{a_atom.res_name}"
+                    )
+
+                    hbond = HydrogenBond(
+                        _donor=donor_atom,
+                        hydrogen=h_atom,
+                        _acceptor=a_atom,
+                        distance=distance,
+                        angle=float(angle_rad),
+                        _donor_acceptor_distance=donor_acceptor_distance,
+                        bond_type=bond_type,
+                        _donor_residue=donor_residue,
+                        _acceptor_residue=acceptor_residue,
+                    )
+                    self.hydrogen_bonds.append(hbond)
 
     def _get_hydrogen_bond_donors(self) -> List[Tuple[Atom, Atom, int, int]]:
         """Get potential hydrogen bond donors with optimized indexing.
@@ -367,50 +406,71 @@ class NPMolecularInteractionAnalyzer:
         # Find pairs within distance cutoff
         x_indices, a_indices = np.where(distances <= self.parameters.xb_distance_cutoff)
 
-        # Process each potential halogen bond
-        for x_idx, a_idx in zip(x_indices, a_indices):
-            x_atom = self.parser.atoms[self._atom_indices["halogen"][x_idx]]
-            a_atom = self.parser.atoms[self._atom_indices["halogen_acceptor"][a_idx]]
+        # Process pairs in chunks for large datasets
+        total_pairs = len(x_indices)
+        chunk_size = 1000  # Process 1000 pairs at a time
 
-            # Skip if same residue (for local mode) - optimized check
-            if self.parameters.analysis_mode == "local":
-                halogen_idx = self._atom_indices["halogen"][x_idx]
-                acceptor_idx = self._atom_indices["halogen_acceptor"][a_idx]
-                if self._are_same_residue(halogen_idx, acceptor_idx):
+        for chunk_start in range(0, total_pairs, chunk_size):
+            chunk_end = min(chunk_start + chunk_size, total_pairs)
+
+            # Progress update for large datasets
+            if total_pairs > chunk_size and self.progress_callback:
+                progress = int((chunk_start / total_pairs) * 100)
+                self.progress_callback(f"Finding halogen bonds... {progress}%")
+                # Small delay to allow GUI updates
+                time.sleep(0.01)
+
+            # Process chunk
+            for i in range(chunk_start, chunk_end):
+                x_idx, a_idx = x_indices[i], a_indices[i]
+                x_atom = self.parser.atoms[self._atom_indices["halogen"][x_idx]]
+                a_atom = self.parser.atoms[
+                    self._atom_indices["halogen_acceptor"][a_idx]
+                ]
+
+                # Skip if same residue (for local mode) - optimized check
+                if self.parameters.analysis_mode == "local":
+                    halogen_idx = self._atom_indices["halogen"][x_idx]
+                    acceptor_idx = self._atom_indices["halogen_acceptor"][a_idx]
+                    if self._are_same_residue(halogen_idx, acceptor_idx):
+                        continue
+
+                # Find carbon atom bonded to halogen
+                carbon_atom = self._find_carbon_for_halogen(x_atom)
+                if not carbon_atom:
                     continue
 
-            # Find carbon atom bonded to halogen
-            carbon_atom = self._find_carbon_for_halogen(x_atom)
-            if not carbon_atom:
-                continue
-
-            # Calculate angle
-            c_vec = NPVec3D(
-                carbon_atom.coords.x, carbon_atom.coords.y, carbon_atom.coords.z
-            )
-            x_vec = NPVec3D(x_atom.coords.x, x_atom.coords.y, x_atom.coords.z)
-            a_vec = NPVec3D(a_atom.coords.x, a_atom.coords.y, a_atom.coords.z)
-
-            angle_rad = batch_angle_between(c_vec, x_vec, a_vec)
-            angle_deg = math.degrees(float(angle_rad))
-
-            # Check angle cutoff
-            if angle_deg >= self.parameters.xb_angle_cutoff:
-                distance = float(distances[x_idx, a_idx])
-                bond_type = f"C-{x_atom.element}...{a_atom.element}"
-                halogen_residue = f"{x_atom.chain_id}{x_atom.res_seq}{x_atom.res_name}"
-                acceptor_residue = f"{a_atom.chain_id}{a_atom.res_seq}{a_atom.res_name}"
-
-                xbond = HalogenBond(
-                    halogen=x_atom,
-                    _acceptor=a_atom,
-                    distance=distance,
-                    angle=float(angle_rad),
-                    bond_type=bond_type,
-                    _halogen_residue=halogen_residue,
-                    _acceptor_residue=acceptor_residue,
+                # Calculate angle
+                c_vec = NPVec3D(
+                    carbon_atom.coords.x, carbon_atom.coords.y, carbon_atom.coords.z
                 )
-                self.halogen_bonds.append(xbond)
+                x_vec = NPVec3D(x_atom.coords.x, x_atom.coords.y, x_atom.coords.z)
+                a_vec = NPVec3D(a_atom.coords.x, a_atom.coords.y, a_atom.coords.z)
+
+                angle_rad = batch_angle_between(c_vec, x_vec, a_vec)
+                angle_deg = math.degrees(float(angle_rad))
+
+                # Check angle cutoff
+                if angle_deg >= self.parameters.xb_angle_cutoff:
+                    distance = float(distances[x_idx, a_idx])
+                    bond_type = f"C-{x_atom.element}...{a_atom.element}"
+                    halogen_residue = (
+                        f"{x_atom.chain_id}{x_atom.res_seq}{x_atom.res_name}"
+                    )
+                    acceptor_residue = (
+                        f"{a_atom.chain_id}{a_atom.res_seq}{a_atom.res_name}"
+                    )
+
+                    xbond = HalogenBond(
+                        halogen=x_atom,
+                        _acceptor=a_atom,
+                        distance=distance,
+                        angle=float(angle_rad),
+                        bond_type=bond_type,
+                        _halogen_residue=halogen_residue,
+                        _acceptor_residue=acceptor_residue,
+                    )
+                    self.halogen_bonds.append(xbond)
 
     def _find_pi_interactions_vectorized(self) -> None:
         """Find π interactions using vectorized operations."""

@@ -5,12 +5,14 @@ This module provides the main tkinter interface for the HBAT application,
 allowing users to load PDB files, configure analysis parameters, and view results.
 """
 
+import asyncio
 import os
-import threading
 import tkinter as tk
 import webbrowser
 from tkinter import filedialog, messagebox, scrolledtext, ttk
 from typing import Optional
+
+import tk_async_execute as tae
 
 from ..constants import APP_NAME, APP_VERSION, GUIDefaults
 from ..core.analysis import (
@@ -57,7 +59,7 @@ class MainWindow:
         # Analysis components
         self.analyzer: Optional[NPMolecularInteractionAnalyzer] = None
         self.current_file: Optional[str] = None
-        self.analysis_thread: Optional[threading.Thread] = None
+        self.analysis_running = False
 
         # Create UI components
         self._create_menu()
@@ -67,6 +69,9 @@ class MainWindow:
 
         # Set up event handlers
         self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
+
+        # Initialize async executor
+        tae.start()
 
     def _create_menu(self) -> None:
         """Create the menu bar.
@@ -287,14 +292,11 @@ class MainWindow:
         :raises Exception: If file cannot be read
         """
         try:
-            with open(filename, "r") as file:
-                content = file.read()
+            # Show progress for large files
+            self._show_loading_progress("Loading file...")
 
-            self.file_text.delete(1.0, tk.END)
-            self.file_text.insert(1.0, content)
-
-            # Highlight ATOM and HETATM lines
-            self._highlight_pdb_records()
+            # Load file in chunks to prevent GUI freezing
+            self._load_file_in_chunks(filename)
 
             # Add to recent files if config is available
             if self.hbat_config:
@@ -302,6 +304,63 @@ class MainWindow:
 
         except Exception as e:
             raise Exception(f"Cannot read file: {e}")
+        finally:
+            self._hide_loading_progress()
+
+    def _load_file_in_chunks(self, filename: str) -> None:
+        """Load file content in chunks to prevent GUI freezing.
+
+        :param filename: Path to the PDB file to load
+        :type filename: str
+        :returns: None
+        :rtype: None
+        """
+        chunk_size = 50000  # Process in 50KB chunks
+        self.file_text.delete(1.0, tk.END)
+
+        try:
+            with open(filename, "r") as file:
+                while True:
+                    chunk = file.read(chunk_size)
+                    if not chunk:
+                        break
+
+                    # Insert chunk and update display
+                    self.file_text.insert(tk.END, chunk)
+                    self.root.update_idletasks()  # Process pending GUI events
+
+            # Apply syntax highlighting after loading
+            self.root.after_idle(self._highlight_pdb_records)
+
+        except Exception as e:
+            raise Exception(f"Cannot read file: {e}")
+
+    def _show_loading_progress(self, message: str) -> None:
+        """Show loading progress indicator.
+
+        :param message: Status message to display
+        :type message: str
+        :returns: None
+        :rtype: None
+        """
+        self.status_var.set(message)
+        if not self.toolbar.winfo_ismapped():
+            self.toolbar.pack(fill=tk.X, padx=5, pady=2)
+        self.progress_bar.pack(fill=tk.BOTH, padx=5, expand=True)
+        self.progress_bar.config(mode="indeterminate")
+        self.progress_bar.start(GUIDefaults.PROGRESS_BAR_INTERVAL)
+        self.root.update_idletasks()
+
+    def _hide_loading_progress(self) -> None:
+        """Hide loading progress indicator.
+
+        :returns: None
+        :rtype: None
+        """
+        self.progress_bar.stop()
+        self.progress_bar.pack_forget()
+        if self.toolbar.winfo_ismapped():
+            self.toolbar.pack_forget()
 
     def _highlight_pdb_records(self) -> None:
         """Highlight important PDB record types.
@@ -336,8 +395,7 @@ class MainWindow:
     def _run_analysis(self) -> None:
         """Run the molecular interaction analysis.
 
-        Initiates analysis in a separate thread using current parameters
-        and loaded PDB file. Updates UI to show progress.
+        Initiates analysis using async/await pattern to keep GUI responsive.
 
         :returns: None
         :rtype: None
@@ -346,7 +404,7 @@ class MainWindow:
             messagebox.showwarning("Warning", "Please open a PDB file first.")
             return
 
-        if self.analysis_thread and self.analysis_thread.is_alive():
+        if self.analysis_running:
             messagebox.showinfo("Info", "Analysis is already running.")
             return
 
@@ -362,29 +420,11 @@ class MainWindow:
             params = AnalysisParameters()
             self.session_parameters = params
 
-        # Start analysis in a separate thread
-        self.analysis_thread = threading.Thread(
-            target=self._perform_analysis, args=(params,)
-        )
-        self.analysis_thread.daemon = True
-        self.analysis_thread.start()
+        # Start async analysis without popup window
+        tae.async_execute(self._perform_analysis_async(params), visible=False)
 
-        # Update UI
-        self.analysis_menu.entryconfig(self.run_analysis_index, state=tk.DISABLED)
-        # Show toolbar and progress bar
-        if not self.toolbar.winfo_ismapped():
-            self.toolbar.pack(fill=tk.X, padx=5, pady=2)
-        self.performance_label.pack(side=tk.LEFT, padx=5)
-        self.progress_bar.pack(fill=tk.BOTH, padx=5, expand=True)
-        self.progress_bar.config(mode="indeterminate")
-        self.progress_bar.start(GUIDefaults.PROGRESS_BAR_INTERVAL)
-        self.status_var.set("Running analysis...")
-
-    def _perform_analysis(self, params: AnalysisParameters) -> None:
-        """Perform the analysis in a separate thread.
-
-        Executes the molecular interaction analysis using the provided
-        parameters and updates the UI upon completion or error.
+    async def _perform_analysis_async(self, params: AnalysisParameters) -> None:
+        """Perform the analysis asynchronously to keep GUI responsive.
 
         :param params: Analysis parameters to use
         :type params: AnalysisParameters
@@ -392,33 +432,58 @@ class MainWindow:
         :rtype: None
         """
         try:
+            # Set up UI for analysis
+            self.analysis_running = True
+            self.analysis_menu.entryconfig(self.run_analysis_index, state=tk.DISABLED)
+
+            # Show toolbar and progress bar
+            if not self.toolbar.winfo_ismapped():
+                self.toolbar.pack(fill=tk.X, padx=5, pady=2)
+            self.performance_label.pack(side=tk.LEFT, padx=5)
+            self.progress_bar.pack(fill=tk.BOTH, padx=5, expand=True)
+            self.progress_bar.config(mode="indeterminate")
+            self.progress_bar.start(GUIDefaults.PROGRESS_BAR_INTERVAL)
+            self.status_var.set("Running analysis...")
+
             # Create analyzer
             self.analyzer = NPMolecularInteractionAnalyzer(params)
 
-            # Update status
-            self.root.after(0, lambda: self.status_var.set("Running analysis..."))
+            # Set up progress callback for async updates
+            def progress_callback(message: str) -> None:
+                tae.async_execute(self._update_progress_async(message), visible=False)
 
-            # Run analysis
-            success = self.analyzer.analyze_file(self.current_file)
+            self.analyzer.progress_callback = progress_callback
+
+            # Run analysis in executor to avoid blocking
+            success = await asyncio.get_event_loop().run_in_executor(
+                None, self.analyzer.analyze_file, self.current_file
+            )
 
             if success:
-                # Update results on main thread
-                self.root.after(0, self._analysis_complete)
+                await self._analysis_complete_async()
             else:
-                self.root.after(0, self._analysis_error, "Analysis failed")
+                await self._analysis_error_async("Analysis failed")
 
         except Exception as e:
-            self.root.after(0, self._analysis_error, str(e))
+            await self._analysis_error_async(str(e))
 
-    def _analysis_complete(self) -> None:
-        """Handle successful analysis completion.
+    async def _update_progress_async(self, message: str) -> None:
+        """Update progress message asynchronously.
 
-        Updates the UI after successful analysis, stops progress indication,
-        displays results, and shows completion notification.
+        :param message: Progress message to display
+        :type message: str
+        :returns: None
+        :rtype: None
+        """
+        self.status_var.set(message)
+
+    async def _analysis_complete_async(self) -> None:
+        """Handle successful analysis completion asynchronously.
 
         :returns: None
         :rtype: None
         """
+        self.analysis_running = False
         self.progress_bar.stop()
         self.progress_bar.config(mode="determinate")
         self.progress_var.set(0)
@@ -441,19 +506,17 @@ class MainWindow:
             f"X-bonds: {summary['halogen_bonds']['count']}, π-interactions: {summary['pi_interactions']['count']}"
         )
 
-        messagebox.showinfo("Success", f"Analysis completed successfully!")
+        messagebox.showinfo("Success", "Analysis completed successfully!")
 
-    def _analysis_error(self, error_msg: str) -> None:
-        """Handle analysis error.
-
-        Updates the UI after analysis failure, stops progress indication,
-        and displays error message to the user.
+    async def _analysis_error_async(self, error_msg: str) -> None:
+        """Handle analysis error asynchronously.
 
         :param error_msg: Error message to display
         :type error_msg: str
         :returns: None
         :rtype: None
         """
+        self.analysis_running = False
         self.progress_bar.stop()
         self.progress_bar.config(mode="determinate")
         self.progress_var.set(0)
@@ -1054,13 +1117,15 @@ Author: Abhishek Tiwari
         :returns: None
         :rtype: None
         """
-        if self.analysis_thread and self.analysis_thread.is_alive():
+        if self.analysis_running:
             result = messagebox.askyesno(
                 "Confirm Exit", "Analysis is running. Are you sure you want to exit?"
             )
             if not result:
                 return
 
+        # Stop async executor
+        tae.stop()
         self.root.destroy()
 
     def run(self) -> None:
