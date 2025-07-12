@@ -86,11 +86,16 @@ class NPMolecularInteractionAnalyzer:
             if self.progress_callback:
                 self.progress_callback(message)
 
-        update_progress("Parsing PDB structure...")
+        # First, parse the original file to check if fixing is needed
+        update_progress("📖 Reading original PDB file...")
+        if not self.parser.parse_file(pdb_file):
+            return False
+
+        update_progress("🔍 Analyzing structure...")
 
         # Apply PDB fixing if enabled
         if self.parameters.fix_pdb_enabled:
-            update_progress("Applying PDB fixing...")
+            update_progress("🔧 Starting PDB fixing...")
             try:
                 original_atoms_count = len(self.parser.atoms)
                 original_bonds_count = len(self.parser.bonds)
@@ -98,8 +103,11 @@ class NPMolecularInteractionAnalyzer:
                     [a for a in self.parser.atoms if a.is_hydrogen()]
                 )
 
+                update_progress("⚙️ Processing structure with PDB fixer...")
                 # Fix the PDB file and get path to fixed file
                 fixed_file_path = self._apply_pdb_fixing(pdb_file)
+
+                update_progress("📋 Parsing fixed structure...")
 
                 # Parse the fixed structure
                 if self.parser.parse_file(fixed_file_path):
@@ -137,16 +145,16 @@ class NPMolecularInteractionAnalyzer:
                 self._pdb_fixing_info = {"applied": False, "error": str(e)}
                 print(f"Warning: PDB fixing failed: {e}")
                 print("Continuing with original structure")
+                # Use the already parsed original structure
         else:
-            if not self.parser.parse_file(pdb_file):
-                return False
+            # Not using PDB fixing, already parsed above
             self._pdb_fixing_info = {"applied": False}
 
         if not self.parser.has_hydrogens():
             print("Warning: PDB file appears to lack hydrogen atoms")
             print("Consider enabling PDB fixing or adding hydrogens manually")
 
-        update_progress("Preparing analysis data...")
+        update_progress("📊 Preparing analysis data...")
         # Prepare vectorized data
         self._prepare_vectorized_data()
 
@@ -157,20 +165,20 @@ class NPMolecularInteractionAnalyzer:
         self.cooperativity_chains = []
 
         # Analyze interactions with progress updates
-        update_progress("Finding hydrogen bonds...")
+        update_progress("🔗 Finding hydrogen bonds...")
         self._find_hydrogen_bonds_vectorized()
 
-        update_progress("Finding halogen bonds...")
+        update_progress("🌟 Finding halogen bonds...")
         self._find_halogen_bonds_vectorized()
 
-        update_progress("Finding π interactions...")
+        update_progress("🔄 Finding π interactions...")
         self._find_pi_interactions_vectorized()
 
-        update_progress("Analyzing cooperativity...")
+        update_progress("🕸️ Analyzing cooperativity...")
         # Find cooperativity chains (still uses graph-based approach)
         self._find_cooperativity_chains()
 
-        update_progress("Analysis complete")
+        update_progress("✅ Analysis complete")
         self._analysis_end_time = time.time()
         return True
 
@@ -294,7 +302,7 @@ class NPMolecularInteractionAnalyzer:
             # Progress update for large datasets
             if total_pairs > chunk_size and self.progress_callback:
                 progress = int((chunk_start / total_pairs) * 100)
-                self.progress_callback(f"Finding hydrogen bonds... {progress}%")
+                self.progress_callback(f"🔗 Finding hydrogen bonds... {progress}%")
                 # Small delay to allow GUI updates
                 time.sleep(0.01)
 
@@ -416,7 +424,7 @@ class NPMolecularInteractionAnalyzer:
             # Progress update for large datasets
             if total_pairs > chunk_size and self.progress_callback:
                 progress = int((chunk_start / total_pairs) * 100)
-                self.progress_callback(f"Finding halogen bonds... {progress}%")
+                self.progress_callback(f"🌟 Finding halogen bonds... {progress}%")
                 # Small delay to allow GUI updates
                 time.sleep(0.01)
 

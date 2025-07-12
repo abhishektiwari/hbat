@@ -43,9 +43,9 @@ class ProgressBar:
         print(f"\r\033[K[INFO] {message}", end="", flush=True)
 
         if progress is not None and progress != self.last_progress:
-            # Add progress bar for percentage updates
+            # Add progress bar for percentage updates with emoji
             filled_width = int(self.width * progress / 100)
-            bar = "█" * filled_width + "░" * (self.width - filled_width)
+            bar = "●" * filled_width + "○" * (self.width - filled_width)
             print(f" [{bar}] {progress}%", end="", flush=True)
             self.last_progress = progress
 
@@ -909,23 +909,30 @@ def run_analysis(args: argparse.Namespace) -> int:
         # Create analyzer
         analyzer = NPMolecularInteractionAnalyzer(parameters)
 
-        # Set up progress tracking for verbose mode
+        # Set up progress tracking (show unless quiet mode)
         progress_bar = None
-        if verbose and not args.quiet:
+        if not args.quiet:
             progress_bar = ProgressBar()
 
             def cli_progress_callback(message: str) -> None:
                 """Progress callback for CLI updates."""
+                # Use progress bar for clean display
                 if progress_bar:
                     # Extract percentage if present in message
                     if "%" in message:
                         try:
-                            percent_str = (
-                                message.split("...")[-1].strip().replace("%", "")
-                            )
-                            if percent_str.isdigit():
-                                progress = int(percent_str)
-                                step_name = message.split("...")[0]
+                            # Split on space to get the percentage part
+                            parts = message.split()
+                            percent_part = None
+                            for part in parts:
+                                if "%" in part:
+                                    percent_part = part.replace("%", "")
+                                    break
+
+                            if percent_part and percent_part.isdigit():
+                                progress = int(percent_part)
+                                # Get the step name (everything before the percentage)
+                                step_name = message.split(f" {percent_part}%")[0]
                                 progress_bar.update(step_name, progress)
                             else:
                                 progress_bar.update(message)
@@ -933,6 +940,9 @@ def run_analysis(args: argparse.Namespace) -> int:
                             progress_bar.update(message)
                     else:
                         progress_bar.update(message)
+                else:
+                    # Fallback if no progress bar
+                    print_progress(message, verbose)
 
             analyzer.progress_callback = cli_progress_callback
 
