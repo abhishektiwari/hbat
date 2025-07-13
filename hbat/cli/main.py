@@ -807,6 +807,8 @@ def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) ->
                     "Angle_deg",
                     "DA_Distance_A",
                     "Bond_Type",
+                    "D-A_Properties",
+                    "B/S",
                 ]
             )
 
@@ -822,6 +824,8 @@ def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) ->
                         f"{math.degrees(hb.angle):.1f}",
                         f"{hb.donor_acceptor_distance:.3f}",
                         hb.bond_type,
+                        hb.donor_acceptor_properties,
+                        hb.get_backbone_sidechain_interaction(),
                     ]
                 )
             writer.writerow([])  # Empty row
@@ -866,6 +870,9 @@ def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) ->
                     "Pi_Residue",
                     "Distance_A",
                     "Angle_deg",
+                    "Type",
+                    "D-A_Properties",
+                    "B/S",
                 ]
             )
 
@@ -878,6 +885,9 @@ def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) ->
                         pi.pi_residue,
                         f"{pi.distance:.3f}",
                         f"{math.degrees(pi.angle):.1f}",
+                        pi.get_interaction_type_display(),
+                        pi.donor_acceptor_properties,
+                        pi.get_backbone_sidechain_interaction(),
                     ]
                 )
 

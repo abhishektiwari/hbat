@@ -9,7 +9,7 @@ import asyncio
 import os
 import tkinter as tk
 import webbrowser
-from tkinter import filedialog, messagebox, scrolledtext, ttk
+from tkinter import filedialog, messagebox, ttk
 from typing import Optional
 
 import tk_async_execute as tae
@@ -198,19 +198,53 @@ class MainWindow:
         file_frame = ttk.Frame(left_notebook)
         left_notebook.add(file_frame, text="PDB File")
 
-        self.file_text = scrolledtext.ScrolledText(
-            file_frame, wrap=tk.NONE, font=("Courier", 12)
+        # Create text widget with both vertical and horizontal scrollbars
+        text_frame = ttk.Frame(file_frame)
+        text_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        self.file_text = tk.Text(text_frame, wrap=tk.NONE, font=("Courier", 12))
+        file_v_scrollbar = ttk.Scrollbar(
+            text_frame, orient=tk.VERTICAL, command=self.file_text.yview
         )
-        self.file_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        file_h_scrollbar = ttk.Scrollbar(
+            text_frame, orient=tk.HORIZONTAL, command=self.file_text.xview
+        )
+        self.file_text.configure(
+            yscrollcommand=file_v_scrollbar.set, xscrollcommand=file_h_scrollbar.set
+        )
+
+        self.file_text.grid(row=0, column=0, sticky="nsew")
+        file_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        file_h_scrollbar.grid(row=1, column=0, sticky="ew")
+
+        text_frame.grid_rowconfigure(0, weight=1)
+        text_frame.grid_columnconfigure(0, weight=1)
 
         # Fixed PDB content tab
         fixed_file_frame = ttk.Frame(left_notebook)
         left_notebook.add(fixed_file_frame, text="Fixed PDB")
 
-        self.fixed_file_text = scrolledtext.ScrolledText(
-            fixed_file_frame, wrap=tk.NONE, font=("Courier", 12)
+        # Create text widget with both vertical and horizontal scrollbars
+        fixed_text_frame = ttk.Frame(fixed_file_frame)
+        fixed_text_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        self.fixed_file_text = tk.Text(fixed_text_frame, wrap=tk.NONE, font=("Courier", 12))
+        fixed_v_scrollbar = ttk.Scrollbar(
+            fixed_text_frame, orient=tk.VERTICAL, command=self.fixed_file_text.yview
         )
-        self.fixed_file_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        fixed_h_scrollbar = ttk.Scrollbar(
+            fixed_text_frame, orient=tk.HORIZONTAL, command=self.fixed_file_text.xview
+        )
+        self.fixed_file_text.configure(
+            yscrollcommand=fixed_v_scrollbar.set, xscrollcommand=fixed_h_scrollbar.set
+        )
+
+        self.fixed_file_text.grid(row=0, column=0, sticky="nsew")
+        fixed_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        fixed_h_scrollbar.grid(row=1, column=0, sticky="ew")
+
+        fixed_text_frame.grid_rowconfigure(0, weight=1)
+        fixed_text_frame.grid_columnconfigure(0, weight=1)
 
         # Add context menu for Fixed PDB tab
         self._create_fixed_pdb_context_menu()
@@ -421,7 +455,7 @@ class MainWindow:
             self.session_parameters = params
 
         # Start async analysis without popup window
-        tae.async_execute(self._perform_analysis_async(params), visible=False)
+        tae.async_execute(self._perform_analysis_async(params), visible=False, show_exceptions=False)
 
     async def _perform_analysis_async(self, params: AnalysisParameters) -> None:
         """Perform the analysis asynchronously to keep GUI responsive.
@@ -448,9 +482,10 @@ class MainWindow:
             # Create analyzer
             self.analyzer = NPMolecularInteractionAnalyzer(params)
 
-            # Set up progress callback for async updates
+            # Set up progress callback for direct GUI updates
             def progress_callback(message: str) -> None:
-                tae.async_execute(self._update_progress_async(message), visible=False)
+                # Update progress directly without creating new async task
+                self.root.after(0, lambda: self.status_var.set(message))
 
             self.analyzer.progress_callback = progress_callback
 

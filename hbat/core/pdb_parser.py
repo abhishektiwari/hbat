@@ -16,6 +16,7 @@ from ..constants.parameters import ParametersDefault
 from ..utilities import pdb_atom_to_element
 from .np_vector import NPVec3D
 from .structure import Atom, Bond, Residue
+from .atom_classifier import get_atom_properties
 
 try:
     import pdbreader  # type: ignore
@@ -249,6 +250,9 @@ class PDBParser:
             if not element or element.isdigit():
                 element = self._guess_element_from_name(name)
 
+            # Classify atom properties
+            atom_props = get_atom_properties(res_name, name)
+
             return Atom(
                 serial=serial,
                 name=name,
@@ -263,6 +267,9 @@ class PDBParser:
                 element=element,
                 charge=charge,
                 record_type=record_type,
+                residue_type=atom_props["residue_type"],
+                backbone_sidechain=atom_props["backbone_sidechain"],
+                aromatic=atom_props["aromatic"],
             )
 
         except Exception as e:
