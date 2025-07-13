@@ -9,21 +9,33 @@ HBAT requires:
 - **Python**: 3.9 or higher
 - **tkinter**: Included with Python standard library on most systems. On macOS, install Python and tkinter using Homebrew:
   
-  .. code-block:: bash
+.. code-block:: bash
 
-     brew install python python3-tk
+   brew install python python3-tk
 
 Installation Methods
 --------------------
 
-From PyPI (Recommended)
-~~~~~~~~~~~~~~~~~~~~~~~
+From PyPI
+~~~~~~~~~
 
 .. code-block:: bash
 
    pip install hbat
 
-**Recommended**: For fixing missing Hydrogen Atoms, install PDBFixer (preferred over OpenBabel). See :doc:`pdbfixing` for details.
+
+From Github
+~~~~~~~~~~~
+
+**Recommended** for fixing missing Hydrogen Atoms using PDBFixer (preferred over OpenBabel). See :doc:`pdbfixing` for details.
+
+
+.. code-block:: bash
+
+   pip install git+https://github.com/abhishektiwari/hbat.git
+
+
+If you installed HBAT from PyPI, you can also install PDBFixer using,
 
 .. code-block:: bash
 
@@ -38,15 +50,6 @@ From Source
    git clone https://github.com/abhishektiwari/hbat.git
    cd hbat
    pip install -e .
-
-
-Alternatively,  
-
-.. code-block:: bash
-
-   pip install git+https://github.com/abhishektiwari/hbat.git
-
-
 From Conda
 ~~~~~~~~~~
 

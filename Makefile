@@ -32,6 +32,7 @@ help:
 	@echo "Development:"
 	@echo "  clean         Clean build artifacts"
 	@echo "  docs          Build documentation"
+	@echo "  docs-watch    Build docs with auto-reload and open browser"
 	@echo "  run-gui       Launch GUI application"
 	@echo "  run-cli       Run CLI with test file"
 	@echo "  generate-ccd-bonds Generate residue bond constants from CCD files"
@@ -124,6 +125,10 @@ docs-serve:
 	else \
 		echo "Documentation not built. Run 'make docs' first."; \
 	fi
+
+docs-watch:
+	@echo "Building and watching documentation with auto-reload (requires sphinx-autobuild)..."
+	sphinx-autobuild docs/source/ docs/build/html/ --open-browser
 
 # Development runners
 run-gui:
