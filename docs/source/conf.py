@@ -129,12 +129,31 @@ html_theme_options = {
     "use_fullscreen_button": True,
     "use_search_button": True,
     "use_sidenotes": True,
+    "icon_links_label": "Quick Links",
     "icon_links": [
         {
             "name": "GitHub",
             "url": "https://github.com/abhishektiwari/hbat",
             "icon": "fa-brands fa-square-github",
             "type": "fontawesome",
+        },
+        {
+            "name": "PyPI",
+            "url": "https://pypi.org/project/hbat/",
+            "icon": "https://img.shields.io/pypi/v/hbat",
+            "type": "local",
+        },
+        {
+            "name": "Documentation",
+            "url": "https://hbat.abhishek-tiwari.com/",
+            "icon": "fa-solid fa-book",
+            "type": "fontawesome",
+        },
+        {
+            "name": "Abhishek Tiwari",
+            "url": "https://www.abhishek-tiwari.com",
+            "icon": "https://www.abhishek-tiwari.com/images/logo.svg",
+            "type": "local",
         },
    ]
 }

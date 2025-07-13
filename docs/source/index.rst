@@ -40,6 +40,9 @@ HBAT Documentation
 .. image:: https://img.shields.io/sourceforge/dt/hbat?label=SourceForge%20Downloads
    :alt: SourceForge Downloads
 
+.. image:: https://img.shields.io/pypi/dm/hbat?label=PyPI%20Downloads
+   :alt: PyPI Downloads
+
 
 Welcome to HBAT (Hydrogen Bond Analysis Tool) documentation!
 
