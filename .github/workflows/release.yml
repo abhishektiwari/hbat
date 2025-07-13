@@ -419,21 +419,28 @@ jobs:
             - `hbat_${{ needs.generate-version.outputs.version }}_amd64.deb` - Debian package
           
           ### Conda Package
-          - `hbat-${{ needs.generate-version.outputs.version }}.tar.bz2` or `.conda`
+          - `hbat-${{ needs.generate-version.outputs.version }}-py0.conda`
           
           ### Documentation
           - `hbat-docs-${{ needs.generate-version.outputs.version }}.zip` - Full HTML documentation
           
           ## Installation
           
-          **pip:**
+          **PIP:**
           ```bash
           pip install https://github.com/${{ github.repository }}/releases/download/${{ needs.generate-version.outputs.github_tag }}/hbat-${{ needs.generate-version.outputs.version }}-py3-none-any.whl
           ```
           
-          ${{ needs.generate-version.outputs.is_prerelease == 'false' && '**PyPI:**\n```bash\npip install hbat\n```' || '' }}
+          ${{ needs.generate-version.outputs.is_prerelease == 'false' && '**PyPI:**
+          ```bash
+          pip install hbat
+          ```' || '' }}
           
-          ${{ needs.generate-version.outputs.is_prerelease == 'false' && '**Conda:**\n```bash\nconda install -c ${{ secrets.ANACONDA_ORG }} hbat\n```' || '**Conda:** Download the package and install locally' }}
+          ${{ needs.generate-version.outputs.is_prerelease == 'false' && '**Conda:**
+          ```bash
+          conda install -c ${{ secrets.ANACONDA_ORG }} hbat
+          ```' || '**Conda:**
+          Download the package and install locally' }}
         prerelease: ${{ needs.generate-version.outputs.is_prerelease == 'true' }}
         draft: false
     

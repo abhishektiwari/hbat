@@ -138,22 +138,16 @@ html_theme_options = {
             "type": "fontawesome",
         },
         {
-            "name": "PyPI",
-            "url": "https://pypi.org/project/hbat/",
-            "icon": "https://img.shields.io/pypi/v/hbat",
-            "type": "local",
-        },
-        {
-            "name": "Documentation",
-            "url": "https://hbat.abhishek-tiwari.com/",
-            "icon": "fa-solid fa-book",
-            "type": "fontawesome",
-        },
-        {
             "name": "Abhishek Tiwari",
             "url": "https://www.abhishek-tiwari.com",
             "icon": "https://www.abhishek-tiwari.com/images/logo.svg",
             "type": "local",
+        },
+        {
+            "name": "PyPI",
+            "url": "https://pypi.org/project/hbat/",
+            "icon": "fa-brands fa-python",
+            "type": "fontawesome",
         },
    ]
 }
