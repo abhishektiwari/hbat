@@ -107,6 +107,7 @@ intersphinx_mapping = {
 html_theme_options = {
     'canonical_url': '',
     'analytics_id': '',
+    'google_analytics_id': 'G-PLZNCJY1B7',
     'logo_only': False,
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
@@ -116,7 +117,26 @@ html_theme_options = {
     'sticky_navigation': True,
     'navigation_depth': 4,
     'includehidden': True,
-    'titles_only': False
+    'titles_only': False,
+    "repository_url": "https://github.com/abhishektiwari/hbat",
+    "repository_provider": "github",
+    "repository_branch": "main",
+    "path_to_docs": "docs/source",
+    "use_issues_button": True,
+    "use_repository_button": True,
+    "use_edit_page_button": True,
+    "use_download_button": False,
+    "use_fullscreen_button": True,
+    "use_search_button": True,
+    "use_sidenotes": True,
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/abhishektiwari/hbat",
+            "icon": "fa-brands fa-square-github",
+            "type": "fontawesome",
+        },
+   ]
 }
 
 # The version info for the project you're documenting, acts as replacement for
