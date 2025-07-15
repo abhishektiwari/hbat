@@ -46,3 +46,6 @@ setuptools-scm>=6.2.0
 
 # Standalone executable building
 pyinstaller>=5.0.0
+
+# psutil for system monitoring
+psutil>=7.0.0
