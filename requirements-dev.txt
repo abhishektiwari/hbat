@@ -34,6 +34,8 @@ sphinxcontrib-bibtex>=2.0.0
 sphinx-sitemap>=2.7.2
 sphinx-autobuild>=2024.10.03
 sphinx-book-theme>=1.1.4
+sphinx-copybutton>=0.5.2
+
 # Development tools
 coverage>=5.0.0
 

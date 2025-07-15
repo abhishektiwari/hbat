@@ -10,7 +10,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 class HBATConfig:
@@ -24,7 +24,7 @@ class HBATConfig:
     - Providing paths for various data storage needs
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize HBAT configuration manager."""
         self.user_home = Path.home()
         self.hbat_dir = self.user_home / ".hbat"
@@ -91,12 +91,12 @@ class HBATConfig:
             print(f"❌ Error creating HBAT directory: {e}")
             return False
 
-    def _create_initial_config(self):
+    def _create_initial_config(self) -> None:
         """Create initial configuration file."""
         with open(self.config_file, "w") as f:
             json.dump(self.default_config, f, indent=2)
 
-    def _create_initial_state(self):
+    def _create_initial_state(self) -> None:
         """Create initial application state file."""
         initial_state = {
             "first_run": datetime.now().isoformat(),
@@ -121,7 +121,7 @@ class HBATConfig:
         try:
             if self.config_file.exists():
                 with open(self.config_file, "r") as f:
-                    return json.load(f)
+                    return json.load(f)  # type: ignore[no-any-return]
             else:
                 return self.default_config.copy()
         except Exception as e:
@@ -157,7 +157,7 @@ class HBATConfig:
         try:
             if self.state_file.exists():
                 with open(self.state_file, "r") as f:
-                    return json.load(f)
+                    return json.load(f)  # type: ignore[no-any-return]
             else:
                 return {}
         except Exception as e:
@@ -183,13 +183,13 @@ class HBATConfig:
             print(f"❌ Error saving state: {e}")
             return False
 
-    def update_run_count(self):
+    def update_run_count(self) -> None:
         """Update the application run count."""
         state = self.load_state()
         state["run_count"] = state.get("run_count", 0) + 1
         self.save_state(state)
 
-    def add_recent_file(self, file_path: str, max_recent: int = 10):
+    def add_recent_file(self, file_path: str, max_recent: int = 10) -> None:
         """
         Add a file to the recent files list.
 
@@ -213,10 +213,10 @@ class HBATConfig:
         state["recent_files"] = recent_files
         self.save_state(state)
 
-    def get_recent_files(self) -> list:
+    def get_recent_files(self) -> List[Any]:
         """Get list of recent files."""
         state = self.load_state()
-        return state.get("recent_files", [])
+        return state.get("recent_files", [])  # type: ignore[no-any-return]
 
     def get_ccd_data_path(self) -> str:
         """
@@ -238,7 +238,7 @@ class HBATConfig:
 
     def update_ccd_status(
         self, files_present: bool, last_download: Optional[str] = None
-    ):
+    ) -> None:
         """
         Update CCD data status in configuration.
 
@@ -266,7 +266,7 @@ class HBATConfig:
         config = self.load_config()
         return config.get("preferences", {}).get(key, default)
 
-    def set_preference(self, key: str, value: Any):
+    def set_preference(self, key: str, value: Any) -> None:
         """
         Set a user preference value.
 
@@ -280,7 +280,7 @@ class HBATConfig:
         config["preferences"][key] = value
         self.save_config(config)
 
-    def cleanup_old_files(self, days_old: int = 30):
+    def cleanup_old_files(self, days_old: int = 30) -> None:
         """
         Clean up old cache and log files.
 
@@ -338,7 +338,7 @@ class HBATConfig:
             for unit in ["B", "KB", "MB", "GB"]:
                 if total_size < 1024.0:
                     return f"{total_size:.1f} {unit}"
-                total_size /= 1024.0
+                total_size = int(total_size / 1024.0)
             return f"{total_size:.1f} TB"
 
         return {

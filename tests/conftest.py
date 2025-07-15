@@ -26,6 +26,16 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "performance: marks performance benchmark tests"
     )
+    # New categorization markers
+    config.addinivalue_line(
+        "markers", "unit: marks pure unit tests (fast, isolated)"
+    )
+    config.addinivalue_line(
+        "markers", "e2e: marks end-to-end workflow tests"
+    )
+    config.addinivalue_line(
+        "markers", "requires_pdb_files: marks tests that need sample PDB files"
+    )
 
 def find_sample_pdb_file():
     """Find the sample PDB file regardless of working directory."""
@@ -53,6 +63,19 @@ def find_pdb_fixing_test_file():
             return path
     return None
 
+def find_large_pdb_file():
+    """Find the large PDB file for performance tests."""
+    sample_paths = [
+        os.path.join(os.path.dirname(__file__), "..", "example_pdb_files", "4jsv.pdb"),
+        "../example_pdb_files/4jsv.pdb",  # When running from tests/
+        "example_pdb_files/4jsv.pdb",     # When running from project root
+    ]
+    
+    for path in sample_paths:
+        if os.path.exists(path):
+            return path
+    return None
+
 @pytest.fixture
 def sample_pdb_file():
     """Provide path to sample PDB file."""
@@ -67,6 +90,14 @@ def pdb_fixing_test_file():
     file_path = find_pdb_fixing_test_file()
     if not file_path:
         pytest.skip("PDB fixing test file (1ubi.pdb) not found")
+    return file_path
+
+@pytest.fixture
+def large_pdb_file():
+    """Provide path to large PDB file for performance tests."""
+    file_path = find_large_pdb_file()
+    if not file_path:
+        pytest.skip("Large PDB file (4jsv.pdb) not found")
     return file_path
 
 @pytest.fixture
@@ -138,6 +169,133 @@ def strict_analysis_parameters():
         hb_donor_acceptor_cutoff=3.7,
         analysis_mode="complete"
     )
+
+# Additional fixtures for new test structure
+@pytest.fixture
+def sample_atoms():
+    """Fixture providing sample atoms for unit testing."""
+    from hbat.core.structure import Atom
+    from hbat.core.np_vector import NPVec3D
+    
+    donor = Atom(
+        serial=1, name="N", alt_loc="", res_name="ALA", chain_id="A",
+        res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
+        temp_factor=20.0, element="N", charge="", record_type="ATOM"
+    )
+    
+    hydrogen = Atom(
+        serial=2, name="H", alt_loc="", res_name="ALA", chain_id="A",
+        res_seq=1, i_code="", coords=NPVec3D(1, 0, 0), occupancy=1.0,
+        temp_factor=20.0, element="H", charge="", record_type="ATOM"
+    )
+    
+    acceptor = Atom(
+        serial=3, name="O", alt_loc="", res_name="GLY", chain_id="A",
+        res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
+        temp_factor=20.0, element="O", charge="", record_type="ATOM"
+    )
+    
+    return donor, hydrogen, acceptor
+
+@pytest.fixture
+def performance_parameters():
+    """Fixture providing parameters optimized for performance testing."""
+    from hbat.core.analysis import AnalysisParameters
+    return AnalysisParameters(
+        hb_distance_cutoff=4.0,
+        hb_angle_cutoff=110.0,
+        analysis_mode="complete",
+        fix_pdb_enabled=False
+    )
+
+@pytest.fixture
+def sample_halogen_atoms():
+    """Fixture providing sample atoms for halogen bond testing."""
+    from hbat.core.structure import Atom
+    from hbat.core.np_vector import NPVec3D
+    
+    halogen = Atom(
+        serial=1, name="CL", alt_loc="", res_name="CLU", chain_id="A",
+        res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
+        temp_factor=20.0, element="CL", charge="", record_type="ATOM"
+    )
+    
+    acceptor = Atom(
+        serial=2, name="O", alt_loc="", res_name="GLY", chain_id="A",
+        res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
+        temp_factor=20.0, element="O", charge="", record_type="ATOM"
+    )
+    
+    return halogen, acceptor
+
+@pytest.fixture
+def sample_pi_atoms():
+    """Fixture providing sample atoms for π interaction testing."""
+    from hbat.core.structure import Atom
+    from hbat.core.np_vector import NPVec3D
+    
+    donor = Atom(
+        serial=1, name="N", alt_loc="", res_name="ALA", chain_id="A",
+        res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
+        temp_factor=20.0, element="N", charge="", record_type="ATOM"
+    )
+    
+    hydrogen = Atom(
+        serial=2, name="H", alt_loc="", res_name="ALA", chain_id="A",
+        res_seq=1, i_code="", coords=NPVec3D(1, 0, 0), occupancy=1.0,
+        temp_factor=20.0, element="H", charge="", record_type="ATOM"
+    )
+    
+    pi_center = NPVec3D(3, 0, 0)
+    
+    return donor, hydrogen, pi_center
+
+@pytest.fixture
+def sample_interactions():
+    """Fixture providing sample interactions for chain testing."""
+    from hbat.core.interactions import HydrogenBond, HalogenBond
+    from hbat.core.structure import Atom
+    from hbat.core.np_vector import NPVec3D
+    import math
+    
+    # Create atoms
+    donor = Atom(
+        serial=1, name="N", alt_loc="", res_name="ALA", chain_id="A",
+        res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
+        temp_factor=20.0, element="N", charge="", record_type="ATOM"
+    )
+    
+    hydrogen = Atom(
+        serial=2, name="H", alt_loc="", res_name="ALA", chain_id="A",
+        res_seq=1, i_code="", coords=NPVec3D(1, 0, 0), occupancy=1.0,
+        temp_factor=20.0, element="H", charge="", record_type="ATOM"
+    )
+    
+    acceptor = Atom(
+        serial=3, name="O", alt_loc="", res_name="GLY", chain_id="A",
+        res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
+        temp_factor=20.0, element="O", charge="", record_type="ATOM"
+    )
+    
+    halogen = Atom(
+        serial=4, name="CL", alt_loc="", res_name="CLU", chain_id="A",
+        res_seq=3, i_code="", coords=NPVec3D(5, 0, 0), occupancy=1.0,
+        temp_factor=20.0, element="CL", charge="", record_type="ATOM"
+    )
+    
+    # Create interactions
+    hb = HydrogenBond(
+        _donor=donor, hydrogen=hydrogen, _acceptor=acceptor,
+        distance=2.5, angle=math.radians(160.0), _donor_acceptor_distance=3.2,
+        bond_type="N-H...O", _donor_residue="A1ALA", _acceptor_residue="A2GLY"
+    )
+    
+    xb = HalogenBond(
+        halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
+        bond_type="C-CL...O", _halogen_residue="A3CLU", _acceptor_residue="A2GLY"
+    )
+    
+    return [hb, xb]
 
 # Constants for expected results with 6RSA.pdb
 class ExpectedResults:

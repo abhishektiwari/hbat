@@ -35,6 +35,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx_toolbox.shields',
     'sphinx_sitemap',
+    'sphinx_copybutton',
 ]
 
 # Mock imports for modules that might not be available in CI

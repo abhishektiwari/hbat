@@ -274,6 +274,16 @@ class HydrogenBond(MolecularInteraction):
     def angle(self) -> float:
         return self._angle
 
+    @property
+    def donor(self) -> Atom:
+        """Property accessor for donor atom."""
+        return self._donor
+
+    @property
+    def acceptor(self) -> Atom:
+        """Property accessor for acceptor atom."""
+        return self._acceptor
+
     # MolecularInteraction interface implementation
     def get_donor(self) -> Union[Atom, NPVec3D]:
         return self._donor
@@ -295,7 +305,7 @@ class HydrogenBond(MolecularInteraction):
 
     def get_donor_interaction_distance(self) -> float:
         """Distance from donor to hydrogen."""
-        return self._donor.coords.distance_to(self.hydrogen.coords)
+        return float(self._donor.coords.distance_to(self.hydrogen.coords))
 
     def get_donor_acceptor_distance(self) -> float:
         """Distance from donor to acceptor."""
@@ -428,6 +438,16 @@ class HalogenBond(MolecularInteraction):
         """Legacy property for halogen residue."""
         return self._halogen_residue
 
+    @property
+    def donor(self) -> Atom:
+        """Property accessor for donor atom (halogen)."""
+        return self.halogen
+
+    @property
+    def acceptor(self) -> Atom:
+        """Property accessor for acceptor atom."""
+        return self._acceptor
+
     # MolecularInteraction interface implementation
     def get_donor(self) -> Union[Atom, NPVec3D]:
         return self.halogen  # Halogen acts as electron acceptor (Lewis acid)
@@ -537,6 +557,11 @@ class PiInteraction(MolecularInteraction):
         """Legacy property for π residue."""
         return self._pi_residue
 
+    @property
+    def donor(self) -> Atom:
+        """Property accessor for donor atom."""
+        return self._donor
+
     # MolecularInteraction interface implementation
     def get_donor(self) -> Union[Atom, NPVec3D]:
         return self._donor
@@ -558,11 +583,11 @@ class PiInteraction(MolecularInteraction):
 
     def get_donor_interaction_distance(self) -> float:
         """Distance from donor to hydrogen."""
-        return self._donor.coords.distance_to(self.hydrogen.coords)
+        return float(self._donor.coords.distance_to(self.hydrogen.coords))
 
     def get_donor_acceptor_distance(self) -> float:
         """Distance from donor to π center."""
-        return self._donor.coords.distance_to(self.pi_center)
+        return float(self._donor.coords.distance_to(self.pi_center))
 
     def get_donor_interaction_acceptor_angle(self) -> float:
         """D-H...π angle."""
@@ -686,16 +711,20 @@ class CooperativityChain(MolecularInteraction):
     # MolecularInteraction interface implementation
     def get_donor(self) -> Union[Atom, NPVec3D]:
         """Get the donor of the first interaction in the chain."""
-        return self.interactions[0].get_donor() if self.interactions else None
+        if self.interactions:
+            return self.interactions[0].get_donor()
+        return NPVec3D(0, 0, 0)  # Return a default NPVec3D instead of None
 
     def get_acceptor(self) -> Union[Atom, NPVec3D]:
         """Get the acceptor of the last interaction in the chain."""
-        return self.interactions[-1].get_acceptor() if self.interactions else None
+        if self.interactions:
+            return self.interactions[-1].get_acceptor()
+        return NPVec3D(0, 0, 0)  # Return a default NPVec3D instead of None
 
     def get_interaction(self) -> Union[Atom, NPVec3D]:
         """Get the center point of the chain (middle interaction point)."""
         if not self.interactions:
-            return None
+            return NPVec3D(0, 0, 0)  # Return a default NPVec3D instead of None
         mid_idx = len(self.interactions) // 2
         return self.interactions[mid_idx].get_interaction()
 
@@ -725,9 +754,9 @@ class CooperativityChain(MolecularInteraction):
         mid_interaction = self.interactions[mid_idx].get_interaction()
 
         if isinstance(first_donor, Atom) and isinstance(mid_interaction, Atom):
-            return first_donor.coords.distance_to(mid_interaction.coords)
+            return float(first_donor.coords.distance_to(mid_interaction.coords))
         elif isinstance(first_donor, Atom) and isinstance(mid_interaction, NPVec3D):
-            return first_donor.coords.distance_to(mid_interaction)
+            return float(first_donor.coords.distance_to(mid_interaction))
         return 0.0
 
     def get_donor_acceptor_distance(self) -> float:
@@ -738,9 +767,9 @@ class CooperativityChain(MolecularInteraction):
         last_acceptor = self.interactions[-1].get_acceptor()
 
         if isinstance(first_donor, Atom) and isinstance(last_acceptor, Atom):
-            return first_donor.coords.distance_to(last_acceptor.coords)
+            return float(first_donor.coords.distance_to(last_acceptor.coords))
         elif isinstance(first_donor, Atom) and isinstance(last_acceptor, NPVec3D):
-            return first_donor.coords.distance_to(last_acceptor)
+            return float(first_donor.coords.distance_to(last_acceptor))
         return 0.0
 
     def get_donor_interaction_acceptor_angle(self) -> float:

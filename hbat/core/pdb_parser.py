@@ -428,7 +428,7 @@ class PDBParser:
                             atom1_serial=atom_id,
                             atom2_serial=bonded_id,
                             bond_type="explicit",
-                            distance=distance,
+                            distance=float(distance),
                             detection_method=BondDetectionMethods.CONECT_RECORDS,
                         )
 
@@ -481,8 +481,8 @@ class PDBParser:
 
             # Process bonds from CCD data
             for bond_info in residue_bonds:
-                atom1_name = bond_info.get("atom1", "").strip()
-                atom2_name = bond_info.get("atom2", "").strip()
+                atom1_name = str(bond_info.get("atom1", "") or "").strip()
+                atom2_name = str(bond_info.get("atom2", "") or "").strip()
 
                 # Check if both atoms exist in this residue
                 if atom1_name in atom_map and atom2_name in atom_map:
@@ -497,7 +497,7 @@ class PDBParser:
                         atom1_serial=atom1.serial,
                         atom2_serial=atom2.serial,
                         bond_type="covalent",
-                        distance=distance,
+                        distance=float(distance),
                         detection_method=BondDetectionMethods.RESIDUE_LOOKUP,
                     )
                     # Avoid duplicate bonds
@@ -525,12 +525,12 @@ class PDBParser:
                     if distance > ParametersDefault.MAX_BOND_DISTANCE:
                         continue
 
-                    if self._are_atoms_bonded_with_distance(atom1, atom2, distance):
+                    if self._are_atoms_bonded_with_distance(atom1, atom2, float(distance)):
                         bond = Bond(
                             atom1_serial=atom1.serial,
                             atom2_serial=atom2.serial,
                             bond_type="covalent",
-                            distance=distance,
+                            distance=float(distance),
                             detection_method=BondDetectionMethods.DISTANCE_BASED,
                         )
 
@@ -595,12 +595,12 @@ class PDBParser:
         if distance > ParametersDefault.MAX_BOND_DISTANCE:
             return
 
-        if self._are_atoms_bonded_with_distance(atom1, atom2, distance):
+        if self._are_atoms_bonded_with_distance(atom1, atom2, float(distance)):
             bond = Bond(
                 atom1_serial=atom1.serial,
                 atom2_serial=atom2.serial,
                 bond_type="covalent",
-                distance=distance,
+                distance=float(distance),
                 detection_method=BondDetectionMethods.DISTANCE_BASED,
             )
             self.bonds.append(bond)
@@ -636,7 +636,7 @@ class PDBParser:
 
         # Calculate distance and use optimized function
         distance = atom1.coords.distance_to(atom2.coords)
-        return self._are_atoms_bonded_with_distance(atom1, atom2, distance)
+        return self._are_atoms_bonded_with_distance(atom1, atom2, float(distance))
 
     def _are_atoms_bonded_with_distance(
         self, atom1: Atom, atom2: Atom, distance: float

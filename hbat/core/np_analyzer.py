@@ -7,7 +7,7 @@ calculations of molecular interactions in protein structures.
 
 import math
 import time
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 import numpy as np
 
@@ -74,7 +74,7 @@ class NPMolecularInteractionAnalyzer:
         self._pdb_fixing_info: Dict[str, Any] = {}
 
         # Progress callback for GUI updates
-        self.progress_callback = None
+        self.progress_callback: Optional[Callable[[str], None]] = None
 
     def analyze_file(self, pdb_file: str) -> bool:
         """Analyze a PDB file for molecular interactions."""
@@ -324,10 +324,10 @@ class NPMolecularInteractionAnalyzer:
 
                 # Calculate angle using NPVec3D
                 donor_vec = NPVec3D(
-                    donor_atom.coords.x, donor_atom.coords.y, donor_atom.coords.z
+                    float(donor_atom.coords.x), float(donor_atom.coords.y), float(donor_atom.coords.z)
                 )
-                h_vec = NPVec3D(h_atom.coords.x, h_atom.coords.y, h_atom.coords.z)
-                a_vec = NPVec3D(a_atom.coords.x, a_atom.coords.y, a_atom.coords.z)
+                h_vec = NPVec3D(float(h_atom.coords.x), float(h_atom.coords.y), float(h_atom.coords.z))
+                a_vec = NPVec3D(float(a_atom.coords.x), float(a_atom.coords.y), float(a_atom.coords.z))
 
                 angle_rad = batch_angle_between(donor_vec, h_vec, a_vec)
                 angle_deg = math.degrees(float(angle_rad))
@@ -450,10 +450,10 @@ class NPMolecularInteractionAnalyzer:
 
                 # Calculate angle
                 c_vec = NPVec3D(
-                    carbon_atom.coords.x, carbon_atom.coords.y, carbon_atom.coords.z
+                    float(carbon_atom.coords.x), float(carbon_atom.coords.y), float(carbon_atom.coords.z)
                 )
-                x_vec = NPVec3D(x_atom.coords.x, x_atom.coords.y, x_atom.coords.z)
-                a_vec = NPVec3D(a_atom.coords.x, a_atom.coords.y, a_atom.coords.z)
+                x_vec = NPVec3D(float(x_atom.coords.x), float(x_atom.coords.y), float(x_atom.coords.z))
+                a_vec = NPVec3D(float(a_atom.coords.x), float(a_atom.coords.y), float(a_atom.coords.z))
 
                 angle_rad = batch_angle_between(c_vec, x_vec, a_vec)
                 angle_deg = math.degrees(float(angle_rad))
@@ -533,11 +533,11 @@ class NPMolecularInteractionAnalyzer:
                             continue
 
                 # Calculate angle
-                donor_vec = NPVec3D(carbon.coords.x, carbon.coords.y, carbon.coords.z)
+                donor_vec = NPVec3D(float(carbon.coords.x), float(carbon.coords.y), float(carbon.coords.z))
                 h_vec = NPVec3D(
-                    interaction_atom.coords.x,
-                    interaction_atom.coords.y,
-                    interaction_atom.coords.z,
+                    float(interaction_atom.coords.x),
+                    float(interaction_atom.coords.y),
+                    float(interaction_atom.coords.z),
                 )
 
                 angle_rad = batch_angle_between(donor_vec, h_vec, center_info["center"])
@@ -796,11 +796,11 @@ class NPMolecularInteractionAnalyzer:
             return None
 
         # Calculate angle
-        vec1 = NPVec3D(other1.coords.x, other1.coords.y, other1.coords.z)
+        vec1 = NPVec3D(float(other1.coords.x), float(other1.coords.y), float(other1.coords.z))
         vec_common = NPVec3D(
-            common_atom.coords.x, common_atom.coords.y, common_atom.coords.z
+            float(common_atom.coords.x), float(common_atom.coords.y), float(common_atom.coords.z)
         )
-        vec2 = NPVec3D(other2.coords.x, other2.coords.y, other2.coords.z)
+        vec2 = NPVec3D(float(other2.coords.x), float(other2.coords.y), float(other2.coords.z))
 
         angle_rad = batch_angle_between(vec1, vec_common, vec2)
         return math.degrees(angle_rad)
@@ -892,7 +892,7 @@ class NPMolecularInteractionAnalyzer:
         :returns: Dictionary containing comprehensive analysis summary
         :rtype: Dict[str, Any]
         """
-        summary = {
+        summary: Dict[str, Any] = {
             "hydrogen_bonds": {
                 "count": len(self.hydrogen_bonds),
                 "average_distance": (
@@ -944,39 +944,42 @@ class NPMolecularInteractionAnalyzer:
         # Add detailed statistics from original get_statistics method
         # Round averages for better presentation
         if self.hydrogen_bonds:
-            summary["hydrogen_bonds"]["average_distance"] = round(
-                summary["hydrogen_bonds"]["average_distance"], 2
+            hb_summary = summary["hydrogen_bonds"]
+            hb_summary["average_distance"] = round(
+                hb_summary["average_distance"], 2
             )
-            summary["hydrogen_bonds"]["average_angle"] = round(
-                summary["hydrogen_bonds"]["average_angle"], 1
+            hb_summary["average_angle"] = round(
+                hb_summary["average_angle"], 1
             )
 
             # Bond type distribution
             hb_types: Dict[str, int] = {}
             for hb in self.hydrogen_bonds:
                 hb_types[hb.bond_type] = hb_types.get(hb.bond_type, 0) + 1
-            summary["hydrogen_bonds"]["bond_types"] = hb_types
+            hb_summary["bond_types"] = hb_types
 
         if self.halogen_bonds:
-            summary["halogen_bonds"]["average_distance"] = round(
-                summary["halogen_bonds"]["average_distance"], 2
+            xb_summary = summary["halogen_bonds"]
+            xb_summary["average_distance"] = round(
+                xb_summary["average_distance"], 2
             )
-            summary["halogen_bonds"]["average_angle"] = round(
-                summary["halogen_bonds"]["average_angle"], 1
+            xb_summary["average_angle"] = round(
+                xb_summary["average_angle"], 1
             )
 
             # Bond type distribution
             xb_types: Dict[str, int] = {}
             for xb in self.halogen_bonds:
                 xb_types[xb.bond_type] = xb_types.get(xb.bond_type, 0) + 1
-            summary["halogen_bonds"]["bond_types"] = xb_types
+            xb_summary["bond_types"] = xb_types
 
         if self.pi_interactions:
-            summary["pi_interactions"]["average_distance"] = round(
-                summary["pi_interactions"]["average_distance"], 2
+            pi_summary = summary["pi_interactions"]
+            pi_summary["average_distance"] = round(
+                pi_summary["average_distance"], 2
             )
-            summary["pi_interactions"]["average_angle"] = round(
-                summary["pi_interactions"]["average_angle"], 1
+            pi_summary["average_angle"] = round(
+                pi_summary["average_angle"], 1
             )
 
         # Chain length distribution
@@ -985,7 +988,8 @@ class NPMolecularInteractionAnalyzer:
             for chain in self.cooperativity_chains:
                 length = chain.chain_length
                 chain_lengths[length] = chain_lengths.get(length, 0) + 1
-            summary["cooperativity_chains"]["chain_lengths"] = chain_lengths
+            coop_summary = summary["cooperativity_chains"]
+            coop_summary["chain_lengths"] = chain_lengths
 
         # Add bond detection method breakdown
         bond_detection_stats = self.parser.get_bond_detection_statistics()
@@ -1000,7 +1004,8 @@ class NPMolecularInteractionAnalyzer:
         if total_bonds > 0:
             for method, count in bond_detection_stats.items():
                 percentage = (count / total_bonds) * 100
-                summary["bond_detection"]["breakdown"][method] = {
+                breakdown = summary["bond_detection"]["breakdown"]
+                breakdown[method] = {
                     "count": count,
                     "percentage": round(percentage, 1),
                 }

@@ -12,26 +12,6 @@ import tempfile
 import json
 
 
-class TestGUIImports:
-    """Test that GUI modules can be imported."""
-    
-    def test_gui_module_imports(self):
-        """Test importing GUI modules."""
-        try:
-            from hbat.gui.main_window import MainWindow
-            from hbat.gui.parameter_panel import ParameterPanel
-            from hbat.gui.results_panel import ResultsPanel
-            assert True, "GUI modules imported successfully"
-        except ImportError as e:
-            pytest.skip(f"GUI modules not available: {e}")
-    
-    def test_chain_visualization_import(self):
-        """Test importing chain visualization module."""
-        try:
-            from hbat.gui.chain_visualization import ChainVisualizationWindow
-            assert True, "Chain visualization module imported successfully"
-        except ImportError as e:
-            pytest.skip(f"Chain visualization module not available: {e}")
 
 
 @pytest.mark.gui
@@ -385,8 +365,8 @@ class TestMainWindow:
                 assert hasattr(main_window, 'root'), "Should have root window"
                 assert hasattr(main_window, 'analyzer'), "Should have analyzer attribute"
                 
-                # Clean up
-                main_window.root.destroy()
+                # Clean up - call _on_closing to properly stop async executor
+                main_window._on_closing()
                 
             except Exception as e:
                 pytest.skip(f"Main window test failed: {e}")
@@ -395,6 +375,7 @@ class TestMainWindow:
             pytest.skip("GUI dependencies not available")
 
 
+@pytest.mark.integration
 class TestGUIPresetIntegration:
     """Test GUI preset integration without requiring full GUI."""
     
