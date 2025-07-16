@@ -71,8 +71,8 @@ test-cli:
 	pytest tests/cli/ -v -m "cli"
 
 test-coverage:
-	@echo "Running tests with coverage..."
-	cd tests && python run_tests.py --coverage
+	@echo "Running tests with coverage...(excludes slow tests)"
+	pytest tests/ -v -m "not slow" --cov --cov-branch --cov-report=xml --junitxml=junit.xml -o junit_family=legacy 
 
 test-gui:
 	@echo "Running GUI tests..."

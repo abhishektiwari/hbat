@@ -244,3 +244,7 @@ ccd-data/*
 
 # Ignore config files
 hbat/config/*
+
+# XML files
+junit.xml
+coverage.xml
