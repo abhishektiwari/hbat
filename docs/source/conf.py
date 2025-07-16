@@ -35,6 +35,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx_toolbox.shields',
     'sphinx_sitemap',
+    'sphinx_copybutton',
 ]
 
 # Mock imports for modules that might not be available in CI
@@ -56,7 +57,7 @@ master_doc = 'index'
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'sphinx_book_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -107,6 +108,7 @@ intersphinx_mapping = {
 html_theme_options = {
     'canonical_url': '',
     'analytics_id': '',
+    'google_analytics_id': 'G-PLZNCJY1B7',
     'logo_only': False,
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
@@ -116,7 +118,39 @@ html_theme_options = {
     'sticky_navigation': True,
     'navigation_depth': 4,
     'includehidden': True,
-    'titles_only': False
+    'titles_only': False,
+    "repository_url": "https://github.com/abhishektiwari/hbat",
+    "repository_provider": "github",
+    "repository_branch": "main",
+    "path_to_docs": "docs/source",
+    "use_issues_button": True,
+    "use_repository_button": True,
+    "use_edit_page_button": True,
+    "use_download_button": False,
+    "use_fullscreen_button": True,
+    "use_search_button": True,
+    "use_sidenotes": True,
+    "icon_links_label": "Quick Links",
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/abhishektiwari/hbat",
+            "icon": "fa-brands fa-square-github",
+            "type": "fontawesome",
+        },
+        {
+            "name": "Abhishek Tiwari",
+            "url": "https://www.abhishek-tiwari.com",
+            "icon": "https://www.abhishek-tiwari.com/images/logo.svg",
+            "type": "local",
+        },
+        {
+            "name": "PyPI",
+            "url": "https://pypi.org/project/hbat/",
+            "icon": "fa-brands fa-python",
+            "type": "fontawesome",
+        },
+   ]
 }
 
 # The version info for the project you're documenting, acts as replacement for

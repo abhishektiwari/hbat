@@ -262,6 +262,9 @@ class HydrogenBond(MolecularInteraction):
         self._donor_residue = _donor_residue
         self._acceptor_residue = _acceptor_residue
 
+        # Generate donor-acceptor property description
+        self._donor_acceptor_properties = self._generate_donor_acceptor_description()
+
     # Backward compatibility properties
     @property
     def distance(self) -> float:
@@ -270,6 +273,16 @@ class HydrogenBond(MolecularInteraction):
     @property
     def angle(self) -> float:
         return self._angle
+
+    @property
+    def donor(self) -> Atom:
+        """Property accessor for donor atom."""
+        return self._donor
+
+    @property
+    def acceptor(self) -> Atom:
+        """Property accessor for acceptor atom."""
+        return self._acceptor
 
     # MolecularInteraction interface implementation
     def get_donor(self) -> Union[Atom, NPVec3D]:
@@ -292,7 +305,7 @@ class HydrogenBond(MolecularInteraction):
 
     def get_donor_interaction_distance(self) -> float:
         """Distance from donor to hydrogen."""
-        return self._donor.coords.distance_to(self.hydrogen.coords)
+        return float(self._donor.coords.distance_to(self.hydrogen.coords))
 
     def get_donor_acceptor_distance(self) -> float:
         """Distance from donor to acceptor."""
@@ -315,11 +328,61 @@ class HydrogenBond(MolecularInteraction):
         # by checking bond lists in the analyzer
         return True  # Assuming validation was done during creation
 
+    def _generate_donor_acceptor_description(self) -> str:
+        """Generate donor-acceptor property description string.
+
+        Describes the hydrogen bond in terms of:
+        - Donor properties: residue type, backbone/sidechain, aromatic
+        - Acceptor properties: residue type, backbone/sidechain, aromatic
+
+        Format: "donor_props-acceptor_props" (e.g., "PBS-PS", "DS-LN")
+
+        :returns: Property description string
+        :rtype: str
+        """
+        # Get donor properties
+        donor_residue_type = getattr(self._donor, "residue_type", "L")
+        donor_backbone_sidechain = getattr(self._donor, "backbone_sidechain", "S")
+        donor_aromatic = getattr(self._donor, "aromatic", "N")
+
+        # Get acceptor properties
+        acceptor_residue_type = getattr(self._acceptor, "residue_type", "L")
+        acceptor_backbone_sidechain = getattr(self._acceptor, "backbone_sidechain", "S")
+        acceptor_aromatic = getattr(self._acceptor, "aromatic", "N")
+
+        # Build property strings
+        donor_props = f"{donor_residue_type}{donor_backbone_sidechain}{donor_aromatic}"
+        acceptor_props = (
+            f"{acceptor_residue_type}{acceptor_backbone_sidechain}{acceptor_aromatic}"
+        )
+
+        return f"{donor_props}-{acceptor_props}"
+
+    @property
+    def donor_acceptor_properties(self) -> str:
+        """Get the donor-acceptor property description.
+
+        :returns: Property description string
+        :rtype: str
+        """
+        return self._donor_acceptor_properties
+
+    def get_backbone_sidechain_interaction(self) -> str:
+        """Get simplified backbone/sidechain interaction description.
+
+        :returns: Interaction type (B-B, B-S, S-B, S-S)
+        :rtype: str
+        """
+        donor_bs = getattr(self._donor, "backbone_sidechain", "S")
+        acceptor_bs = getattr(self._acceptor, "backbone_sidechain", "S")
+        return f"{donor_bs}-{acceptor_bs}"
+
     def __str__(self) -> str:
         return (
             f"H-Bond: {self.donor_residue}({self._donor.name}) - "
             f"H - {self.acceptor_residue}({self._acceptor.name}) "
-            f"[{self.distance:.2f}Å, {math.degrees(self.angle):.1f}°]"
+            f"[{self.distance:.2f}Å, {math.degrees(self.angle):.1f}°] "
+            f"[{self.get_backbone_sidechain_interaction()}] [{self.donor_acceptor_properties}]"
         )
 
 
@@ -376,6 +439,16 @@ class HalogenBond(MolecularInteraction):
     def halogen_residue(self) -> str:
         """Legacy property for halogen residue."""
         return self._halogen_residue
+
+    @property
+    def donor(self) -> Atom:
+        """Property accessor for donor atom (halogen)."""
+        return self.halogen
+
+    @property
+    def acceptor(self) -> Atom:
+        """Property accessor for acceptor atom."""
+        return self._acceptor
 
     # MolecularInteraction interface implementation
     def get_donor(self) -> Union[Atom, NPVec3D]:
@@ -469,6 +542,9 @@ class PiInteraction(MolecularInteraction):
         self._donor_residue = _donor_residue
         self._pi_residue = _pi_residue
 
+        # Generate donor-acceptor property description
+        self._donor_acceptor_properties = self._generate_donor_acceptor_description()
+
     # Backward compatibility properties
     @property
     def distance(self) -> float:
@@ -482,6 +558,11 @@ class PiInteraction(MolecularInteraction):
     def pi_residue(self) -> str:
         """Legacy property for π residue."""
         return self._pi_residue
+
+    @property
+    def donor(self) -> Atom:
+        """Property accessor for donor atom."""
+        return self._donor
 
     # MolecularInteraction interface implementation
     def get_donor(self) -> Union[Atom, NPVec3D]:
@@ -504,11 +585,11 @@ class PiInteraction(MolecularInteraction):
 
     def get_donor_interaction_distance(self) -> float:
         """Distance from donor to hydrogen."""
-        return self._donor.coords.distance_to(self.hydrogen.coords)
+        return float(self._donor.coords.distance_to(self.hydrogen.coords))
 
     def get_donor_acceptor_distance(self) -> float:
         """Distance from donor to π center."""
-        return self._donor.coords.distance_to(self.pi_center)
+        return float(self._donor.coords.distance_to(self.pi_center))
 
     def get_donor_interaction_acceptor_angle(self) -> float:
         """D-H...π angle."""
@@ -526,10 +607,91 @@ class PiInteraction(MolecularInteraction):
         # by checking bond lists in the analyzer
         return True  # Assuming validation was done during creation
 
+    def _generate_donor_acceptor_description(self) -> str:
+        """Generate donor-acceptor property description string.
+
+        Describes the π interaction in terms of:
+        - Donor properties: residue type, backbone/sidechain, aromatic
+        - Acceptor properties: residue type, backbone/sidechain, aromatic (always aromatic for π)
+
+        Format: "donor_props-acceptor_props" (e.g., "PSN-PSA")
+
+        :returns: Property description string
+        :rtype: str
+        """
+        # Get donor properties
+        donor_residue_type = getattr(self._donor, "residue_type", "L")
+        donor_backbone_sidechain = getattr(self._donor, "backbone_sidechain", "S")
+        donor_aromatic = getattr(self._donor, "aromatic", "N")
+
+        # For π interactions, we need to determine acceptor properties from the π residue
+        # Since we don't have the actual π atoms, we'll use the residue info
+        from ..constants.pdb_constants import (
+            DNA_RESIDUES,
+            PROTEIN_RESIDUES,
+            RNA_RESIDUES,
+        )
+
+        pi_res_name = (
+            self._pi_residue.split("_")[0]
+            if "_" in self._pi_residue
+            else self._pi_residue.split(":")[0]
+        )
+
+        if pi_res_name in PROTEIN_RESIDUES:
+            acceptor_residue_type = "P"
+        elif pi_res_name in DNA_RESIDUES:
+            acceptor_residue_type = "D"
+        elif pi_res_name in RNA_RESIDUES:
+            acceptor_residue_type = "R"
+        else:
+            acceptor_residue_type = "L"
+
+        # π system atoms are always sidechain and aromatic
+        acceptor_backbone_sidechain = "S"
+        acceptor_aromatic = "A"
+
+        # Build property strings
+        donor_props = f"{donor_residue_type}{donor_backbone_sidechain}{donor_aromatic}"
+        acceptor_props = (
+            f"{acceptor_residue_type}{acceptor_backbone_sidechain}{acceptor_aromatic}"
+        )
+
+        return f"{donor_props}-{acceptor_props}"
+
+    @property
+    def donor_acceptor_properties(self) -> str:
+        """Get the donor-acceptor property description.
+
+        :returns: Property description string
+        :rtype: str
+        """
+        return self._donor_acceptor_properties
+
+    def get_backbone_sidechain_interaction(self) -> str:
+        """Get simplified backbone/sidechain interaction description.
+
+        :returns: Interaction type (B-S, S-S, etc.)
+        :rtype: str
+        """
+        donor_bs = getattr(self._donor, "backbone_sidechain", "S")
+        # π systems are always sidechain
+        acceptor_bs = "S"
+        return f"{donor_bs}-{acceptor_bs}"
+
+    def get_interaction_type_display(self) -> str:
+        """Get the interaction type for display purposes.
+
+        :returns: Display format like "D-H...π"
+        :rtype: str
+        """
+        return "D-H...π"
+
     def __str__(self) -> str:
         return (
             f"π-Int: {self._donor_residue}({self._donor.name}) - H...π - "
-            f"{self._pi_residue} [{self.distance:.2f}Å, {math.degrees(self.angle):.1f}°]"
+            f"{self._pi_residue} [{self.distance:.2f}Å, {math.degrees(self.angle):.1f}°] "
+            f"[{self.get_backbone_sidechain_interaction()}] [{self.donor_acceptor_properties}]"
         )
 
 
@@ -561,16 +723,20 @@ class CooperativityChain(MolecularInteraction):
     # MolecularInteraction interface implementation
     def get_donor(self) -> Union[Atom, NPVec3D]:
         """Get the donor of the first interaction in the chain."""
-        return self.interactions[0].get_donor() if self.interactions else None
+        if self.interactions:
+            return self.interactions[0].get_donor()
+        return NPVec3D(0, 0, 0)  # Return a default NPVec3D instead of None
 
     def get_acceptor(self) -> Union[Atom, NPVec3D]:
         """Get the acceptor of the last interaction in the chain."""
-        return self.interactions[-1].get_acceptor() if self.interactions else None
+        if self.interactions:
+            return self.interactions[-1].get_acceptor()
+        return NPVec3D(0, 0, 0)  # Return a default NPVec3D instead of None
 
     def get_interaction(self) -> Union[Atom, NPVec3D]:
         """Get the center point of the chain (middle interaction point)."""
         if not self.interactions:
-            return None
+            return NPVec3D(0, 0, 0)  # Return a default NPVec3D instead of None
         mid_idx = len(self.interactions) // 2
         return self.interactions[mid_idx].get_interaction()
 
@@ -600,9 +766,9 @@ class CooperativityChain(MolecularInteraction):
         mid_interaction = self.interactions[mid_idx].get_interaction()
 
         if isinstance(first_donor, Atom) and isinstance(mid_interaction, Atom):
-            return first_donor.coords.distance_to(mid_interaction.coords)
+            return float(first_donor.coords.distance_to(mid_interaction.coords))
         elif isinstance(first_donor, Atom) and isinstance(mid_interaction, NPVec3D):
-            return first_donor.coords.distance_to(mid_interaction)
+            return float(first_donor.coords.distance_to(mid_interaction))
         return 0.0
 
     def get_donor_acceptor_distance(self) -> float:
@@ -613,9 +779,9 @@ class CooperativityChain(MolecularInteraction):
         last_acceptor = self.interactions[-1].get_acceptor()
 
         if isinstance(first_donor, Atom) and isinstance(last_acceptor, Atom):
-            return first_donor.coords.distance_to(last_acceptor.coords)
+            return float(first_donor.coords.distance_to(last_acceptor.coords))
         elif isinstance(first_donor, Atom) and isinstance(last_acceptor, NPVec3D):
-            return first_donor.coords.distance_to(last_acceptor)
+            return float(first_donor.coords.distance_to(last_acceptor))
         return 0.0
 
     def get_donor_interaction_acceptor_angle(self) -> float:

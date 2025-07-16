@@ -38,7 +38,13 @@ def install_dependencies():
 def clean_build():
     """Clean previous build artifacts."""
     print("Cleaning previous builds...")
-    paths_to_clean = ["build", "dist", "__pycache__", "appimagetool-extracted", "squashfs-root"]
+    paths_to_clean = [
+        "build",
+        "dist",
+        "__pycache__",
+        "appimagetool-extracted",
+        "squashfs-root",
+    ]
 
     for path in paths_to_clean:
         if os.path.exists(path):
@@ -129,9 +135,9 @@ def build_cli():
 def create_appimage():
     """Create AppImage for better Linux distribution."""
     print("\nCreating AppImage...")
-    
+
     # Get version from environment or use default
-    version = os.environ.get('HBAT_VERSION', '2.0.0')
+    version = os.environ.get("HBAT_VERSION", "2.0.0")
 
     # Create AppDir structure
     appdir = Path("HBAT.AppDir")
@@ -183,7 +189,7 @@ Terminal=false
 
     with open(appdir / "usr" / "share" / "applications" / "hbat.desktop", "w") as f:
         f.write(desktop_content)
-    
+
     # Also create desktop file at root for appimagetool
     with open(appdir / "hbat.desktop", "w") as f:
         f.write(desktop_content)
@@ -209,7 +215,7 @@ fi
     # Download and extract appimagetool if not present
     appimagetool = "appimagetool-x86_64.AppImage"
     appimagetool_dir = "appimagetool-extracted"
-    
+
     if not os.path.exists(appimagetool_dir):
         if not os.path.exists(appimagetool):
             print("Downloading appimagetool...")
@@ -222,13 +228,16 @@ fi
             except Exception as e:
                 print(f"Failed to download appimagetool: {e}")
                 return False
-        
+
         # Extract appimagetool to avoid FUSE requirement
         print("Extracting appimagetool...")
         try:
             # Extract quietly to avoid verbose output
-            result = subprocess.run([f"./{appimagetool}", "--appimage-extract"], 
-                                  capture_output=True, text=True)
+            result = subprocess.run(
+                [f"./{appimagetool}", "--appimage-extract"],
+                capture_output=True,
+                text=True,
+            )
             if result.returncode != 0 and "squashfs-root" not in result.stdout:
                 print(f"Failed to extract appimagetool: {result.stderr}")
                 return False
@@ -246,13 +255,13 @@ fi
         env = os.environ.copy()
         env["ARCH"] = "x86_64"
         appimage_name = f"dist/HBAT-{version}-x86_64.AppImage"
-        
+
         # Check if desktop file exists at root (required by appimagetool)
         desktop_file = appdir / "hbat.desktop"
         if not desktop_file.exists():
             print(f"Error: Desktop file not found at {desktop_file}")
             return False
-            
+
         # Use the extracted AppRun instead of the AppImage
         print(f"Building AppImage with {appimagetool_dir}/AppRun...")
         result = subprocess.run(
@@ -261,12 +270,12 @@ fi
             text=True,
             env=env,
         )
-        
+
         if result.returncode != 0:
             print(f"AppImage build failed: {result.stderr}")
             print(f"stdout: {result.stdout}")
             return False
-            
+
         shutil.rmtree(appdir)
         print(f"✓ AppImage created successfully: HBAT-{version}-x86_64.AppImage")
         return True
@@ -278,9 +287,9 @@ fi
 def create_deb_package():
     """Create .deb package for Debian/Ubuntu."""
     print("\nCreating .deb package...")
-    
+
     # Get version from environment or use default
-    version = os.environ.get('HBAT_VERSION', '2.0.0')
+    version = os.environ.get("HBAT_VERSION", "2.0.0")
 
     # Create debian package structure
     debdir = Path("hbat-deb")
@@ -349,7 +358,8 @@ Description: Hydrogen Bond Analysis Tool
     # Build .deb package
     try:
         subprocess.run(
-            ["dpkg-deb", "--build", "hbat-deb", f"dist/hbat_{version}_amd64.deb"], check=True
+            ["dpkg-deb", "--build", "hbat-deb", f"dist/hbat_{version}_amd64.deb"],
+            check=True,
         )
         shutil.rmtree(debdir)
         print(f"✓ .deb package created successfully: hbat_{version}_amd64.deb")
@@ -365,9 +375,9 @@ def main():
     """Main build function."""
     print("HBAT Linux Build Script")
     print("=" * 40)
-    
+
     # Get version from environment or use default
-    version = os.environ.get('HBAT_VERSION', '2.0.0')
+    version = os.environ.get("HBAT_VERSION", "2.0.0")
     print(f"Building version: {version}")
 
     # Check we're in the right directory

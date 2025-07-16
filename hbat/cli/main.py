@@ -18,6 +18,47 @@ from ..core.analysis import AnalysisParameters, NPMolecularInteractionAnalyzer
 from ..core.pdb_parser import PDBParser
 
 
+class ProgressBar:
+    """Simple CLI progress bar for analysis operations."""
+
+    def __init__(self, width: int = 50):
+        """Initialize progress bar.
+
+        :param width: Width of the progress bar in characters
+        :type width: int
+        """
+        self.width = width
+        self.current_step = ""
+        self.last_progress = -1
+
+    def update(self, message: str, progress: Optional[int] = None) -> None:
+        """Update progress bar with new message and optional percentage.
+
+        :param message: Current operation message
+        :type message: str
+        :param progress: Progress percentage (0-100), optional
+        :type progress: Optional[int]
+        """
+        # Clear previous line and print new status
+        print(f"\r\033[K[INFO] {message}", end="", flush=True)
+
+        if progress is not None and progress != self.last_progress:
+            # Add progress bar for percentage updates with emoji
+            filled_width = int(self.width * progress / 100)
+            bar = "●" * filled_width + "○" * (self.width - filled_width)
+            print(f" [{bar}] {progress}%", end="", flush=True)
+            self.last_progress = progress
+
+    def finish(self, message: str) -> None:
+        """Finish progress bar with final message.
+
+        :param message: Final completion message
+        :type message: str
+        """
+        print(f"\r\033[K[INFO] {message}")
+        self.last_progress = -1
+
+
 def create_parser() -> argparse.ArgumentParser:
     """Create command-line argument parser.
 
@@ -766,6 +807,8 @@ def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) ->
                     "Angle_deg",
                     "DA_Distance_A",
                     "Bond_Type",
+                    "D-A_Properties",
+                    "B/S",
                 ]
             )
 
@@ -781,6 +824,8 @@ def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) ->
                         f"{math.degrees(hb.angle):.1f}",
                         f"{hb.donor_acceptor_distance:.3f}",
                         hb.bond_type,
+                        hb.donor_acceptor_properties,
+                        hb.get_backbone_sidechain_interaction(),
                     ]
                 )
             writer.writerow([])  # Empty row
@@ -825,6 +870,9 @@ def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) ->
                     "Pi_Residue",
                     "Distance_A",
                     "Angle_deg",
+                    "Type",
+                    "D-A_Properties",
+                    "B/S",
                 ]
             )
 
@@ -837,6 +885,9 @@ def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) ->
                         pi.pi_residue,
                         f"{pi.distance:.3f}",
                         f"{math.degrees(pi.angle):.1f}",
+                        pi.get_interaction_type_display(),
+                        pi.donor_acceptor_properties,
+                        pi.get_backbone_sidechain_interaction(),
                     ]
                 )
 
@@ -868,16 +919,60 @@ def run_analysis(args: argparse.Namespace) -> int:
         # Create analyzer
         analyzer = NPMolecularInteractionAnalyzer(parameters)
 
+        # Set up progress tracking (show unless quiet mode)
+        progress_bar = None
+        if not args.quiet:
+            progress_bar = ProgressBar()
+
+            def cli_progress_callback(message: str) -> None:
+                """Progress callback for CLI updates."""
+                # Use progress bar for clean display
+                if progress_bar:
+                    # Extract percentage if present in message
+                    if "%" in message:
+                        try:
+                            # Split on space to get the percentage part
+                            parts = message.split()
+                            percent_part = None
+                            for part in parts:
+                                if "%" in part:
+                                    percent_part = part.replace("%", "")
+                                    break
+
+                            if percent_part and percent_part.isdigit():
+                                progress = int(percent_part)
+                                # Get the step name (everything before the percentage)
+                                step_name = message.split(f" {percent_part}%")[0]
+                                progress_bar.update(step_name, progress)
+                            else:
+                                progress_bar.update(message)
+                        except (ValueError, IndexError):
+                            progress_bar.update(message)
+                    else:
+                        progress_bar.update(message)
+                else:
+                    # Fallback if no progress bar
+                    print_progress(message, verbose)
+
+            analyzer.progress_callback = cli_progress_callback
+
         # Run analysis
         start_time = time.time()
         success = analyzer.analyze_file(args.input)
         analysis_time = time.time() - start_time
 
         if not success:
+            if progress_bar:
+                progress_bar.finish("Analysis failed")
             print_error("Analysis failed")
             return 1
 
-        print_progress(f"Analysis completed in {analysis_time:.2f} seconds", verbose)
+        if progress_bar:
+            progress_bar.finish(f"Analysis completed in {analysis_time:.2f} seconds")
+        else:
+            print_progress(
+                f"Analysis completed in {analysis_time:.2f} seconds", verbose
+            )
 
         # Get results
         summary = analyzer.get_summary()

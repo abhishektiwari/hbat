@@ -193,6 +193,9 @@ class Atom:
         element: str,
         charge: str,
         record_type: str,
+        residue_type: str = "L",
+        backbone_sidechain: str = "S",
+        aromatic: str = "N",
     ) -> None:
         """Initialize an Atom object.
 
@@ -236,6 +239,9 @@ class Atom:
         self.element = element
         self.charge = charge
         self.record_type = record_type
+        self.residue_type = residue_type
+        self.backbone_sidechain = backbone_sidechain
+        self.aromatic = aromatic
 
     def is_hydrogen(self) -> bool:
         """Check if atom is hydrogen.
@@ -273,6 +279,9 @@ class Atom:
         yield ("element", self.element)
         yield ("charge", self.charge)
         yield ("record_type", self.record_type)
+        yield ("residue_type", self.residue_type)
+        yield ("backbone_sidechain", self.backbone_sidechain)
+        yield ("aromatic", self.aromatic)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert atom to dictionary.
@@ -303,6 +312,9 @@ class Atom:
             "element",
             "charge",
             "record_type",
+            "residue_type",
+            "backbone_sidechain",
+            "aromatic",
         ]
 
     def __repr__(self) -> str:
@@ -327,6 +339,9 @@ class Atom:
             and self.element == other.element
             and self.charge == other.charge
             and self.record_type == other.record_type
+            and self.residue_type == other.residue_type
+            and self.backbone_sidechain == other.backbone_sidechain
+            and self.aromatic == other.aromatic
         )
 
 

@@ -19,3 +19,6 @@ pybel>=0.15.5
 # mmCIF/BinaryCIF parsing
 mmcif-pdbx>=2.0.1
 mmcif>=0.92.0
+
+# Tkinter async support
+tkinter-async-execute>=1.4.0

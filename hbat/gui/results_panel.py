@@ -72,18 +72,29 @@ class ResultsPanel:
         summary_frame = ttk.Frame(self.notebook)
         self.notebook.add(summary_frame, text="Summary")
 
-        # Create text widget with scrollbar
+        # Create text widget with scrollbars
         text_frame = ttk.Frame(summary_frame)
         text_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        self.summary_text = tk.Text(text_frame, wrap=tk.WORD, font=("Courier", 12))
-        summary_scrollbar = ttk.Scrollbar(
+        self.summary_text = tk.Text(text_frame, wrap=tk.NONE, font=("Courier", 12))
+        summary_v_scrollbar = ttk.Scrollbar(
             text_frame, orient=tk.VERTICAL, command=self.summary_text.yview
         )
-        self.summary_text.configure(yscrollcommand=summary_scrollbar.set)
+        summary_h_scrollbar = ttk.Scrollbar(
+            text_frame, orient=tk.HORIZONTAL, command=self.summary_text.xview
+        )
+        self.summary_text.configure(
+            yscrollcommand=summary_v_scrollbar.set,
+            xscrollcommand=summary_h_scrollbar.set,
+        )
 
-        self.summary_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        summary_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        # Use grid layout for proper scrollbar positioning
+        self.summary_text.grid(row=0, column=0, sticky="nsew")
+        summary_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        summary_h_scrollbar.grid(row=1, column=0, sticky="ew")
+
+        text_frame.grid_rowconfigure(0, weight=1)
+        text_frame.grid_columnconfigure(0, weight=1)
 
         # Configure text tags for formatting
         self.summary_text.tag_configure(
@@ -110,6 +121,8 @@ class ResultsPanel:
             "angle",
             "da_distance",
             "type",
+            "da_props",
+            "bs_int",
         )
 
         self.hb_tree = ttk.Treeview(
@@ -125,16 +138,20 @@ class ResultsPanel:
         self.hb_tree.heading("angle", text="Angle (°)")
         self.hb_tree.heading("da_distance", text="D...A (Å)")
         self.hb_tree.heading("type", text="Type")
+        self.hb_tree.heading("da_props", text="D-A Props")
+        self.hb_tree.heading("bs_int", text="B/S")
 
         # Configure column widths
-        self.hb_tree.column("donor_res", width=100)
-        self.hb_tree.column("donor_atom", width=80)
-        self.hb_tree.column("acceptor_res", width=100)
-        self.hb_tree.column("acceptor_atom", width=80)
-        self.hb_tree.column("distance", width=80)
-        self.hb_tree.column("angle", width=80)
-        self.hb_tree.column("da_distance", width=80)
-        self.hb_tree.column("type", width=100)
+        self.hb_tree.column("donor_res", width=120)
+        self.hb_tree.column("donor_atom", width=100)
+        self.hb_tree.column("acceptor_res", width=120)
+        self.hb_tree.column("acceptor_atom", width=100)
+        self.hb_tree.column("distance", width=90)
+        self.hb_tree.column("angle", width=90)
+        self.hb_tree.column("da_distance", width=90)
+        self.hb_tree.column("type", width=120)
+        self.hb_tree.column("da_props", width=100)
+        self.hb_tree.column("bs_int", width=70)
 
         # Add scrollbars
         hb_v_scrollbar = ttk.Scrollbar(
@@ -211,13 +228,13 @@ class ResultsPanel:
         self.xb_tree.heading("type", text="Type")
 
         # Configure column widths
-        self.xb_tree.column("halogen_res", width=120)
-        self.xb_tree.column("halogen_atom", width=100)
-        self.xb_tree.column("acceptor_res", width=120)
-        self.xb_tree.column("acceptor_atom", width=100)
-        self.xb_tree.column("distance", width=80)
-        self.xb_tree.column("angle", width=80)
-        self.xb_tree.column("type", width=100)
+        self.xb_tree.column("halogen_res", width=140)
+        self.xb_tree.column("halogen_atom", width=120)
+        self.xb_tree.column("acceptor_res", width=140)
+        self.xb_tree.column("acceptor_atom", width=120)
+        self.xb_tree.column("distance", width=90)
+        self.xb_tree.column("angle", width=90)
+        self.xb_tree.column("type", width=120)
 
         # Add scrollbars
         xb_v_scrollbar = ttk.Scrollbar(
@@ -270,7 +287,16 @@ class ResultsPanel:
         tree_frame = ttk.Frame(pi_frame)
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        columns = ("donor_res", "donor_atom", "pi_res", "distance", "angle")
+        columns = (
+            "donor_res",
+            "donor_atom",
+            "pi_res",
+            "distance",
+            "angle",
+            "type",
+            "da_props",
+            "bs_int",
+        )
 
         self.pi_tree = ttk.Treeview(
             tree_frame, columns=columns, show="headings", height=15
@@ -282,13 +308,19 @@ class ResultsPanel:
         self.pi_tree.heading("pi_res", text="π Residue")
         self.pi_tree.heading("distance", text="H...π (Å)")
         self.pi_tree.heading("angle", text="Angle (°)")
+        self.pi_tree.heading("type", text="Type")
+        self.pi_tree.heading("da_props", text="D-A Props")
+        self.pi_tree.heading("bs_int", text="B/S")
 
         # Configure column widths
-        self.pi_tree.column("donor_res", width=120)
-        self.pi_tree.column("donor_atom", width=100)
-        self.pi_tree.column("pi_res", width=120)
-        self.pi_tree.column("distance", width=100)
-        self.pi_tree.column("angle", width=100)
+        self.pi_tree.column("donor_res", width=140)
+        self.pi_tree.column("donor_atom", width=120)
+        self.pi_tree.column("pi_res", width=140)
+        self.pi_tree.column("distance", width=110)
+        self.pi_tree.column("angle", width=110)
+        self.pi_tree.column("type", width=90)
+        self.pi_tree.column("da_props", width=100)
+        self.pi_tree.column("bs_int", width=70)
 
         # Add scrollbars
         pi_v_scrollbar = ttk.Scrollbar(
@@ -353,9 +385,9 @@ class ResultsPanel:
         self.coop_tree.heading("chain_description", text="Chain Description")
 
         # Configure column widths
-        self.coop_tree.column("chain_id", width=80)
-        self.coop_tree.column("chain_length", width=80)
-        self.coop_tree.column("chain_description", width=800)
+        self.coop_tree.column("chain_id", width=100)
+        self.coop_tree.column("chain_length", width=100)
+        self.coop_tree.column("chain_description", width=1000)
 
         # Add scrollbars
         coop_v_scrollbar = ttk.Scrollbar(
@@ -657,6 +689,8 @@ class ResultsPanel:
                     f"{math.degrees(hb.angle):.1f}",
                     f"{hb.donor_acceptor_distance:.2f}",
                     hb.bond_type,
+                    hb.donor_acceptor_properties,
+                    hb.get_backbone_sidechain_interaction(),
                 ),
             )
 
@@ -705,6 +739,9 @@ class ResultsPanel:
                     pi.pi_residue,
                     f"{pi.distance:.2f}",
                     f"{math.degrees(pi.angle):.1f}",
+                    pi.get_interaction_type_display(),
+                    pi.donor_acceptor_properties,
+                    pi.get_backbone_sidechain_interaction(),
                 ),
             )
 

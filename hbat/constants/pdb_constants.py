@@ -745,3 +745,107 @@ Used for:
     - DNA/RNA-protein interface interactions
     - Nucleotide base stacking analysis
 """
+
+HYDROPHOBIC_RESIDUES: List[str] = [
+    "VAL",
+    "LEU",
+    "ILE",
+    "MET",
+    "PHE",
+    "TRP",
+    "PRO",
+    "ALA",
+]
+"""List[str]: Hydrophobic amino acid residues with nonpolar side chains.
+
+These amino acids have side chains that are predominantly nonpolar and hydrophobic:
+    - VAL (Valine): Branched aliphatic chain
+    - LEU (Leucine): Branched aliphatic chain
+    - ILE (Isoleucine): Branched aliphatic chain
+    - MET (Methionine): Sulfur-containing nonpolar chain
+    - PHE (Phenylalanine): Aromatic benzyl group
+    - TRP (Tryptophan): Aromatic indole group
+    - PRO (Proline): Cyclic imino acid structure
+    - ALA (Alanine): Simple methyl group
+
+Used for:
+    - Hydrophobic interaction analysis
+    - Protein folding studies
+    - Membrane protein analysis
+    - Hydrophobic patch identification
+"""
+
+CHARGED_RESIDUES: List[str] = ["ARG", "LYS", "ASP", "GLU", "HIS"]
+"""List[str]: Charged amino acid residues with ionizable side chains.
+
+These amino acids carry formal charges at physiological pH:
+    - ARG (Arginine): Positively charged guanidinium group (+1)
+    - LYS (Lysine): Positively charged amino group (+1)
+    - ASP (Aspartic acid): Negatively charged carboxylate group (-1)
+    - GLU (Glutamic acid): Negatively charged carboxylate group (-1)
+    - HIS (Histidine): Can be positively charged imidazolium group (pKa ~6)
+
+Used for:
+    - Electrostatic interaction analysis
+    - Salt bridge identification
+    - pH-dependent behavior studies
+    - Ion binding site analysis
+"""
+
+RESIDUE_TYPES: List[str] = ["DNA", "RNA", "PROTEIN", "LIGAND"]
+"""List[str]: Standard residue type classifications for molecular analysis.
+
+Classification categories for different types of molecular residues:
+    - DNA: Deoxyribonucleotide residues (DA, DG, DC, DT, DI)
+    - RNA: Ribonucleotide residues (A, G, C, U, I)
+    - PROTEIN: Amino acid residues (20 standard amino acids and variants)
+    - LIGAND: Ligands, cofactors, metals, and other heteroatom residues
+
+Used for:
+    - Residue type identification and classification
+    - Molecular component analysis
+    - Structure validation and processing
+    - Interaction type determination
+"""
+
+# Single letter codes for atom properties
+RESIDUE_TYPE_CODES: Dict[str, str] = {
+    "DNA": "D",
+    "RNA": "R",
+    "PROTEIN": "P",
+    "LIGAND": "L",
+}
+"""Dict[str, str]: Single letter codes for residue types.
+
+Mapping of full residue type names to compact single letter codes:
+    - "DNA" → "D": Deoxyribonucleotide residues
+    - "RNA" → "R": Ribonucleotide residues  
+    - "PROTEIN" → "P": Amino acid residues
+    - "LIGAND" → "L": Ligands, cofactors, metals, and other heteroatom residues
+
+Used for compact representation in hydrogen bond descriptions and atom records.
+"""
+
+BACKBONE_SIDECHAIN_CODES: Dict[str, str] = {
+    "BACKBONE": "B",
+    "SIDECHAIN": "S",
+    "NOT_APPLICABLE": "N",
+}
+"""Dict[str, str]: Single letter codes for backbone vs sidechain classification.
+
+Mapping of atom structural classification to compact single letter codes:
+    - "BACKBONE" → "B": Main chain atoms (protein backbone, DNA/RNA sugar-phosphate)
+    - "SIDECHAIN" → "S": Side chain atoms (protein R-groups, nucleotide bases)
+
+Used for describing hydrogen bond donor-acceptor relationships (e.g., S-S, S-B, B-B).
+"""
+
+AROMATIC_CODES: Dict[str, str] = {"AROMATIC": "A", "NON-AROMATIC": "N"}
+"""Dict[str, str]: Single letter codes for aromatic classification.
+
+Mapping of aromatic property classification to compact single letter codes:
+    - "AROMATIC" → "A": Atoms that are part of aromatic ring systems
+    - "NON-AROMATIC" → "N": Atoms that are not part of aromatic ring systems
+
+Used for identifying atoms involved in π-interactions and aromatic stacking.
+"""

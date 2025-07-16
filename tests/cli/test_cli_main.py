@@ -17,224 +17,8 @@ from hbat.cli.main import (
 from hbat.core.analysis import AnalysisParameters
 
 
-class TestCLIArgumentParsing:
-    """Test CLI argument parsing functionality."""
-    
-    def test_parser_creation(self):
-        """Test that parser can be created."""
-        parser = create_parser()
-        assert parser is not None
-        
-        help_text = parser.format_help()
-        assert "HBAT" in help_text
-        assert "input" in help_text
-        assert "--hb-distance" in help_text
-    
-    def test_basic_argument_parsing(self):
-        """Test basic argument parsing."""
-        parser = create_parser()
-        
-        # Test with minimal arguments
-        args = parser.parse_args(["test.pdb"])
-        assert args.input == "test.pdb"
-        
-        # Test with output options
-        args = parser.parse_args(["test.pdb", "-o", "output.txt"])
-        assert args.input == "test.pdb"
-        assert args.output == "output.txt"
-    
-    def test_parameter_arguments(self):
-        """Test parameter-specific arguments."""
-        parser = create_parser()
-        
-        args = parser.parse_args([
-            "test.pdb",
-            "--hb-distance", "3.0",
-            "--hb-angle", "130",
-            "--mode", "local"
-        ])
-        
-        assert args.hb_distance == 3.0
-        assert args.hb_angle == 130.0
-        assert args.mode == "local"
-    
-    def test_preset_arguments(self):
-        """Test preset-related arguments."""
-        parser = create_parser()
-        
-        # Test preset option
-        args = parser.parse_args(["test.pdb", "--preset", "high_resolution"])
-        assert args.preset == "high_resolution"
-        
-        # Test list presets option
-        args = parser.parse_args(["--list-presets"])
-        assert args.list_presets is True
-        assert args.input is None  # Should be optional when listing presets
-    
-    def test_pdb_fixing_arguments(self):
-        """Test PDB fixing arguments."""
-        parser = create_parser()
-        
-        # Test basic PDB fixing arguments
-        args = parser.parse_args([
-            "test.pdb",
-            "--fix-pdb",
-            "--fix-method", "pdbfixer",
-            "--fix-add-hydrogens",
-            "--fix-add-heavy-atoms"
-        ])
-        
-        assert args.fix_pdb is True
-        assert args.fix_method == "pdbfixer"
-        assert args.fix_add_hydrogens is True
-        assert args.fix_add_heavy_atoms is True
-        
-        # Test PDBFixer-specific arguments
-        args = parser.parse_args([
-            "test.pdb",
-            "--fix-pdb",
-            "--fix-method", "pdbfixer",
-            "--fix-replace-nonstandard",
-            "--fix-remove-heterogens",
-            "--fix-keep-water"
-        ])
-        
-        assert args.fix_replace_nonstandard is True
-        assert args.fix_remove_heterogens is True
-        assert args.fix_keep_water is True
-    
-    def test_output_format_arguments(self):
-        """Test output format arguments."""
-        parser = create_parser()
-        
-        args = parser.parse_args([
-            "test.pdb",
-            "--json", "output.json",
-            "--csv", "output.csv",
-            "--verbose"
-        ])
-        
-        assert args.json == "output.json"
-        assert args.csv == "output.csv"
-        assert args.verbose is True
-    
-    def test_analysis_filter_arguments(self):
-        """Test analysis filter arguments."""
-        parser = create_parser()
-        
-        args = parser.parse_args([
-            "test.pdb",
-            "--no-hydrogen-bonds",
-            "--no-halogen-bonds"
-        ])
-        
-        assert args.no_hydrogen_bonds is True
-        assert args.no_halogen_bonds is True
-
-
-class TestParameterLoading:
-    """Test parameter loading from CLI arguments."""
-    
-    def test_default_parameter_loading(self):
-        """Test loading default parameters."""
-        parser = create_parser()
-        args = parser.parse_args(["test.pdb"])
-        
-        params = load_parameters_from_args(args)
-        assert isinstance(params, AnalysisParameters)
-        assert params.hb_distance_cutoff > 0
-        assert params.hb_angle_cutoff > 0
-    
-    def test_custom_parameter_loading(self):
-        """Test loading custom parameters."""
-        parser = create_parser()
-        args = parser.parse_args([
-            "test.pdb",
-            "--hb-distance", "3.2",
-            "--hb-angle", "140",
-            "--mode", "local"
-        ])
-        
-        params = load_parameters_from_args(args)
-        assert params.hb_distance_cutoff == 3.2
-        assert params.hb_angle_cutoff == 140.0
-        assert params.analysis_mode == "local"
-    
-    def test_pdb_fixing_parameter_loading(self):
-        """Test loading PDB fixing parameters."""
-        parser = create_parser()
-        args = parser.parse_args([
-            "test.pdb",
-            "--fix-pdb",
-            "--fix-method", "openbabel",
-            "--fix-add-hydrogens"
-        ])
-        
-        params = load_parameters_from_args(args)
-        assert params.fix_pdb_enabled is True
-        assert params.fix_pdb_method == "openbabel"
-        assert params.fix_pdb_add_hydrogens is True
-        assert params.fix_pdb_add_heavy_atoms is False  # Default
-        
-        # Test PDBFixer parameters
-        args = parser.parse_args([
-            "test.pdb",
-            "--fix-pdb",
-            "--fix-method", "pdbfixer",
-            "--fix-add-heavy-atoms",
-            "--fix-replace-nonstandard",
-            "--fix-remove-heterogens",
-            "--fix-keep-water"
-        ])
-        
-        params = load_parameters_from_args(args)
-        assert params.fix_pdb_enabled is True
-        assert params.fix_pdb_method == "pdbfixer"
-        assert params.fix_pdb_add_heavy_atoms is True
-        assert params.fix_pdb_replace_nonstandard is True
-        assert params.fix_pdb_remove_heterogens is True
-        assert params.fix_pdb_keep_water is True
-    
-    def test_preset_parameter_loading(self):
-        """Test loading parameters from preset."""
-        parser = create_parser()
-        
-        # Find an available preset
-        presets_dir = get_example_presets_directory()
-        if os.path.exists(presets_dir):
-            preset_files = [f for f in os.listdir(presets_dir) if f.endswith('.hbat')]
-            if preset_files:
-                preset_name = preset_files[0].replace('.hbat', '')
-                
-                args = parser.parse_args(["test.pdb", "--preset", preset_name])
-                params = load_parameters_from_args(args)
-                
-                assert isinstance(params, AnalysisParameters)
-                # Parameters should be loaded from preset
-                assert params.hb_distance_cutoff > 0
-    
-    def test_preset_with_override(self):
-        """Test preset loading with parameter overrides."""
-        parser = create_parser()
-        
-        # Find an available preset
-        presets_dir = get_example_presets_directory()
-        if os.path.exists(presets_dir):
-            preset_files = [f for f in os.listdir(presets_dir) if f.endswith('.hbat')]
-            if preset_files:
-                preset_name = preset_files[0].replace('.hbat', '')
-                
-                args = parser.parse_args([
-                    "test.pdb", 
-                    "--preset", preset_name,
-                    "--hb-distance", "2.8"
-                ])
-                params = load_parameters_from_args(args)
-                
-                # Override should take effect
-                assert params.hb_distance_cutoff == 2.8
-
-
+@pytest.mark.cli
+@pytest.mark.integration
 class TestPresetManagement:
     """Test preset management functionality."""
     
@@ -357,6 +141,7 @@ class TestPresetManagement:
             os.unlink(temp_path)
 
 
+@pytest.mark.cli
 class TestCLIIntegration:
     """Test CLI integration with analysis engine."""
     
@@ -441,6 +226,7 @@ class TestCLIIntegration:
             os.unlink(temp_path)
 
 
+@pytest.mark.cli
 class TestCLIHelp:
     """Test CLI help and documentation."""
     

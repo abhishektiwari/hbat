@@ -1,6 +1,6 @@
 # HBAT Development Makefile
 
-.PHONY: help install install-dev test test-fast test-legacy test-pytest test-core test-cli test-gui test-coverage test-ccd clean lint format type-check docs generate-ccd-bonds
+.PHONY: help install install-dev test test-all test-fast test-legacy test-pytest test-unit test-integration test-e2e test-performance test-cli test-gui test-coverage test-ccd clean lint format type-check docs generate-ccd-bonds
 
 # Default target
 help:
@@ -9,11 +9,15 @@ help:
 	@echo "  install-dev   Install with development dependencies"
 	@echo ""
 	@echo "Testing:"
-	@echo "  test          Run comprehensive test suite (recommended)"
+	@echo "  test          Run comprehensive test suite (excludes slow tests)"
+	@echo "  test-all      Run ALL tests including slow performance tests"
 	@echo "  test-fast     Run fast tests only (skip slow integration tests)"
 	@echo "  test-legacy   Run legacy test runner"
 	@echo "  test-pytest   Run tests with pytest (if available)"
-	@echo "  test-core     Run core module tests only"
+	@echo "  test-unit     Run unit tests only (fast, isolated)"
+	@echo "  test-integration Run integration tests only (component interactions)"
+	@echo "  test-e2e      Run end-to-end workflow tests only"
+	@echo "  test-performance Run performance benchmark tests only"
 	@echo "  test-cli      Run CLI tests only"
 	@echo "  test-gui      Run GUI tests only (requires display)"
 	@echo "  test-coverage Generate test coverage report"
@@ -32,6 +36,7 @@ help:
 	@echo "Development:"
 	@echo "  clean         Clean build artifacts"
 	@echo "  docs          Build documentation"
+	@echo "  docs-watch    Build docs with auto-reload and open browser"
 	@echo "  run-gui       Launch GUI application"
 	@echo "  run-cli       Run CLI with test file"
 	@echo "  generate-ccd-bonds Generate residue bond constants from CCD files"
@@ -46,12 +51,16 @@ install-dev:
 
 # Testing
 test:
-	@echo "Running additional pytest tests if available..."
-	-pytest tests/ -v
+	@echo "Running all tests except slow ones..."
+	pytest tests/ -v -m "not slow"
 
 test-fast:
 	@echo "Running fast tests only..."
 	cd tests && python run_tests.py --fast
+
+test-all:
+	@echo "Running ALL tests including slow ones..."
+	pytest tests/ -v
 
 test-pytest:
 	@echo "Running tests with pytest..."
@@ -59,23 +68,35 @@ test-pytest:
 
 test-cli:
 	@echo "Running CLI tests..."
-	cd tests && python run_tests.py --cli --fast
-
-test-core:
-	@echo "Running core tests..."
-	cd tests && python run_tests.py --core --fast
+	pytest tests/cli/ -v -m "cli"
 
 test-coverage:
-	@echo "Running tests with coverage..."
-	cd tests && python run_tests.py --coverage
+	@echo "Running tests with coverage...(excludes slow tests)"
+	pytest tests/ -v -m "not slow" --cov --cov-branch --cov-report=xml --junitxml=junit.xml -o junit_family=legacy 
 
 test-gui:
 	@echo "Running GUI tests..."
-	cd tests && python run_tests.py --gui --fast
+	pytest tests/gui/ -v -m "gui"
+
+test-unit:
+	@echo "Running unit tests..."
+	pytest tests/unit/ -v -m "unit"
+
+test-integration:
+	@echo "Running integration tests..."
+	pytest tests/integration/ -v -m "integration"
+
+test-e2e:
+	@echo "Running end-to-end tests..."
+	pytest tests/e2e/ -v -m "e2e"
+
+test-performance:
+	@echo "Running performance tests..."
+	pytest tests/performance/ -v -m "performance"
 
 test-ccd:
 	@echo "Running CCD performance tests..."
-	pytest tests/core/test_ccd_performance.py -v -m "ccd"
+	pytest tests/performance/test_ccd_performance.py -v -m "ccd"
 
 # Code quality
 lint:
@@ -124,6 +145,10 @@ docs-serve:
 	else \
 		echo "Documentation not built. Run 'make docs' first."; \
 	fi
+
+docs-watch:
+	@echo "Building and watching documentation with auto-reload (requires sphinx-autobuild)..."
+	sphinx-autobuild docs/source/ docs/build/html/ --open-browser
 
 # Development runners
 run-gui:

@@ -241,3 +241,10 @@ experiments/*
 ccd-data/*
 !ccd-data/.gitkeep
 !ccd-data/README.md
+
+# Ignore config files
+hbat/config/*
+
+# XML files
+junit.xml
+coverage.xml

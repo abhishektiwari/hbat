@@ -67,31 +67,31 @@ class NPVec3D:
         """X coordinate(s)."""
         if self._data.ndim == 1:
             return float(self._data[0])
-        return self._data[:, 0]
+        return self._data[:, 0]  # type: ignore[no-any-return]
 
     @property
     def y(self) -> Union[float, np.ndarray]:
         """Y coordinate(s)."""
         if self._data.ndim == 1:
             return float(self._data[1])
-        return self._data[:, 1]
+        return self._data[:, 1]  # type: ignore[no-any-return]
 
     @property
     def z(self) -> Union[float, np.ndarray]:
         """Z coordinate(s)."""
         if self._data.ndim == 1:
             return float(self._data[2])
-        return self._data[:, 2]
+        return self._data[:, 2]  # type: ignore[no-any-return]
 
     @property
     def shape(self) -> Tuple[int, ...]:
         """Shape of the underlying array."""
-        return self._data.shape
+        return self._data.shape  # type: ignore[no-any-return]
 
     @property
     def is_batch(self) -> bool:
         """Whether this represents multiple vectors."""
-        return self._data.ndim == 2
+        return self._data.ndim == 2  # type: ignore[no-any-return]
 
     def __repr__(self) -> str:
         if self._data.ndim == 1:
@@ -127,11 +127,11 @@ class NPVec3D:
         """Scalar division."""
         return NPVec3D(self._data / scalar)
 
-    def __eq__(self, other: object) -> Union[bool, np.ndarray]:
+    def __eq__(self, other: object) -> bool:
         """Vector equality comparison."""
         if not isinstance(other, NPVec3D):
             return False
-        return np.allclose(self._data, other._data, atol=1e-10)
+        return bool(np.allclose(self._data, other._data, atol=1e-10))
 
     def __getitem__(
         self, index: Union[int, slice, np.ndarray]
@@ -156,13 +156,13 @@ class NPVec3D:
             return float(np.dot(self._data, other._data))
         elif self._data.ndim == 1:
             # Single vector dot batch
-            return np.dot(other._data, self._data)
+            return np.dot(other._data, self._data)  # type: ignore[no-any-return]
         elif other._data.ndim == 1:
             # Batch dot single vector
-            return np.dot(self._data, other._data)
+            return np.dot(self._data, other._data)  # type: ignore[no-any-return]
         else:
             # Batch dot batch
-            return np.sum(self._data * other._data, axis=1)
+            return np.sum(self._data * other._data, axis=1)  # type: ignore[no-any-return]
 
     def cross(self, other: "NPVec3D") -> "NPVec3D":
         """Cross product with another vector.
@@ -182,7 +182,7 @@ class NPVec3D:
         """
         if self._data.ndim == 1:
             return float(np.linalg.norm(self._data))
-        return np.linalg.norm(self._data, axis=1)
+        return np.linalg.norm(self._data, axis=1)  # type: ignore[no-any-return]
 
     def magnitude(self) -> Union[float, np.ndarray]:
         """Alias for length()."""
@@ -235,7 +235,7 @@ class NPVec3D:
             cos_angle = dot_product / mag_product
             # Clamp to avoid numerical errors
             cos_angle = np.clip(cos_angle, -1.0, 1.0)
-            return np.arccos(cos_angle)
+            return np.arccos(cos_angle)  # type: ignore[no-any-return]
         else:
             if mag_product == 0:
                 return 0.0
@@ -250,7 +250,7 @@ class NPVec3D:
         :returns: Numpy array of coordinates
         :rtype: np.ndarray
         """
-        return self._data.copy()
+        return self._data.copy()  # type: ignore[no-any-return]
 
     def to_list(self) -> List[float]:
         """Convert to list [x, y, z] (single vector only).
@@ -260,7 +260,7 @@ class NPVec3D:
         """
         if self._data.ndim != 1:
             raise ValueError("to_list() only works for single vectors")
-        return self._data.tolist()
+        return self._data.tolist()  # type: ignore[no-any-return]
 
     def to_tuple(self) -> Tuple[float, float, float]:
         """Convert to tuple (x, y, z) (single vector only).
@@ -292,7 +292,7 @@ class NPVec3D:
         :returns: New NPVec3D instance
         :rtype: NPVec3D
         """
-        return cls(coords)
+        return cls(coords)  # type: ignore[arg-type]
 
     @classmethod
     def from_atoms(cls, atoms: List) -> "NPVec3D":
@@ -325,7 +325,7 @@ def compute_distance_matrix(
     # Efficient pairwise distance computation
     diff = coords1[:, np.newaxis, :] - coords2[np.newaxis, :, :]
     distances = np.linalg.norm(diff, axis=2)
-    return distances
+    return distances  # type: ignore[no-any-return]
 
 
 def batch_angle_between(
