@@ -746,7 +746,16 @@ Used for:
     - Nucleotide base stacking analysis
 """
 
-HYDROPHOBIC_RESIDUES: List[str] = ["VAL", "LEU", "ILE", "MET", "PHE", "TRP", "PRO", "ALA"]
+HYDROPHOBIC_RESIDUES: List[str] = [
+    "VAL",
+    "LEU",
+    "ILE",
+    "MET",
+    "PHE",
+    "TRP",
+    "PRO",
+    "ALA",
+]
 """List[str]: Hydrophobic amino acid residues with nonpolar side chains.
 
 These amino acids have side chains that are predominantly nonpolar and hydrophobic:
@@ -802,9 +811,9 @@ Used for:
 # Single letter codes for atom properties
 RESIDUE_TYPE_CODES: Dict[str, str] = {
     "DNA": "D",
-    "RNA": "R", 
+    "RNA": "R",
     "PROTEIN": "P",
-    "LIGAND": "L"
+    "LIGAND": "L",
 }
 """Dict[str, str]: Single letter codes for residue types.
 
@@ -820,7 +829,7 @@ Used for compact representation in hydrogen bond descriptions and atom records.
 BACKBONE_SIDECHAIN_CODES: Dict[str, str] = {
     "BACKBONE": "B",
     "SIDECHAIN": "S",
-    "NOT_APPLICABLE": "N"
+    "NOT_APPLICABLE": "N",
 }
 """Dict[str, str]: Single letter codes for backbone vs sidechain classification.
 
@@ -831,10 +840,7 @@ Mapping of atom structural classification to compact single letter codes:
 Used for describing hydrogen bond donor-acceptor relationships (e.g., S-S, S-B, B-B).
 """
 
-AROMATIC_CODES: Dict[str, str] = {
-    "AROMATIC": "A",
-    "NON-AROMATIC": "N"
-}
+AROMATIC_CODES: Dict[str, str] = {"AROMATIC": "A", "NON-AROMATIC": "N"}
 """Dict[str, str]: Single letter codes for aromatic classification.
 
 Mapping of aromatic property classification to compact single letter codes:

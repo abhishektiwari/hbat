@@ -324,10 +324,20 @@ class NPMolecularInteractionAnalyzer:
 
                 # Calculate angle using NPVec3D
                 donor_vec = NPVec3D(
-                    float(donor_atom.coords.x), float(donor_atom.coords.y), float(donor_atom.coords.z)
+                    float(donor_atom.coords.x),
+                    float(donor_atom.coords.y),
+                    float(donor_atom.coords.z),
                 )
-                h_vec = NPVec3D(float(h_atom.coords.x), float(h_atom.coords.y), float(h_atom.coords.z))
-                a_vec = NPVec3D(float(a_atom.coords.x), float(a_atom.coords.y), float(a_atom.coords.z))
+                h_vec = NPVec3D(
+                    float(h_atom.coords.x),
+                    float(h_atom.coords.y),
+                    float(h_atom.coords.z),
+                )
+                a_vec = NPVec3D(
+                    float(a_atom.coords.x),
+                    float(a_atom.coords.y),
+                    float(a_atom.coords.z),
+                )
 
                 angle_rad = batch_angle_between(donor_vec, h_vec, a_vec)
                 angle_deg = math.degrees(float(angle_rad))
@@ -450,10 +460,20 @@ class NPMolecularInteractionAnalyzer:
 
                 # Calculate angle
                 c_vec = NPVec3D(
-                    float(carbon_atom.coords.x), float(carbon_atom.coords.y), float(carbon_atom.coords.z)
+                    float(carbon_atom.coords.x),
+                    float(carbon_atom.coords.y),
+                    float(carbon_atom.coords.z),
                 )
-                x_vec = NPVec3D(float(x_atom.coords.x), float(x_atom.coords.y), float(x_atom.coords.z))
-                a_vec = NPVec3D(float(a_atom.coords.x), float(a_atom.coords.y), float(a_atom.coords.z))
+                x_vec = NPVec3D(
+                    float(x_atom.coords.x),
+                    float(x_atom.coords.y),
+                    float(x_atom.coords.z),
+                )
+                a_vec = NPVec3D(
+                    float(a_atom.coords.x),
+                    float(a_atom.coords.y),
+                    float(a_atom.coords.z),
+                )
 
                 angle_rad = batch_angle_between(c_vec, x_vec, a_vec)
                 angle_deg = math.degrees(float(angle_rad))
@@ -533,7 +553,11 @@ class NPMolecularInteractionAnalyzer:
                             continue
 
                 # Calculate angle
-                donor_vec = NPVec3D(float(carbon.coords.x), float(carbon.coords.y), float(carbon.coords.z))
+                donor_vec = NPVec3D(
+                    float(carbon.coords.x),
+                    float(carbon.coords.y),
+                    float(carbon.coords.z),
+                )
                 h_vec = NPVec3D(
                     float(interaction_atom.coords.x),
                     float(interaction_atom.coords.y),
@@ -796,11 +820,17 @@ class NPMolecularInteractionAnalyzer:
             return None
 
         # Calculate angle
-        vec1 = NPVec3D(float(other1.coords.x), float(other1.coords.y), float(other1.coords.z))
-        vec_common = NPVec3D(
-            float(common_atom.coords.x), float(common_atom.coords.y), float(common_atom.coords.z)
+        vec1 = NPVec3D(
+            float(other1.coords.x), float(other1.coords.y), float(other1.coords.z)
         )
-        vec2 = NPVec3D(float(other2.coords.x), float(other2.coords.y), float(other2.coords.z))
+        vec_common = NPVec3D(
+            float(common_atom.coords.x),
+            float(common_atom.coords.y),
+            float(common_atom.coords.z),
+        )
+        vec2 = NPVec3D(
+            float(other2.coords.x), float(other2.coords.y), float(other2.coords.z)
+        )
 
         angle_rad = batch_angle_between(vec1, vec_common, vec2)
         return math.degrees(angle_rad)
@@ -945,12 +975,8 @@ class NPMolecularInteractionAnalyzer:
         # Round averages for better presentation
         if self.hydrogen_bonds:
             hb_summary = summary["hydrogen_bonds"]
-            hb_summary["average_distance"] = round(
-                hb_summary["average_distance"], 2
-            )
-            hb_summary["average_angle"] = round(
-                hb_summary["average_angle"], 1
-            )
+            hb_summary["average_distance"] = round(hb_summary["average_distance"], 2)
+            hb_summary["average_angle"] = round(hb_summary["average_angle"], 1)
 
             # Bond type distribution
             hb_types: Dict[str, int] = {}
@@ -960,12 +986,8 @@ class NPMolecularInteractionAnalyzer:
 
         if self.halogen_bonds:
             xb_summary = summary["halogen_bonds"]
-            xb_summary["average_distance"] = round(
-                xb_summary["average_distance"], 2
-            )
-            xb_summary["average_angle"] = round(
-                xb_summary["average_angle"], 1
-            )
+            xb_summary["average_distance"] = round(xb_summary["average_distance"], 2)
+            xb_summary["average_angle"] = round(xb_summary["average_angle"], 1)
 
             # Bond type distribution
             xb_types: Dict[str, int] = {}
@@ -975,12 +997,8 @@ class NPMolecularInteractionAnalyzer:
 
         if self.pi_interactions:
             pi_summary = summary["pi_interactions"]
-            pi_summary["average_distance"] = round(
-                pi_summary["average_distance"], 2
-            )
-            pi_summary["average_angle"] = round(
-                pi_summary["average_angle"], 1
-            )
+            pi_summary["average_distance"] = round(pi_summary["average_distance"], 2)
+            pi_summary["average_angle"] = round(pi_summary["average_angle"], 1)
 
         # Chain length distribution
         if self.cooperativity_chains:

@@ -84,7 +84,8 @@ class ResultsPanel:
             text_frame, orient=tk.HORIZONTAL, command=self.summary_text.xview
         )
         self.summary_text.configure(
-            yscrollcommand=summary_v_scrollbar.set, xscrollcommand=summary_h_scrollbar.set
+            yscrollcommand=summary_v_scrollbar.set,
+            xscrollcommand=summary_h_scrollbar.set,
         )
 
         # Use grid layout for proper scrollbar positioning
@@ -286,7 +287,16 @@ class ResultsPanel:
         tree_frame = ttk.Frame(pi_frame)
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        columns = ("donor_res", "donor_atom", "pi_res", "distance", "angle", "type", "da_props", "bs_int")
+        columns = (
+            "donor_res",
+            "donor_atom",
+            "pi_res",
+            "distance",
+            "angle",
+            "type",
+            "da_props",
+            "bs_int",
+        )
 
         self.pi_tree = ttk.Treeview(
             tree_frame, columns=columns, show="headings", height=15

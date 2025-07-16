@@ -261,7 +261,7 @@ class HydrogenBond(MolecularInteraction):
         self.bond_type = bond_type
         self._donor_residue = _donor_residue
         self._acceptor_residue = _acceptor_residue
-        
+
         # Generate donor-acceptor property description
         self._donor_acceptor_properties = self._generate_donor_acceptor_description()
 
@@ -330,49 +330,51 @@ class HydrogenBond(MolecularInteraction):
 
     def _generate_donor_acceptor_description(self) -> str:
         """Generate donor-acceptor property description string.
-        
+
         Describes the hydrogen bond in terms of:
         - Donor properties: residue type, backbone/sidechain, aromatic
         - Acceptor properties: residue type, backbone/sidechain, aromatic
-        
+
         Format: "donor_props-acceptor_props" (e.g., "PBS-PS", "DS-LN")
-        
+
         :returns: Property description string
         :rtype: str
         """
         # Get donor properties
-        donor_residue_type = getattr(self._donor, 'residue_type', 'L')
-        donor_backbone_sidechain = getattr(self._donor, 'backbone_sidechain', 'S')
-        donor_aromatic = getattr(self._donor, 'aromatic', 'N')
-        
-        # Get acceptor properties  
-        acceptor_residue_type = getattr(self._acceptor, 'residue_type', 'L')
-        acceptor_backbone_sidechain = getattr(self._acceptor, 'backbone_sidechain', 'S')
-        acceptor_aromatic = getattr(self._acceptor, 'aromatic', 'N')
-        
+        donor_residue_type = getattr(self._donor, "residue_type", "L")
+        donor_backbone_sidechain = getattr(self._donor, "backbone_sidechain", "S")
+        donor_aromatic = getattr(self._donor, "aromatic", "N")
+
+        # Get acceptor properties
+        acceptor_residue_type = getattr(self._acceptor, "residue_type", "L")
+        acceptor_backbone_sidechain = getattr(self._acceptor, "backbone_sidechain", "S")
+        acceptor_aromatic = getattr(self._acceptor, "aromatic", "N")
+
         # Build property strings
         donor_props = f"{donor_residue_type}{donor_backbone_sidechain}{donor_aromatic}"
-        acceptor_props = f"{acceptor_residue_type}{acceptor_backbone_sidechain}{acceptor_aromatic}"
-        
+        acceptor_props = (
+            f"{acceptor_residue_type}{acceptor_backbone_sidechain}{acceptor_aromatic}"
+        )
+
         return f"{donor_props}-{acceptor_props}"
 
     @property
     def donor_acceptor_properties(self) -> str:
         """Get the donor-acceptor property description.
-        
+
         :returns: Property description string
         :rtype: str
         """
         return self._donor_acceptor_properties
-    
+
     def get_backbone_sidechain_interaction(self) -> str:
         """Get simplified backbone/sidechain interaction description.
-        
+
         :returns: Interaction type (B-B, B-S, S-B, S-S)
         :rtype: str
         """
-        donor_bs = getattr(self._donor, 'backbone_sidechain', 'S')
-        acceptor_bs = getattr(self._acceptor, 'backbone_sidechain', 'S')
+        donor_bs = getattr(self._donor, "backbone_sidechain", "S")
+        acceptor_bs = getattr(self._acceptor, "backbone_sidechain", "S")
         return f"{donor_bs}-{acceptor_bs}"
 
     def __str__(self) -> str:
@@ -539,7 +541,7 @@ class PiInteraction(MolecularInteraction):
         self._angle = angle
         self._donor_residue = _donor_residue
         self._pi_residue = _pi_residue
-        
+
         # Generate donor-acceptor property description
         self._donor_acceptor_properties = self._generate_donor_acceptor_description()
 
@@ -607,69 +609,79 @@ class PiInteraction(MolecularInteraction):
 
     def _generate_donor_acceptor_description(self) -> str:
         """Generate donor-acceptor property description string.
-        
+
         Describes the π interaction in terms of:
         - Donor properties: residue type, backbone/sidechain, aromatic
         - Acceptor properties: residue type, backbone/sidechain, aromatic (always aromatic for π)
-        
+
         Format: "donor_props-acceptor_props" (e.g., "PSN-PSA")
-        
+
         :returns: Property description string
         :rtype: str
         """
         # Get donor properties
-        donor_residue_type = getattr(self._donor, 'residue_type', 'L')
-        donor_backbone_sidechain = getattr(self._donor, 'backbone_sidechain', 'S')
-        donor_aromatic = getattr(self._donor, 'aromatic', 'N')
-        
+        donor_residue_type = getattr(self._donor, "residue_type", "L")
+        donor_backbone_sidechain = getattr(self._donor, "backbone_sidechain", "S")
+        donor_aromatic = getattr(self._donor, "aromatic", "N")
+
         # For π interactions, we need to determine acceptor properties from the π residue
         # Since we don't have the actual π atoms, we'll use the residue info
-        from ..constants.pdb_constants import PROTEIN_RESIDUES, DNA_RESIDUES, RNA_RESIDUES
-        
-        pi_res_name = self._pi_residue.split('_')[0] if '_' in self._pi_residue else self._pi_residue.split(':')[0]
-        
+        from ..constants.pdb_constants import (
+            DNA_RESIDUES,
+            PROTEIN_RESIDUES,
+            RNA_RESIDUES,
+        )
+
+        pi_res_name = (
+            self._pi_residue.split("_")[0]
+            if "_" in self._pi_residue
+            else self._pi_residue.split(":")[0]
+        )
+
         if pi_res_name in PROTEIN_RESIDUES:
-            acceptor_residue_type = 'P'
+            acceptor_residue_type = "P"
         elif pi_res_name in DNA_RESIDUES:
-            acceptor_residue_type = 'D'
+            acceptor_residue_type = "D"
         elif pi_res_name in RNA_RESIDUES:
-            acceptor_residue_type = 'R'
+            acceptor_residue_type = "R"
         else:
-            acceptor_residue_type = 'L'
-        
+            acceptor_residue_type = "L"
+
         # π system atoms are always sidechain and aromatic
-        acceptor_backbone_sidechain = 'S'
-        acceptor_aromatic = 'A'
-        
+        acceptor_backbone_sidechain = "S"
+        acceptor_aromatic = "A"
+
         # Build property strings
         donor_props = f"{donor_residue_type}{donor_backbone_sidechain}{donor_aromatic}"
-        acceptor_props = f"{acceptor_residue_type}{acceptor_backbone_sidechain}{acceptor_aromatic}"
-        
+        acceptor_props = (
+            f"{acceptor_residue_type}{acceptor_backbone_sidechain}{acceptor_aromatic}"
+        )
+
         return f"{donor_props}-{acceptor_props}"
 
     @property
     def donor_acceptor_properties(self) -> str:
         """Get the donor-acceptor property description.
-        
+
         :returns: Property description string
         :rtype: str
         """
         return self._donor_acceptor_properties
-    
+
     def get_backbone_sidechain_interaction(self) -> str:
         """Get simplified backbone/sidechain interaction description.
-        
+
         :returns: Interaction type (B-S, S-S, etc.)
         :rtype: str
         """
-        donor_bs = getattr(self._donor, 'backbone_sidechain', 'S')
+        donor_bs = getattr(self._donor, "backbone_sidechain", "S")
         # π systems are always sidechain
-        acceptor_bs = 'S'
+        acceptor_bs = "S"
         return f"{donor_bs}-{acceptor_bs}"
 
     def get_interaction_type_display(self) -> str:
         """Get the interaction type for display purposes.
-        
+
         :returns: Display format like "D-H...π"
         :rtype: str
         """

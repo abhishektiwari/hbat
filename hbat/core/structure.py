@@ -194,7 +194,7 @@ class Atom:
         charge: str,
         record_type: str,
         residue_type: str = "L",
-        backbone_sidechain: str = "S", 
+        backbone_sidechain: str = "S",
         aromatic: str = "N",
     ) -> None:
         """Initialize an Atom object.
@@ -313,7 +313,7 @@ class Atom:
             "charge",
             "record_type",
             "residue_type",
-            "backbone_sidechain", 
+            "backbone_sidechain",
             "aromatic",
         ]
 

@@ -228,7 +228,9 @@ class MainWindow:
         fixed_text_frame = ttk.Frame(fixed_file_frame)
         fixed_text_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        self.fixed_file_text = tk.Text(fixed_text_frame, wrap=tk.NONE, font=("Courier", 12))
+        self.fixed_file_text = tk.Text(
+            fixed_text_frame, wrap=tk.NONE, font=("Courier", 12)
+        )
         fixed_v_scrollbar = ttk.Scrollbar(
             fixed_text_frame, orient=tk.VERTICAL, command=self.fixed_file_text.yview
         )
@@ -455,7 +457,9 @@ class MainWindow:
             self.session_parameters = params
 
         # Start async analysis without popup window
-        tae.async_execute(self._perform_analysis_async(params), visible=False, show_exceptions=False)
+        tae.async_execute(
+            self._perform_analysis_async(params), visible=False, show_exceptions=False
+        )
 
     async def _perform_analysis_async(self, params: AnalysisParameters) -> None:
         """Perform the analysis asynchronously to keep GUI responsive.

@@ -14,9 +14,9 @@ import numpy as np
 from ..constants import AtomicData, BondDetectionMethods, get_residue_bonds
 from ..constants.parameters import ParametersDefault
 from ..utilities import pdb_atom_to_element
+from .atom_classifier import get_atom_properties
 from .np_vector import NPVec3D
 from .structure import Atom, Bond, Residue
-from .atom_classifier import get_atom_properties
 
 try:
     import pdbreader  # type: ignore
@@ -525,7 +525,9 @@ class PDBParser:
                     if distance > ParametersDefault.MAX_BOND_DISTANCE:
                         continue
 
-                    if self._are_atoms_bonded_with_distance(atom1, atom2, float(distance)):
+                    if self._are_atoms_bonded_with_distance(
+                        atom1, atom2, float(distance)
+                    ):
                         bond = Bond(
                             atom1_serial=atom1.serial,
                             atom2_serial=atom2.serial,
