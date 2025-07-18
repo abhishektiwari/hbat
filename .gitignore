@@ -248,3 +248,9 @@ hbat/config/*
 # XML files
 junit.xml
 coverage.xml
+
+# Plan files
+plan/*
+plan/*/*
+plan/*/*/*
+!plan/.gitkeep

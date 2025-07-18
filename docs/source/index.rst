@@ -46,6 +46,13 @@ HBAT Documentation
 .. image:: https://codecov.io/gh/abhishektiwari/hbat/graph/badge.svg?token=QSKYLB3M1V 
    :alt: Codecov Coverage
 
+.. image:: https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3Au-x6o8ySG0sC&search=Cited%20by%20(%5Cd%2B)&replace=%241&style=plastic&logo=googlescholar&logoColor=%23fff&label=Cited%20By&link=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3Au-x6o8ySG0sC
+   :alt: Cited by Google Scholar
+
+
+
+
+
 
 Welcome to HBAT (Hydrogen Bond Analysis Tool) documentation!
 
