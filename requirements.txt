@@ -6,6 +6,10 @@ pdbreader>=0.1.0
 
 # Numerical computing
 numpy>=1.20.0
+scipy >=1.16.0
+
+# Parsing library for selection language
+pyparsing>=3.0.0
 
 # Optional visualization (GUI features)
 networkx>=2.5.0

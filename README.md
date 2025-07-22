@@ -24,6 +24,8 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 
 HBAT v2  is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi.
 
+<span class="__dimensions_badge_embed__" data-doi="10.3233/isi-2007-00337" data-legend="always" data-style="small_circle"></span><script async src="https://badge.dimensions.ai/badge.js" charset="utf-8"></script>
+
 ## Features
 
 - **Comprehensive Analysis**: Detect and analyze potential hydrogen bonds, halogen bonds, and X-H...π interactions
