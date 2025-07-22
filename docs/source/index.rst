@@ -133,6 +133,27 @@ Features
 - **GUI Interface**: User-friendly graphical interface for interactive analysis
 - **Command Line Tool**: Scriptable CLI for batch processing and automation
 
+
+Cite HBAT
+---------
+
+.. code-block:: bash
+
+   @article{tiwari2023hbat,
+       title={HBAT: A Python Package for Automated Hydrogen Bond Analysis in Macromolecular Structures},
+       author={Tiwari, Abhishek and others},
+       journal={Journal of Open Research Software},
+       volume={11},
+       number={1},
+       pages={1-8},
+       year={2023},
+       publisher={Ubiquity Press}
+   }
+
+.. code-block:: bash
+
+   Tiwari, A., & Panigrahi, S. K. (2007). HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures. In Silico Biology, 7(6). https://doi.org/10.3233/ISI-2007-00337
+
 Indices and tables
 ==================
 
