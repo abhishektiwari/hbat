@@ -3,9 +3,11 @@ HBAT Documentation
 
 .. image:: https://img.shields.io/github/v/release/abhishektiwari/hbat
    :alt: GitHub Release
+   :target: https://github.com/abhishektiwari/hbat/releases
 
 .. image:: https://img.shields.io/github/actions/workflow/status/abhishektiwari/hbat/test.yml?label=tests
    :alt: GitHub Actions Test Workflow Status
+   :target: https://github.com/abhishektiwari/hbat/actions/workflows/test.yml
 
 .. pypi-shield::
    :project: hbat
@@ -36,18 +38,23 @@ HBAT Documentation
 
 .. image:: https://img.shields.io/github/downloads/abhishektiwari/hbat/total?label=GitHub%20Downloads
    :alt: GitHub Downloads (all assets, all releases)
+   :target: https://github.com/abhishektiwari/hbat/releases
 
 .. image:: https://img.shields.io/sourceforge/dt/hbat?label=SourceForge%20Downloads
    :alt: SourceForge Downloads
+   :target: https://sourceforge.net/projects/hbat/files/
 
 .. image:: https://img.shields.io/pypi/dm/hbat?label=PyPI%20Downloads
    :alt: PyPI Downloads
+   :target: https://pypi.org/project/hbat/
 
 .. image:: https://codecov.io/gh/abhishektiwari/hbat/graph/badge.svg?token=QSKYLB3M1V 
    :alt: Codecov Coverage
+   :target: https://codecov.io/gh/abhishektiwari/hbat
 
-.. image:: https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3Au-x6o8ySG0sC&search=Cited%20by%20(%5Cd%2B)&replace=%241&style=plastic&logo=googlescholar&label=Cited%20By&cacheSeconds=86400&link=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3Au-x6o8ySG0sC
+.. image:: https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3Au-x6o8ySG0sC&search=Cited%20by%20(%5Cd%2B)&replace=%241&style=plastic&logo=googlescholar&label=Cited%20By&cacheSeconds=86400
    :alt: Cited by Google Scholar
+   :target: https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC
 
 
 
