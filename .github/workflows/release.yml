@@ -22,7 +22,7 @@ jobs:
         uses: lewagon/wait-on-check-action@v1.3.4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-          check-name: 'test (3.10)'  # Wait for at least one test matrix job
+          check-name: 'test (3.11)'  # Wait for at least one test matrix job
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
 
