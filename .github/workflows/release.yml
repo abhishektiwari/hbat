@@ -13,11 +13,16 @@ on:
 jobs:
   wait-for-tests:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     outputs:
-      tests-passed: ${{ steps.wait-for-tests.outputs.conclusion == 'success' }}
+      tests-passed: ${{ steps.wait-for-tests.outputs.conclusion == 'success' || steps.skip.outputs.skip == 'true' }}
     steps:
+      - name: Skip for workflow_run events
+        if: github.event_name != 'pull_request'
+        id: skip
+        run: echo "skip=true" >> $GITHUB_OUTPUT
+        
       - name: Wait for test workflow to complete
+        if: github.event_name == 'pull_request'
         id: wait-for-tests
         uses: lewagon/wait-on-check-action@v1.3.4
         with:
@@ -31,8 +36,8 @@ jobs:
     needs: [wait-for-tests]
     if: |
       always() && (
-        (github.event_name == 'pull_request' && needs.wait-for-tests.result == 'success' && needs.wait-for-tests.outputs.tests-passed == 'true') ||
-        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+        (github.event_name == 'pull_request' && needs.wait-for-tests.outputs.tests-passed == 'true')
       )
     outputs:
       version: ${{ steps.generate_version.outputs.version }}
