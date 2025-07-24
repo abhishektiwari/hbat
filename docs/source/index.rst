@@ -44,7 +44,7 @@ HBAT Documentation
    :alt: SourceForge Downloads
    :target: https://sourceforge.net/projects/hbat/files/
 
-.. image:: https://img.shields.io/pypi/dm/hbat?label=PyPI%20Downloads
+.. image:: https://img.shields.io/pepy/dt/hbat?label=PyPI%20Downloads
    :alt: PyPI Downloads
    :target: https://pypi.org/project/hbat/
 
@@ -56,7 +56,13 @@ HBAT Documentation
    :alt: Cited by Google Scholar
    :target: https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC
 
+.. image:: https://socket.dev/api/badge/pypi/package/hbat/2.2.6?artifact_id=tar-gz#1753326341848
+   :alt: Socket
+   :target: https://socket.dev/pypi/package/hbat/overview/2.2.6/tar-gz
 
+.. image:: https://www.codefactor.io/repository/github/abhishektiwari/hbat/badge/main
+   :target: https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main
+   :alt: CodeFactor
 
 Welcome to HBAT (Hydrogen Bond Analysis Tool) documentation!
 
