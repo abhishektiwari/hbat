@@ -116,7 +116,6 @@ jobs:
         retention-days: 30
     
     - name: Publish to PyPI
-      if: needs.generate-version.outputs.is_prerelease == 'false'
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         attestations: true
@@ -431,10 +430,10 @@ jobs:
           pip install https://github.com/${{ github.repository }}/releases/download/${{ needs.generate-version.outputs.github_tag }}/hbat-${{ needs.generate-version.outputs.version }}-py3-none-any.whl
           ```
           
-          ${{ needs.generate-version.outputs.is_prerelease == 'false' && '**PyPI:**
+          **PyPI:**
           ```bash
-          pip install hbat
-          ```' || '' }}
+          pip install hbat${{ needs.generate-version.outputs.is_prerelease == 'true' && '==' || '' }}${{ needs.generate-version.outputs.is_prerelease == 'true' && needs.generate-version.outputs.version || '' }}
+          ```
           
           ${{ needs.generate-version.outputs.is_prerelease == 'false' && '**Conda:**
           ```bash
@@ -458,6 +457,13 @@ jobs:
           A pre-release has been created for this PR: **${tag}**
           
           ### Quick Install
+          
+          **From PyPI (recommended):**
+          \`\`\`bash
+          pip install hbat==${version}
+          \`\`\`
+          
+          **From GitHub Release:**
           \`\`\`bash
           pip install https://github.com/${{ github.repository }}/releases/download/${tag}/hbat-${version}-py3-none-any.whl
           \`\`\`
