@@ -15,12 +15,16 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 ![License](https://img.shields.io/github/license/abhishektiwari/hbat)
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/abhishektiwari/hbat/total?label=GitHub%20Downloads)
 ![SourceForge Downloads](https://img.shields.io/sourceforge/dt/hbat?label=SourceForge%20Downloads)
-![PyPI Downloads](https://img.shields.io/pypi/dm/hbat?label=PyPI%20Downloads)
+![PyPI Downloads](https://img.shields.io/pepy/dt/hbat?label=PyPI%20Downloads)
 [![codecov](https://codecov.io/gh/abhishektiwari/hbat/graph/badge.svg?token=QSKYLB3M1V)](https://codecov.io/gh/abhishektiwari/hbat)
+[![Cited By](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3Au-x6o8ySG0sC&search=Cited%20by%20(%5Cd%2B)&replace=%241&style=plastic&logo=googlescholar&label=Cited%20By&cacheSeconds=86400)](https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC)
+[![Socket](https://socket.dev/api/badge/pypi/package/hbat/2.2.6?artifact_id=tar-gz#1753326341848)](https://socket.dev/pypi/package/hbat/overview/2.2.6/tar-gz)
+[![CodeFactor](https://www.codefactor.io/repository/github/abhishektiwari/hbat/badge/main)](https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main)
 
 ## Background
 
 HBAT v2  is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi.
+
 
 ## Features
 
@@ -52,7 +56,13 @@ pip install hbat
 
 Run HBAT Command-Line Interface (CLI) using `hbat` or launch HBAT GUI using `hbat-gui`.
 
-**Recommended**: For [fixing missing Hydrogen Atoms](https://hbat.abhishek-tiwari.com/pdbfixing), install PDBFixer (preferred over OpenBabel).
+**Recommended:** For [fixing missing Hydrogen Atoms](https://hbat.abhishek-tiwari.com/pdbfixing), using PDBFixer (preferred over OpenBabel).
+
+```bash
+pip install git+https://github.com/abhishektiwari/hbat.git
+```
+
+If you installed HBAT from PyPI, you can also install PDBFixer using,
 
 ```bash
 pip install git+https://github.com/openmm/pdbfixer.git

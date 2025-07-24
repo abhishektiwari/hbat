@@ -24,10 +24,12 @@ From PyPI
    pip install hbat
 
 
+Run HBAT Command-Line Interface (CLI) using :code:`hbat` or launch HBAT GUI using :code:`hbat-gui`.
+
 From Github
 ~~~~~~~~~~~
 
-**Recommended** for fixing missing Hydrogen Atoms using PDBFixer (preferred over OpenBabel). See :doc:`pdbfixing` for details.
+**Recommended:** For fixing missing Hydrogen Atoms, using PDBFixer (preferred over OpenBabel). See :doc:`pdbfixing` for details.
 
 
 .. code-block:: bash
