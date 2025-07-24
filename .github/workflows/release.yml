@@ -1,22 +1,45 @@
 name: Build and Release
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main ]
   workflow_run:
     workflows: ["Tests"]
     types:
       - completed
+    branches: [ main ]
 
 jobs:
+  wait-for-tests:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      tests-passed: ${{ steps.wait-for-tests.outputs.conclusion == 'success' }}
+    steps:
+      - name: Wait for test workflow to complete
+        id: wait-for-tests
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          check-name: 'test (3.10)'  # Wait for at least one test matrix job
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
   generate-version:
     runs-on: ubuntu-latest
-    # Only run if Tests workflow succeeded
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    needs: [wait-for-tests]
+    if: |
+      always() && (
+        (github.event_name == 'pull_request' && needs.wait-for-tests.result == 'success' && needs.wait-for-tests.outputs.tests-passed == 'true') ||
+        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      )
     outputs:
       version: ${{ steps.generate_version.outputs.version }}
       version_tag: ${{ steps.generate_version.outputs.version_tag }}
       github_tag: ${{ steps.generate_version.outputs.github_tag }}
       is_prerelease: ${{ steps.generate_version.outputs.is_prerelease }}
-      pr_number: ${{ steps.get_pr_number.outputs.pr_number }}
+      pr_number: ${{ github.event.pull_request.number || steps.get_pr_number.outputs.pr_number }}
     
     steps:
     - uses: actions/checkout@v4
@@ -24,21 +47,17 @@ jobs:
         fetch-depth: 0
     
     - name: Get PR number from workflow run
+      if: github.event_name == 'workflow_run'
       id: get_pr_number
       run: |
-        # Check if this workflow run was triggered by a PR
+        # This is only used for workflow_run events, not direct PR triggers
         if [[ "${{ github.event.workflow_run.event }}" == "pull_request" ]]; then
-          # Get PR number from the workflow run
           PR_NUMBER=$(echo '${{ toJSON(github.event.workflow_run.pull_requests[0].number) }}' || echo "")
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          echo "is_pr=true" >> $GITHUB_OUTPUT
-        else
-          echo "pr_number=" >> $GITHUB_OUTPUT
-          echo "is_pr=false" >> $GITHUB_OUTPUT
         fi
     
     - name: Generate version for PR
-      if: steps.get_pr_number.outputs.is_pr == 'true'
+      if: github.event_name == 'pull_request' || (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request')
       id: generate_pr_version
       run: |
         # Get base version from latest tag or default to 0.0.0
@@ -46,7 +65,7 @@ jobs:
         
         # Generate PEP 440 compatible pre-release version
         SHORT_SHA=$(git rev-parse --short HEAD)
-        PR_NUMBER=${{ steps.get_pr_number.outputs.pr_number }}
+        PR_NUMBER=${{ github.event.pull_request.number || steps.get_pr_number.outputs.pr_number }}
         
         # Use PEP 440 compatible format
         PRERELEASE_VERSION="${BASE_VERSION}.dev${PR_NUMBER}+${SHORT_SHA}"
@@ -61,7 +80,7 @@ jobs:
         echo "is_prerelease=true" >> $GITHUB_OUTPUT
     
     - name: Generate version for release
-      if: steps.get_pr_number.outputs.is_pr == 'false'
+      if: github.event_name == 'workflow_run' && github.event.workflow_run.event != 'pull_request'
       id: generate_release_version
       uses: paulhatch/semantic-version@v5.4.0
       with:
@@ -74,7 +93,7 @@ jobs:
     - name: Set outputs
       id: generate_version
       run: |
-        if [[ "${{ steps.get_pr_number.outputs.is_pr }}" == "true" ]]; then
+        if [[ "${{ github.event_name }}" == "pull_request" ]] || [[ "${{ github.event.workflow_run.event }}" == "pull_request" ]]; then
           echo "version=${{ steps.generate_pr_version.outputs.version }}" >> $GITHUB_OUTPUT
           echo "version_tag=${{ steps.generate_pr_version.outputs.version_tag }}" >> $GITHUB_OUTPUT
           echo "github_tag=${{ steps.generate_pr_version.outputs.github_tag }}" >> $GITHUB_OUTPUT
