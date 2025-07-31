@@ -254,3 +254,6 @@ plan/*
 plan/*/*
 plan/*/*/*
 !plan/.gitkeep
+
+# Ignore local .claude files
+.claude/*

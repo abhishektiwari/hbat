@@ -437,7 +437,7 @@ jobs:
           
           ${{ needs.generate-version.outputs.is_prerelease == 'false' && '**Conda:**
           ```bash
-          conda install -c ${{ secrets.ANACONDA_ORG }} hbat
+          conda install -c hbat hbat
           ```' || '**Conda:**
           Download the package and install locally' }}
         prerelease: ${{ needs.generate-version.outputs.is_prerelease == 'true' }}
