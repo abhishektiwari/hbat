@@ -314,7 +314,7 @@ class TestCooperativityWorkflows:
                 for interaction in chain.interactions:
                     assert hasattr(interaction, 'interaction_type')
                     assert interaction.interaction_type in [
-                        'hydrogen_bond', 'halogen_bond', 'pi_interaction'
+                        "H-Bond", "X-Bond", "π-Int"
                     ]
     
     def test_chain_export_workflow(self, sample_pdb_file):
