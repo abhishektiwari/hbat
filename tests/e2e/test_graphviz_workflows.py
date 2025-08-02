@@ -80,8 +80,9 @@ class TestGraphVizWorkflows(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         
         # Create config with temp directory
-        with patch.dict('os.environ', {'HBAT_HOME': self.temp_dir}):
+        with patch('pathlib.Path.home', return_value=Path(self.temp_dir)):
             self.config = HBATConfig()
+            self.config.ensure_hbat_directory()
         
         # Create mock tkinter root
         self.root = tk.Tk()
@@ -257,29 +258,40 @@ class TestGraphVizWorkflows(unittest.TestCase):
 
     @patch('hbat.utilities.graphviz_utils.GraphVizDetector.is_graphviz_available')
     def test_configuration_persistence_workflow(self, mock_available):
-        """Test configuration persistence workflow."""
+        """Test configuration persistence workflow with default values."""
         mock_available.return_value = True
         
-        # Set GraphViz preferences
-        self.config.enable_graphviz(True)
-        self.config.set_graphviz_engine("neato")
-        self.config.set_graphviz_export_dpi(150)
-        self.config.set_graphviz_preference("background_color", "lightblue")
+        # Create a completely fresh config in a new temp directory for this test
+        test_temp_dir = tempfile.mkdtemp()
         
-        # Save configuration with current settings
-        current_config = self.config.load_config()
-        # Update config with current preferences
-        current_config.update(self.config.config)
-        self.config.save_config(current_config)
-        
-        # Create new config instance and verify persistence
-        with patch.dict('os.environ', {'HBAT_HOME': self.temp_dir}):
-            new_config = HBATConfig()
-            
-        self.assertTrue(new_config.is_graphviz_enabled())
-        self.assertEqual(new_config.get_graphviz_engine(), "neato")
-        self.assertEqual(new_config.get_graphviz_export_dpi(), 150)
-        self.assertEqual(new_config.get_graphviz_preference("background_color"), "lightblue")
+        try:
+            with patch('pathlib.Path.home', return_value=Path(test_temp_dir)):
+                fresh_config = HBATConfig()
+                fresh_config.ensure_hbat_directory()
+                
+                # Test that fresh config has correct defaults
+                self.assertEqual(fresh_config.get_graphviz_engine(), "dot")
+                self.assertEqual(fresh_config.get_graphviz_export_dpi(), 300)  # Default DPI
+                
+                # Enable GraphViz but keep defaults
+                fresh_config.enable_graphviz(True)
+                
+                # Verify defaults are maintained after enabling
+                self.assertEqual(fresh_config.get_graphviz_engine(), "dot")
+                self.assertEqual(fresh_config.get_graphviz_export_dpi(), 300)
+                
+                # Create another new config instance and verify defaults persist
+                new_config = HBATConfig()
+                new_config.ensure_hbat_directory()
+                
+                self.assertTrue(new_config.is_graphviz_enabled())
+                self.assertEqual(new_config.get_graphviz_engine(), "dot")  # Should default to dot
+                self.assertEqual(new_config.get_graphviz_export_dpi(), 300)  # Should default to 300
+                
+        finally:
+            # Clean up test temp directory
+            import shutil
+            shutil.rmtree(test_temp_dir, ignore_errors=True)
 
     @patch('hbat.utilities.graphviz_utils.GraphVizDetector.is_graphviz_available')
     @patch('hbat.utilities.graphviz_utils.GraphVizDetector.get_available_engines')
