@@ -266,9 +266,11 @@ class TestGraphVizWorkflows(unittest.TestCase):
         self.config.set_graphviz_export_dpi(150)
         self.config.set_graphviz_preference("background_color", "lightblue")
         
-        # Save configuration
-        config_data = self.config.load_config()
-        self.config.save_config(config_data)
+        # Save configuration with current settings
+        current_config = self.config.load_config()
+        # Update config with current preferences
+        current_config.update(self.config.config)
+        self.config.save_config(current_config)
         
         # Create new config instance and verify persistence
         with patch.dict('os.environ', {'HBAT_HOME': self.temp_dir}):
