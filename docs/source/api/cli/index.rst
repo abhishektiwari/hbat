@@ -5,8 +5,3 @@ Main CLI Module
    :members:
    :undoc-members:
    :show-inheritance:
-
-Functions
-~~~~~~~~~
-
-.. autofunction:: hbat.cli.main.main

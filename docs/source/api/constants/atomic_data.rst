@@ -10,14 +10,3 @@ Module Overview
    :members:
    :undoc-members:
    :show-inheritance:
-
-Classes
--------
-
-Atomic Data
-~~~~~~~~~~~
-
-.. autoclass:: hbat.constants.atomic_data.AtomicData
-   :members:
-   :undoc-members:
-   :show-inheritance:

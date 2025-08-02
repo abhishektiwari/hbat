@@ -30,6 +30,9 @@ HBAT v2  is a modern Python re-implementation of the original Perl-based tool de
 
 - **Comprehensive Analysis**: Detect and analyze potential hydrogen bonds, halogen bonds, and X-H...π interactions
 - **Dual Interface**: Both graphical (tkinter) and command-line interfaces
+- **Advanced Visualization**: Choice between NetworkX/matplotlib and GraphViz renderers for cooperativity chain visualization
+- **High-Quality Graphics**: Export visualizations to PNG, SVG, PDF with configurable resolution
+- **Interactive GUI**: Scrollable visualizations with dynamic layout switching and engine selection
 - **Parameter Presets**: Built-in presets for different structure types (high-resolution, NMR, membrane proteins, etc.)
 - **Flexible Parameters**: Customizable distance cutoffs, angle thresholds, and analysis modes.
 - **Multiple Output Formats**: Text, CSV, and JSON export options
@@ -99,6 +102,28 @@ conda install -c hbat hbat
 ```
 brew install python python3-tk
 ```
+
+- **GraphViz** (Optional): Required for advanced cooperativity chain visualization with high-quality graph rendering. HBAT will automatically fall back to NetworkX/matplotlib visualization if GraphViz is not available.
+
+**Install GraphViz:**
+
+On **Ubuntu/Debian**:
+```bash
+sudo apt-get update
+sudo apt-get install graphviz
+```
+
+On **macOS** (using Homebrew):
+```bash
+brew install graphviz
+```
+
+On **Windows**:
+- Download and install from [GraphViz official website](https://graphviz.org/download/)
+- Or using Chocolatey: `choco install graphviz`
+- Or using conda: `conda install -c conda-forge graphviz`
+
+**Note**: After installing GraphViz, restart your terminal/command prompt before running HBAT to ensure the GraphViz executables are available in your PATH.
 
 ## Usage
 
