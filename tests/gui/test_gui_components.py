@@ -10,6 +10,7 @@ import sys
 import os
 import tempfile
 import json
+import unittest.mock
 
 
 
@@ -300,10 +301,14 @@ class TestChainVisualization:
         """Test ellipse node drawing functionality."""
         try:
             import tkinter as tk
-            from hbat.gui.chain_visualization import ChainVisualizationWindow, VISUALIZATION_AVAILABLE
+            from hbat.gui.chain_visualization import ChainVisualizationWindow
+            from hbat.core.app_config import HBATConfig
             
-            # Skip if visualization dependencies are not available
-            if not VISUALIZATION_AVAILABLE:
+            # Check if visualization dependencies are available
+            try:
+                import networkx as nx
+                import matplotlib.pyplot as plt
+            except ImportError:
                 pytest.skip("Visualization dependencies (networkx, matplotlib) not available")
             
             # Create root window for testing
@@ -318,8 +323,12 @@ class TestChainVisualization:
                 mock_chain.chain_length = 0
                 mock_chain.chain_type = "mock"
                 
+                # Create config for testing
+                config = HBATConfig()
+                
                 # Test that we can create the visualization window with proper parameters
-                viz_window = ChainVisualizationWindow(root, mock_chain, "test_chain")
+                with unittest.mock.patch('tkinter.Toplevel'):  # Mock window creation
+                    viz_window = ChainVisualizationWindow(root, mock_chain, "test_chain", config)
                 assert viz_window is not None
                 assert hasattr(viz_window, 'viz_window')
                 assert hasattr(viz_window, 'G')  # NetworkX graph

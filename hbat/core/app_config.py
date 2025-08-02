@@ -51,6 +51,17 @@ class HBATConfig:
                 "auto_save_results": True,
                 "default_output_format": "json",
             },
+            "graphviz": {
+                "enabled": True,
+                "preferred_engine": "dot",
+                "export_dpi": 300,
+                "node_style": "filled",
+                "edge_style": "solid",
+                "render_format": "png",
+                "background_color": "white",
+                "node_shape": "ellipse",
+                "rankdir": "TB",
+            },
             "paths": {"last_pdb_directory": None, "last_output_directory": None},
         }
 
@@ -347,6 +358,118 @@ class HBATConfig:
             "cache": get_dir_size(self.cache_dir),
             "logs": get_dir_size(self.logs_dir),
         }
+
+    def get_graphviz_preference(self, key: str, default: Any = None) -> Any:
+        """
+        Get a GraphViz preference value.
+
+        Args:
+            key: GraphViz preference key
+            default: Default value if preference not found
+
+        Returns:
+            GraphViz preference value or default
+        """
+        config = self.load_config()
+        return config.get("graphviz", {}).get(key, default)
+
+    def set_graphviz_preference(self, key: str, value: Any) -> None:
+        """
+        Set a GraphViz preference value.
+
+        Args:
+            key: GraphViz preference key
+            value: GraphViz preference value
+        """
+        config = self.load_config()
+        if "graphviz" not in config:
+            config["graphviz"] = {}
+        config["graphviz"][key] = value
+        self.save_config(config)
+
+    def is_graphviz_enabled(self) -> bool:
+        """
+        Check if GraphViz visualization is enabled.
+
+        Returns:
+            True if GraphViz is enabled in preferences
+        """
+        return bool(self.get_graphviz_preference("enabled", True))
+
+    def get_graphviz_engine(self) -> str:
+        """
+        Get the preferred GraphViz engine.
+
+        Returns:
+            Preferred GraphViz engine name
+        """
+        return str(self.get_graphviz_preference("preferred_engine", "dot"))
+
+    def set_graphviz_engine(self, engine: str) -> None:
+        """
+        Set the preferred GraphViz engine.
+
+        Args:
+            engine: GraphViz engine name (dot, neato, fdp, etc.)
+        """
+        self.set_graphviz_preference("preferred_engine", engine)
+
+    def get_graphviz_export_dpi(self) -> int:
+        """
+        Get the DPI setting for GraphViz exports.
+
+        Returns:
+            DPI value for exports
+        """
+        return int(self.get_graphviz_preference("export_dpi", 300))
+
+    def set_graphviz_export_dpi(self, dpi: int) -> None:
+        """
+        Set the DPI setting for GraphViz exports.
+
+        Args:
+            dpi: DPI value for exports
+        """
+        self.set_graphviz_preference("export_dpi", dpi)
+
+    def get_graphviz_render_format(self) -> str:
+        """
+        Get the default render format for GraphViz.
+
+        Returns:
+            Default render format (png, svg, pdf)
+        """
+        return str(self.get_graphviz_preference("render_format", "png"))
+
+    def set_graphviz_render_format(self, format: str) -> None:
+        """
+        Set the default render format for GraphViz.
+
+        Args:
+            format: Render format (png, svg, pdf)
+        """
+        self.set_graphviz_preference("render_format", format)
+
+    def enable_graphviz(self, enabled: bool = True) -> None:
+        """
+        Enable or disable GraphViz visualization.
+
+        Args:
+            enabled: True to enable GraphViz, False to disable
+        """
+        self.set_graphviz_preference("enabled", enabled)
+
+    def get_graphviz_config(self) -> Dict[str, Any]:
+        """
+        Get all GraphViz configuration settings.
+
+        Returns:
+            Dictionary containing all GraphViz settings
+        """
+        config = self.load_config()
+        default_graphviz = self.default_config.get("graphviz", {})
+        graphviz_config = config.get("graphviz", default_graphviz)
+        return dict(graphviz_config) if graphviz_config else {}
 
 
 # Global configuration instance

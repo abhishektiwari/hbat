@@ -257,3 +257,4 @@ plan/*/*/*
 
 # Ignore local .claude files
 .claude/*
+CLAUDE.md
