@@ -175,7 +175,7 @@ class TestAnalyzerCooperativityIntegration:
                 assert hasattr(interaction, 'interaction_type'), \
                     "Chain interaction should have type"
                 assert interaction.interaction_type in \
-                    ["hydrogen_bond", "halogen_bond", "pi_interaction"], \
+                    ["H-Bond", "X-Bond", "π–Inter"], \
                     f"Unknown interaction type: {interaction.interaction_type}"
     
     def test_cooperativity_statistics_integration(self, sample_pdb_file):

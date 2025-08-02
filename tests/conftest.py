@@ -334,7 +334,7 @@ def validate_interaction_attributes(interaction, interaction_type):
 
 def validate_hydrogen_bond(hbond):
     """Validate hydrogen bond specific attributes."""
-    validate_interaction_attributes(hbond, "hydrogen_bond")
+    validate_interaction_attributes(hbond, "H-Bond")
     
     required_attrs = ['donor', 'hydrogen', 'acceptor', 'donor_residue', 'acceptor_residue']
     for attr in required_attrs:
@@ -342,7 +342,7 @@ def validate_hydrogen_bond(hbond):
 
 def validate_pi_interaction(pi_interaction):
     """Validate π interaction specific attributes."""
-    validate_interaction_attributes(pi_interaction, "pi_interaction")
+    validate_interaction_attributes(pi_interaction, "π–Inter")
     
     required_attrs = ['donor', 'hydrogen', 'pi_center', 'donor_residue', 'pi_residue']
     for attr in required_attrs:
@@ -377,5 +377,5 @@ def validate_cooperativity_chain(chain):
     # Validate each interaction in the chain
     for interaction in chain.interactions:
         assert hasattr(interaction, 'interaction_type'), "Chain interaction missing type"
-        assert interaction.interaction_type in ["hydrogen_bond", "halogen_bond", "pi_interaction"], \
+        assert interaction.interaction_type in ["H-Bond", "X-Bond", "π–Inter"], \
             f"Unknown interaction type: {interaction.interaction_type}"

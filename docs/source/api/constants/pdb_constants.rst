@@ -63,6 +63,15 @@ Water molecule recognition patterns.
 
 .. autodata:: hbat.constants.pdb_constants.WATER_MOLECULES
 
+Classification Codes
+~~~~~~~~~~~~~~~~~~~~
+
+Single letter codes for molecular classification systems.
+
+.. autodata:: hbat.constants.pdb_constants.RESIDUE_TYPE_CODES
+.. autodata:: hbat.constants.pdb_constants.BACKBONE_SIDECHAIN_CODES
+.. autodata:: hbat.constants.pdb_constants.AROMATIC_CODES
+
 Atom Name Mapping
 ~~~~~~~~~~~~~~~~~
 

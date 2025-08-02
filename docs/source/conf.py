@@ -104,31 +104,17 @@ intersphinx_mapping = {
     'matplotlib': ('https://matplotlib.org/stable/', None),
 }
 
-# HTML theme options
+# HTML theme options for sphinx_book_theme
 html_theme_options = {
-    'canonical_url': '',
-    'analytics_id': '',
-    'google_analytics_id': 'G-PLZNCJY1B7',
-    'logo_only': False,
-    'prev_next_buttons_location': 'bottom',
-    'style_external_links': False,
-    'vcs_pageview_mode': '',
-    'style_nav_header_background': '#343131',  # Dark header background
-    'collapse_navigation': True,
-    'sticky_navigation': True,
-    'navigation_depth': 4,
-    'includehidden': True,
-    'titles_only': False,
     "repository_url": "https://github.com/abhishektiwari/hbat",
     "repository_provider": "github",
     "repository_branch": "main",
     "path_to_docs": "docs/source",
     "use_issues_button": True,
     "use_repository_button": True,
-    "use_edit_page_button": True,
+    "use_edit_page_button": True, 
     "use_download_button": False,
     "use_fullscreen_button": True,
-    "use_search_button": True,
     "use_sidenotes": True,
     "icon_links_label": "Quick Links",
     "icon_links": [

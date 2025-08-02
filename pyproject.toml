@@ -30,11 +30,14 @@ dependencies = [
     "pdbreader>=0.1.0",
     "numpy>=1.20.0",
     "networkx>=2.5.0",
+    "graphviz>=0.20.0",
+    "Pillow>=8.0.0",
     "matplotlib>=3.3.0",
     "openbabel-wheel>=3.1.1.22",
     "pybel>=0.15.5",
     "mmcif-pdbx>=2.0.1",
     "mmcif>=0.92.0",
+    "tkinter-async-execute>=1.4.0",
 ]
 dynamic = ["version"]
 
@@ -71,17 +74,9 @@ docs = [
 gui = [
     "tkinter; python_version>='3.8'",
 ]
-advanced-viz = [
-    "seaborn>=0.11.0",
-    "plotly>=5.0.0",
-]
-export = [
-    "pandas>=1.1.0",
-    "openpyxl>=3.0.0",
-    "xlwt>=1.3.0",
-]
+
 all = [
-    "hbat[gui,advanced-viz,export,docs]",
+    "hbat[gui]",
 ]
 
 [project.scripts]

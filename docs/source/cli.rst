@@ -166,11 +166,11 @@ Basic analysis with default parameters:
 
    hbat protein.pdb
 
-Save results to a text file:
+Save results to a CSV file (default format):
 
 .. code-block:: bash
 
-   hbat protein.pdb -o results.txt
+   hbat protein.pdb -o results.csv
 
 Use custom hydrogen bond criteria:
 
@@ -182,7 +182,7 @@ Export results in multiple formats:
 
 .. code-block:: bash
 
-   hbat protein.pdb -o results.txt --json results.json --csv results.csv
+   hbat protein.pdb -o results.csv --json results.json
 
 Use a high-resolution preset:
 
@@ -236,23 +236,36 @@ The default text output includes:
 JSON Output
 ~~~~~~~~~~~
 
-The JSON format provides structured data with:
+The JSON format automatically generates separate files for each interaction type with structured data:
 
 - Metadata section with version and file information
-- Complete statistics
+- Complete statistics for each interaction type
 - Arrays of interactions with all geometric parameters
-- Atom coordinates for further processing
+- Atom coordinates and structural properties for further processing
+
+When using ``--json results.json``, HBAT creates:
+- ``results_h_bonds.json``
+- ``results_halogen_bonds.json``
+- ``results_pi_interactions.json``
+- ``results_cooperativity_chains.json``
 
 CSV Output
 ~~~~~~~~~~
 
-The CSV format includes separate sections for:
+The CSV format automatically generates separate files for each interaction type:
 
-- Hydrogen bonds with all parameters
-- Halogen bonds with geometric data
+- Hydrogen bonds with donor-acceptor properties and backbone/sidechain classification
+- Halogen bonds with geometric data and structural properties  
 - π interactions with distance and angle information
+- Cooperativity chains showing interaction networks
 
-Each section has appropriate column headers for easy import into spreadsheet applications.
+When using ``--csv results.csv``, HBAT creates:
+- ``results_h_bonds.csv``
+- ``results_halogen_bonds.csv``
+- ``results_pi_interactions.csv``
+- ``results_cooperativity_chains.csv``
+
+Each file includes comprehensive data with appropriate column headers for easy import into spreadsheet applications.
 
 Exit Codes
 ----------

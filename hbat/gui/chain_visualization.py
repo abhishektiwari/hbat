@@ -5,21 +5,19 @@ This module provides a dedicated window for visualizing cooperative hydrogen bon
 chains using NetworkX and matplotlib with ellipse-shaped nodes.
 """
 
-import math
+import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Optional
 
-try:
-    import matplotlib.pyplot as plt
-    import networkx as nx
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    from matplotlib.patches import Ellipse
+import networkx as nx
 
-    VISUALIZATION_AVAILABLE = True
-except ImportError:
-    VISUALIZATION_AVAILABLE = False
+from hbat.core.app_config import HBATConfig, get_hbat_config
+from hbat.gui.export_manager import ExportManager
+from hbat.gui.visualization_renderer import RendererFactory, VisualizationRenderer
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 
 class ChainVisualizationWindow:
@@ -36,7 +34,9 @@ class ChainVisualizationWindow:
     :type chain_id: str
     """
 
-    def __init__(self, parent, chain, chain_id) -> None:
+    def __init__(
+        self, parent, chain, chain_id, config: Optional[HBATConfig] = None
+    ) -> None:
         """Initialize the chain visualization window.
 
         Sets up the visualization window with NetworkX graph rendering
@@ -48,26 +48,30 @@ class ChainVisualizationWindow:
         :type chain: CooperativityChain
         :param chain_id: String identifier for the chain
         :type chain_id: str
+        :param config: HBAT configuration instance (optional)
+        :type config: Optional[HBATConfig]
         :returns: None
         :rtype: None
         """
-        if not VISUALIZATION_AVAILABLE:
-            messagebox.showerror(
-                "Error",
-                "Visualization libraries (networkx, matplotlib) are not available.",
-            )
-            return
-
         self.parent = parent
         self.chain = chain
         self.chain_id = chain_id
+        self.config = config or get_hbat_config()
         self.viz_window = None
-        self.canvas = None
-        self.fig = None
-        self.ax = None
         self.G = None
+        self.renderer: Optional[VisualizationRenderer] = None
+        self.export_manager: Optional[ExportManager] = None
+        self.current_layout = "circular"
 
-        self._create_window()
+        # Create the window
+        try:
+            self._create_window()
+        except ImportError as e:
+            messagebox.showerror(
+                "Error", f"Visualization libraries are not available: {str(e)}"
+            )
+            logger.error(f"Failed to create visualization window: {e}")
+            return
 
     def _create_window(self):
         """Create the visualization window."""
@@ -75,24 +79,38 @@ class ChainVisualizationWindow:
         self.viz_window.title(f"Cooperativity Chain Visualization - {self.chain_id}")
         self.viz_window.geometry("1000x1000")
 
-        # Create the matplotlib figure
-        self.fig = Figure(figsize=(10, 8), dpi=100)
-        self.ax = self.fig.add_subplot(111)
+        # Create main container frames
+        main_frame = ttk.Frame(self.viz_window)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Create visualization frame
+        viz_frame = ttk.Frame(main_frame)
+        viz_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Create renderer
+        try:
+            self.renderer = RendererFactory.create_renderer(viz_frame, self.config)
+            logger.info(f"Using {self.renderer.get_renderer_name()} renderer")
+
+            # Create export manager
+            self.export_manager = ExportManager(self.renderer, self.config)
+        except ImportError as e:
+            raise ImportError(f"No visualization renderer available: {e}")
 
         # Create the network graph
         self.G = nx.MultiDiGraph()
 
-        # Build and display the initial graph
+        # Build the graph
         self._build_graph()
-        self._draw_graph()
 
-        # Add the canvas to the window
-        self.canvas = FigureCanvasTkAgg(self.fig, self.viz_window)
-        self.canvas.draw()
-        self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-
-        # Add toolbar
+        # Add toolbar first to set up engine preferences
         self._create_toolbar()
+
+        # Now render the graph with correct engine settings
+        self._render_graph()
+
+        # Pack the renderer's canvas widget
+        self._pack_renderer_widget(viz_frame)
 
         # Add chain information
         self._create_info_panel()
@@ -126,223 +144,150 @@ class ChainVisualizationWindow:
             # Add edge with interaction data
             self.G.add_edge(donor_node, acceptor_node, interaction=interaction)
 
-    def _draw_graph(self, layout_type="circular"):
-        """Draw the graph with the specified layout."""
-        self.ax.clear()
+    def _render_graph(self, layout_type="circular"):
+        """Render the graph with the specified layout using the current renderer."""
+        self.current_layout = layout_type
 
-        if not self.G.nodes():
-            self.ax.text(
-                0.5,
-                0.5,
-                "No interactions to display",
-                ha="center",
-                va="center",
-                transform=self.ax.transAxes,
-            )
-            return
-
-        # Get layout
-        pos = self._get_layout(layout_type)
-
-        # Prepare node and edge data
-        node_labels, node_colors, node_sizes = self._prepare_node_data()
-        edge_labels = self._prepare_edge_data()
-
-        # Draw components
-        self._draw_ellipse_nodes(pos, node_colors, node_sizes)
-        self._draw_edges(pos)
-        self._draw_labels(pos, node_labels, edge_labels)
-
-        # Set title and clean up axes
-        self.ax.set_title(
-            f"Cooperativity Chain: {self.chain_id}\n"
-            f"Length: {self.chain.chain_length} interactions ({layout_type.title()} Layout)"
-        )
-        self.ax.axis("off")
-
-    def _prepare_node_data(self):
-        """Prepare node labels, colors, and sizes."""
-        node_labels = {}
-        node_colors = []
-        node_sizes = []
-
-        for node in self.G.nodes():
-            node_labels[node] = node
-
-            if "(" in node:
-                # Atom-specific node - color based on atom type
-                atom_name = node.split("(")[1].split(")")[0]
-                if atom_name.startswith(("N", "NH")):
-                    node_colors.append("springgreen")  # Nitrogen donors/acceptors
-                elif atom_name.startswith(("O", "OH")):
-                    node_colors.append("cyan")  # Oxygen donors/acceptors
-                elif atom_name.startswith(("S", "SH")):
-                    node_colors.append("mediumturquoise")  # Sulfur donors/acceptors
-                elif atom_name in ["F", "Cl", "Br", "I"]:
-                    node_colors.append("darkkhaki")  # Halogen atoms
-                else:
-                    node_colors.append("lightgray")  # Other atoms
-                node_sizes.append(900)
-            else:
-                # Residue node - different colors for different residue types
-                if any(res in node for res in ["PHE", "TYR", "TRP", "HIS"]):
-                    node_colors.append("darkorange")  # Aromatic residues
-                elif any(res in node for res in ["ASP", "GLU"]):
-                    node_colors.append("cyan")  # Acidic residues
-                elif any(res in node for res in ["LYS", "ARG", "HIS"]):
-                    node_colors.append("springgreen")  # Basic residues
-                elif any(res in node for res in ["SER", "THR", "ASN", "GLN"]):
-                    node_colors.append("peachpuff")  # Polar residues
-                else:
-                    node_colors.append("lightgray")  # Other residues
-                node_sizes.append(1200)
-
-        return node_labels, node_colors, node_sizes
-
-    def _prepare_edge_data(self):
-        """Prepare edge labels."""
-        edge_labels = {}
-
-        for u, v, key, data in self.G.edges(keys=True, data=True):
-            interaction = data.get("interaction")
-            if interaction:
-                interaction_type = interaction.interaction_type
-                distance = getattr(interaction, "distance", 0)
-                angle = math.degrees(getattr(interaction, "angle", 0))
-                edge_labels[(u, v, key)] = (
-                    f"{interaction_type}\n{distance:.2f}Å\n{angle:.1f}°"
+        if self.renderer:
+            try:
+                self.renderer.render(self.G, layout_type)
+            except Exception as e:
+                logger.error(f"Failed to render graph: {e}")
+                messagebox.showerror(
+                    "Render Error", f"Failed to render graph: {str(e)}"
                 )
 
-        return edge_labels
-
-    def _draw_ellipse_nodes(self, pos, node_colors, node_sizes):
-        """Draw ellipse-shaped nodes."""
-        for i, node in enumerate(self.G.nodes()):
-            x, y = pos[node]
-
-            # Calculate ellipse dimensions based on node size
-            width = (node_sizes[i] / 3000) * 1.8  # Scale factor for width
-            height = (node_sizes[i] / 3000) * 1.0  # Scale factor for height
-
-            # Determine node style based on node type
-            if "(" in node:
-                # Atom-specific node - more elongated ellipse
-                width *= 1.2
-                edge_style = "dotted"
-                linewidth = 2.0
-            else:
-                # Residue node - more circular ellipse
-                width *= 1.2
-                edge_style = "dashed"
-                linewidth = 2.0
-
-            # Create ellipse patch with enhanced styling
-            ellipse = Ellipse(
-                (x, y),
-                width,
-                height,
-                facecolor=node_colors[i],
-                edgecolor="black",
-                linewidth=linewidth,
-                linestyle=edge_style,
-                alpha=0.85,
-            )
-
-            # Add ellipse to the axes
-            self.ax.add_patch(ellipse)
-
-    def _draw_edges(self, pos):
-        """Draw edges with connectionstyles."""
-        import itertools as it
-
-        # Create connectionstyles for curved edges
-        connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 6)]
-
-        # Draw edges with connectionstyles to handle multiple edges
-        nx.draw_networkx_edges(
-            self.G,
-            pos,
-            edge_color="black",
-            style="dashed",
-            connectionstyle=connectionstyle,
-            arrows=True,
-            arrowsize=10,
-            ax=self.ax,
-        )
-
-    def _draw_labels(self, pos, node_labels, edge_labels):
-        """Draw node and edge labels."""
-        import itertools as it
-
-        # Draw node labels
-        nx.draw_networkx_labels(self.G, pos, node_labels, font_size=8, ax=self.ax)
-
-        # Draw edge labels
-        connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 6)]
-
-        # Convert edge_labels from (u,v,key) format to tuple format expected by NetworkX
-        formatted_labels = {}
-        for (u, v, key), label in edge_labels.items():
-            edge_tuple = tuple([u, v, key])
-            formatted_labels[edge_tuple] = label
-
-        nx.draw_networkx_edge_labels(
-            self.G,
-            pos,
-            formatted_labels,
-            connectionstyle=connectionstyle,
-            label_pos=0.5,
-            font_size=8,
-            bbox={"boxstyle": "round,pad=0.2", "facecolor": "white", "alpha": 0.8},
-            ax=self.ax,
-        )
-
-    def _get_layout(self, layout_type="circular"):
-        """Get node positions using the specified layout algorithm."""
-        try:
-            if layout_type == "circular":
-                return nx.circular_layout(self.G)
-            elif layout_type == "shell":
-                return nx.shell_layout(self.G)
-            elif layout_type == "kamada_kawai":
-                return nx.kamada_kawai_layout(self.G)
-            elif layout_type == "planar":
-                if nx.is_planar(self.G):
-                    return nx.planar_layout(self.G)
-                else:
-                    # Fallback to circular if not planar
-                    return nx.circular_layout(self.G)
-            else:
-                return nx.circular_layout(self.G)
-        except Exception:
-            # Fallback to circular layout if anything fails
-            return nx.circular_layout(self.G)
+    def _pack_renderer_widget(self, parent_frame):
+        """Pack the renderer's widget into the parent frame."""
+        # Different renderers have different widget types
+        if hasattr(self.renderer, "get_canvas"):
+            # Matplotlib renderer
+            canvas = self.renderer.get_canvas()
+            if canvas:
+                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        elif hasattr(self.renderer, "canvas_frame"):
+            # GraphViz renderer with scrollable canvas
+            if self.renderer.canvas_frame:
+                self.renderer.canvas_frame.pack(fill=tk.BOTH, expand=True)
+        elif hasattr(self.renderer, "canvas"):
+            # Fallback for GraphViz renderer without canvas_frame
+            if self.renderer.canvas:
+                self.renderer.canvas.pack(fill=tk.BOTH, expand=True)
 
     def _create_toolbar(self):
         """Create toolbar with layout options."""
-        toolbar_frame = ttk.Frame(self.viz_window)
-        toolbar_frame.pack(fill=tk.X)
+        self.toolbar_frame = ttk.Frame(self.viz_window)
+        self.toolbar_frame.pack(fill=tk.X)
 
-        # Layout selection buttons
-        ttk.Label(toolbar_frame, text="Layout:").pack(side=tk.LEFT, padx=5)
+        # Create a fixed section for renderer selection
+        self.renderer_section = ttk.Frame(self.toolbar_frame)
+        self.renderer_section.pack(side=tk.LEFT)
 
-        layout_buttons = [
-            ("Circular", "circular"),
-            ("Shell", "shell"),
-            ("Kamada-Kawai", "kamada_kawai"),
-            ("Planar", "planar"),
-        ]
+        # Renderer selection (if multiple available)
+        renderers = RendererFactory.get_available_renderers(self.config)
+        if len(renderers) > 1:
+            ttk.Label(self.renderer_section, text="Renderer:").pack(
+                side=tk.LEFT, padx=5
+            )
+            self.renderer_var = tk.StringVar(value=self.renderer.get_renderer_name())
 
-        for name, layout_type in layout_buttons:
-            ttk.Button(
-                toolbar_frame,
-                text=name,
-                command=lambda lt=layout_type: self._update_layout(lt),
-            ).pack(side=tk.LEFT, padx=2)
+            renderer_menu = ttk.Combobox(
+                self.renderer_section,
+                textvariable=self.renderer_var,
+                values=[name for _, name in renderers],
+                state="readonly",
+                width=15,
+            )
+            renderer_menu.pack(side=tk.LEFT, padx=5)
+            renderer_menu.bind("<<ComboboxSelected>>", self._change_renderer)
 
-        ttk.Button(toolbar_frame, text="Close", command=self.viz_window.destroy).pack(
-            side=tk.RIGHT, padx=5, pady=5
-        )
+        # Create a dynamic section for layout/engine controls
+        self.layout_section = ttk.Frame(self.toolbar_frame)
+        self.layout_section.pack(side=tk.LEFT)
+
+        # Update the layout section based on current renderer
+        self._update_layout_controls()
+
+        # Create a fixed section for export and close buttons
+        self.button_section = ttk.Frame(self.toolbar_frame)
+        self.button_section.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # Export button
+        ttk.Button(
+            self.button_section, text="Export...", command=self._export_visualization
+        ).pack(side=tk.LEFT, padx=10)
+
+        # Close button
+        ttk.Button(
+            self.button_section, text="Close", command=self.viz_window.destroy
+        ).pack(side=tk.RIGHT, padx=5, pady=5)
+
+    def _update_layout_controls(self):
+        """Update the layout/engine controls based on current renderer."""
+        # Clear existing controls in layout section
+        for widget in self.layout_section.winfo_children():
+            widget.destroy()
+
+        renderer_name = self.renderer.get_renderer_name()
+        logger.debug(f"Updating layout controls for renderer: {renderer_name}")
+
+        if "GraphViz" in renderer_name:
+            # For GraphViz, show actual engine names
+            ttk.Label(self.layout_section, text="Engine:").pack(side=tk.LEFT, padx=5)
+
+            # Get available GraphViz engines
+            from hbat.utilities.graphviz_utils import GraphVizDetector
+
+            available_engines = GraphVizDetector.get_available_engines()
+            if not available_engines:
+                available_engines = ["dot", "neato", "fdp", "circo", "twopi"]
+
+            # Ensure "dot" is first in the list
+            if "dot" in available_engines:
+                available_engines = ["dot"] + [
+                    engine for engine in available_engines if engine != "dot"
+                ]
+
+            # Create dropdown for engine selection
+            # Always prefer 'dot' as the default engine for new chain visualization windows
+            current_engine = (
+                "dot" if "dot" in available_engines else available_engines[0]
+            )
+
+            # Update config to use the preferred engine
+            self.config.set_graphviz_engine(current_engine)
+
+            self.engine_var = tk.StringVar(value=current_engine)
+            engine_menu = ttk.Combobox(
+                self.layout_section,
+                textvariable=self.engine_var,
+                values=available_engines,
+                state="readonly",
+                width=8,
+            )
+            engine_menu.pack(side=tk.LEFT, padx=5)
+            engine_menu.bind("<<ComboboxSelected>>", self._change_engine)
+
+            # Explicitly set the combobox to show the current engine
+            # This ensures the GUI displays the correct default value
+            engine_menu.set(current_engine)
+
+        else:
+            # For other renderers, show layout names
+            ttk.Label(self.layout_section, text="Layout:").pack(side=tk.LEFT, padx=5)
+
+            # Get supported layouts from renderer
+            if hasattr(self.renderer, "get_supported_layouts"):
+                layouts = self.renderer.get_supported_layouts()
+            else:
+                layouts = ["circular", "shell", "kamada_kawai", "planar", "spring"]
+
+            for layout in layouts:
+                ttk.Button(
+                    self.layout_section,
+                    text=layout.replace("_", " ").title(),
+                    command=lambda lt=layout: self._update_layout(lt),
+                ).pack(side=tk.LEFT, padx=2)
 
     def _create_info_panel(self):
         """Create information panel."""
@@ -358,6 +303,90 @@ class ChainVisualizationWindow:
 
     def _update_layout(self, layout_type):
         """Update the visualization with a new layout."""
-        self._draw_graph(layout_type)
-        if self.canvas:
-            self.canvas.draw()
+        self._render_graph(layout_type)
+
+    def _change_renderer(self, event=None):
+        """Change the visualization renderer."""
+        if not hasattr(self, "renderer_var"):
+            return
+
+        selected_name = self.renderer_var.get()
+        renderers = RendererFactory.get_available_renderers(self.config)
+
+        # Find the renderer type for the selected name
+        renderer_type = None
+        for r_type, r_name in renderers:
+            if r_name == selected_name:
+                renderer_type = r_type
+                break
+
+        if renderer_type:
+            try:
+                # Get the parent frame of current renderer widget
+                parent_frame = self.renderer.parent
+
+                # Remove old renderer widget
+                if hasattr(self.renderer, "get_canvas"):
+                    canvas = self.renderer.get_canvas()
+                    if canvas:
+                        canvas.get_tk_widget().pack_forget()
+                elif hasattr(self.renderer, "canvas_frame"):
+                    if self.renderer.canvas_frame:
+                        self.renderer.canvas_frame.pack_forget()
+                elif hasattr(self.renderer, "canvas"):
+                    if self.renderer.canvas:
+                        self.renderer.canvas.pack_forget()
+
+                # Create new renderer
+                self.renderer = RendererFactory.create_renderer(
+                    parent_frame, self.config, preferred_type=renderer_type
+                )
+
+                # Update export manager
+                self.export_manager = ExportManager(self.renderer, self.config)
+
+                # Pack new renderer widget
+                self._pack_renderer_widget(parent_frame)
+
+                # Re-render with current layout
+                self._render_graph(self.current_layout)
+
+                # Update the toolbar layout controls for the new renderer
+                self._update_layout_controls()
+
+                logger.info(f"Switched to {self.renderer.get_renderer_name()} renderer")
+
+            except Exception as e:
+                logger.error(f"Failed to switch renderer: {e}")
+                messagebox.showerror(
+                    "Renderer Error", f"Failed to switch renderer: {str(e)}"
+                )
+
+    def _export_visualization(self):
+        """Export the current visualization."""
+        if self.export_manager:
+            self.export_manager.export_visualization()
+
+    def _change_engine(self, event=None):
+        """Change the GraphViz engine and re-render."""
+        if (
+            not hasattr(self, "engine_var")
+            or self.renderer.get_renderer_name() != "GraphViz"
+        ):
+            return
+
+        selected_engine = self.engine_var.get()
+
+        try:
+            # Update the configuration with the selected engine
+            self.config.set_graphviz_engine(selected_engine)
+
+            # Re-render the graph with the new engine
+            # For GraphViz, we use a dummy layout since the engine determines the layout
+            self._render_graph("dot_layout")
+
+            logger.info(f"Switched GraphViz engine to: {selected_engine}")
+
+        except Exception as e:
+            logger.error(f"Failed to change GraphViz engine: {e}")
+            messagebox.showerror("Engine Error", f"Failed to change engine: {str(e)}")

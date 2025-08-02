@@ -76,7 +76,7 @@ test-coverage:
 
 test-gui:
 	@echo "Running GUI tests..."
-	pytest tests/gui/ -v -m "gui"
+	pytest tests/ -v -m "gui"
 
 test-unit:
 	@echo "Running unit tests..."

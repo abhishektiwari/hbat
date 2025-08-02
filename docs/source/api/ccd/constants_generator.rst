@@ -8,7 +8,7 @@ This module provides functionality to generate Python constants files from CCD d
 Classes
 -------
 
-.. autoclass:: ConstantsGenerator
+.. autoclass:: CCDConstantsGenerator
    :members:
    :undoc-members:
    :show-inheritance:
@@ -19,9 +19,7 @@ Classes
    .. autosummary::
       :nosignatures:
       
-      extract_residue_bonds
-      generate_constants_file
-      write_constants_file
+      write_residue_bonds_constants
 
    .. rubric:: Attributes
 
@@ -29,13 +27,6 @@ Classes
       :type: CCDDataManager
 
       Instance of CCDDataManager for accessing CCD data
-
-Functions
----------
-
-.. autofunction:: main
-
-   Command-line interface for generating residue bond constants.
 
    Usage:
       .. code-block:: bash
@@ -102,22 +93,16 @@ Usage Example
 
 .. code-block:: python
 
-   from hbat.ccd.constants_generator import ConstantsGenerator
+   from hbat.ccd.constants_generator import CCDConstantsGenerator
    from hbat.ccd.ccd_analyzer import CCDDataManager
 
    # Initialize generator
    ccd_manager = CCDDataManager()
-   generator = ConstantsGenerator(ccd_manager)
+   generator = CCDConstantsGenerator(ccd_manager)
 
-   # Extract bonds for specific residues
+   # Generate constants file for specific residues
    residue_list = ["ALA", "GLY", "VAL"]
-   bonds_data = generator.extract_residue_bonds(residue_list)
-
-   # Generate full constants file
-   generator.generate_constants_file("my_constants.py")
-
-   # Or write specific data
-   generator.write_constants_file(bonds_data, "partial_constants.py")
+   success = generator.write_residue_bonds_constants(residue_list, "my_constants.py")
 
 Performance Benefits
 --------------------

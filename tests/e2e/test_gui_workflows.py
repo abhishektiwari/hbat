@@ -9,6 +9,7 @@ import pytest
 import tempfile
 import os
 import json
+import unittest.mock
 
 
 @pytest.mark.e2e
@@ -267,10 +268,15 @@ class TestGUIResultsDisplayWorkflows:
         """Test workflow: analysis → cooperativity chains → visualization."""
         try:
             import tkinter as tk
-            from hbat.gui.chain_visualization import ChainVisualizationWindow, VISUALIZATION_AVAILABLE
+            from hbat.gui.chain_visualization import ChainVisualizationWindow
             from hbat.core.analyzer import MolecularInteractionAnalyzer
+            from hbat.core.app_config import HBATConfig
             
-            if not VISUALIZATION_AVAILABLE:
+            # Check if visualization dependencies are available
+            try:
+                import networkx as nx
+                import matplotlib.pyplot as plt
+            except ImportError:
                 pytest.skip("Visualization dependencies not available")
             
             # Run analysis to get chains
@@ -286,8 +292,10 @@ class TestGUIResultsDisplayWorkflows:
                 root.withdraw()
                 
                 try:
-                    # Create visualization window
-                    viz_window = ChainVisualizationWindow(root, chains[0], "Test Chain")
+                    # Create config and visualization window
+                    config = HBATConfig()
+                    with unittest.mock.patch('tkinter.Toplevel'):  # Mock window creation
+                        viz_window = ChainVisualizationWindow(root, chains[0], "Test Chain", config)
                     
                     # Verify visualization components
                     assert viz_window is not None

@@ -183,150 +183,41 @@ Exception Classes
 Core Fixing Methods
 -------------------
 
-Hydrogen Addition
-~~~~~~~~~~~~~~~~~
+The PDBFixer class provides comprehensive structure fixing capabilities through its member methods. All methods are documented through the class autodocumentation above.
 
-.. automethod:: hbat.core.pdb_fixer.PDBFixer.add_missing_hydrogens
+**Key Method Categories:**
 
-   Add missing hydrogen atoms using chemical bonding rules and geometric optimization.
+- **Hydrogen Addition**: `add_missing_hydrogens()` - Uses chemical bonding rules and geometric optimization
+- **Heavy Atom Reconstruction**: `add_missing_heavy_atoms()` - Reconstructs missing heavy atoms in standard residues  
+- **Residue Standardization**: `convert_nonstandard_residues()` - Converts non-standard and modified residues
+- **Hetrogen Management**: `remove_heterogens()` - Manages hetrogen retention based on analysis requirements
+- **File Operations**: `fix_structure_file()` - High-level interface for comprehensive PDB fixing
 
-   **Algorithm Details:**
+Standalone Functions
+--------------------
 
-   1. **Identify Missing Hydrogens**: Compare with expected atom counts
-   2. **Determine Bonding Geometry**: Analyze local chemical environment
-   3. **Calculate Positions**: Use ideal bond lengths and angles
-   4. **Geometric Optimization**: Minimize steric clashes
-   5. **Validation**: Check for reasonable H-bond geometries
-
-   **Chemical Rules:**
-
-   - **sp³ Carbons**: Tetrahedral geometry (109.5°)
-   - **sp² Carbons**: Trigonal planar geometry (120°)
-   - **Nitrogens**: Pyramidal or planar based on hybridization
-   - **Oxygens**: Bent geometry for alcohols, linear for carbonyls
-
-Heavy Atom Reconstruction
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. automethod:: hbat.core.pdb_fixer.PDBFixer.add_missing_heavy_atoms
-
-   Reconstruct missing heavy atoms in standard protein and nucleic acid residues.
-
-   **Reconstruction Strategy:**
-
-   1. **Template Matching**: Use ideal residue geometries
-   2. **Coordinate Transformation**: Align existing atoms with templates
-   3. **Position Calculation**: Place missing atoms using transformations
-   4. **Clash Resolution**: Adjust positions to avoid overlaps
-   5. **Energy Minimization**: Optimize local geometry
-
-Residue Standardization
-~~~~~~~~~~~~~~~~~~~~~~~
-
-.. automethod:: hbat.core.pdb_fixer.PDBFixer.convert_nonstandard_residues
-
-   Convert non-standard and modified residues to their standard equivalents.
-
-   **Conversion Rules:**
-
-   - **Modified Amino Acids**: Map to parent amino acid (e.g., MSE → MET)
-   - **Protonation States**: Standardize histidine variants (HIS, HID, HIE)
-   - **Post-translational Modifications**: Convert to unmodified forms
-   - **Non-standard Nucleotides**: Map to canonical bases
-
-   **Database Integration:**
-
-   Uses comprehensive substitution tables from the constants module:
-
-   .. code-block:: python
-
-      from hbat.constants import PROTEIN_SUBSTITUTIONS
-
-      # Example conversions
-      conversions = {
-          "MSE": "MET",  # Selenomethionine → Methionine
-          "CSO": "CYS",  # Cysteine sulfenic acid → Cysteine  
-          "HYP": "PRO",  # Hydroxyproline → Proline
-          "PCA": "GLU"   # Pyroglutamic acid → Glutamic acid
-      }
-
-Hetrogen Management
-~~~~~~~~~~~~~~~~~~~
-
-.. automethod:: hbat.core.pdb_fixer.PDBFixer.remove_heterogens
-
-   Remove or retain specific heterogens based on analysis requirements.
-
-   **Hetrogen Categories:**
-
-   - **Waters**: HOH, WAT, DOD molecules
-   - **Ions**: Metal ions and simple salts
-   - **Cofactors**: Essential prosthetic groups
-   - **Ligands**: Small molecule binding partners
-   - **Crystallographic Additives**: PEG, glycerol, buffer components
-
-   **Retention Strategies:**
-
-   - **Keep All**: Retain all heterogens for comprehensive analysis
-   - **Keep Essential**: Retain only biologically relevant heterogens
-   - **Remove All**: Remove all heterogens for protein-only analysis
-   - **Custom Filtering**: User-defined retention criteria
-
-File-Level Operations
----------------------
-
-Structure File Fixing
+Module-Level Functions
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. automethod:: hbat.core.pdb_fixer.PDBFixer.fix_structure_file
+.. autofunction:: hbat.core.pdb_fixer.add_missing_hydrogens
 
-   High-level interface for fixing PDB files with comprehensive options.
+   Standalone function for adding missing hydrogen atoms to atom lists.
 
-   **Process Flow:**
+.. autofunction:: hbat.core.pdb_fixer.fix_pdb_file
 
-   1. **Parse Input**: Load and validate input PDB structure
-   2. **Apply Fixes**: Execute requested fixing operations in optimal order
-   3. **Validate Results**: Check fixed structure for consistency
-   4. **Write Output**: Save enhanced structure to output file
-   5. **Generate Report**: Provide detailed fixing statistics
+   Convenience function for fixing PDB files with comprehensive options.
 
-   **Output Formats:**
+.. autofunction:: hbat.core.pdb_fixer.add_missing_heavy_atoms
 
-   - **Standard PDB**: Traditional PDB format with fixed structure
-   - **Enhanced PDB**: PDB with additional metadata and validation info
-   - **Statistics Report**: Detailed log of all fixing operations
+   Standalone function for reconstructing missing heavy atoms.
 
-Convenience Functions
----------------------
+.. autofunction:: hbat.core.pdb_fixer.convert_nonstandard_residues
 
-Quick Fixing Operations
-~~~~~~~~~~~~~~~~~~~~~~~
+   Standalone function for converting non-standard residues.
 
-.. autofunction:: hbat.core.pdb_fixer.add_hydrogens_to_file
+.. autofunction:: hbat.core.pdb_fixer.remove_heterogens
 
-   Convenience function for quick hydrogen addition to PDB files.
-
-.. autofunction:: hbat.core.pdb_fixer.standardize_residues_in_file
-
-   Convenience function for residue standardization without other modifications.
-
-.. autofunction:: hbat.core.pdb_fixer.clean_structure_file
-
-   Convenience function for comprehensive structure cleaning and validation.
-
-Structure Validation
-~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: hbat.core.pdb_fixer.validate_pdb_structure
-
-   Comprehensive structure validation with detailed quality reporting.
-
-   **Validation Checks:**
-
-   - **Atomic Completeness**: Missing atoms in standard residues
-   - **Geometric Consistency**: Bond lengths, angles, and chirality
-   - **Chemical Validity**: Proper atom types and formal charges
-   - **Structural Integrity**: Chain continuity and proper termination
+   Standalone function for removing heterogens from atom lists.
 
 Chemical Intelligence
 ---------------------
