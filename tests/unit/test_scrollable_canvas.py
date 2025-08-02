@@ -11,11 +11,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 from PIL import Image
+import pytest
 
 from hbat.core.app_config import HBATConfig
 from hbat.gui.graphviz_renderer import GraphVizRenderer
 
 
+@pytest.mark.gui
 class TestScrollableCanvas(unittest.TestCase):
     """Unit tests for scrollable canvas functionality."""
 

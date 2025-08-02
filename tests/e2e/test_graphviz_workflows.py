@@ -12,6 +12,7 @@ from unittest.mock import Mock, patch
 import tkinter as tk
 
 import networkx as nx
+import pytest
 
 from hbat.core.app_config import HBATConfig
 from hbat.gui.chain_visualization import ChainVisualizationWindow
@@ -69,6 +70,7 @@ class MockAtom:
         return f"{self.residue}{self.chain}({self.name})"
 
 
+@pytest.mark.gui
 class TestGraphVizWorkflows(unittest.TestCase):
     """End-to-end tests for GraphViz workflows."""
 

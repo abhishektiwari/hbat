@@ -244,11 +244,14 @@ class TestGraphVizDetector:
 
     def test_check_executable_in_directory_not_found(self):
         """Test private method _check_executable_in_directory when not found."""
-        mock_path = Mock()
-        mock_path.exists.return_value = False
-        mock_path.is_file.return_value = False
+        mock_path_instance = Mock()
+        mock_path_instance.exists.return_value = False
+        mock_path_instance.is_file.return_value = False
         
-        with patch('pathlib.Path', return_value=mock_path):
+        mock_path_constructor = Mock()
+        mock_path_constructor.__truediv__ = Mock(return_value=mock_path_instance)
+        
+        with patch('hbat.utilities.graphviz_utils.Path', return_value=mock_path_constructor):
             result = GraphVizDetector._check_executable_in_directory('dot', '/usr/bin')
             assert result is False
 
@@ -287,11 +290,14 @@ class TestGraphVizDetector:
 
     def test_which_not_found(self):
         """Test private method _which when executable is not found."""
-        mock_path = Mock()
-        mock_path.exists.return_value = False
-        mock_path.is_file.return_value = False
+        mock_path_instance = Mock()
+        mock_path_instance.exists.return_value = False
+        mock_path_instance.is_file.return_value = False
         
-        with patch('pathlib.Path', return_value=mock_path), \
+        mock_path_constructor = Mock()
+        mock_path_constructor.__truediv__ = Mock(return_value=mock_path_instance)
+        
+        with patch('hbat.utilities.graphviz_utils.Path', return_value=mock_path_constructor), \
              patch.dict(os.environ, {'PATH': '/usr/bin:/usr/local/bin'}):
             result = GraphVizDetector._which('nonexistent')
             assert result is None

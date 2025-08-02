@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import networkx as nx
+import pytest
 import tkinter as tk
 
 from hbat.core.app_config import HBATConfig
@@ -18,6 +19,7 @@ from hbat.gui.graphviz_renderer import GraphVizRenderer
 from hbat.gui.visualization_renderer import RendererFactory
 
 
+@pytest.mark.gui
 class TestGraphVizRendererIntegration(unittest.TestCase):
     """Integration tests for GraphViz renderer."""
 
