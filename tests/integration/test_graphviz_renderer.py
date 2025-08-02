@@ -230,6 +230,7 @@ class TestGraphVizRendererIntegration(unittest.TestCase):
         self.assertIn("png", formats)
         self.assertIn("svg", formats)
         self.assertIn("pdf", formats)
+        self.assertIn("dot", formats)
         
     @patch('hbat.utilities.graphviz_utils.GraphVizDetector.is_graphviz_available')
     def test_configuration_integration(self, mock_available):

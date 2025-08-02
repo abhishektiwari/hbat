@@ -150,7 +150,7 @@ class GraphVizRenderer(BaseVisualizationRenderer):
         :returns: List of supported format names
         :rtype: List[str]
         """
-        return ["png", "svg", "pdf"]
+        return ["png", "svg", "pdf", "dot"]
 
     def get_supported_layouts(self) -> List[str]:
         """Get list of supported layout algorithms.
@@ -401,6 +401,10 @@ class GraphVizRenderer(BaseVisualizationRenderer):
         :returns: True if successful
         :rtype: bool
         """
+        # Handle DOT format specially - just save the source
+        if format.lower() == "dot":
+            return self._export_dot_source(dot_string, filename)
+
         engine = self.config.get_graphviz_engine()
 
         if GRAPHVIZ_PYTHON_AVAILABLE:
@@ -430,8 +434,13 @@ class GraphVizRenderer(BaseVisualizationRenderer):
             graph = graphviz.Source(dot_string)
             graph.engine = engine
 
+            # Remove extension from filename since graph.render() adds it automatically
+            from pathlib import Path
+
+            base_filename = str(Path(filename).with_suffix(""))
+
             # Render to file
-            graph.render(filename, format=format, cleanup=True)
+            graph.render(base_filename, format=format, cleanup=True)
             return True
 
         except Exception as e:
@@ -481,6 +490,25 @@ class GraphVizRenderer(BaseVisualizationRenderer):
 
         except Exception as e:
             logger.error(f"Failed to export with subprocess: {e}")
+            return False
+
+    def _export_dot_source(self, dot_string: str, filename: str) -> bool:
+        """Export DOT source code to file.
+
+        :param dot_string: DOT format string
+        :type dot_string: str
+        :param filename: Output filename
+        :type filename: str
+        :returns: True if successful
+        :rtype: bool
+        """
+        try:
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(dot_string)
+            logger.info(f"Successfully exported DOT source to {filename}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to export DOT source: {e}")
             return False
 
     def _create_canvas(self) -> None:

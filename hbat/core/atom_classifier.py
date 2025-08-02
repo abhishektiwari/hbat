@@ -19,6 +19,7 @@ from ..constants.pdb_constants import (
     RESIDUES_WITH_AROMATIC_RINGS,
     RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS,
     RNA_RESIDUES,
+    WATER_MOLECULES,
 )
 
 
@@ -27,7 +28,7 @@ def classify_residue_type(res_name: str) -> str:
 
     :param res_name: Three-letter residue name (e.g., 'ALA', 'DA', 'HOH')
     :type res_name: str
-    :returns: Single letter code for residue type ('P', 'D', 'R', 'L')
+    :returns: Single letter code for residue type ('P', 'D', 'R', 'W', 'L')
     :rtype: str
     """
     res_name = res_name.strip().upper()
@@ -38,6 +39,8 @@ def classify_residue_type(res_name: str) -> str:
         return RESIDUE_TYPE_CODES["DNA"]  # "D"
     elif res_name in RNA_RESIDUES:
         return RESIDUE_TYPE_CODES["RNA"]  # "R"
+    elif res_name in WATER_MOLECULES:
+        return RESIDUE_TYPE_CODES["WATER"]  # "W"
     else:
         return RESIDUE_TYPE_CODES["LIGAND"]  # "L"
 

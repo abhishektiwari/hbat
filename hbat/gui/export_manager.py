@@ -45,6 +45,12 @@ EXPORT_FORMATS = {
         "description": "Encapsulated PostScript",
         "filetypes": [("EPS files", "*.eps")],
     },
+    "dot": {
+        "name": "DOT Source",
+        "extension": ".dot",
+        "description": "GraphViz DOT language source file",
+        "filetypes": [("DOT files", "*.dot")],
+    },
 }
 
 

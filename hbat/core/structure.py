@@ -176,6 +176,12 @@ class Atom:
     :type charge: str
     :param record_type: PDB record type (ATOM or HETATM)
     :type record_type: str
+    :param residue_type: Residue type classification (P=Protein, D=DNA, R=RNA, L=Ligand)
+    :type residue_type: str
+    :param backbone_sidechain: Backbone/sidechain classification (B=Backbone, S=Sidechain)
+    :type backbone_sidechain: str
+    :param aromatic: Aromatic classification (A=Aromatic, N=Non-aromatic)
+    :type aromatic: str
     """
 
     def __init__(
@@ -225,6 +231,12 @@ class Atom:
         :type charge: str
         :param record_type: PDB record type (ATOM or HETATM)
         :type record_type: str
+        :param residue_type: Residue type classification (P=Protein, D=DNA, R=RNA, L=Ligand)
+        :type residue_type: str
+        :param backbone_sidechain: Backbone/sidechain classification (B=Backbone, S=Sidechain)
+        :type backbone_sidechain: str
+        :param aromatic: Aromatic classification (A=Aromatic, N=Non-aromatic)
+        :type aromatic: str
         """
         self.serial = serial
         self.name = name

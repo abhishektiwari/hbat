@@ -14,7 +14,7 @@ See full CLI options :doc:`cli`.
 .. code-block:: bash
 
    hbat input.pdb                          # Basic analysis
-   hbat input.pdb -o results.txt           # Save results to file
+   hbat input.pdb -o results.csv           # Save results to CSV file (default)
    hbat input.pdb --hb-distance 3.0        # Custom H-bond distance cutoff
    hbat input.pdb --mode local             # Local interactions only
    hbat input.pdb --json results.json      # Export to JSON format

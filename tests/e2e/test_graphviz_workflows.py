@@ -28,13 +28,13 @@ class MockCooperativityChain:
     def __init__(self, interactions=None):
         self.interactions = interactions or []
         self.chain_length = len(self.interactions)
-        self.chain_type = "Hydrogen Bond"
+        self.chain_type = "H-Bond"
 
 
 class MockInteraction:
     """Mock interaction for testing."""
     
-    def __init__(self, donor, acceptor, interaction_type="Hydrogen Bond", distance=2.8, angle=2.96):
+    def __init__(self, donor, acceptor, interaction_type="H-Bond", distance=2.8, angle=2.96):
         self.donor_atom = donor
         self.acceptor_atom = acceptor
         self.interaction_type = interaction_type
@@ -215,7 +215,7 @@ class TestGraphVizWorkflows(unittest.TestCase):
         G.add_node("SER123(OG)")
         G.add_node("THR124(N)")
         G.add_edge("SER123(OG)", "THR124(N)", 
-                  interaction=Mock(interaction_type="Hydrogen Bond", distance=2.8, angle=2.96))
+                  interaction=Mock(interaction_type="H-Bond", distance=2.8, angle=2.96))
         
         # Test rendering
         try:
@@ -240,7 +240,7 @@ class TestGraphVizWorkflows(unittest.TestCase):
         G = nx.MultiDiGraph()
         G.add_node("A")
         G.add_node("B")
-        G.add_edge("A", "B", interaction=Mock(interaction_type="Hydrogen Bond", distance=2.8, angle=2.96))
+        G.add_edge("A", "B", interaction=Mock(interaction_type="H-Bond", distance=2.8, angle=2.96))
         
         # Prepare graph
         renderer.prepare_graph_data(G)

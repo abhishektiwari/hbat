@@ -126,7 +126,7 @@ Basic usage
 .. code-block:: bash
 
    hbat input.pdb                          # Basic analysis
-   hbat input.pdb -o results.txt           # Save results to file
+   hbat input.pdb -o results.csv           # Save results to CSV file (default)
 
 See full CLI options :doc:`cli`.
 
@@ -137,7 +137,7 @@ Features
 - **Cooperativity Detection**: Identifies chains of cooperative molecular interactions
 - **Structure Enhancement**: Automated PDB fixing with OpenBabel and PDBFixer integration
 - **Flexible Parameters**: Customizable analysis parameters for different research needs
-- **Multiple Output Formats**: Support for CSV, JSON, and formatted text output
+- **Multiple Output Formats**: Support for CSV (default), JSON, and formatted text output with automated file generation for each interaction type
 - **GUI Interface**: User-friendly graphical interface for interactive analysis
 - **Command Line Tool**: Scriptable CLI for batch processing and automation
 

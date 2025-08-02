@@ -220,24 +220,24 @@ class HydrogenBond(MolecularInteraction):
     including the participating atoms, geometric parameters, and
     classification information.
 
-    :param donor: The hydrogen bond donor atom
-    :type donor: Atom
+    :param _donor: The hydrogen bond donor atom
+    :type _donor: Atom
     :param hydrogen: The hydrogen atom in the bond
     :type hydrogen: Atom
-    :param acceptor: The hydrogen bond acceptor atom
-    :type acceptor: Atom
+    :param _acceptor: The hydrogen bond acceptor atom
+    :type _acceptor: Atom
     :param distance: H...A distance in Angstroms
     :type distance: float
     :param angle: D-H...A angle in radians
     :type angle: float
-    :param donor_acceptor_distance: D...A distance in Angstroms
-    :type donor_acceptor_distance: float
+    :param _donor_acceptor_distance: D...A distance in Angstroms
+    :type _donor_acceptor_distance: float
     :param bond_type: Classification of the hydrogen bond type
     :type bond_type: str
-    :param donor_residue: Identifier for donor residue
-    :type donor_residue: str
-    :param acceptor_residue: Identifier for acceptor residue
-    :type acceptor_residue: str
+    :param _donor_residue: Identifier for donor residue
+    :type _donor_residue: str
+    :param _acceptor_residue: Identifier for acceptor residue
+    :type _acceptor_residue: str
     """
 
     def __init__(
@@ -252,6 +252,27 @@ class HydrogenBond(MolecularInteraction):
         _donor_residue: str,
         _acceptor_residue: str,
     ):
+        """Initialize a HydrogenBond object.
+
+        :param _donor: The hydrogen bond donor atom
+        :type _donor: Atom
+        :param hydrogen: The hydrogen atom in the bond
+        :type hydrogen: Atom
+        :param _acceptor: The hydrogen bond acceptor atom
+        :type _acceptor: Atom
+        :param distance: H...A distance in Angstroms
+        :type distance: float
+        :param angle: D-H...A angle in radians
+        :type angle: float
+        :param _donor_acceptor_distance: D...A distance in Angstroms
+        :type _donor_acceptor_distance: float
+        :param bond_type: Classification of the hydrogen bond type
+        :type bond_type: str
+        :param _donor_residue: Identifier for donor residue
+        :type _donor_residue: str
+        :param _acceptor_residue: Identifier for acceptor residue
+        :type _acceptor_residue: str
+        """
         self._donor = _donor
         self.hydrogen = hydrogen
         self._acceptor = _acceptor
@@ -301,7 +322,7 @@ class HydrogenBond(MolecularInteraction):
         return self._acceptor_residue
 
     def get_interaction_type(self) -> str:
-        return "hydrogen_bond"
+        return "H-Bond"
 
     def get_donor_interaction_distance(self) -> float:
         """Distance from donor to hydrogen."""
@@ -394,18 +415,18 @@ class HalogenBond(MolecularInteraction):
 
     :param halogen: The halogen atom (F, Cl, Br, I)
     :type halogen: Atom
-    :param acceptor: The electron donor/acceptor atom
-    :type acceptor: Atom
+    :param _acceptor: The electron donor/acceptor atom
+    :type _acceptor: Atom
     :param distance: X...A distance in Angstroms
     :type distance: float
     :param angle: C-X...A angle in radians
     :type angle: float
     :param bond_type: Classification of the halogen bond type
     :type bond_type: str
-    :param halogen_residue: Identifier for halogen-containing residue
-    :type halogen_residue: str
-    :param acceptor_residue: Identifier for acceptor residue
-    :type acceptor_residue: str
+    :param _halogen_residue: Identifier for halogen-containing residue
+    :type _halogen_residue: str
+    :param _acceptor_residue: Identifier for acceptor residue
+    :type _acceptor_residue: str
     """
 
     def __init__(
@@ -418,6 +439,23 @@ class HalogenBond(MolecularInteraction):
         _halogen_residue: str,
         _acceptor_residue: str,
     ):
+        """Initialize a HalogenBond object.
+
+        :param halogen: The halogen atom (F, Cl, Br, I)
+        :type halogen: Atom
+        :param _acceptor: The electron donor/acceptor atom
+        :type _acceptor: Atom
+        :param distance: X...A distance in Angstroms
+        :type distance: float
+        :param angle: C-X...A angle in radians
+        :type angle: float
+        :param bond_type: Classification of the halogen bond type
+        :type bond_type: str
+        :param _halogen_residue: Identifier for halogen-containing residue
+        :type _halogen_residue: str
+        :param _acceptor_residue: Identifier for acceptor residue
+        :type _acceptor_residue: str
+        """
         self.halogen = halogen
         self._acceptor = _acceptor
         self._distance = distance
@@ -425,6 +463,9 @@ class HalogenBond(MolecularInteraction):
         self.bond_type = bond_type
         self._halogen_residue = _halogen_residue
         self._acceptor_residue = _acceptor_residue
+
+        # Generate donor-acceptor property description
+        self._donor_acceptor_properties = self._generate_donor_acceptor_description()
 
     # Backward compatibility properties
     @property
@@ -467,7 +508,7 @@ class HalogenBond(MolecularInteraction):
         return self._acceptor_residue
 
     def get_interaction_type(self) -> str:
-        return "halogen_bond"
+        return "X-Bond"
 
     def get_donor_interaction_distance(self) -> float:
         """Distance from donor to interaction point (0 for halogen bonds)."""
@@ -494,11 +535,61 @@ class HalogenBond(MolecularInteraction):
         # by ensuring the halogen is bonded to carbon
         return True  # Assuming validation was done during creation
 
+    def _generate_donor_acceptor_description(self) -> str:
+        """Generate donor-acceptor property description string.
+
+        Describes the halogen bond in terms of:
+        - Donor properties: residue type, backbone/sidechain, aromatic (halogen donor)
+        - Acceptor properties: residue type, backbone/sidechain, aromatic
+
+        Format: "donor_props-acceptor_props" (e.g., "PSN-LBN", "LSN-PSA")
+
+        :returns: Property description string
+        :rtype: str
+        """
+        # Get halogen (donor) properties
+        donor_residue_type = getattr(self.halogen, "residue_type", "L")
+        donor_backbone_sidechain = getattr(self.halogen, "backbone_sidechain", "S")
+        donor_aromatic = getattr(self.halogen, "aromatic", "N")
+
+        # Get acceptor properties
+        acceptor_residue_type = getattr(self._acceptor, "residue_type", "L")
+        acceptor_backbone_sidechain = getattr(self._acceptor, "backbone_sidechain", "S")
+        acceptor_aromatic = getattr(self._acceptor, "aromatic", "N")
+
+        # Build property strings
+        donor_props = f"{donor_residue_type}{donor_backbone_sidechain}{donor_aromatic}"
+        acceptor_props = (
+            f"{acceptor_residue_type}{acceptor_backbone_sidechain}{acceptor_aromatic}"
+        )
+
+        return f"{donor_props}-{acceptor_props}"
+
+    @property
+    def donor_acceptor_properties(self) -> str:
+        """Get the donor-acceptor property description.
+
+        :returns: Property description string
+        :rtype: str
+        """
+        return self._donor_acceptor_properties
+
+    def get_backbone_sidechain_interaction(self) -> str:
+        """Get simplified backbone/sidechain interaction description.
+
+        :returns: Interaction type (B-B, B-S, S-B, S-S)
+        :rtype: str
+        """
+        donor_bs = getattr(self.halogen, "backbone_sidechain", "S")
+        acceptor_bs = getattr(self._acceptor, "backbone_sidechain", "S")
+        return f"{donor_bs}-{acceptor_bs}"
+
     def __str__(self) -> str:
         return (
             f"X-Bond: {self._halogen_residue}({self.halogen.name}) - "
             f"{self._acceptor_residue}({self._acceptor.name}) "
-            f"[{self.distance:.2f}Å, {math.degrees(self.angle):.1f}°]"
+            f"[{self.distance:.2f}Å, {math.degrees(self.angle):.1f}°] "
+            f"[{self.get_backbone_sidechain_interaction()}] [{self.donor_acceptor_properties}]"
         )
 
 
@@ -508,8 +599,8 @@ class PiInteraction(MolecularInteraction):
     This class stores information about a detected X-H...π interaction,
     where a hydrogen bond donor interacts with an aromatic π system.
 
-    :param donor: The hydrogen bond donor atom
-    :type donor: Atom
+    :param _donor: The hydrogen bond donor atom
+    :type _donor: Atom
     :param hydrogen: The hydrogen atom
     :type hydrogen: Atom
     :param pi_center: Center of the aromatic π system
@@ -518,10 +609,10 @@ class PiInteraction(MolecularInteraction):
     :type distance: float
     :param angle: D-H...π angle in radians
     :type angle: float
-    :param donor_residue: Identifier for donor residue
-    :type donor_residue: str
-    :param pi_residue: Identifier for π-containing residue
-    :type pi_residue: str
+    :param _donor_residue: Identifier for donor residue
+    :type _donor_residue: str
+    :param _pi_residue: Identifier for π-containing residue
+    :type _pi_residue: str
     """
 
     def __init__(
@@ -534,6 +625,23 @@ class PiInteraction(MolecularInteraction):
         _donor_residue: str,
         _pi_residue: str,
     ):
+        """Initialize a PiInteraction object.
+
+        :param _donor: The hydrogen bond donor atom
+        :type _donor: Atom
+        :param hydrogen: The hydrogen atom
+        :type hydrogen: Atom
+        :param pi_center: Center of the aromatic π system
+        :type pi_center: NPVec3D
+        :param distance: H...π distance in Angstroms
+        :type distance: float
+        :param angle: D-H...π angle in radians
+        :type angle: float
+        :param _donor_residue: Identifier for donor residue
+        :type _donor_residue: str
+        :param _pi_residue: Identifier for π-containing residue
+        :type _pi_residue: str
+        """
         self._donor = _donor
         self.hydrogen = hydrogen
         self.pi_center = pi_center
@@ -581,7 +689,7 @@ class PiInteraction(MolecularInteraction):
         return self._pi_residue
 
     def get_interaction_type(self) -> str:
-        return "pi_interaction"
+        return "π–Inter"
 
     def get_donor_interaction_distance(self) -> float:
         """Distance from donor to hydrogen."""
@@ -716,6 +824,15 @@ class CooperativityChain(MolecularInteraction):
         chain_length: int,
         chain_type: str,
     ):
+        """Initialize a CooperativityChain object.
+
+        :param interactions: List of interactions in the chain
+        :type interactions: List[Union[HydrogenBond, HalogenBond, PiInteraction]]
+        :param chain_length: Number of interactions in the chain
+        :type chain_length: int
+        :param chain_type: Description of the interaction types in the chain
+        :type chain_type: str
+        """
         self.interactions = interactions
         self.chain_length = chain_length
         self.chain_type = chain_type  # e.g., "H-Bond -> X-Bond -> π-Int"
@@ -887,8 +1004,8 @@ class CooperativityChain(MolecularInteraction):
     def _get_interaction_symbol(self, interaction_type: str) -> str:
         """Get display symbol for interaction type."""
         symbols = {
-            "hydrogen_bond": "->",
-            "halogen_bond": "=X=>",
-            "pi_interaction": "~π~>",
+            "H-Bond": "->",
+            "X-Bond": "=X=>",
+            "π–Inter": "~π~>",
         }
         return symbols.get(interaction_type, "->")

@@ -6,9 +6,12 @@ allowing users to load PDB files, configure analysis parameters, and view result
 """
 
 import asyncio
+import csv
+import json
 import os
 import tkinter as tk
 import webbrowser
+from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Optional
 
@@ -584,7 +587,7 @@ class MainWindow:
     def _save_results(self) -> None:
         """Save analysis results to file.
 
-        Displays a file dialog to save analysis results in text format.
+        Displays a file dialog to save analysis results in CSV or JSON format.
         Requires completed analysis to function.
 
         :returns: None
@@ -596,32 +599,70 @@ class MainWindow:
 
         filename = filedialog.asksaveasfilename(
             title="Save Results",
-            defaultextension=".txt",
+            defaultextension=".csv",
             filetypes=[
-                ("Text files", "*.txt"),
                 ("CSV files", "*.csv"),
-                ("All files", "*.*"),
+                ("JSON files", "*.json"),
             ],
         )
 
         if filename:
             try:
+                file_path = Path(filename)
+                extension = file_path.suffix.lower()
+
                 self._export_results_to_file(filename)
-                messagebox.showinfo("Success", f"Results saved to {filename}")
-                self.status_var.set(f"Results saved to {os.path.basename(filename)}")
+
+                # Show appropriate success message based on format
+                if extension in [".csv", ".json"]:
+                    base_name = file_path.stem
+                    directory = file_path.parent
+                    messagebox.showinfo(
+                        "Success",
+                        f"Results saved as separate {extension.upper()} files:\n"
+                        f"- {base_name}_h_bonds{extension}\n"
+                        f"- {base_name}_x_bonds{extension}\n"
+                        f"- {base_name}_pi_interactions{extension}\n"
+                        f"- {base_name}_cooperativity_chains{extension}\n\n"
+                        f"Location: {directory}",
+                    )
+                    self.status_var.set(
+                        f"Results saved as multiple {extension.upper()} files"
+                    )
+                else:
+                    messagebox.showinfo("Success", f"Results saved to {filename}")
+                    self.status_var.set(
+                        f"Results saved to {os.path.basename(filename)}"
+                    )
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to save results:\n{str(e)}")
 
     def _export_results_to_file(self, filename: str) -> None:
         """Export results to a file.
 
-        Writes complete analysis results to the specified file in
-        human-readable text format.
+        Supports multiple formats:
+        - .csv: Separate CSV files for each interaction type (default)
+        - .json: Separate JSON files for each interaction type
 
         :param filename: Path to the output file
         :type filename: str
         :returns: None
         :rtype: None
+        """
+        file_path = Path(filename)
+        extension = file_path.suffix.lower()
+
+        if extension == ".json":
+            self._export_json_files(file_path)
+        else:
+            # Default to CSV format
+            self._export_csv_files(file_path)
+
+    def _export_text_file(self, filename: str) -> None:
+        """Export results to a single text file.
+
+        :param filename: Path to the output file
+        :type filename: str
         """
         with open(filename, "w") as f:
             f.write("HBAT Analysis Results\n")
@@ -656,6 +697,337 @@ class MainWindow:
             f.write("-" * 30 + "\n")
             for pi in self.analyzer.pi_interactions:
                 f.write(f"{pi}\n")
+
+            # Write cooperativity chains if available
+            if (
+                hasattr(self.analyzer, "cooperativity_chains")
+                and self.analyzer.cooperativity_chains
+            ):
+                f.write("\nCooperativity Chains:\n")
+                f.write("-" * 30 + "\n")
+                for chain in self.analyzer.cooperativity_chains:
+                    f.write(f"{chain}\n")
+
+    def _export_csv_files(self, base_path: Path) -> None:
+        """Export results to separate CSV files for each interaction type.
+
+        :param base_path: Base path for the files (extension will be replaced)
+        :type base_path: Path
+        """
+        base_name = base_path.stem
+        directory = base_path.parent
+
+        # Export hydrogen bonds
+        if self.analyzer.hydrogen_bonds:
+            hb_file = directory / f"{base_name}_h_bonds.csv"
+            self._write_hydrogen_bonds_csv(hb_file)
+
+        # Export halogen bonds
+        if self.analyzer.halogen_bonds:
+            xb_file = directory / f"{base_name}_x_bonds.csv"
+            self._write_halogen_bonds_csv(xb_file)
+
+        # Export π interactions
+        if self.analyzer.pi_interactions:
+            pi_file = directory / f"{base_name}_pi_interactions.csv"
+            self._write_pi_interactions_csv(pi_file)
+
+        # Export cooperativity chains if available
+        if (
+            hasattr(self.analyzer, "cooperativity_chains")
+            and self.analyzer.cooperativity_chains
+        ):
+            chains_file = directory / f"{base_name}_cooperativity_chains.csv"
+            self._write_cooperativity_chains_csv(chains_file)
+
+    def _export_json_files(self, base_path: Path) -> None:
+        """Export results to separate JSON files for each interaction type.
+
+        :param base_path: Base path for the files (extension will be replaced)
+        :type base_path: Path
+        """
+        base_name = base_path.stem
+        directory = base_path.parent
+
+        # Export hydrogen bonds
+        if self.analyzer.hydrogen_bonds:
+            hb_file = directory / f"{base_name}_h_bonds.json"
+            self._write_hydrogen_bonds_json(hb_file)
+
+        # Export halogen bonds
+        if self.analyzer.halogen_bonds:
+            xb_file = directory / f"{base_name}_x_bonds.json"
+            self._write_halogen_bonds_json(xb_file)
+
+        # Export π interactions
+        if self.analyzer.pi_interactions:
+            pi_file = directory / f"{base_name}_pi_interactions.json"
+            self._write_pi_interactions_json(pi_file)
+
+        # Export cooperativity chains if available
+        if (
+            hasattr(self.analyzer, "cooperativity_chains")
+            and self.analyzer.cooperativity_chains
+        ):
+            chains_file = directory / f"{base_name}_cooperativity_chains.json"
+            self._write_cooperativity_chains_json(chains_file)
+
+    def _write_hydrogen_bonds_csv(self, filename: Path) -> None:
+        """Write hydrogen bonds to CSV file."""
+        with open(filename, "w", newline="", encoding="utf-8") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(
+                [
+                    "Donor_Residue",
+                    "Donor_Atom",
+                    "Hydrogen_Atom",
+                    "Acceptor_Residue",
+                    "Acceptor_Atom",
+                    "Distance_Angstrom",
+                    "Angle_Degrees",
+                    "Donor_Acceptor_Distance_Angstrom",
+                    "Bond_Type",
+                    "B/S_Interaction",
+                    "D-A_Properties",
+                ]
+            )
+            for hb in self.analyzer.hydrogen_bonds:
+                writer.writerow(
+                    [
+                        hb.donor_residue,
+                        hb.donor.name,
+                        hb.hydrogen.name,
+                        hb.acceptor_residue,
+                        hb.acceptor.name,
+                        f"{hb.distance:.3f}",
+                        f"{hb.angle * 180 / 3.14159:.1f}",
+                        f"{hb.donor_acceptor_distance:.3f}",
+                        hb.bond_type,
+                        hb.get_backbone_sidechain_interaction(),
+                        hb.donor_acceptor_properties,
+                    ]
+                )
+
+    def _write_halogen_bonds_csv(self, filename: Path) -> None:
+        """Write halogen bonds to CSV file."""
+        with open(filename, "w", newline="", encoding="utf-8") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(
+                [
+                    "Halogen_Residue",
+                    "Halogen_Atom",
+                    "Acceptor_Residue",
+                    "Acceptor_Atom",
+                    "Distance_Angstrom",
+                    "Angle_Degrees",
+                    "Bond_Type",
+                    "B/S_Interaction",
+                    "D-A_Properties",
+                ]
+            )
+            for xb in self.analyzer.halogen_bonds:
+                bs_interaction = xb.get_backbone_sidechain_interaction()
+                da_properties = xb.donor_acceptor_properties
+
+                writer.writerow(
+                    [
+                        xb.donor_residue,
+                        xb.halogen.name,
+                        xb.acceptor_residue,
+                        xb.acceptor.name,
+                        f"{xb.distance:.3f}",
+                        f"{xb.angle * 180 / 3.14159:.1f}",
+                        xb.bond_type,
+                        bs_interaction,
+                        da_properties,
+                    ]
+                )
+
+    def _write_pi_interactions_csv(self, filename: Path) -> None:
+        """Write π interactions to CSV file."""
+        with open(filename, "w", newline="", encoding="utf-8") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(
+                [
+                    "Donor_Residue",
+                    "Donor_Atom",
+                    "Hydrogen_Atom",
+                    "Pi_Residue",
+                    "Distance_Angstrom",
+                    "Angle_Degrees",
+                    "B/S_Interaction",
+                    "D-A_Properties",
+                ]
+            )
+            for pi in self.analyzer.pi_interactions:
+                writer.writerow(
+                    [
+                        pi.donor_residue,
+                        pi.donor.name,
+                        pi.hydrogen.name,
+                        pi.pi_residue,
+                        f"{pi.distance:.3f}",
+                        f"{pi.angle * 180 / 3.14159:.1f}",
+                        pi.get_backbone_sidechain_interaction(),
+                        pi.donor_acceptor_properties,
+                    ]
+                )
+
+    def _write_cooperativity_chains_csv(self, filename: Path) -> None:
+        """Write cooperativity chains to CSV file."""
+        with open(filename, "w", newline="", encoding="utf-8") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(["Chain_ID", "Chain_Length", "Chain_Type", "Interactions"])
+            for i, chain in enumerate(self.analyzer.cooperativity_chains):
+                interactions_str = " -> ".join(
+                    [
+                        f"{interaction.get_donor_residue()}({interaction.get_donor_atom().name if interaction.get_donor_atom() else '?'})"
+                        for interaction in chain.interactions
+                    ]
+                )
+                writer.writerow(
+                    [i + 1, chain.chain_length, chain.chain_type, interactions_str]
+                )
+
+    def _write_hydrogen_bonds_json(self, filename: Path) -> None:
+        """Write hydrogen bonds to JSON file."""
+        data = {
+            "metadata": {
+                "input_file": self.current_file,
+                "analysis_engine": "HBAT",
+                "version": APP_VERSION,
+                "interaction_type": "Hydrogen Bonds",
+            },
+            "interactions": [],
+        }
+
+        for hb in self.analyzer.hydrogen_bonds:
+            data["interactions"].append(
+                {
+                    "donor_residue": hb.donor_residue,
+                    "donor_atom": hb.donor.name,
+                    "hydrogen_atom": hb.hydrogen.name,
+                    "acceptor_residue": hb.acceptor_residue,
+                    "acceptor_atom": hb.acceptor.name,
+                    "distance_angstrom": round(hb.distance, 3),
+                    "angle_degrees": round(hb.angle * 180 / 3.14159, 1),
+                    "donor_acceptor_distance_angstrom": round(
+                        hb.donor_acceptor_distance, 3
+                    ),
+                    "bond_type": hb.bond_type,
+                    "backbone_sidechain_interaction": hb.get_backbone_sidechain_interaction(),
+                    "donor_acceptor_properties": hb.donor_acceptor_properties,
+                }
+            )
+
+        with open(filename, "w", encoding="utf-8") as jsonfile:
+            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
+
+    def _write_halogen_bonds_json(self, filename: Path) -> None:
+        """Write halogen bonds to JSON file."""
+        data = {
+            "metadata": {
+                "input_file": self.current_file,
+                "analysis_engine": "HBAT",
+                "version": APP_VERSION,
+                "interaction_type": "Halogen Bonds",
+            },
+            "interactions": [],
+        }
+
+        for xb in self.analyzer.halogen_bonds:
+            bs_interaction = xb.get_backbone_sidechain_interaction()
+            da_properties = xb.donor_acceptor_properties
+
+            data["interactions"].append(
+                {
+                    "halogen_residue": xb.donor_residue,
+                    "halogen_atom": xb.halogen.name,
+                    "acceptor_residue": xb.acceptor_residue,
+                    "acceptor_atom": xb.acceptor.name,
+                    "distance_angstrom": round(xb.distance, 3),
+                    "angle_degrees": round(xb.angle * 180 / 3.14159, 1),
+                    "bond_type": xb.bond_type,
+                    "backbone_sidechain_interaction": bs_interaction,
+                    "donor_acceptor_properties": da_properties,
+                }
+            )
+
+        with open(filename, "w", encoding="utf-8") as jsonfile:
+            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
+
+    def _write_pi_interactions_json(self, filename: Path) -> None:
+        """Write π interactions to JSON file."""
+        data = {
+            "metadata": {
+                "input_file": self.current_file,
+                "analysis_engine": "HBAT",
+                "version": APP_VERSION,
+                "interaction_type": "Pi Interactions",
+            },
+            "interactions": [],
+        }
+
+        for pi in self.analyzer.pi_interactions:
+            data["interactions"].append(
+                {
+                    "donor_residue": pi.donor_residue,
+                    "donor_atom": pi.donor.name,
+                    "hydrogen_atom": pi.hydrogen.name,
+                    "pi_residue": pi.pi_residue,
+                    "distance_angstrom": round(pi.distance, 3),
+                    "angle_degrees": round(pi.angle * 180 / 3.14159, 1),
+                    "backbone_sidechain_interaction": pi.get_backbone_sidechain_interaction(),
+                    "donor_acceptor_properties": pi.donor_acceptor_properties,
+                }
+            )
+
+        with open(filename, "w", encoding="utf-8") as jsonfile:
+            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
+
+    def _write_cooperativity_chains_json(self, filename: Path) -> None:
+        """Write cooperativity chains to JSON file."""
+        data = {
+            "metadata": {
+                "input_file": self.current_file,
+                "analysis_engine": "HBAT",
+                "version": APP_VERSION,
+                "interaction_type": "Cooperativity Chains",
+            },
+            "chains": [],
+        }
+
+        for i, chain in enumerate(self.analyzer.cooperativity_chains):
+            chain_data = {
+                "chain_id": i + 1,
+                "chain_length": chain.chain_length,
+                "chain_type": chain.chain_type,
+                "interactions": [],
+            }
+
+            for interaction in chain.interactions:
+                interaction_data = {
+                    "donor_residue": interaction.get_donor_residue(),
+                    "acceptor_residue": interaction.get_acceptor_residue(),
+                    "interaction_type": interaction.get_interaction_type(),
+                }
+
+                # Add donor atom if available
+                donor_atom = interaction.get_donor_atom()
+                if donor_atom:
+                    interaction_data["donor_atom"] = donor_atom.name
+
+                # Add acceptor atom if available
+                acceptor_atom = interaction.get_acceptor_atom()
+                if acceptor_atom:
+                    interaction_data["acceptor_atom"] = acceptor_atom.name
+
+                chain_data["interactions"].append(interaction_data)
+
+            data["chains"].append(chain_data)
+
+        with open(filename, "w", encoding="utf-8") as jsonfile:
+            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
 
     def _export_all(self) -> None:
         """Export all results in multiple formats.

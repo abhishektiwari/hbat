@@ -792,7 +792,7 @@ Used for:
     - Ion binding site analysis
 """
 
-RESIDUE_TYPES: List[str] = ["DNA", "RNA", "PROTEIN", "LIGAND"]
+RESIDUE_TYPES: List[str] = ["DNA", "RNA", "PROTEIN", "LIGAND", "WATER"]
 """List[str]: Standard residue type classifications for molecular analysis.
 
 Classification categories for different types of molecular residues:
@@ -800,6 +800,8 @@ Classification categories for different types of molecular residues:
     - RNA: Ribonucleotide residues (A, G, C, U, I)
     - PROTEIN: Amino acid residues (20 standard amino acids and variants)
     - LIGAND: Ligands, cofactors, metals, and other heteroatom residues
+    - WATER: Water molecules and solvent
+
 
 Used for:
     - Residue type identification and classification
@@ -813,6 +815,7 @@ RESIDUE_TYPE_CODES: Dict[str, str] = {
     "DNA": "D",
     "RNA": "R",
     "PROTEIN": "P",
+    "WATER": "W",
     "LIGAND": "L",
 }
 """Dict[str, str]: Single letter codes for residue types.
@@ -821,6 +824,7 @@ Mapping of full residue type names to compact single letter codes:
     - "DNA" → "D": Deoxyribonucleotide residues
     - "RNA" → "R": Ribonucleotide residues  
     - "PROTEIN" → "P": Amino acid residues
+    - "WATER" → "W": Water molecules and solvent
     - "LIGAND" → "L": Ligands, cofactors, metals, and other heteroatom residues
 
 Used for compact representation in hydrogen bond descriptions and atom records.

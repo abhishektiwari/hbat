@@ -77,7 +77,18 @@ class NPMolecularInteractionAnalyzer:
         self.progress_callback: Optional[Callable[[str], None]] = None
 
     def analyze_file(self, pdb_file: str) -> bool:
-        """Analyze a PDB file for molecular interactions."""
+        """Analyze a PDB file for molecular interactions.
+
+        Performs comprehensive analysis of hydrogen bonds, halogen bonds, π interactions,
+        and cooperativity chains in the provided PDB structure. Optionally applies PDB
+        fixing to add missing atoms if enabled in parameters.
+
+        :param pdb_file: Path to PDB file to analyze
+        :type pdb_file: str
+        :returns: True if analysis completed successfully, False if parsing failed
+        :rtype: bool
+        :raises Exception: If PDB fixing fails when enabled
+        """
         self._analysis_start_time = time.time()
         self._pdb_fixing_info = {}
 

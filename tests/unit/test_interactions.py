@@ -115,7 +115,7 @@ class TestHydrogenBondCreation:
             bond_type="N-H...O", _donor_residue="A1ALA", _acceptor_residue="A2GLY"
         )
         
-        assert hb.interaction_type == "hydrogen_bond"
+        assert hb.interaction_type == "H-Bond"
     
     def test_hydrogen_bond_interface_methods(self, sample_atoms):
         """Test hydrogen bond interface methods."""
@@ -267,7 +267,7 @@ class TestHalogenBondCreation:
             bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY"
         )
         
-        assert xb.interaction_type == "halogen_bond"
+        assert xb.interaction_type == "X-Bond"
     
     def test_halogen_bond_interface_methods(self, sample_halogen_atoms):
         """Test halogen bond interface methods."""
@@ -375,7 +375,7 @@ class TestPiInteractionCreation:
             _donor_residue="A1ALA", _pi_residue="A2PHE"
         )
         
-        assert pi.interaction_type == "pi_interaction"
+        assert pi.interaction_type == "π–Inter"
     
     def test_pi_interaction_interface_methods(self, sample_pi_atoms):
         """Test π interaction interface methods."""
@@ -546,9 +546,9 @@ class TestCooperativityChainString:
         )
         
         # Test symbol mapping method
-        assert chain._get_interaction_symbol("hydrogen_bond") == "->"
-        assert chain._get_interaction_symbol("halogen_bond") == "=X=>"
-        assert chain._get_interaction_symbol("pi_interaction") == "~π~>"
+        assert chain._get_interaction_symbol("H-Bond") == "->"
+        assert chain._get_interaction_symbol("X-Bond") == "=X=>"
+        assert chain._get_interaction_symbol("π–Inter") == "~π~>"
         assert chain._get_interaction_symbol("unknown") == "->"
 
 

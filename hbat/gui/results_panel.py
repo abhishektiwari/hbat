@@ -212,6 +212,8 @@ class ResultsPanel:
             "distance",
             "angle",
             "type",
+            "bs_interaction",
+            "da_properties",
         )
 
         self.xb_tree = ttk.Treeview(
@@ -226,6 +228,8 @@ class ResultsPanel:
         self.xb_tree.heading("distance", text="X...A (Å)")
         self.xb_tree.heading("angle", text="Angle (°)")
         self.xb_tree.heading("type", text="Type")
+        self.xb_tree.heading("bs_interaction", text="B/S Interaction")
+        self.xb_tree.heading("da_properties", text="D-A Properties")
 
         # Configure column widths
         self.xb_tree.column("halogen_res", width=140)
@@ -235,6 +239,8 @@ class ResultsPanel:
         self.xb_tree.column("distance", width=90)
         self.xb_tree.column("angle", width=90)
         self.xb_tree.column("type", width=120)
+        self.xb_tree.column("bs_interaction", width=100)
+        self.xb_tree.column("da_properties", width=120)
 
         # Add scrollbars
         xb_v_scrollbar = ttk.Scrollbar(
@@ -716,6 +722,8 @@ class ResultsPanel:
                     f"{xb.distance:.2f}",
                     f"{math.degrees(xb.angle):.1f}",
                     xb.bond_type,
+                    xb.get_backbone_sidechain_interaction(),
+                    xb.donor_acceptor_properties,
                 ),
             )
 
@@ -786,11 +794,11 @@ class ResultsPanel:
                 acceptor_str = acceptor_res  # For π interactions
 
             # Get interaction symbol
-            if interaction.interaction_type == "hydrogen_bond":
+            if interaction.interaction_type == "H-Bond":
                 symbol = " -> "
-            elif interaction.interaction_type == "halogen_bond":
+            elif interaction.interaction_type == "X-Bond":
                 symbol = " =X=> "
-            elif interaction.interaction_type == "pi_interaction":
+            elif interaction.interaction_type == "π–Inter":
                 symbol = " ~π~> "
             else:
                 symbol = " -> "
