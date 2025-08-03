@@ -56,9 +56,9 @@ HBAT Documentation
    :alt: Cited by Google Scholar
    :target: https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC
 
-.. image:: https://socket.dev/api/badge/pypi/package/hbat/2.2.6?artifact_id=tar-gz#1753326341848
+.. image:: https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl
    :alt: Socket
-   :target: https://socket.dev/pypi/package/hbat/overview/2.2.6/tar-gz
+   :target: https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl
 
 .. image:: https://www.codefactor.io/repository/github/abhishektiwari/hbat/badge/main
    :target: https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main

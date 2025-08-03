@@ -18,7 +18,7 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 ![PyPI Downloads](https://img.shields.io/pepy/dt/hbat?label=PyPI%20Downloads)
 [![codecov](https://codecov.io/gh/abhishektiwari/hbat/graph/badge.svg?token=QSKYLB3M1V)](https://codecov.io/gh/abhishektiwari/hbat)
 [![Cited By](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3Au-x6o8ySG0sC&search=Cited%20by%20(%5Cd%2B)&replace=%241&style=plastic&logo=googlescholar&label=Cited%20By&cacheSeconds=86400)](https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC)
-[![Socket](https://socket.dev/api/badge/pypi/package/hbat/2.2.6?artifact_id=tar-gz#1753326341848)](https://socket.dev/pypi/package/hbat/overview/2.2.6/tar-gz)
+[![Socket](https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl)](https://socket.dev/pypi/package/hbat/overview/2.2.11/py3-none-any-whl)
 [![CodeFactor](https://www.codefactor.io/repository/github/abhishektiwari/hbat/badge/main)](https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main)
 
 ## Background
@@ -152,26 +152,43 @@ Basic usage:
 hbat input.pdb
 ```
 
+#### Output Format Options
+
+HBAT supports multiple output formats with automatic detection based on file extension:
+
+```bash
+# Single file outputs (format auto-detected from extension)
+hbat input.pdb -o results.txt     # Text format
+hbat input.pdb -o results.csv     # CSV format (single file with all data)
+hbat input.pdb -o results.json    # JSON format (single file with all data)
+
+# Multiple file outputs (separate files per interaction type)
+hbat input.pdb --csv results      # Creates results_h_bonds.csv, results_x_bonds.csv, etc.
+hbat input.pdb --json results     # Creates results_h_bonds.json, results_x_bonds.json, etc.
+```
+
 With custom parameters:
 
 ```bash
-hbat input.pdb -o results.txt --hb-distance 3.0 --mode local
+hbat input.pdb -o results.csv --hb-distance 3.0 --mode local
 ```
 
-```
+#### List Available Presets
+
+```bash
 hbat --list-presets
 ```
 
 #### Use a specific preset
 
-```
+```bash
 hbat protein.pdb --preset high_resolution
 hbat membrane_protein.pdb --preset membrane_proteins
 ```
 
 #### Use preset with custom overrides
 
-```
+```bash
 hbat protein.pdb --preset drug_design_strict --hb-distance 3.0 --verbose
 ```
 
@@ -184,9 +201,9 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -o OUTPUT, --output OUTPUT
-                        Output text file for results
-  --json JSON           Output JSON file for structured results
-  --csv CSV             Output CSV file for tabular results
+                        Output file (format auto-detected from extension: .txt, .csv, .json)
+  --json JSON           Export to multiple JSON files (base name for files)
+  --csv CSV             Export to multiple CSV files (base name for files)
 
 Preset Options:
   --preset PRESET       Load parameters from preset file (.hbat or .json)
