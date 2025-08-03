@@ -1,0 +1,43 @@
+name: Build JOSS Paper
+
+on:
+  push:
+    paths:
+      - 'paper/**'
+  pull_request:
+    paths:
+      - 'paper/**'
+  workflow_dispatch:
+
+jobs:
+  build-paper:
+    runs-on: ubuntu-latest
+    name: Build JOSS Paper PDF
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Build paper PDF
+      uses: docker://openjournals/inara:latest
+      with:
+        args: paper/paper.md
+        
+    - name: Upload paper artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: joss-paper
+        path: |
+          paper/paper.pdf
+          paper/paper.crossref
+        retention-days: 30
+        
+    - name: Check if paper PDF was generated
+      run: |
+        if [ -f paper/paper.pdf ]; then
+          echo "✅ Paper PDF generated successfully"
+          ls -la paper/paper.pdf
+        else
+          echo "❌ Paper PDF generation failed"
+          exit 1
+        fi

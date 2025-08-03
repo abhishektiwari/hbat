@@ -20,10 +20,10 @@ Simple Hydrogen Bond Analysis
 
 .. code-block:: python
 
-   from hbat.core.analysis import MolecularInteractionAnalyzerractionAnalyzer
+   from hbat.core.analysis import MolecularInteractionAnalyzer
    
    # Initialize analyzer
-   analyzer = MolecularInteractionAnalyzerractionAnalyzer()
+   analyzer = MolecularInteractionAnalyzer()
    
    # Analyze PDB file
    analyzer.analyze_file("1abc.pdb")
@@ -42,7 +42,8 @@ Advanced Parameter Customization
 
 .. code-block:: python
 
-   from hbat.core.analysis import MolecularInteractionAnalyzerractionAnalyzer, AnalysisParameters
+   from hbat.core.analysis import MolecularInteractionAnalyzer
+   from hbat.constants.parameters import AnalysisParameters
    
    # Create custom parameters for drug design
    drug_params = AnalysisParameters(
@@ -52,7 +53,7 @@ Advanced Parameter Customization
        analysis_mode="global"          # Include all interactions
    )
    
-   analyzer = MolecularInteractionAnalyzerractionAnalyzer(parameters=drug_params)
+   analyzer = MolecularInteractionAnalyzer(parameters=drug_params)
    analyzer.analyze_file("drug_target_complex.pdb")
    
    # Focus on strong interactions only
@@ -67,7 +68,7 @@ Multi-Type Interaction Analysis
 .. code-block:: python
 
    # Analyze all interaction types
-   analyzer = MolecularInteractionAnalyzerractionAnalyzer()
+   analyzer = MolecularInteractionAnalyzer()
    analyzer.analyze_file("membrane_protein.pdb")
    
    print("=== Interaction Summary ===")
@@ -94,14 +95,14 @@ Processing Multiple Structures
 
    import glob
    import csv
-   from hbat.core.analysis import MolecularInteractionAnalyzerractionAnalyzer
+   from hbat.core.analysis import MolecularInteractionAnalyzer
    
    # Process all PDB files in directory
    pdb_files = glob.glob("structures/*.pdb")
    results = []
    
    for pdb_file in pdb_files:
-       analyzer = MolecularInteractionAnalyzerractionAnalyzer()
+       analyzer = MolecularInteractionAnalyzer()
        if analyzer.analyze_file(pdb_file):
            stats = analyzer.get_statistics()
            results.append({
@@ -134,7 +135,7 @@ Comparative Analysis
    results = {}
    
    for name, pdb_file in structures.items():
-       analyzer = MolecularInteractionAnalyzerractionAnalyzer()
+       analyzer = MolecularInteractionAnalyzer()
        analyzer.analyze_file(pdb_file)
        
        results[name] = {
@@ -161,9 +162,9 @@ Detailed CSV Export
 .. code-block:: python
 
    import csv
-   from hbat.core.analysis import MolecularInteractionAnalyzerractionAnalyzer
+   from hbat.core.analysis import MolecularInteractionAnalyzer
    
-   analyzer = MolecularInteractionAnalyzerractionAnalyzer()
+   analyzer = MolecularInteractionAnalyzer()
    analyzer.analyze_file("protein.pdb")
    
    # Export hydrogen bonds to CSV
@@ -193,9 +194,9 @@ JSON Export with Metadata
 
    import json
    from datetime import datetime
-   from hbat.core.analysis import MolecularInteractionAnalyzerractionAnalyzer
+   from hbat.core.analysis import MolecularInteractionAnalyzer
    
-   analyzer = MolecularInteractionAnalyzerractionAnalyzer()
+   analyzer = MolecularInteractionAnalyzer()
    analyzer.analyze_file("complex.pdb")
    
    # Create comprehensive results dictionary
@@ -244,7 +245,8 @@ Drug-Target Interaction Analysis
 
 .. code-block:: python
 
-   from hbat.core.analysis import MolecularInteractionAnalyzerractionAnalyzer, AnalysisParameters
+   from hbat.core.analysis import MolecularInteractionAnalyzer
+   from hbat.constants.parameters import AnalysisParameters
    
    # Custom parameters for drug analysis
    drug_params = AnalysisParameters(
@@ -253,7 +255,7 @@ Drug-Target Interaction Analysis
        analysis_mode="global"
    )
    
-   analyzer = MolecularInteractionAnalyzerractionAnalyzer(parameters=drug_params)
+   analyzer = MolecularInteractionAnalyzer(parameters=drug_params)
    analyzer.analyze_file("drug_target.pdb")
    
    # Filter interactions involving the drug (assuming it's a HET residue)
@@ -275,7 +277,7 @@ Membrane Protein Analysis
 .. code-block:: python
 
    # Analyze interactions in membrane proteins
-   analyzer = MolecularInteractionAnalyzerractionAnalyzer()
+   analyzer = MolecularInteractionAnalyzer()
    analyzer.analyze_file("membrane_protein.pdb")
    
    # Categorize interactions by region (transmembrane vs extracellular)
@@ -307,9 +309,9 @@ Using with Pandas for Analysis
 .. code-block:: python
 
    import pandas as pd
-   from hbat.core.analysis import MolecularInteractionAnalyzerractionAnalyzer
+   from hbat.core.analysis import MolecularInteractionAnalyzer
    
-   analyzer = MolecularInteractionAnalyzerractionAnalyzer()
+   analyzer = MolecularInteractionAnalyzer()
    analyzer.analyze_file("protein.pdb")
    
    # Convert results to pandas DataFrame
