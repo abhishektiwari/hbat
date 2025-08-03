@@ -110,6 +110,35 @@ These options allow fine-tuning of the interaction detection criteria:
    - ``complete``: Analyze all interactions (default)
    - ``local``: Analyze only intra-residue interactions
 
+PDB Fixing Options
+~~~~~~~~~~~~~~~~~~~
+
+HBAT can automatically fix common PDB file issues before analysis:
+
+.. option:: --fix-pdb
+
+   Enable automatic PDB fixing to resolve common structural issues like:
+   
+   - Missing hydrogen atoms
+   - Incomplete residues
+   - Chain breaks
+   - Non-standard residues
+
+.. option:: --fix-method {pdbfixer,openbabel}
+
+   Choose the method for PDB fixing (default: pdbfixer):
+   
+   - ``pdbfixer``: Use PDBFixer (default method, recommended for protein structures)
+   - ``openbabel``: Use OpenBabel (alternative method)
+
+.. option:: --save-fixed PATH
+
+   Save the fixed PDB structure to the specified file path. Useful for:
+   
+   - Inspecting the fixed structure
+   - Reusing the fixed structure in other analyses
+   - Quality control of the fixing process
+
 Preset Management
 ~~~~~~~~~~~~~~~~~
 
@@ -187,9 +216,9 @@ Save results to different formats (auto-detected from extension):
 
 .. code-block:: bash
 
-   hbat protein.pdb -o results.txt   # Text format
-   hbat protein.pdb -o results.csv   # CSV format (single file)
-   hbat protein.pdb -o results.json  # JSON format (single file)
+   hbat input.pdb                                    # Show results in terminal
+   hbat input.pdb -o results.csv                     # Save results to CSV file
+   hbat input.pdb -o results.json                    # Save results to JSON file
 
 Multiple File Outputs
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -206,6 +235,31 @@ This creates files like:
 - ``results_x_bonds.csv``
 - ``results_pi_interactions.csv``
 - ``results_cooperativity_chains.csv``
+
+PDB Fixing Examples
+~~~~~~~~~~~~~~~~~~~~
+
+Fix PDB structure automatically before analysis:
+
+.. code-block:: bash
+
+   hbat input.pdb --fix-pdb                                    # Auto-fix using PDBFixer (default)
+   hbat input.pdb --fix-pdb --fix-method=pdbfixer              # Explicitly use PDBFixer
+   hbat input.pdb --fix-pdb --fix-method=openbabel             # Use OpenBabel for fixing
+
+Save the fixed structure for inspection:
+
+.. code-block:: bash
+
+   hbat input.pdb --fix-pdb --save-fixed input_fixed.pdb       # Save fixed structure
+   hbat input.pdb --fix-pdb --save-fixed input_fixed.pdb -o results.json  # Fix, save, and analyze
+
+For structures missing hydrogen atoms:
+
+.. code-block:: bash
+
+   hbat no_hydrogens.pdb --fix-pdb -o results.csv              # Fix and analyze
+   hbat crystal.pdb --fix-pdb --fix-method=pdbfixer --verbose  # Detailed fixing process
 
 Custom Analysis Parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -337,10 +391,18 @@ The CLI is designed for easy integration with shell scripts and workflow systems
 .. code-block:: bash
 
    #!/bin/bash
-   # Process multiple PDB files
+   # Process multiple PDB files with automatic fixing
    for pdb in *.pdb; do
        echo "Processing $pdb..."
-       hbat "$pdb" --json "${pdb%.pdb}_results.json" --quiet
+       hbat "$pdb" --fix-pdb --json "${pdb%.pdb}_results.json" --quiet
+   done
+   
+   # Process crystallographic structures (likely missing hydrogens)
+   for pdb in crystal_*.pdb; do
+       echo "Processing crystal structure $pdb..."
+       hbat "$pdb" --fix-pdb --fix-method=pdbfixer \
+            --save-fixed "${pdb%.pdb}_fixed.pdb" \
+            --csv "${pdb%.pdb}_analysis" --verbose
    done
 
 .. code-block:: python
