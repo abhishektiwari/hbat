@@ -1,5 +1,5 @@
 ---
-title: 'HBAT: An updated with Python Reimplementation for Hydrogen Bond Analysis in 
+title: 'HBAT: An updated Python Reimplementation for Hydrogen Bond Analysis in 
   Macromolecular Structures'
 tags:
   - Python
