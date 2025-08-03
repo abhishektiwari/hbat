@@ -108,20 +108,6 @@ Install HBAT
 
 Run HBAT Command-Line Interface (CLI) using :code:`hbat` or launch HBAT GUI using :code:`hbat-gui`.
 
-**Recommended:** For fixing missing Hydrogen Atoms, using PDBFixer (preferred over OpenBabel). See :doc:`pdbfixing` for details.
-
-.. code-block:: bash
-
-   pip install git+https://github.com/abhishektiwari/hbat.git
-
-
-If you installed HBAT from PyPI, you can also install PDBFixer using,
-
-.. code-block:: bash
-
-   pip install git+https://github.com/openmm/pdbfixer.git
-
-
 See complete installation instructions in :doc:`installation`.
 
 Basic usage
@@ -129,8 +115,10 @@ Basic usage
 
 .. code-block:: bash
 
-   hbat input.pdb                          # Basic analysis
-   hbat input.pdb -o results.csv           # Save results to CSV file (default)
+   hbat input.pdb                                                   # Show results in terminal
+   hbat input.pdb -o results.csv                                    # Save results to CSV file (default)
+   hbat input.pdb -o results.json  --fix-pdb                        # Apply PDB fixing and Save results to JSON file
+   hbat input.pdb -o results.json  --fix-pdb  --fix-method=pdbfixer # Apply PDB fixing using PdbFixer and Save results to JSON file
 
 See full CLI options :doc:`cli`.
 

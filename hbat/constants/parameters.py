@@ -35,7 +35,7 @@ class ParametersDefault:
 
     # PDB structure fixing parameters
     FIX_PDB_ENABLED = True  # Enable PDB structure fixing
-    FIX_PDB_METHOD = "openbabel"  # Method: "openbabel" or "pdbfixer"
+    FIX_PDB_METHOD = "pdbfixer"  # Method: "openbabel" or "pdbfixer"
 
     # Fixing operations (explicit control)
     FIX_PDB_ADD_HYDROGENS = (

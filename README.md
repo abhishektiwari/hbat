@@ -62,18 +62,6 @@ pip install hbat
 
 Run HBAT Command-Line Interface (CLI) using `hbat` or launch HBAT GUI using `hbat-gui`.
 
-**Recommended:** For [fixing missing Hydrogen Atoms](https://hbat.abhishek-tiwari.com/pdbfixing), using PDBFixer (preferred over OpenBabel).
-
-```bash
-pip install git+https://github.com/abhishektiwari/hbat.git
-```
-
-If you installed HBAT from PyPI, you can also install PDBFixer using,
-
-```bash
-pip install git+https://github.com/openmm/pdbfixer.git
-```
-
 ### Option 2: Install from Source
 
 ```bash

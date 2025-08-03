@@ -14,7 +14,7 @@ graphviz>=0.20.0
 Pillow>=8.0.0
 
 # PDB structure fixing and chemical informatics
-pdbfixer @ git+https://github.com/openmm/pdbfixer.git
+pdbfixer-wheel>=1.11.0
 openbabel-wheel>=3.1.1.22
 pybel>=0.15.5
 

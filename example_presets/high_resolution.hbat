@@ -23,7 +23,7 @@
     },
     "pdb_fixing": {
       "enabled": false,
-      "method": "openbabel",
+      "method": "pdbfixer",
       "add_hydrogens": true,
       "add_heavy_atoms": false,
       "replace_nonstandard": false,
