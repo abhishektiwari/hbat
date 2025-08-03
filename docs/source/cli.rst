@@ -41,15 +41,29 @@ Input/Output Options
 
 .. option:: -o OUTPUT, --output OUTPUT
 
-   Output text file for saving analysis results.
+   Output file for saving analysis results. The format is automatically detected from the file extension:
+   
+   - ``.txt`` - Text format (human-readable summary)
+   - ``.csv`` - CSV format (single file with all interactions)
+   - ``.json`` - JSON format (single file with structured data)
 
-.. option:: --json JSON_FILE
+.. option:: --json JSON_BASE
 
-   Export results to JSON format for programmatic access.
+   Export results to multiple JSON files. Creates separate files for each interaction type:
+   
+   - ``{base}_h_bonds.json`` - Hydrogen bonds
+   - ``{base}_x_bonds.json`` - Halogen bonds  
+   - ``{base}_pi_interactions.json`` - π interactions
+   - ``{base}_cooperativity_chains.json`` - Cooperativity chains
 
-.. option:: --csv CSV_FILE
+.. option:: --csv CSV_BASE
 
-   Export results to CSV format for spreadsheet analysis.
+   Export results to multiple CSV files. Creates separate files for each interaction type:
+   
+   - ``{base}_h_bonds.csv`` - Hydrogen bonds
+   - ``{base}_x_bonds.csv`` - Halogen bonds
+   - ``{base}_pi_interactions.csv`` - π interactions
+   - ``{base}_cooperativity_chains.csv`` - Cooperativity chains
 
 Analysis Parameters
 ~~~~~~~~~~~~~~~~~~~
@@ -166,11 +180,35 @@ Basic analysis with default parameters:
 
    hbat protein.pdb
 
-Save results to a CSV file (default format):
+Single File Output Formats
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Save results to different formats (auto-detected from extension):
 
 .. code-block:: bash
 
-   hbat protein.pdb -o results.csv
+   hbat protein.pdb -o results.txt   # Text format
+   hbat protein.pdb -o results.csv   # CSV format (single file)
+   hbat protein.pdb -o results.json  # JSON format (single file)
+
+Multiple File Outputs
+~~~~~~~~~~~~~~~~~~~~~~
+
+Export to separate files for each interaction type:
+
+.. code-block:: bash
+
+   hbat protein.pdb --csv results    # Creates multiple CSV files
+   hbat protein.pdb --json results   # Creates multiple JSON files
+
+This creates files like:
+- ``results_h_bonds.csv``
+- ``results_x_bonds.csv``
+- ``results_pi_interactions.csv``
+- ``results_cooperativity_chains.csv``
+
+Custom Analysis Parameters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use custom hydrogen bond criteria:
 
@@ -233,31 +271,46 @@ The default text output includes:
 - Detailed lists of each interaction type
 - Cooperativity chain information
 
-JSON Output
-~~~~~~~~~~~
+Single File JSON Output
+~~~~~~~~~~~~~~~~~~~~~~~
 
-The JSON format automatically generates separate files for each interaction type with structured data:
+When using ``-o results.json``, HBAT creates a single JSON file containing all interactions with:
 
-- Metadata section with version and file information
-- Complete statistics for each interaction type
-- Arrays of interactions with all geometric parameters
-- Atom coordinates and structural properties for further processing
+- Metadata section with version and file information  
+- Complete summary statistics
+- All interaction types in one structured file
 
-When using ``--json results.json``, HBAT creates:
-- ``results_h_bonds.json``
-- ``results_halogen_bonds.json``
-- ``results_pi_interactions.json``
-- ``results_cooperativity_chains.json``
+Multiple File JSON Output
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-CSV Output
-~~~~~~~~~~
+When using ``--json results``, HBAT creates separate JSON files for each interaction type:
 
-The CSV format automatically generates separate files for each interaction type:
+- ``results_h_bonds.json`` - Hydrogen bonds with donor-acceptor properties
+- ``results_x_bonds.json`` - Halogen bonds with geometric data  
+- ``results_pi_interactions.json`` - π interactions with distance/angle data
+- ``results_cooperativity_chains.json`` - Cooperativity chain networks
 
-- Hydrogen bonds with donor-acceptor properties and backbone/sidechain classification
-- Halogen bonds with geometric data and structural properties  
-- π interactions with distance and angle information
-- Cooperativity chains showing interaction networks
+Each file includes metadata and structured arrays with all geometric parameters and atom coordinates.
+
+Single File CSV Output
+~~~~~~~~~~~~~~~~~~~~~~~
+
+When using ``-o results.csv``, HBAT creates a single CSV file with all interactions organized in sections:
+
+- Hydrogen bonds with D-A Properties and B/S classification
+- Halogen bonds with enhanced property columns
+- π interactions with structural information
+- Cooperativity chains with interaction networks
+
+Multiple File CSV Output
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When using ``--csv results``, HBAT creates separate CSV files for each interaction type:
+
+- ``results_h_bonds.csv`` - Hydrogen bonds with complete donor-acceptor properties
+- ``results_x_bonds.csv`` - Halogen bonds with geometric and structural data
+- ``results_pi_interactions.csv`` - π interactions with distance and angle information  
+- ``results_cooperativity_chains.csv`` - Cooperativity chains showing interaction networks
 
 When using ``--csv results.csv``, HBAT creates:
 - ``results_h_bonds.csv``

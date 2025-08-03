@@ -74,13 +74,15 @@ def create_parser() -> argparse.ArgumentParser:
         epilog="""
 Examples:
   %(prog)s input.pdb                          # Basic analysis
-  %(prog)s input.pdb -o results.txt          # Save results to file
+  %(prog)s input.pdb -o results.txt          # Save results to text file
+  %(prog)s input.pdb -o results.csv          # Save results to CSV file (single file)
+  %(prog)s input.pdb -o results.json         # Save results to JSON file (single file)
+  %(prog)s input.pdb --csv results           # Export to multiple CSV files (one per interaction type)
+  %(prog)s input.pdb --json results          # Export to multiple JSON files (one per interaction type)
   %(prog)s input.pdb --hb-distance 3.0       # Custom H-bond distance cutoff
   %(prog)s input.pdb --mode local             # Local interactions only
-  %(prog)s input.pdb --json results.json     # Export to JSON format
   %(prog)s --list-presets                     # List available presets
   %(prog)s input.pdb --preset high_resolution # Use preset with custom overrides
-  %(prog)s input.pdb --preset drug_design_strict --hb-distance 3.0
         """,
     )
 
@@ -93,9 +95,9 @@ Examples:
     parser.add_argument("input", nargs="?", help="Input PDB file")
 
     # Output options
-    parser.add_argument("-o", "--output", help="Output text file for results")
-    parser.add_argument("--json", help="Output JSON file for structured results")
-    parser.add_argument("--csv", help="Output CSV file for tabular results")
+    parser.add_argument("-o", "--output", help="Output file (format auto-detected from extension: .txt, .csv, .json)")
+    parser.add_argument("--json", help="Export to multiple JSON files (base name for files)")
+    parser.add_argument("--csv", help="Export to multiple CSV files (base name for files)")
 
     # Preset options
     preset_group = parser.add_argument_group("Preset Options")
@@ -774,6 +776,267 @@ def export_to_json(
         json.dump(data, f, indent=2)
 
 
+def detect_output_format(filename: str) -> str:
+    """Detect output format from file extension.
+
+    :param filename: Output filename
+    :type filename: str
+    :returns: Format type ('text', 'csv', 'json')
+    :rtype: str
+    :raises ValueError: If file extension is not supported
+    """
+    import os
+    _, ext = os.path.splitext(filename)
+    ext_lower = ext.lower()
+    
+    if ext_lower == '.txt':
+        return 'text'
+    elif ext_lower == '.csv':
+        return 'csv'
+    elif ext_lower == '.json':
+        return 'json'
+    else:
+        raise ValueError(f"Unsupported output format '{ext}'. Use .txt, .csv, or .json")
+
+
+def export_to_csv_files(analyzer: NPMolecularInteractionAnalyzer, base_filename: str) -> None:
+    """Export results to multiple CSV files.
+
+    Creates separate CSV files for each interaction type.
+
+    :param analyzer: Analysis results to export
+    :type analyzer: NPMolecularInteractionAnalyzer
+    :param base_filename: Base filename (extension will be removed)
+    :type base_filename: str
+    :returns: None
+    :rtype: None
+    """
+    import csv
+    import math
+    import os
+    from pathlib import Path
+    
+    base_path = Path(base_filename)
+    base_name = base_path.stem
+    directory = base_path.parent
+    
+    # Export hydrogen bonds
+    if analyzer.hydrogen_bonds:
+        hb_file = directory / f"{base_name}_h_bonds.csv"
+        with open(hb_file, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow([
+                "Donor_Residue", "Donor_Atom", "Hydrogen_Atom",
+                "Acceptor_Residue", "Acceptor_Atom", "Distance_Angstrom",
+                "Angle_Degrees", "Donor_Acceptor_Distance_Angstrom",
+                "Bond_Type", "B/S_Interaction", "D-A_Properties"
+            ])
+            for hb in analyzer.hydrogen_bonds:
+                writer.writerow([
+                    hb.donor_residue, hb.donor.name, hb.hydrogen.name,
+                    hb.acceptor_residue, hb.acceptor.name,
+                    f"{hb.distance:.3f}", f"{math.degrees(hb.angle):.1f}",
+                    f"{hb.donor_acceptor_distance:.3f}", hb.bond_type,
+                    hb.get_backbone_sidechain_interaction(),
+                    hb.donor_acceptor_properties
+                ])
+    
+    # Export halogen bonds
+    if analyzer.halogen_bonds:
+        xb_file = directory / f"{base_name}_x_bonds.csv"
+        with open(xb_file, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow([
+                "Halogen_Residue", "Halogen_Atom", "Acceptor_Residue",
+                "Acceptor_Atom", "Distance_Angstrom", "Angle_Degrees",
+                "Bond_Type", "B/S_Interaction", "D-A_Properties"
+            ])
+            for xb in analyzer.halogen_bonds:
+                writer.writerow([
+                    xb.halogen_residue, xb.halogen.name,
+                    xb.acceptor_residue, xb.acceptor.name,
+                    f"{xb.distance:.3f}", f"{math.degrees(xb.angle):.1f}",
+                    xb.bond_type,
+                    xb.get_backbone_sidechain_interaction(),
+                    xb.donor_acceptor_properties
+                ])
+    
+    # Export π interactions
+    if analyzer.pi_interactions:
+        pi_file = directory / f"{base_name}_pi_interactions.csv"
+        with open(pi_file, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow([
+                "Donor_Residue", "Donor_Atom", "Hydrogen_Atom",
+                "Pi_Residue", "Distance_Angstrom", "Angle_Degrees",
+                "B/S_Interaction", "D-A_Properties"
+            ])
+            for pi in analyzer.pi_interactions:
+                writer.writerow([
+                    pi.donor_residue, pi.donor.name, pi.hydrogen.name,
+                    pi.pi_residue, f"{pi.distance:.3f}",
+                    f"{math.degrees(pi.angle):.1f}",
+                    pi.get_backbone_sidechain_interaction(),
+                    pi.donor_acceptor_properties
+                ])
+    
+    # Export cooperativity chains
+    if analyzer.cooperativity_chains:
+        chains_file = directory / f"{base_name}_cooperativity_chains.csv"
+        with open(chains_file, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(["Chain_ID", "Chain_Length", "Chain_Type", "Interactions"])
+            for i, chain in enumerate(analyzer.cooperativity_chains):
+                interactions_str = " -> ".join([
+                    f"{interaction.get_donor_residue()}({interaction.get_donor_atom().name if interaction.get_donor_atom() else '?'})"
+                    for interaction in chain.interactions
+                ])
+                writer.writerow([
+                    i + 1, chain.chain_length, chain.chain_type, interactions_str
+                ])
+
+
+def export_to_json_files(analyzer: NPMolecularInteractionAnalyzer, base_filename: str, input_file: str) -> None:
+    """Export results to multiple JSON files.
+
+    Creates separate JSON files for each interaction type.
+
+    :param analyzer: Analysis results to export
+    :type analyzer: NPMolecularInteractionAnalyzer
+    :param base_filename: Base filename (extension will be removed)
+    :type base_filename: str
+    :param input_file: Path to the input file analyzed
+    :type input_file: str
+    :returns: None
+    :rtype: None
+    """
+    import json
+    import math
+    from pathlib import Path
+    
+    base_path = Path(base_filename)
+    base_name = base_path.stem
+    directory = base_path.parent
+    
+    # Export hydrogen bonds
+    if analyzer.hydrogen_bonds:
+        hb_file = directory / f"{base_name}_h_bonds.json"
+        data = {
+            "metadata": {
+                "input_file": input_file,
+                "analysis_engine": "HBAT",
+                "version": __version__,
+                "interaction_type": "Hydrogen Bonds"
+            },
+            "interactions": []
+        }
+        for hb in analyzer.hydrogen_bonds:
+            data["interactions"].append({
+                "donor_residue": hb.donor_residue,
+                "donor_atom": hb.donor.name,
+                "hydrogen_atom": hb.hydrogen.name,
+                "acceptor_residue": hb.acceptor_residue,
+                "acceptor_atom": hb.acceptor.name,
+                "distance_angstrom": round(hb.distance, 3),
+                "angle_degrees": round(math.degrees(hb.angle), 1),
+                "donor_acceptor_distance_angstrom": round(hb.donor_acceptor_distance, 3),
+                "bond_type": hb.bond_type,
+                "backbone_sidechain_interaction": hb.get_backbone_sidechain_interaction(),
+                "donor_acceptor_properties": hb.donor_acceptor_properties
+            })
+        with open(hb_file, 'w', encoding='utf-8') as jsonfile:
+            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
+    
+    # Export halogen bonds
+    if analyzer.halogen_bonds:
+        xb_file = directory / f"{base_name}_x_bonds.json"
+        data = {
+            "metadata": {
+                "input_file": input_file,
+                "analysis_engine": "HBAT",
+                "version": __version__,
+                "interaction_type": "Halogen Bonds"
+            },
+            "interactions": []
+        }
+        for xb in analyzer.halogen_bonds:
+            data["interactions"].append({
+                "halogen_residue": xb.halogen_residue,
+                "halogen_atom": xb.halogen.name,
+                "acceptor_residue": xb.acceptor_residue,
+                "acceptor_atom": xb.acceptor.name,
+                "distance_angstrom": round(xb.distance, 3),
+                "angle_degrees": round(math.degrees(xb.angle), 1),
+                "bond_type": xb.bond_type,
+                "backbone_sidechain_interaction": xb.get_backbone_sidechain_interaction(),
+                "donor_acceptor_properties": xb.donor_acceptor_properties
+            })
+        with open(xb_file, 'w', encoding='utf-8') as jsonfile:
+            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
+    
+    # Export π interactions
+    if analyzer.pi_interactions:
+        pi_file = directory / f"{base_name}_pi_interactions.json"
+        data = {
+            "metadata": {
+                "input_file": input_file,
+                "analysis_engine": "HBAT",
+                "version": __version__,
+                "interaction_type": "Pi Interactions"
+            },
+            "interactions": []
+        }
+        for pi in analyzer.pi_interactions:
+            data["interactions"].append({
+                "donor_residue": pi.donor_residue,
+                "donor_atom": pi.donor.name,
+                "hydrogen_atom": pi.hydrogen.name,
+                "pi_residue": pi.pi_residue,
+                "distance_angstrom": round(pi.distance, 3),
+                "angle_degrees": round(math.degrees(pi.angle), 1),
+                "backbone_sidechain_interaction": pi.get_backbone_sidechain_interaction(),
+                "donor_acceptor_properties": pi.donor_acceptor_properties
+            })
+        with open(pi_file, 'w', encoding='utf-8') as jsonfile:
+            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
+    
+    # Export cooperativity chains
+    if analyzer.cooperativity_chains:
+        chains_file = directory / f"{base_name}_cooperativity_chains.json"
+        data = {
+            "metadata": {
+                "input_file": input_file,
+                "analysis_engine": "HBAT",
+                "version": __version__,
+                "interaction_type": "Cooperativity Chains"
+            },
+            "chains": []
+        }
+        for i, chain in enumerate(analyzer.cooperativity_chains):
+            chain_data = {
+                "chain_id": i + 1,
+                "chain_length": chain.chain_length,
+                "chain_type": chain.chain_type,
+                "interactions": []
+            }
+            for interaction in chain.interactions:
+                interaction_data = {
+                    "donor_residue": interaction.get_donor_residue(),
+                    "acceptor_residue": interaction.get_acceptor_residue(),
+                    "interaction_type": interaction.get_interaction_type()
+                }
+                donor_atom = interaction.get_donor_atom()
+                if donor_atom:
+                    interaction_data["donor_atom"] = donor_atom.name
+                acceptor_atom = interaction.get_acceptor_atom()
+                if acceptor_atom:
+                    interaction_data["acceptor_atom"] = acceptor_atom.name
+                chain_data["interactions"].append(interaction_data)
+            data["chains"].append(chain_data)
+        with open(chains_file, 'w', encoding='utf-8') as jsonfile:
+            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
+
+
 def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) -> None:
     """Export results to CSV format.
 
@@ -842,6 +1105,8 @@ def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) ->
                     "Distance_A",
                     "Angle_deg",
                     "Bond_Type",
+                    "D-A_Properties",
+                    "B/S",
                 ]
             )
 
@@ -855,6 +1120,8 @@ def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) ->
                         f"{xb.distance:.3f}",
                         f"{math.degrees(xb.angle):.1f}",
                         xb.bond_type,
+                        xb.donor_acceptor_properties,
+                        xb.get_backbone_sidechain_interaction(),
                     ]
                 )
             writer.writerow([])  # Empty row
@@ -889,6 +1156,23 @@ def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) ->
                         pi.donor_acceptor_properties,
                         pi.get_backbone_sidechain_interaction(),
                     ]
+                )
+            writer.writerow([])  # Empty row
+
+        # Cooperativity chains section
+        if analyzer.cooperativity_chains:
+            writer.writerow(["# Cooperativity Chains"])
+            writer.writerow(["Chain_ID", "Chain_Length", "Chain_Type", "Interactions"])
+            
+            for i, chain in enumerate(analyzer.cooperativity_chains):
+                interactions_str = " -> ".join(
+                    [
+                        f"{interaction.get_donor_residue()}({interaction.get_donor_atom().name if interaction.get_donor_atom() else '?'})"
+                        for interaction in chain.interactions
+                    ]
+                )
+                writer.writerow(
+                    [i + 1, chain.chain_length, chain.chain_type, interactions_str]
                 )
 
 
@@ -987,17 +1271,29 @@ def run_analysis(args: argparse.Namespace) -> int:
 
         # Output results
         if args.output:
-            print_progress(f"Writing results to {args.output}", verbose)
-            with open(args.output, "w") as f:
-                f.write(format_results_text(analyzer, args.input, args.summary_only))
+            try:
+                output_format = detect_output_format(args.output)
+                if output_format == 'text':
+                    print_progress(f"Writing results to {args.output}", verbose)
+                    with open(args.output, "w") as f:
+                        f.write(format_results_text(analyzer, args.input, args.summary_only))
+                elif output_format == 'csv':
+                    print_progress(f"Exporting to CSV: {args.output}", verbose)
+                    export_to_csv(analyzer, args.output)
+                elif output_format == 'json':
+                    print_progress(f"Exporting to JSON: {args.output}", verbose)
+                    export_to_json(analyzer, args.input, args.output)
+            except ValueError as e:
+                print_error(str(e))
+                return 1
 
         if args.json:
-            print_progress(f"Exporting to JSON: {args.json}", verbose)
-            export_to_json(analyzer, args.input, args.json)
+            print_progress(f"Exporting to multiple JSON files: {args.json}", verbose)
+            export_to_json_files(analyzer, args.json, args.input)
 
         if args.csv:
-            print_progress(f"Exporting to CSV: {args.csv}", verbose)
-            export_to_csv(analyzer, args.csv)
+            print_progress(f"Exporting to multiple CSV files: {args.csv}", verbose)
+            export_to_csv_files(analyzer, args.csv)
 
         # Print to stdout if no output files specified
         if not any([args.output, args.json, args.csv]) and not args.quiet:
