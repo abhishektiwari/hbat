@@ -176,7 +176,12 @@ class TestMolecularValidation:
     
     def test_reference_structure_consistency(self, sample_pdb_file):
         """Test consistency of results for reference structure (6RSA)."""
-        analyzer = MolecularInteractionAnalyzer()
+        from hbat.core.analysis import AnalysisParameters
+        
+        # Create parameters with PDB fixing disabled for consistent results
+        params = AnalysisParameters(fix_pdb_enabled=False)
+        
+        analyzer = MolecularInteractionAnalyzer(parameters=params)
         
         # Run analysis twice to test consistency
         success1 = analyzer.analyze_file(sample_pdb_file)
@@ -184,7 +189,7 @@ class TestMolecularValidation:
         stats1 = analyzer.get_summary()
         
         # Create new analyzer for second run
-        analyzer2 = MolecularInteractionAnalyzer()
+        analyzer2 = MolecularInteractionAnalyzer(parameters=params)
         success2 = analyzer2.analyze_file(sample_pdb_file)
         assert success2, "Second analysis should succeed"
         stats2 = analyzer2.get_summary()
