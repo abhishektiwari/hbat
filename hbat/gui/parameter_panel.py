@@ -846,7 +846,7 @@ class ParameterPanel:
         if "pdb_fixing" in params:
             pdb_fix = params["pdb_fixing"]
             self.fix_pdb_enabled.set(pdb_fix.get("enabled", False))
-            self.fix_pdb_method.set(pdb_fix.get("method", "openbabel"))
+            self.fix_pdb_method.set(pdb_fix.get("method", "pdbfixer"))
             self.fix_pdb_add_hydrogens.set(pdb_fix.get("add_hydrogens", True))
             self.fix_pdb_add_heavy_atoms.set(pdb_fix.get("add_heavy_atoms", False))
             self.fix_pdb_replace_nonstandard.set(
