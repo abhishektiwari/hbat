@@ -179,27 +179,27 @@ class MainWindow:
     def _create_main_content(self) -> None:
         """Create the main content area.
 
-        Sets up the main interface with a paned window containing file content,
-        parameter panels, and results display areas.
+        Sets up the main interface with a vertical paned window containing PDB file
+        content on top (30%) and results display area below (70%).
 
         :returns: None
         :rtype: None
         """
-        # Create main paned window
-        main_paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
+        # Create main paned window with vertical orientation
+        main_paned = ttk.PanedWindow(self.root, orient=tk.VERTICAL)
         main_paned.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        # Left panel - File content and parameters
-        left_frame = ttk.Frame(main_paned)
-        main_paned.add(left_frame, weight=1)
+        # Top panel - PDB File content (30% of height)
+        top_frame = ttk.Frame(main_paned)
+        main_paned.add(top_frame, weight=3)  # 30% weight ratio
 
-        # Create notebook for left panel
-        left_notebook = ttk.Notebook(left_frame)
-        left_notebook.pack(fill=tk.BOTH, expand=True)
+        # Create notebook for PDB file tabs
+        self.left_notebook = ttk.Notebook(top_frame)
+        self.left_notebook.pack(fill=tk.BOTH, expand=True)
 
         # File content tab
-        file_frame = ttk.Frame(left_notebook)
-        left_notebook.add(file_frame, text="PDB File")
+        file_frame = ttk.Frame(self.left_notebook)
+        self.left_notebook.add(file_frame, text="PDB File")
 
         # Create text widget with both vertical and horizontal scrollbars
         text_frame = ttk.Frame(file_frame)
@@ -224,8 +224,8 @@ class MainWindow:
         text_frame.grid_columnconfigure(0, weight=1)
 
         # Fixed PDB content tab
-        fixed_file_frame = ttk.Frame(left_notebook)
-        left_notebook.add(fixed_file_frame, text="Fixed PDB")
+        fixed_file_frame = ttk.Frame(self.left_notebook)
+        self.left_notebook.add(fixed_file_frame, text="Fixed PDB")
 
         # Create text widget with both vertical and horizontal scrollbars
         fixed_text_frame = ttk.Frame(fixed_file_frame)
@@ -254,22 +254,24 @@ class MainWindow:
         # Add context menu for Fixed PDB tab
         self._create_fixed_pdb_context_menu()
 
-        # Store reference to the notebook for later updates
-        self.left_notebook = left_notebook
-
         # Store parameters separately (no longer in tab)
         self.parameter_panel = None
         self.parameters_window = None
         self.session_parameters = None  # Store parameters for session persistence
 
-        # Right panel - Results
-        right_frame = ttk.Frame(main_paned)
-        main_paned.add(right_frame, weight=2)
+        # Bottom panel - Results (70% of height)
+        bottom_frame = ttk.Frame(main_paned)
+        main_paned.add(bottom_frame, weight=7)  # 70% weight ratio
 
-        self.results_panel = ResultsPanel(right_frame)
+        self.results_panel = ResultsPanel(bottom_frame)
 
-        # Set initial pane positions
-        main_paned.sashpos(0, GUIDefaults.LEFT_PANEL_WIDTH)
+        # Set initial pane positions (30% for top, 70% for bottom)
+        # Position the sash at 30% of the total height
+        main_paned.update_idletasks()  # Ensure the window is rendered
+        total_height = self.root.winfo_height() - 60  # Account for padding and menu
+        if total_height > 0:
+            sash_position = int(total_height * 0.3)
+            main_paned.sashpos(0, sash_position)
 
     def _create_status_bar(self) -> None:
         """Create the status bar.
@@ -1138,7 +1140,7 @@ Author: Abhishek Tiwari
         # Create new parameters window
         self.parameters_window = tk.Toplevel(self.root)
         self.parameters_window.title("Analysis Parameters")
-        self.parameters_window.geometry("800x800")
+        self.parameters_window.geometry("700x600")
         self.parameters_window.resizable(True, True)
 
         # Create parameter panel in popup window

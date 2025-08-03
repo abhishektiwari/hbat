@@ -9,11 +9,11 @@ from .app import APP_VERSION
 class GUIDefaults:
     """Default values for GUI interface."""
 
-    # Window settings
-    WINDOW_WIDTH = 1800
-    WINDOW_HEIGHT = 900
-    MIN_WINDOW_WIDTH = 1200
-    MIN_WINDOW_HEIGHT = 800
+    # Window settings - optimized for standard displays (1366x768, 1920x1080)
+    WINDOW_WIDTH = 1280
+    WINDOW_HEIGHT = 720
+    MIN_WINDOW_WIDTH = 1024
+    MIN_WINDOW_HEIGHT = 680
 
     # Layout settings
     LEFT_PANEL_WIDTH = 400  # Initial pane position

@@ -77,7 +77,7 @@ class ChainVisualizationWindow:
         """Create the visualization window."""
         self.viz_window = tk.Toplevel(self.parent)
         self.viz_window.title(f"Cooperativity Chain Visualization - {self.chain_id}")
-        self.viz_window.geometry("1000x1000")
+        self.viz_window.geometry("900x700")
 
         # Create main container frames
         main_frame = ttk.Frame(self.viz_window)

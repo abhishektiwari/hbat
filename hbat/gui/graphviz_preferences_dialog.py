@@ -89,7 +89,7 @@ class GraphVizPreferencesDialog:
         """Create the preferences dialog window."""
         self.dialog = tk.Toplevel(self.parent)
         self.dialog.title("GraphViz Preferences")
-        self.dialog.geometry("600x500")
+        self.dialog.geometry("550x450")
         self.dialog.resizable(False, False)
         self.dialog.grab_set()  # Make dialog modal
 

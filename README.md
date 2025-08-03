@@ -25,6 +25,7 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 
 HBAT v2  is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi.
 
+![HBAT GUI](https://static.abhishek-tiwari.com/hbat/hbat-window-v1.png)
 
 ## Features
 
@@ -40,6 +41,8 @@ HBAT v2  is a modern Python re-implementation of the original Perl-based tool de
 - **Cross-Platform**: Works on Windows, macOS, and Linux.
 
 Please review [HBAT documentation](https://hbat.abhishek-tiwari.com/) for more details.
+
+![Cooperativity chain visualization](https://static.abhishek-tiwari.com/hbat/6rsa-pdb-chain-6.png)
 
 ### Supported Interactions
 
