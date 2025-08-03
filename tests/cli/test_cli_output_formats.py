@@ -66,54 +66,110 @@ class TestSingleFileExports:
         """Create a mock analyzer with sample results."""
         analyzer = Mock(spec=NPMolecularInteractionAnalyzer)
         
-        # Mock hydrogen bonds
-        hb1 = Mock()
-        hb1.donor_residue = "A123GLY"
-        hb1.donor.name = "N"
-        hb1.hydrogen.name = "H"
-        hb1.acceptor_residue = "A124ALA"
-        hb1.acceptor.name = "O"
-        hb1.distance = 2.8
-        hb1.angle = 2.79  # radians (~160 degrees)
-        hb1.donor_acceptor_distance = 3.2
-        hb1.bond_type = "N-H...O"
-        hb1.donor_acceptor_properties = "PBN-PBN"
-        hb1.get_backbone_sidechain_interaction = Mock(return_value="B-B")
+        # Create mock coordinate objects that support to_list()
+        def mock_coords(x, y, z):
+            coords = Mock()
+            coords.to_list.return_value = [x, y, z]
+            return coords
         
-        # Mock halogen bonds
-        xb1 = Mock()
-        xb1.halogen_residue = "A125TYR"
-        xb1.donor_residue = "A125TYR"  # For compatibility
-        xb1.halogen.name = "CL"
-        xb1.acceptor_residue = "A126ASP"
-        xb1.acceptor.name = "OD1"
-        xb1.distance = 3.5
-        xb1.angle = 2.62  # radians (~150 degrees)
-        xb1.bond_type = "C-Cl...O"
-        xb1.donor_acceptor_properties = "PSN-PSN"
-        xb1.get_backbone_sidechain_interaction = Mock(return_value="S-S")
+        # Create mock atom objects with proper attributes
+        def mock_atom(name, x=0.0, y=0.0, z=0.0):
+            atom = Mock()
+            atom.name = name
+            atom.coords = mock_coords(x, y, z)
+            return atom
         
-        # Mock pi interactions
-        pi1 = Mock()
-        pi1.donor_residue = "A127LYS"
-        pi1.donor.name = "NZ"
-        pi1.hydrogen.name = "HZ1"
-        pi1.pi_residue = "A128PHE"
-        pi1.distance = 3.8
-        pi1.angle = 2.44  # radians (~140 degrees)
-        pi1.donor_acceptor_properties = "PSN-PSN"
-        pi1.get_backbone_sidechain_interaction = Mock(return_value="S-S")
-        pi1.get_interaction_type_display = Mock(return_value="NH-π")
+        # Create hydrogen bond object using a simple namespace class
+        class SimpleHBond:
+            def __init__(self):
+                self.donor_residue = "A123GLY"
+                self.donor = mock_atom("N", 1.0, 2.0, 3.0)
+                self.hydrogen = mock_atom("H", 1.1, 2.1, 3.1)
+                self.acceptor_residue = "A124ALA"
+                self.acceptor = mock_atom("O", 4.0, 5.0, 6.0)
+                self.distance = 2.8
+                self.angle = 2.79  # radians (~160 degrees)
+                self.donor_acceptor_distance = 3.2
+                self.bond_type = "N-H...O"
+                self.donor_acceptor_properties = "PBN-PBN"
+            
+            def get_backbone_sidechain_interaction(self):
+                return "B-B"
         
-        # Mock cooperativity chains
-        chain1 = Mock()
-        chain1.chain_length = 3
-        chain1.chain_type = "H-bond chain"
+        hb1 = SimpleHBond()
         
-        interaction1 = Mock()
-        interaction1.get_donor_residue = Mock(return_value="A123GLY")
-        interaction1.get_donor_atom = Mock(return_value=Mock(name="N"))
-        chain1.interactions = [interaction1, interaction1, interaction1]
+        # Create halogen bond object using a simple namespace class
+        class SimpleXBond:
+            def __init__(self):
+                self.halogen_residue = "A125TYR"
+                self.donor_residue = "A125TYR"  # For compatibility
+                self.halogen = mock_atom("CL", 7.0, 8.0, 9.0)
+                self.acceptor_residue = "A126ASP"
+                self.acceptor = mock_atom("OD1", 10.0, 11.0, 12.0)
+                self.distance = 3.5
+                self.angle = 2.62  # radians (~150 degrees)
+                self.bond_type = "C-Cl...O"
+                self.donor_acceptor_properties = "PSN-PSN"
+            
+            def get_backbone_sidechain_interaction(self):
+                return "S-S"
+        
+        xb1 = SimpleXBond()
+        
+        # Create pi interaction object using a simple namespace class
+        class SimplePiBond:
+            def __init__(self):
+                self.donor_residue = "A127LYS"
+                self.donor = mock_atom("NZ", 13.0, 14.0, 15.0)
+                self.hydrogen = mock_atom("HZ1", 13.1, 14.1, 15.1)
+                self.pi_residue = "A128PHE"
+                self.pi_center = mock_coords(16.0, 17.0, 18.0)
+                self.distance = 3.8
+                self.angle = 2.44  # radians (~140 degrees)
+                self.donor_acceptor_properties = "PSN-PSN"
+            
+            def get_backbone_sidechain_interaction(self):
+                return "S-S"
+            
+            def get_interaction_type_display(self):
+                return "NH-π"
+        
+        pi1 = SimplePiBond()
+        
+        # Create cooperativity chain with simple namespace classes
+        class SimpleChainInteraction:
+            def __init__(self):
+                self.interaction_type = "H-Bond"
+                self.distance = 2.8
+                self.angle = 2.79
+                self.bond_type = "N-H...O"
+            
+            def get_donor_residue(self):
+                return "A123GLY"
+            
+            def get_acceptor_residue(self):
+                return "A124ALA"
+            
+            def get_donor_atom(self):
+                atom = Mock()
+                atom.name = "N"
+                return atom
+            
+            def get_acceptor_atom(self):
+                atom = Mock()
+                atom.name = "O"
+                return atom
+            
+            def get_interaction_type(self):
+                return self.interaction_type
+        
+        class SimpleChain:
+            def __init__(self):
+                self.chain_length = 3
+                self.chain_type = "H-bond chain"
+                self.interactions = [SimpleChainInteraction(), SimpleChainInteraction(), SimpleChainInteraction()]
+        
+        chain1 = SimpleChain()
         
         analyzer.hydrogen_bonds = [hb1]
         analyzer.halogen_bonds = [xb1]
@@ -205,42 +261,90 @@ class TestMultipleFileExports:
         """Create a mock analyzer with sample results."""
         analyzer = Mock(spec=NPMolecularInteractionAnalyzer)
         
-        # Mock hydrogen bonds
-        hb1 = Mock()
-        hb1.donor_residue = "A123GLY"
-        hb1.donor.name = "N"
-        hb1.hydrogen.name = "H"
-        hb1.acceptor_residue = "A124ALA"
-        hb1.acceptor.name = "O"
-        hb1.distance = 2.8
-        hb1.angle = 2.79  # radians
-        hb1.donor_acceptor_distance = 3.2
-        hb1.bond_type = "N-H...O"
-        hb1.donor_acceptor_properties = "PBN-PBN"
-        hb1.get_backbone_sidechain_interaction = Mock(return_value="B-B")
+        # Create mock coordinate objects that support to_list()
+        def mock_coords(x, y, z):
+            coords = Mock()
+            coords.to_list.return_value = [x, y, z]
+            return coords
         
-        # Mock halogen bonds with all required attributes
-        xb1 = Mock()
-        xb1.halogen_residue = "A125TYR"
-        xb1.donor_residue = "A125TYR"  # For compatibility
-        xb1.halogen.name = "CL"
-        xb1.acceptor_residue = "A126ASP"
-        xb1.acceptor.name = "OD1"
-        xb1.distance = 3.5
-        xb1.angle = 2.62  # radians
-        xb1.bond_type = "C-Cl...O"
-        xb1.donor_acceptor_properties = "PSN-PSN"
-        xb1.get_backbone_sidechain_interaction = Mock(return_value="S-S")
+        # Create mock atom objects with proper attributes
+        def mock_atom(name, x=0.0, y=0.0, z=0.0):
+            atom = Mock()
+            atom.name = name
+            atom.coords = mock_coords(x, y, z)
+            return atom
         
-        # Mock cooperativity chains
-        chain1 = Mock()
-        chain1.chain_length = 3
-        chain1.chain_type = "H-bond chain"
+        # Create hydrogen bond object using a simple namespace class
+        class SimpleHBond:
+            def __init__(self):
+                self.donor_residue = "A123GLY"
+                self.donor = mock_atom("N", 1.0, 2.0, 3.0)
+                self.hydrogen = mock_atom("H", 1.1, 2.1, 3.1)
+                self.acceptor_residue = "A124ALA"
+                self.acceptor = mock_atom("O", 4.0, 5.0, 6.0)
+                self.distance = 2.8
+                self.angle = 2.79  # radians
+                self.donor_acceptor_distance = 3.2
+                self.bond_type = "N-H...O"
+                self.donor_acceptor_properties = "PBN-PBN"
+            
+            def get_backbone_sidechain_interaction(self):
+                return "B-B"
         
-        interaction1 = Mock()
-        interaction1.get_donor_residue = Mock(return_value="A123GLY")
-        interaction1.get_donor_atom = Mock(return_value=Mock(name="N"))
-        chain1.interactions = [interaction1]
+        hb1 = SimpleHBond()
+        
+        # Create halogen bond object using a simple namespace class
+        class SimpleXBond:
+            def __init__(self):
+                self.halogen_residue = "A125TYR"
+                self.donor_residue = "A125TYR"  # For compatibility
+                self.halogen = mock_atom("CL", 7.0, 8.0, 9.0)
+                self.acceptor_residue = "A126ASP"
+                self.acceptor = mock_atom("OD1", 10.0, 11.0, 12.0)
+                self.distance = 3.5
+                self.angle = 2.62  # radians
+                self.bond_type = "C-Cl...O"
+                self.donor_acceptor_properties = "PSN-PSN"
+            
+            def get_backbone_sidechain_interaction(self):
+                return "S-S"
+        
+        xb1 = SimpleXBond()
+        
+        # Create cooperativity chain with simple namespace classes
+        class SimpleChainInteraction:
+            def __init__(self):
+                self.interaction_type = "H-Bond"
+                self.distance = 2.8
+                self.angle = 2.79
+                self.bond_type = "N-H...O"
+            
+            def get_donor_residue(self):
+                return "A123GLY"
+            
+            def get_acceptor_residue(self):
+                return "A124ALA"
+            
+            def get_donor_atom(self):
+                atom = Mock()
+                atom.name = "N"
+                return atom
+            
+            def get_acceptor_atom(self):
+                atom = Mock()
+                atom.name = "O"
+                return atom
+            
+            def get_interaction_type(self):
+                return self.interaction_type
+        
+        class SimpleChain:
+            def __init__(self):
+                self.chain_length = 3
+                self.chain_type = "H-bond chain"
+                self.interactions = [SimpleChainInteraction()]
+        
+        chain1 = SimpleChain()
         
         analyzer.hydrogen_bonds = [hb1]
         analyzer.halogen_bonds = [xb1]
