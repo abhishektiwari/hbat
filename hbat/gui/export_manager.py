@@ -262,7 +262,7 @@ class ExportDialog:
         # Create dialog window
         self.dialog = tk.Toplevel()
         self.dialog.title("Export Visualization")
-        self.dialog.geometry("380x280")
+        self.dialog.geometry("400x300")
         self.dialog.resizable(False, False)
         self.dialog.grab_set()  # Make dialog modal
 
