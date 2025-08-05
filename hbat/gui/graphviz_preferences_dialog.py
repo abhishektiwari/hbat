@@ -16,18 +16,6 @@ from hbat.utilities.graphviz_utils import GraphVizDetector
 # Set up logging
 logger = logging.getLogger(__name__)
 
-# GraphViz engine descriptions
-ENGINE_DESCRIPTIONS = {
-    "dot": "Hierarchical layouts for directed graphs",
-    "neato": "Spring model layouts (Kamada-Kawai)",
-    "fdp": "Force-directed spring model",
-    "sfdp": "Scalable force-directed placement",
-    "circo": "Circular layout",
-    "twopi": "Radial layout",
-    "osage": "Array-based layout",
-    "patchwork": "Squarified treemap layout",
-}
-
 # Background color options
 BACKGROUND_COLORS = [
     ("White", "white"),

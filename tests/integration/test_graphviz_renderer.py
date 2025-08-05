@@ -240,14 +240,14 @@ class TestGraphVizRendererIntegration(unittest.TestCase):
         # Set custom preferences
         self.config.set_graphviz_engine("neato")
         self.config.set_graphviz_export_dpi(150)
-        self.config.set_graphviz_preference("background_color", "lightgray")
+        self.config.set_graphviz_preference("background_color", "white")
         self.config.set_graphviz_preference("node_shape", "box")
         
         renderer = GraphVizRenderer(self.root, self.config)
         dot_string = renderer.generate_dot(self.graph, "circular")
         
         # Verify preferences are used
-        self.assertIn('bgcolor="lightgray"', dot_string)
+        self.assertIn('bgcolor="white"', dot_string)
         self.assertIn('node [shape="box"]', dot_string)
         
     @patch('hbat.utilities.graphviz_utils.GraphVizDetector.is_graphviz_available')

@@ -9,13 +9,32 @@
       "dha_angle_cutoff": 140.0,
       "d_a_distance_cutoff": 3.5
     },
+    "weak_hydrogen_bonds": {
+      "h_a_distance_cutoff": 3.0,
+      "dha_angle_cutoff": 160.0,
+      "d_a_distance_cutoff": 3.0
+    },
     "halogen_bonds": {
-      "x_a_distance_cutoff": 3.5,
-      "cxa_angle_cutoff": 140.0
+      "x_a_distance_cutoff": 3.9,
+      "dxa_angle_cutoff": 150.0
     },
     "pi_interactions": {
       "h_pi_distance_cutoff": 4.0,
-      "dh_pi_angle_cutoff": 80.0
+      "dh_pi_angle_cutoff": 80.0,
+      "ccl_pi_distance_cutoff": 3.3,
+      "ccl_pi_angle_cutoff": 135.0,
+      "cbr_pi_distance_cutoff": 3.4,
+      "cbr_pi_angle_cutoff": 135.0,
+      "ci_pi_distance_cutoff": 3.5,
+      "ci_pi_angle_cutoff": 135.0,
+      "ch_pi_distance_cutoff": 4.0,
+      "ch_pi_angle_cutoff": 135.0,
+      "nh_pi_distance_cutoff": 3.7,
+      "nh_pi_angle_cutoff": 145.0,
+      "oh_pi_distance_cutoff": 3.5,
+      "oh_pi_angle_cutoff": 145.0,
+      "sh_pi_distance_cutoff": 3.8,
+      "sh_pi_angle_cutoff": 135.0
     },
     "general": {
       "covalent_cutoff_factor": 0.85,

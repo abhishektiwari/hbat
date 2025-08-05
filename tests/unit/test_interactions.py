@@ -205,6 +205,77 @@ class TestHydrogenBondString:
 
 
 @pytest.mark.unit
+class TestWeakHydrogenBondsWithCarbonDonors:
+    """Test weak hydrogen bonds with carbon donors."""
+    
+    @pytest.fixture
+    def carbon_donor_atoms(self):
+        """Create sample atoms for testing weak hydrogen bonds with carbon donors."""
+        carbon_donor = Atom(
+            serial=1, name="CA", alt_loc="", res_name="GLY", chain_id="A",
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="C", charge="", record_type="ATOM"
+        )
+        
+        hydrogen = Atom(
+            serial=2, name="HA", alt_loc="", res_name="GLY", chain_id="A",
+            res_seq=1, i_code="", coords=NPVec3D(1, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="H", charge="", record_type="ATOM"
+        )
+        
+        acceptor = Atom(
+            serial=3, name="O", alt_loc="", res_name="ALA", chain_id="A",
+            res_seq=2, i_code="", coords=NPVec3D(4, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="O", charge="", record_type="ATOM"
+        )
+        
+        return carbon_donor, hydrogen, acceptor
+    
+    def test_weak_hydrogen_bond_creation_with_carbon_donor(self, carbon_donor_atoms):
+        """Test creation of weak hydrogen bond with carbon donor."""
+        carbon_donor, hydrogen, acceptor = carbon_donor_atoms
+        
+        # Create a weak hydrogen bond typical of C-H...O interactions
+        whb = HydrogenBond(
+            _donor=carbon_donor,
+            hydrogen=hydrogen,
+            _acceptor=acceptor,
+            distance=3.6,  # WHB distance cutoff
+            angle=math.radians(150.0),  # WHB angle cutoff
+            _donor_acceptor_distance=3.5,  # WHB D-A distance cutoff
+            bond_type="C-H...O",
+            _donor_residue="A1GLY",
+            _acceptor_residue="A2ALA"
+        )
+        
+        assert whb.donor == carbon_donor
+        assert whb.donor.element == "C"  # Verify it's a carbon donor
+        assert whb.hydrogen == hydrogen
+        assert whb.acceptor == acceptor
+        assert whb.distance == 3.6
+        assert abs(whb.angle - math.radians(150.0)) < 1e-10
+        assert whb.donor_acceptor_distance == 3.5
+        assert whb.bond_type == "C-H...O"
+    
+    def test_weak_hydrogen_bond_longer_distances(self, carbon_donor_atoms):
+        """Test that weak hydrogen bonds can have longer distances than regular H-bonds."""
+        carbon_donor, hydrogen, acceptor = carbon_donor_atoms
+        
+        # Test with distances that would be too long for regular H-bonds but acceptable for WHB
+        whb = HydrogenBond(
+            _donor=carbon_donor, hydrogen=hydrogen, _acceptor=acceptor,
+            distance=3.8,  # Longer than typical HB_DISTANCE_CUTOFF (2.5)
+            angle=math.radians(140.0),
+            _donor_acceptor_distance=4.0,  # Longer than typical HB_DA_DISTANCE (3.5)
+            bond_type="C-H...O", _donor_residue="A1GLY", _acceptor_residue="A2ALA"
+        )
+        
+        assert whb.distance == 3.8
+        assert whb.donor_acceptor_distance == 4.0
+        assert whb.donor.element == "C"
+
+
+@pytest.mark.unit
 class TestHalogenBondCreation:
     """Test halogen bond creation and properties."""
     
@@ -415,6 +486,168 @@ class TestPiInteractionString:
         assert "N" in str_repr
         assert "3.50" in str_repr
         assert "150.0" in str_repr
+
+
+@pytest.mark.unit
+class TestPiInteractionTypeDisplay:
+    """Test π interaction type display functionality for different subtypes."""
+    
+    def create_test_atom(self, name: str, element: str, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> Atom:
+        """Helper method to create test atoms."""
+        return Atom(
+            serial=1, name=name, alt_loc="", res_name="TST", chain_id="A",
+            res_seq=1, i_code="", coords=NPVec3D(x, y, z), occupancy=1.0,
+            temp_factor=20.0, element=element, charge="", record_type="ATOM",
+            residue_type="P", backbone_sidechain="S", aromatic="N"
+        )
+    
+    def test_c_h_pi_interaction_type(self):
+        """Test C-H...π interaction type display."""
+        carbon = self.create_test_atom("C1", "C")
+        hydrogen = self.create_test_atom("H1", "H", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(4.5, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=carbon,
+            hydrogen=hydrogen,
+            pi_center=pi_center,
+            distance=4.5,
+            angle=math.radians(120),
+            _donor_residue="TST1A",
+            _pi_residue="PHE2A"
+        )
+        
+        assert pi.get_interaction_type_display() == "C-H...π"
+    
+    def test_c_cl_pi_interaction_type(self):
+        """Test C-Cl...π interaction type display."""
+        carbon = self.create_test_atom("C1", "C")
+        chlorine = self.create_test_atom("CL1", "CL", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(3.8, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=carbon,
+            hydrogen=chlorine,
+            pi_center=pi_center,
+            distance=3.8,
+            angle=math.radians(125),
+            _donor_residue="TST1A",
+            _pi_residue="PHE2A"
+        )
+        
+        assert pi.get_interaction_type_display() == "C-CL...π"
+    
+    def test_c_br_pi_interaction_type(self):
+        """Test C-Br...π interaction type display."""
+        carbon = self.create_test_atom("C1", "C")
+        bromine = self.create_test_atom("BR1", "BR", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(3.9, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=carbon,
+            hydrogen=bromine,
+            pi_center=pi_center,
+            distance=3.9,
+            angle=math.radians(120),
+            _donor_residue="TST1A",
+            _pi_residue="PHE2A"
+        )
+        
+        assert pi.get_interaction_type_display() == "C-BR...π"
+    
+    def test_c_i_pi_interaction_type(self):
+        """Test C-I...π interaction type display."""
+        carbon = self.create_test_atom("C1", "C")
+        iodine = self.create_test_atom("I1", "I", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(4.0, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=carbon,
+            hydrogen=iodine,
+            pi_center=pi_center,
+            distance=4.0,
+            angle=math.radians(115),
+            _donor_residue="TST1A",
+            _pi_residue="PHE2A"
+        )
+        
+        assert pi.get_interaction_type_display() == "C-I...π"
+    
+    def test_n_h_pi_interaction_type(self):
+        """Test N-H...π interaction type display."""
+        nitrogen = self.create_test_atom("N1", "N")
+        hydrogen = self.create_test_atom("H1", "H", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(4.2, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=nitrogen,
+            hydrogen=hydrogen,
+            pi_center=pi_center,
+            distance=4.2,
+            angle=math.radians(135),
+            _donor_residue="ARG1A",
+            _pi_residue="PHE2A"
+        )
+        
+        assert pi.get_interaction_type_display() == "N-H...π"
+    
+    def test_o_h_pi_interaction_type(self):
+        """Test O-H...π interaction type display."""
+        oxygen = self.create_test_atom("O1", "O")
+        hydrogen = self.create_test_atom("H1", "H", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(4.0, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=oxygen,
+            hydrogen=hydrogen,
+            pi_center=pi_center,
+            distance=4.0,
+            angle=math.radians(140),
+            _donor_residue="SER1A",
+            _pi_residue="PHE2A"
+        )
+        
+        assert pi.get_interaction_type_display() == "O-H...π"
+    
+    def test_s_h_pi_interaction_type(self):
+        """Test S-H...π interaction type display."""
+        sulfur = self.create_test_atom("S1", "S")
+        hydrogen = self.create_test_atom("H1", "H", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(4.3, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=sulfur,
+            hydrogen=hydrogen,
+            pi_center=pi_center,
+            distance=4.3,
+            angle=math.radians(125),
+            _donor_residue="CYS1A",
+            _pi_residue="PHE2A"
+        )
+        
+        assert pi.get_interaction_type_display() == "S-H...π"
+    
+    def test_pi_interaction_string_includes_type(self):
+        """Test that string representation includes the specific interaction type."""
+        carbon = self.create_test_atom("C1", "C")
+        chlorine = self.create_test_atom("CL1", "CL", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(3.8, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=carbon,
+            hydrogen=chlorine,
+            pi_center=pi_center,
+            distance=3.8,
+            angle=math.radians(125),
+            _donor_residue="TST1A",
+            _pi_residue="PHE2A"
+        )
+        
+        str_repr = str(pi)
+        assert "C-CL...π" in str_repr
+        assert "π-Int:" in str_repr
+        assert "TST1A" in str_repr
+        assert "PHE2A" in str_repr
 
 
 @pytest.mark.unit
@@ -666,3 +899,131 @@ class TestInteractionValidation:
         assert hasattr(pi.pi_center, 'x')
         assert hasattr(pi.pi_center, 'y')
         assert hasattr(pi.pi_center, 'z')
+
+
+@pytest.mark.unit
+class TestHalogenBondDistanceCriteria:
+    """Test halogen bond distance criteria using vdW radii and fixed cutoffs."""
+    
+    def test_vdw_sum_calculation(self):
+        """Test van der Waals radii sum calculation."""
+        from hbat.core.np_analyzer import NPMolecularInteractionAnalyzer
+        from hbat.constants.parameters import AnalysisParameters
+        
+        analyzer = NPMolecularInteractionAnalyzer(AnalysisParameters())
+        
+        # Create test atoms
+        cl_atom = Atom(
+            serial=1, name="CL", alt_loc="", res_name="CLU", chain_id="A",
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="CL", charge="", record_type="ATOM"
+        )
+        
+        o_atom = Atom(
+            serial=2, name="O", alt_loc="", res_name="GLY", chain_id="A",
+            res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="O", charge="", record_type="ATOM"
+        )
+        
+        # Test Cl...O vdW sum: 1.75 + 1.52 = 3.27 Å
+        vdw_sum = analyzer._get_vdw_sum(cl_atom, o_atom)
+        assert abs(vdw_sum - 3.27) < 0.01
+        
+        # Test with different halogen
+        br_atom = Atom(
+            serial=3, name="BR", alt_loc="", res_name="BRU", chain_id="A",
+            res_seq=3, i_code="", coords=NPVec3D(4, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="BR", charge="", record_type="ATOM"
+        )
+        
+        # Test Br...O vdW sum: 1.83 + 1.52 = 3.35 Å
+        vdw_sum = analyzer._get_vdw_sum(br_atom, o_atom)
+        assert abs(vdw_sum - 3.35) < 0.01
+        
+        # Test I...N vdW sum: 1.98 + 1.55 = 3.53 Å
+        i_atom = Atom(
+            serial=4, name="I", alt_loc="", res_name="IOU", chain_id="A",
+            res_seq=4, i_code="", coords=NPVec3D(5, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="I", charge="", record_type="ATOM"
+        )
+        
+        n_atom = Atom(
+            serial=5, name="N", alt_loc="", res_name="ASN", chain_id="A",
+            res_seq=5, i_code="", coords=NPVec3D(6, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="N", charge="", record_type="ATOM"
+        )
+        
+        vdw_sum = analyzer._get_vdw_sum(i_atom, n_atom)
+        assert abs(vdw_sum - 3.53) < 0.01
+    
+    def test_vdw_sum_unknown_elements(self):
+        """Test vdW sum with unknown elements uses defaults."""
+        from hbat.core.np_analyzer import NPMolecularInteractionAnalyzer
+        from hbat.constants.parameters import AnalysisParameters
+        
+        analyzer = NPMolecularInteractionAnalyzer(AnalysisParameters())
+        
+        # Create atoms with unknown elements
+        unknown1 = Atom(
+            serial=1, name="X", alt_loc="", res_name="UNK", chain_id="A",
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="X", charge="", record_type="ATOM"
+        )
+        
+        unknown2 = Atom(
+            serial=2, name="Y", alt_loc="", res_name="UNK", chain_id="A",
+            res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="Y", charge="", record_type="ATOM"
+        )
+        
+        # Should use default 2.0 Å for each: 2.0 + 2.0 = 4.0 Å
+        vdw_sum = analyzer._get_vdw_sum(unknown1, unknown2)
+        assert vdw_sum == 4.0
+    
+    def test_distance_criteria_logic(self):
+        """Test the OR logic for distance criteria."""
+        from hbat.constants.parameters import AnalysisParameters
+        
+        # Test scenario 1: distance <= vdW sum but > fixed cutoff
+        vdw_sum = 3.2
+        fixed_cutoff = 3.0
+        distance = 3.1
+        
+        # Should pass: distance <= vdW_sum (3.1 <= 3.2)
+        meets_vdw = distance <= vdw_sum
+        meets_fixed = distance <= fixed_cutoff
+        meets_criteria = meets_vdw or meets_fixed
+        assert meets_criteria
+        
+        # Test scenario 2: distance > vdW sum but <= fixed cutoff
+        vdw_sum = 3.0
+        fixed_cutoff = 3.5
+        distance = 3.2
+        
+        # Should pass: distance <= fixed_cutoff (3.2 <= 3.5)
+        meets_vdw = distance <= vdw_sum
+        meets_fixed = distance <= fixed_cutoff
+        meets_criteria = meets_vdw or meets_fixed
+        assert meets_criteria
+        
+        # Test scenario 3: distance > both criteria
+        vdw_sum = 3.0
+        fixed_cutoff = 3.2
+        distance = 3.5
+        
+        # Should fail: distance > both cutoffs
+        meets_vdw = distance <= vdw_sum
+        meets_fixed = distance <= fixed_cutoff
+        meets_criteria = meets_vdw or meets_fixed
+        assert not meets_criteria
+        
+        # Test scenario 4: distance <= both criteria
+        vdw_sum = 3.5
+        fixed_cutoff = 3.4
+        distance = 3.0
+        
+        # Should pass: distance <= both cutoffs
+        meets_vdw = distance <= vdw_sum
+        meets_fixed = distance <= fixed_cutoff
+        meets_criteria = meets_vdw or meets_fixed
+        assert meets_criteria

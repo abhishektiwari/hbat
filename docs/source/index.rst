@@ -85,6 +85,7 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
    quickstart
    cli
    parameters
+   presets
    pdbfixing
    license
 

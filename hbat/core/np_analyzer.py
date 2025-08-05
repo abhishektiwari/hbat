@@ -21,6 +21,7 @@ from ..constants import (
     PI_INTERACTION_DONOR,
     RESIDUES_WITH_AROMATIC_RINGS,
 )
+from ..constants.atomic_data import AtomicData
 from ..constants.parameters import AnalysisParameters
 from .interactions import CooperativityChain, HalogenBond, HydrogenBond, PiInteraction
 from .np_vector import NPVec3D, batch_angle_between, compute_distance_matrix
@@ -31,10 +32,20 @@ from .structure import Atom, Residue
 class NPMolecularInteractionAnalyzer:
     """High-performance analyzer for molecular interactions.
 
-    This analyzer uses vectorized NumPy operations for efficient
-    analysis of molecular interactions in protein structures.
+    This analyzer uses vectorized NumPy operations for efficient analysis of molecular 
+    interactions in protein structures. Supports comprehensive detection of:
+    
+    - **Hydrogen bonds:** Classical N-H···O, O-H···O, N-H···N interactions
+    - **Weak hydrogen bonds:** C-H···O interactions (important in protein-ligand binding)
+    - **Halogen bonds:** C-X···A interactions where X is Cl, Br, I (default angle: 150°)
+    - **π interactions:** Multiple subtypes including:
+    
+      - Hydrogen-π: C-H···π, N-H···π, O-H···π, S-H···π
+      - Halogen-π: C-Cl···π, C-Br···π, C-I···π
+      
+    - **Cooperativity chains:** Networks of linked interactions
 
-    :param parameters: Analysis parameters to use
+    :param parameters: Analysis parameters with subtype-specific cutoffs
     :type parameters: Optional[AnalysisParameters]
     """
 
@@ -79,9 +90,10 @@ class NPMolecularInteractionAnalyzer:
     def analyze_file(self, pdb_file: str) -> bool:
         """Analyze a PDB file for molecular interactions.
 
-        Performs comprehensive analysis of hydrogen bonds, halogen bonds, π interactions,
-        and cooperativity chains in the provided PDB structure. Optionally applies PDB
-        fixing to add missing atoms if enabled in parameters.
+        Performs comprehensive analysis of hydrogen bonds, weak hydrogen bonds (C-H···O),
+        halogen bonds, π interactions (including subtypes: C-H···π, N-H···π, O-H···π, 
+        S-H···π, C-Cl···π, C-Br···π, C-I···π), and cooperativity chains in the provided 
+        PDB structure. Optionally applies PDB fixing to add missing atoms if enabled in parameters.
 
         :param pdb_file: Path to PDB file to analyze
         :type pdb_file: str
@@ -300,8 +312,21 @@ class NPMolecularInteractionAnalyzer:
         # Compute distance matrix between hydrogens (from donors) and acceptors
         distances = compute_distance_matrix(h_coords, a_coords)
 
-        # Find pairs within distance cutoff
-        h_indices, a_indices = np.where(distances <= self.parameters.hb_distance_cutoff)
+        # Create separate distance masks for regular HB and WHB
+        regular_hb_mask = np.zeros_like(distances, dtype=bool)
+        weak_hb_mask = np.zeros_like(distances, dtype=bool)
+        
+        for h_idx, (donor_atom, _, _, _) in enumerate(donors):
+            if donor_atom.element == "C":
+                # Use WHB cutoffs for carbon donors
+                weak_hb_mask[h_idx, :] = distances[h_idx, :] <= self.parameters.whb_distance_cutoff
+            else:
+                # Use regular HB cutoffs for other donors
+                regular_hb_mask[h_idx, :] = distances[h_idx, :] <= self.parameters.hb_distance_cutoff
+        
+        # Combine masks to find all valid pairs
+        combined_mask = regular_hb_mask | weak_hb_mask
+        h_indices, a_indices = np.where(combined_mask)
 
         # Process pairs in chunks for large datasets
         total_pairs = len(h_indices)
@@ -353,18 +378,22 @@ class NPMolecularInteractionAnalyzer:
                 angle_rad = batch_angle_between(donor_vec, h_vec, a_vec)
                 angle_deg = math.degrees(float(angle_rad))
 
+                # Determine if this is a weak hydrogen bond (carbon donor)
+                is_weak_hb = donor_atom.element == "C"
+                
+                # Use appropriate angle cutoff
+                angle_cutoff = self.parameters.whb_angle_cutoff if is_weak_hb else self.parameters.hb_angle_cutoff
+                da_distance_cutoff = self.parameters.whb_donor_acceptor_cutoff if is_weak_hb else self.parameters.hb_donor_acceptor_cutoff
+
                 # Check angle cutoff
-                if angle_deg >= self.parameters.hb_angle_cutoff:
+                if angle_deg >= angle_cutoff:
                     distance = float(distances[h_idx, a_idx])
                     donor_acceptor_distance = donor_atom.coords.distance_to(
                         a_atom.coords
                     )
 
-                    # Check donor-acceptor distance cutoff (like original analyzer)
-                    if (
-                        donor_acceptor_distance
-                        > self.parameters.hb_donor_acceptor_cutoff
-                    ):
+                    # Check donor-acceptor distance cutoff
+                    if donor_acceptor_distance > da_distance_cutoff:
                         continue
 
                     bond_type = f"{donor_atom.element}-H...{a_atom.element}"
@@ -432,8 +461,10 @@ class NPMolecularInteractionAnalyzer:
         # Compute distance matrix
         distances = compute_distance_matrix(x_coords, a_coords)
 
-        # Find pairs within distance cutoff
-        x_indices, a_indices = np.where(distances <= self.parameters.xb_distance_cutoff)
+        # Find pairs within generous distance cutoff for initial filtering
+        # We'll apply the actual vdW/fixed cutoff criteria per pair below
+        max_possible_cutoff = max(self.parameters.xb_distance_cutoff, 6.0)  # 6.0 Å as upper bound
+        x_indices, a_indices = np.where(distances <= max_possible_cutoff)
 
         # Process pairs in chunks for large datasets
         total_pairs = len(x_indices)
@@ -464,6 +495,12 @@ class NPMolecularInteractionAnalyzer:
                     if self._are_same_residue(halogen_idx, acceptor_idx):
                         continue
 
+                # Check distance criteria: vdW sum OR fixed cutoff
+                distance = float(distances[x_idx, a_idx])
+                vdw_sum = self._get_vdw_sum(x_atom, a_atom)
+                if not (distance <= vdw_sum or distance <= self.parameters.xb_distance_cutoff):
+                    continue  # Skip this pair - doesn't meet either distance criterion
+
                 # Find carbon atom bonded to halogen
                 carbon_atom = self._find_carbon_for_halogen(x_atom)
                 if not carbon_atom:
@@ -491,7 +528,7 @@ class NPMolecularInteractionAnalyzer:
 
                 # Check angle cutoff
                 if angle_deg >= self.parameters.xb_angle_cutoff:
-                    distance = float(distances[x_idx, a_idx])
+                    # distance already calculated above
                     bond_type = f"C-{x_atom.element}...{a_atom.element}"
                     halogen_residue = (
                         f"{x_atom.chain_id}{x_atom.res_seq}{x_atom.res_name}"
@@ -512,7 +549,25 @@ class NPMolecularInteractionAnalyzer:
                     self.halogen_bonds.append(xbond)
 
     def _find_pi_interactions_vectorized(self) -> None:
-        """Find π interactions using vectorized operations."""
+        """Find π interactions using vectorized operations.
+        
+        Detects multiple types of π interactions with aromatic rings:
+        
+        **Hydrogen-π interactions:**
+        - C-H···π: Carbon-hydrogen to π system (weak but important)
+        - N-H···π: Nitrogen-hydrogen to π system (moderate strength)
+        - O-H···π: Oxygen-hydrogen to π system (strongest H-π interaction)
+        - S-H···π: Sulfur-hydrogen to π system (rare but significant)
+        
+        **Halogen-π interactions:**
+        - C-Cl···π: Chlorine to π system interactions
+        - C-Br···π: Bromine to π system interactions (stronger than Cl)
+        - C-I···π: Iodine to π system interactions (strongest halogen-π)
+        
+        Each subtype uses specific distance and angle cutoffs optimized for 
+        the particular interaction type. Aromatic rings are detected in 
+        PHE, TYR, TRP, and HIS residues.
+        """
         aromatic_centers = self._get_aromatic_centers()
         if not aromatic_centers:
             return
@@ -527,11 +582,19 @@ class NPMolecularInteractionAnalyzer:
             [center["center"].to_array() for center in aromatic_centers]
         )
 
-        # Check interactions with each carbon-interaction atom pair
-        for carbon, interaction_atom in interaction_pairs:
+        # Check interactions with each donor-interaction atom pair
+        for donor_atom, interaction_atom in interaction_pairs:
             # Skip if not a π donor element
-            if carbon.element not in PI_INTERACTION_DONOR:
+            if donor_atom.element not in PI_INTERACTION_DONOR:
                 continue
+
+            # Determine interaction subtype and get appropriate cutoffs
+            distance_cutoff, angle_cutoff = self._get_pi_subtype_cutoffs(
+                donor_atom.element, interaction_atom.element
+            )
+            
+            if distance_cutoff is None or angle_cutoff is None:
+                continue  # Unsupported subtype
 
             # Calculate distances to all aromatic centers
             h_coord = np.array(
@@ -543,31 +606,31 @@ class NPMolecularInteractionAnalyzer:
             )
             distances = np.linalg.norm(center_coords - h_coord, axis=1)
 
-            # Find centers within cutoff
-            close_centers = np.where(distances <= self.parameters.pi_distance_cutoff)[0]
+            # Find centers within cutoff using subtype-specific distance
+            close_centers = np.where(distances <= distance_cutoff)[0]
 
             for center_idx in close_centers:
                 center_info = aromatic_centers[center_idx]
 
                 # Skip same residue (for local mode) - optimized check
                 if self.parameters.analysis_mode == "local":
-                    carbon_idx = self._serial_to_idx.get(carbon.serial)
-                    if carbon_idx is not None:
+                    donor_idx = self._serial_to_idx.get(donor_atom.serial)
+                    if donor_idx is not None:
                         # Create residue key for aromatic center
                         aromatic_residue_key = (
                             center_info["residue"].chain_id,
                             center_info["residue"].seq_num,
                             center_info["residue"].name,
                         )
-                        carbon_residue_key = self._atom_to_residue.get(carbon_idx)
-                        if carbon_residue_key == aromatic_residue_key:
+                        donor_residue_key = self._atom_to_residue.get(donor_idx)
+                        if donor_residue_key == aromatic_residue_key:
                             continue
 
                 # Calculate angle
                 donor_vec = NPVec3D(
-                    float(carbon.coords.x),
-                    float(carbon.coords.y),
-                    float(carbon.coords.z),
+                    float(donor_atom.coords.x),
+                    float(donor_atom.coords.y),
+                    float(donor_atom.coords.z),
                 )
                 h_vec = NPVec3D(
                     float(interaction_atom.coords.x),
@@ -578,9 +641,9 @@ class NPMolecularInteractionAnalyzer:
                 angle_rad = batch_angle_between(donor_vec, h_vec, center_info["center"])
                 angle_deg = math.degrees(float(angle_rad))
 
-                if angle_deg >= self.parameters.pi_angle_cutoff:
+                if angle_deg >= angle_cutoff:
                     donor_residue = (
-                        f"{carbon.chain_id}{carbon.res_seq}{carbon.res_name}"
+                        f"{donor_atom.chain_id}{donor_atom.res_seq}{donor_atom.res_name}"
                     )
                     pi_residue = f"{center_info['residue'].chain_id}{center_info['residue'].seq_num}{center_info['residue'].name}"
 
@@ -588,7 +651,7 @@ class NPMolecularInteractionAnalyzer:
                     pi_center_vec3d = center_info["center"]
 
                     pi_int = PiInteraction(
-                        _donor=carbon,
+                        _donor=donor_atom,
                         hydrogen=interaction_atom,
                         pi_center=pi_center_vec3d,
                         distance=float(distances[center_idx]),
@@ -598,26 +661,77 @@ class NPMolecularInteractionAnalyzer:
                     )
                     self.pi_interactions.append(pi_int)
 
-    def _get_pi_interaction_pairs(self) -> List[Tuple[Atom, Atom]]:
-        """Get interaction atoms (H, F, Cl) that are bonded to carbon.
+    def _get_pi_subtype_cutoffs(self, donor_element: str, interaction_element: str) -> Tuple[Optional[float], Optional[float]]:
+        """Get distance and angle cutoffs for specific π interaction subtype.
+        
+        Maps donor-interaction element combinations to their specific parameters:
+        
+        **Supported subtypes:**
+        - (C, H): C-H···π interactions - weak but ubiquitous
+        - (N, H): N-H···π interactions - moderate strength
+        - (O, H): O-H···π interactions - strongest hydrogen-π type
+        - (S, H): S-H···π interactions - less common
+        - (C, Cl): C-Cl···π interactions - halogen bonding to π system
+        - (C, Br): C-Br···π interactions - stronger than chlorine
+        - (C, I): C-I···π interactions - strongest halogen-π type
+        
+        Falls back to legacy π interaction parameters for unsupported combinations.
+        
+        :param donor_element: Element symbol of the donor atom (C, N, O, S)
+        :param interaction_element: Element symbol of the interaction atom (H, Cl, Br, I)
+        :returns: Tuple of (distance_cutoff, angle_cutoff) or (None, None) if unsupported
+        """
+        # Map donor-interaction combinations to parameter attributes
+        subtype_map = {
+            ('C', 'CL'): ('pi_ccl_distance_cutoff', 'pi_ccl_angle_cutoff'),
+            ('C', 'BR'): ('pi_cbr_distance_cutoff', 'pi_cbr_angle_cutoff'), 
+            ('C', 'I'): ('pi_ci_distance_cutoff', 'pi_ci_angle_cutoff'),
+            ('C', 'H'): ('pi_ch_distance_cutoff', 'pi_ch_angle_cutoff'),
+            ('N', 'H'): ('pi_nh_distance_cutoff', 'pi_nh_angle_cutoff'),
+            ('O', 'H'): ('pi_oh_distance_cutoff', 'pi_oh_angle_cutoff'),
+            ('S', 'H'): ('pi_sh_distance_cutoff', 'pi_sh_angle_cutoff'),
+        }
+        
+        # Normalize element symbols to uppercase
+        key = (donor_element.upper(), interaction_element.upper())
+        
+        if key in subtype_map:
+            distance_attr, angle_attr = subtype_map[key]
+            return (
+                getattr(self.parameters, distance_attr),
+                getattr(self.parameters, angle_attr)
+            )
+        
+        # Fallback to general π interaction parameters for unsupported subtypes
+        return (self.parameters.pi_distance_cutoff, self.parameters.pi_angle_cutoff)
 
-        For π interactions, we need C-X...π geometry, so only atoms
-        bonded to carbon are potential π interaction donors.
-        Returns list of tuples (carbon, interaction_atom).
+    def _get_pi_interaction_pairs(self) -> List[Tuple[Atom, Atom]]:
+        """Get interaction atoms that are bonded to donor atoms for π interaction analysis.
+
+        Identifies donor-interaction atom pairs with D-X···π geometry where:
+        - D is a donor atom (C, N, O, S) 
+        - X is an interaction atom (H, Cl, Br, I) bonded to D
+        - π is an aromatic ring system
+        
+        **Interaction types detected:**
+        - H bonded to C, N, O, S (hydrogen-π interactions)
+        - Cl, Br, I bonded to C (halogen-π interactions)
+        
+        :returns: List of (donor_atom, interaction_atom) tuples for analysis
+        :rtype: List[Tuple[Atom, Atom]]
         """
         interactions = []
 
         # Use cached atom mapping
-
         for atom in self.parser.atoms:
             if atom.element.upper() in PI_INTERACTION_ATOMS:
-                # Check if this atom is bonded to carbon
+                # Check if this atom is bonded to a donor atom (C, N, O, S)
                 bonded_serials = self.parser.get_bonded_atoms(atom.serial)
                 for bonded_serial in bonded_serials:
                     bonded_atom = self._atom_map.get(bonded_serial)
-                    if bonded_atom is not None and bonded_atom.element.upper() == "C":
+                    if bonded_atom is not None and bonded_atom.element.upper() in PI_INTERACTION_DONOR:
                         interactions.append((bonded_atom, atom))
-                        break  # Found at least one carbon, that's sufficient
+                        break  # Found at least one donor, that's sufficient
 
         return interactions
 
@@ -665,6 +779,20 @@ class NPMolecularInteractionAnalyzer:
                         ):
                             return atom
         return None
+
+    def _get_vdw_sum(self, atom1: Atom, atom2: Atom) -> float:
+        """Get van der Waals radii sum for two atoms.
+        
+        :param atom1: First atom
+        :type atom1: Atom
+        :param atom2: Second atom
+        :type atom2: Atom
+        :returns: Sum of van der Waals radii in Angstroms
+        :rtype: float
+        """
+        radius1 = AtomicData.VDW_RADII.get(atom1.element, 2.0)  # Default 2.0 Å if unknown
+        radius2 = AtomicData.VDW_RADII.get(atom2.element, 2.0)  # Default 2.0 Å if unknown
+        return radius1 + radius2
 
     def _get_aromatic_centers(self) -> List[Dict[str, Any]]:
         """Get aromatic ring centers using NumPy."""

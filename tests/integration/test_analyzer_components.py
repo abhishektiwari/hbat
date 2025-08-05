@@ -84,11 +84,21 @@ class TestAnalyzerInteractionDetection:
             
             # Geometric validation
             assert hb.distance > 0, "Distance should be positive"
-            assert hb.distance <= analyzer.parameters.hb_distance_cutoff
+            
+            # Check appropriate distance cutoff based on donor type
+            if hb.donor.element.upper() == "C":
+                # Weak hydrogen bond (C-H···O)
+                assert hb.distance <= analyzer.parameters.whb_distance_cutoff, \
+                    f"Weak H-bond distance {hb.distance:.3f} should be <= {analyzer.parameters.whb_distance_cutoff}"
+            else:
+                # Regular hydrogen bond (N-H, O-H, S-H)
+                assert hb.distance <= analyzer.parameters.hb_distance_cutoff, \
+                    f"H-bond distance {hb.distance:.3f} should be <= {analyzer.parameters.hb_distance_cutoff}"
+            
             assert 0 <= hb.angle <= math.pi, "Angle should be in valid range"
             
-            # Chemical validation
-            assert hb.donor.element.upper() in ["N", "O", "S"], "Donor should be N, O, or S"
+            # Chemical validation - includes weak hydrogen bonds (C-H···O)
+            assert hb.donor.element.upper() in ["N", "O", "S", "C"], "Donor should be N, O, S, or C"
             assert hb.hydrogen.is_hydrogen(), "Hydrogen should be H"
             assert hb.acceptor.element.upper() in ["N", "O", "S"], "Acceptor should be N, O, or S"
     

@@ -20,10 +20,28 @@ class TestAnalysisParametersCreation:
         assert params.hb_distance_cutoff > 0
         assert params.hb_angle_cutoff > 0
         assert params.hb_donor_acceptor_cutoff > 0
+        assert params.whb_distance_cutoff > 0
+        assert params.whb_angle_cutoff > 0
+        assert params.whb_donor_acceptor_cutoff > 0
         assert params.xb_distance_cutoff > 0
         assert params.xb_angle_cutoff > 0
         assert params.pi_distance_cutoff > 0
         assert params.pi_angle_cutoff > 0
+        # Test π interaction subtype parameters
+        assert params.pi_ccl_distance_cutoff > 0
+        assert params.pi_ccl_angle_cutoff > 0
+        assert params.pi_cbr_distance_cutoff > 0
+        assert params.pi_cbr_angle_cutoff > 0
+        assert params.pi_ci_distance_cutoff > 0
+        assert params.pi_ci_angle_cutoff > 0
+        assert params.pi_ch_distance_cutoff > 0
+        assert params.pi_ch_angle_cutoff > 0
+        assert params.pi_nh_distance_cutoff > 0
+        assert params.pi_nh_angle_cutoff > 0
+        assert params.pi_oh_distance_cutoff > 0
+        assert params.pi_oh_angle_cutoff > 0
+        assert params.pi_sh_distance_cutoff > 0
+        assert params.pi_sh_angle_cutoff > 0
         assert params.covalent_cutoff_factor > 0
         assert params.analysis_mode in ["complete", "local"]
         
@@ -41,10 +59,28 @@ class TestAnalysisParametersCreation:
         assert isinstance(params.hb_distance_cutoff, (int, float))
         assert isinstance(params.hb_angle_cutoff, (int, float))
         assert isinstance(params.hb_donor_acceptor_cutoff, (int, float))
+        assert isinstance(params.whb_distance_cutoff, (int, float))
+        assert isinstance(params.whb_angle_cutoff, (int, float))
+        assert isinstance(params.whb_donor_acceptor_cutoff, (int, float))
         assert isinstance(params.xb_distance_cutoff, (int, float))
         assert isinstance(params.xb_angle_cutoff, (int, float))
         assert isinstance(params.pi_distance_cutoff, (int, float))
         assert isinstance(params.pi_angle_cutoff, (int, float))
+        # π interaction subtype parameters
+        assert isinstance(params.pi_ccl_distance_cutoff, (int, float))
+        assert isinstance(params.pi_ccl_angle_cutoff, (int, float))
+        assert isinstance(params.pi_cbr_distance_cutoff, (int, float))
+        assert isinstance(params.pi_cbr_angle_cutoff, (int, float))
+        assert isinstance(params.pi_ci_distance_cutoff, (int, float))
+        assert isinstance(params.pi_ci_angle_cutoff, (int, float))
+        assert isinstance(params.pi_ch_distance_cutoff, (int, float))
+        assert isinstance(params.pi_ch_angle_cutoff, (int, float))
+        assert isinstance(params.pi_nh_distance_cutoff, (int, float))
+        assert isinstance(params.pi_nh_angle_cutoff, (int, float))
+        assert isinstance(params.pi_oh_distance_cutoff, (int, float))
+        assert isinstance(params.pi_oh_angle_cutoff, (int, float))
+        assert isinstance(params.pi_sh_distance_cutoff, (int, float))
+        assert isinstance(params.pi_sh_angle_cutoff, (int, float))
         assert isinstance(params.covalent_cutoff_factor, (int, float))
         
         # String parameters
@@ -73,6 +109,18 @@ class TestAnalysisParametersCustomization:
         assert params.hb_angle_cutoff == 130.0
         assert params.hb_donor_acceptor_cutoff == 3.5
     
+    def test_custom_weak_hydrogen_bond_parameters(self):
+        """Test setting custom weak hydrogen bond parameters."""
+        params = AnalysisParameters(
+            whb_distance_cutoff=3.8,
+            whb_angle_cutoff=145.0,
+            whb_donor_acceptor_cutoff=3.6
+        )
+        
+        assert params.whb_distance_cutoff == 3.8
+        assert params.whb_angle_cutoff == 145.0
+        assert params.whb_donor_acceptor_cutoff == 3.6
+    
     def test_custom_halogen_bond_parameters(self):
         """Test setting custom halogen bond parameters."""
         params = AnalysisParameters(
@@ -92,6 +140,40 @@ class TestAnalysisParametersCustomization:
         
         assert params.pi_distance_cutoff == 4.2
         assert params.pi_angle_cutoff == 85.0
+    
+    def test_custom_pi_interaction_subtype_parameters(self):
+        """Test setting custom π interaction subtype parameters."""
+        params = AnalysisParameters(
+            pi_ccl_distance_cutoff=3.5,
+            pi_ccl_angle_cutoff=125.0,
+            pi_cbr_distance_cutoff=3.6,
+            pi_cbr_angle_cutoff=120.0,
+            pi_ci_distance_cutoff=3.7,
+            pi_ci_angle_cutoff=115.0,
+            pi_ch_distance_cutoff=4.0,
+            pi_ch_angle_cutoff=130.0,
+            pi_nh_distance_cutoff=3.8,
+            pi_nh_angle_cutoff=135.0,
+            pi_oh_distance_cutoff=3.6,
+            pi_oh_angle_cutoff=140.0,
+            pi_sh_distance_cutoff=3.9,
+            pi_sh_angle_cutoff=125.0
+        )
+        
+        assert params.pi_ccl_distance_cutoff == 3.5
+        assert params.pi_ccl_angle_cutoff == 125.0
+        assert params.pi_cbr_distance_cutoff == 3.6
+        assert params.pi_cbr_angle_cutoff == 120.0
+        assert params.pi_ci_distance_cutoff == 3.7
+        assert params.pi_ci_angle_cutoff == 115.0
+        assert params.pi_ch_distance_cutoff == 4.0
+        assert params.pi_ch_angle_cutoff == 130.0
+        assert params.pi_nh_distance_cutoff == 3.8
+        assert params.pi_nh_angle_cutoff == 135.0
+        assert params.pi_oh_distance_cutoff == 3.6
+        assert params.pi_oh_angle_cutoff == 140.0
+        assert params.pi_sh_distance_cutoff == 3.9
+        assert params.pi_sh_angle_cutoff == 125.0
     
     def test_custom_general_parameters(self):
         """Test setting custom general parameters."""
@@ -149,12 +231,16 @@ class TestAnalysisParametersValidation:
         params = AnalysisParameters(
             hb_distance_cutoff=2.5,
             hb_donor_acceptor_cutoff=3.5,
+            whb_distance_cutoff=3.6,
+            whb_donor_acceptor_cutoff=3.4,
             xb_distance_cutoff=4.0,
             pi_distance_cutoff=4.5
         )
         
         assert params.hb_distance_cutoff == 2.5
         assert params.hb_donor_acceptor_cutoff == 3.5
+        assert params.whb_distance_cutoff == 3.6
+        assert params.whb_donor_acceptor_cutoff == 3.4
         assert params.xb_distance_cutoff == 4.0
         assert params.pi_distance_cutoff == 4.5
     
@@ -162,11 +248,13 @@ class TestAnalysisParametersValidation:
         """Test that angle parameters accept valid values."""
         params = AnalysisParameters(
             hb_angle_cutoff=120.0,
+            whb_angle_cutoff=150.0,
             xb_angle_cutoff=140.0,
             pi_angle_cutoff=90.0
         )
         
         assert params.hb_angle_cutoff == 120.0
+        assert params.whb_angle_cutoff == 150.0
         assert params.xb_angle_cutoff == 140.0
         assert params.pi_angle_cutoff == 90.0
     
@@ -188,12 +276,16 @@ class TestAnalysisParametersEdgeCases:
         params = AnalysisParameters(
             hb_distance_cutoff=1.0,
             hb_donor_acceptor_cutoff=1.5,
+            whb_distance_cutoff=2.0,
+            whb_donor_acceptor_cutoff=1.8,
             xb_distance_cutoff=2.0,
             pi_distance_cutoff=2.5
         )
         
         assert params.hb_distance_cutoff == 1.0
         assert params.hb_donor_acceptor_cutoff == 1.5
+        assert params.whb_distance_cutoff == 2.0
+        assert params.whb_donor_acceptor_cutoff == 1.8
         assert params.xb_distance_cutoff == 2.0
         assert params.pi_distance_cutoff == 2.5
     
@@ -202,12 +294,16 @@ class TestAnalysisParametersEdgeCases:
         params = AnalysisParameters(
             hb_distance_cutoff=5.0,
             hb_donor_acceptor_cutoff=6.0,
+            whb_distance_cutoff=5.5,
+            whb_donor_acceptor_cutoff=5.8,
             xb_distance_cutoff=7.0,
             pi_distance_cutoff=8.0
         )
         
         assert params.hb_distance_cutoff == 5.0
         assert params.hb_donor_acceptor_cutoff == 6.0
+        assert params.whb_distance_cutoff == 5.5
+        assert params.whb_donor_acceptor_cutoff == 5.8
         assert params.xb_distance_cutoff == 7.0
         assert params.pi_distance_cutoff == 8.0
     
@@ -215,11 +311,13 @@ class TestAnalysisParametersEdgeCases:
         """Test minimal angle parameter values."""
         params = AnalysisParameters(
             hb_angle_cutoff=90.0,
+            whb_angle_cutoff=120.0,
             xb_angle_cutoff=100.0,
             pi_angle_cutoff=45.0
         )
         
         assert params.hb_angle_cutoff == 90.0
+        assert params.whb_angle_cutoff == 120.0
         assert params.xb_angle_cutoff == 100.0
         assert params.pi_angle_cutoff == 45.0
     
@@ -227,11 +325,13 @@ class TestAnalysisParametersEdgeCases:
         """Test large angle parameter values."""
         params = AnalysisParameters(
             hb_angle_cutoff=180.0,
+            whb_angle_cutoff=180.0,
             xb_angle_cutoff=180.0,
             pi_angle_cutoff=180.0
         )
         
         assert params.hb_angle_cutoff == 180.0
+        assert params.whb_angle_cutoff == 180.0
         assert params.xb_angle_cutoff == 180.0
         assert params.pi_angle_cutoff == 180.0
     
@@ -254,6 +354,9 @@ class TestAnalysisParametersCombinations:
             hb_distance_cutoff=2.8,
             hb_angle_cutoff=140.0,
             hb_donor_acceptor_cutoff=3.3,
+            whb_distance_cutoff=3.0,
+            whb_angle_cutoff=160.0,
+            whb_donor_acceptor_cutoff=3.0,
             xb_distance_cutoff=3.5,
             xb_angle_cutoff=150.0,
             pi_distance_cutoff=3.8,
@@ -266,6 +369,9 @@ class TestAnalysisParametersCombinations:
         assert params.hb_distance_cutoff == 2.8
         assert params.hb_angle_cutoff == 140.0
         assert params.hb_donor_acceptor_cutoff == 3.3
+        assert params.whb_distance_cutoff == 3.0
+        assert params.whb_angle_cutoff == 160.0
+        assert params.whb_donor_acceptor_cutoff == 3.0
         assert params.xb_distance_cutoff == 3.5
         assert params.xb_angle_cutoff == 150.0
         assert params.pi_distance_cutoff == 3.8
@@ -279,6 +385,9 @@ class TestAnalysisParametersCombinations:
             hb_distance_cutoff=4.0,
             hb_angle_cutoff=110.0,
             hb_donor_acceptor_cutoff=4.5,
+            whb_distance_cutoff=4.2,
+            whb_angle_cutoff=120.0,
+            whb_donor_acceptor_cutoff=4.0,
             xb_distance_cutoff=4.5,
             xb_angle_cutoff=120.0,
             pi_distance_cutoff=5.0,
@@ -291,6 +400,9 @@ class TestAnalysisParametersCombinations:
         assert params.hb_distance_cutoff == 4.0
         assert params.hb_angle_cutoff == 110.0
         assert params.hb_donor_acceptor_cutoff == 4.5
+        assert params.whb_distance_cutoff == 4.2
+        assert params.whb_angle_cutoff == 120.0
+        assert params.whb_donor_acceptor_cutoff == 4.0
         assert params.xb_distance_cutoff == 4.5
         assert params.xb_angle_cutoff == 120.0
         assert params.pi_distance_cutoff == 5.0
@@ -413,6 +525,11 @@ class TestAnalysisParametersAttributes:
         assert hasattr(params, 'hb_distance_cutoff')
         assert hasattr(params, 'hb_angle_cutoff')
         assert hasattr(params, 'hb_donor_acceptor_cutoff')
+        
+        # Weak hydrogen bond parameters
+        assert hasattr(params, 'whb_distance_cutoff')
+        assert hasattr(params, 'whb_angle_cutoff')
+        assert hasattr(params, 'whb_donor_acceptor_cutoff')
         
         # Halogen bond parameters
         assert hasattr(params, 'xb_distance_cutoff')

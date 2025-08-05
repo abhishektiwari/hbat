@@ -131,6 +131,24 @@ Examples:
         help=f"Donor-acceptor distance cutoff in Å (default: {ParametersDefault.HB_DA_DISTANCE})",
     )
     param_group.add_argument(
+        "--whb-distance",
+        type=float,
+        default=ParametersDefault.WHB_DISTANCE_CUTOFF,
+        help=f"Weak hydrogen bond H...A distance cutoff in Å for carbon donors (default: {ParametersDefault.WHB_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--whb-angle",
+        type=float,
+        default=ParametersDefault.WHB_ANGLE_CUTOFF,
+        help=f"Weak hydrogen bond D-H...A angle cutoff in degrees for carbon donors (default: {ParametersDefault.WHB_ANGLE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--whb-da-distance",
+        type=float,
+        default=ParametersDefault.WHB_DA_DISTANCE,
+        help=f"Weak hydrogen bond donor-acceptor distance cutoff in Å for carbon donors (default: {ParametersDefault.WHB_DA_DISTANCE})",
+    )
+    param_group.add_argument(
         "--xb-distance",
         type=float,
         default=ParametersDefault.XB_DISTANCE_CUTOFF,
@@ -154,6 +172,93 @@ Examples:
         default=ParametersDefault.PI_ANGLE_CUTOFF,
         help=f"π interaction D-H...π angle cutoff in degrees (default: {ParametersDefault.PI_ANGLE_CUTOFF})",
     )
+    
+    # π interaction subtype parameters
+    param_group.add_argument(
+        "--pi-ccl-distance",
+        type=float,
+        default=ParametersDefault.PI_CCL_DISTANCE_CUTOFF,
+        help=f"C-Cl...π interaction distance cutoff in Å (default: {ParametersDefault.PI_CCL_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-ccl-angle",
+        type=float,
+        default=ParametersDefault.PI_CCL_ANGLE_CUTOFF,
+        help=f"C-Cl...π interaction angle cutoff in degrees (default: {ParametersDefault.PI_CCL_ANGLE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-cbr-distance",
+        type=float,
+        default=ParametersDefault.PI_CBR_DISTANCE_CUTOFF,
+        help=f"C-Br...π interaction distance cutoff in Å (default: {ParametersDefault.PI_CBR_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-cbr-angle",
+        type=float,
+        default=ParametersDefault.PI_CBR_ANGLE_CUTOFF,
+        help=f"C-Br...π interaction angle cutoff in degrees (default: {ParametersDefault.PI_CBR_ANGLE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-ci-distance",
+        type=float,
+        default=ParametersDefault.PI_CI_DISTANCE_CUTOFF,
+        help=f"C-I...π interaction distance cutoff in Å (default: {ParametersDefault.PI_CI_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-ci-angle",
+        type=float,
+        default=ParametersDefault.PI_CI_ANGLE_CUTOFF,
+        help=f"C-I...π interaction angle cutoff in degrees (default: {ParametersDefault.PI_CI_ANGLE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-ch-distance",
+        type=float,
+        default=ParametersDefault.PI_CH_DISTANCE_CUTOFF,
+        help=f"C-H...π interaction distance cutoff in Å (default: {ParametersDefault.PI_CH_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-ch-angle",
+        type=float,
+        default=ParametersDefault.PI_CH_ANGLE_CUTOFF,
+        help=f"C-H...π interaction angle cutoff in degrees (default: {ParametersDefault.PI_CH_ANGLE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-nh-distance",
+        type=float,
+        default=ParametersDefault.PI_NH_DISTANCE_CUTOFF,
+        help=f"N-H...π interaction distance cutoff in Å (default: {ParametersDefault.PI_NH_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-nh-angle",
+        type=float,
+        default=ParametersDefault.PI_NH_ANGLE_CUTOFF,
+        help=f"N-H...π interaction angle cutoff in degrees (default: {ParametersDefault.PI_NH_ANGLE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-oh-distance",
+        type=float,
+        default=ParametersDefault.PI_OH_DISTANCE_CUTOFF,
+        help=f"O-H...π interaction distance cutoff in Å (default: {ParametersDefault.PI_OH_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-oh-angle",
+        type=float,
+        default=ParametersDefault.PI_OH_ANGLE_CUTOFF,
+        help=f"O-H...π interaction angle cutoff in degrees (default: {ParametersDefault.PI_OH_ANGLE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-sh-distance",
+        type=float,
+        default=ParametersDefault.PI_SH_DISTANCE_CUTOFF,
+        help=f"S-H...π interaction distance cutoff in Å (default: {ParametersDefault.PI_SH_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-sh-angle",
+        type=float,
+        default=ParametersDefault.PI_SH_ANGLE_CUTOFF,
+        help=f"S-H...π interaction angle cutoff in degrees (default: {ParametersDefault.PI_SH_ANGLE_CUTOFF})",
+    )
+    
     param_group.add_argument(
         "--covalent-factor",
         type=float,
@@ -337,6 +442,7 @@ def load_preset_file(preset_path: str) -> AnalysisParameters:
 
         # Extract parameters with defaults
         hb_params = params.get("hydrogen_bonds", {})
+        whb_params = params.get("weak_hydrogen_bonds", {})
         xb_params = params.get("halogen_bonds", {})
         pi_params = params.get("pi_interactions", {})
         general_params = params.get("general", {})
@@ -352,17 +458,69 @@ def load_preset_file(preset_path: str) -> AnalysisParameters:
             hb_donor_acceptor_cutoff=hb_params.get(
                 "d_a_distance_cutoff", ParametersDefault.HB_DA_DISTANCE
             ),
+            whb_distance_cutoff=whb_params.get(
+                "h_a_distance_cutoff", ParametersDefault.WHB_DISTANCE_CUTOFF
+            ),
+            whb_angle_cutoff=whb_params.get(
+                "dha_angle_cutoff", ParametersDefault.WHB_ANGLE_CUTOFF
+            ),
+            whb_donor_acceptor_cutoff=whb_params.get(
+                "d_a_distance_cutoff", ParametersDefault.WHB_DA_DISTANCE
+            ),
             xb_distance_cutoff=xb_params.get(
                 "x_a_distance_cutoff", ParametersDefault.XB_DISTANCE_CUTOFF
             ),
             xb_angle_cutoff=xb_params.get(
-                "cxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF
+                "dxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF
             ),
             pi_distance_cutoff=pi_params.get(
                 "h_pi_distance_cutoff", ParametersDefault.PI_DISTANCE_CUTOFF
             ),
             pi_angle_cutoff=pi_params.get(
                 "dh_pi_angle_cutoff", ParametersDefault.PI_ANGLE_CUTOFF
+            ),
+            # π interaction subtype parameters
+            pi_ccl_distance_cutoff=pi_params.get(
+                "ccl_pi_distance_cutoff", ParametersDefault.PI_CCL_DISTANCE_CUTOFF
+            ),
+            pi_ccl_angle_cutoff=pi_params.get(
+                "ccl_pi_angle_cutoff", ParametersDefault.PI_CCL_ANGLE_CUTOFF
+            ),
+            pi_cbr_distance_cutoff=pi_params.get(
+                "cbr_pi_distance_cutoff", ParametersDefault.PI_CBR_DISTANCE_CUTOFF
+            ),
+            pi_cbr_angle_cutoff=pi_params.get(
+                "cbr_pi_angle_cutoff", ParametersDefault.PI_CBR_ANGLE_CUTOFF
+            ),
+            pi_ci_distance_cutoff=pi_params.get(
+                "ci_pi_distance_cutoff", ParametersDefault.PI_CI_DISTANCE_CUTOFF
+            ),
+            pi_ci_angle_cutoff=pi_params.get(
+                "ci_pi_angle_cutoff", ParametersDefault.PI_CI_ANGLE_CUTOFF
+            ),
+            pi_ch_distance_cutoff=pi_params.get(
+                "ch_pi_distance_cutoff", ParametersDefault.PI_CH_DISTANCE_CUTOFF
+            ),
+            pi_ch_angle_cutoff=pi_params.get(
+                "ch_pi_angle_cutoff", ParametersDefault.PI_CH_ANGLE_CUTOFF
+            ),
+            pi_nh_distance_cutoff=pi_params.get(
+                "nh_pi_distance_cutoff", ParametersDefault.PI_NH_DISTANCE_CUTOFF
+            ),
+            pi_nh_angle_cutoff=pi_params.get(
+                "nh_pi_angle_cutoff", ParametersDefault.PI_NH_ANGLE_CUTOFF
+            ),
+            pi_oh_distance_cutoff=pi_params.get(
+                "oh_pi_distance_cutoff", ParametersDefault.PI_OH_DISTANCE_CUTOFF
+            ),
+            pi_oh_angle_cutoff=pi_params.get(
+                "oh_pi_angle_cutoff", ParametersDefault.PI_OH_ANGLE_CUTOFF
+            ),
+            pi_sh_distance_cutoff=pi_params.get(
+                "sh_pi_distance_cutoff", ParametersDefault.PI_SH_DISTANCE_CUTOFF
+            ),
+            pi_sh_angle_cutoff=pi_params.get(
+                "sh_pi_angle_cutoff", ParametersDefault.PI_SH_ANGLE_CUTOFF
             ),
             covalent_cutoff_factor=general_params.get(
                 "covalent_cutoff_factor", ParametersDefault.COVALENT_CUTOFF_FACTOR
@@ -471,6 +629,12 @@ def load_parameters_from_args(args: argparse.Namespace) -> AnalysisParameters:
             params.hb_angle_cutoff = args.hb_angle
         if args.da_distance != defaults.get("da_distance"):
             params.hb_donor_acceptor_cutoff = args.da_distance
+        if args.whb_distance != defaults.get("whb_distance"):
+            params.whb_distance_cutoff = args.whb_distance
+        if args.whb_angle != defaults.get("whb_angle"):
+            params.whb_angle_cutoff = args.whb_angle
+        if args.whb_da_distance != defaults.get("whb_da_distance"):
+            params.whb_donor_acceptor_cutoff = args.whb_da_distance
         if args.xb_distance != defaults.get("xb_distance"):
             params.xb_distance_cutoff = args.xb_distance
         if args.xb_angle != defaults.get("xb_angle"):
@@ -479,6 +643,37 @@ def load_parameters_from_args(args: argparse.Namespace) -> AnalysisParameters:
             params.pi_distance_cutoff = args.pi_distance
         if args.pi_angle != defaults.get("pi_angle"):
             params.pi_angle_cutoff = args.pi_angle
+        
+        # π interaction subtype parameter overrides
+        if args.pi_ccl_distance != defaults.get("pi_ccl_distance"):
+            params.pi_ccl_distance_cutoff = args.pi_ccl_distance
+        if args.pi_ccl_angle != defaults.get("pi_ccl_angle"):
+            params.pi_ccl_angle_cutoff = args.pi_ccl_angle
+        if args.pi_cbr_distance != defaults.get("pi_cbr_distance"):
+            params.pi_cbr_distance_cutoff = args.pi_cbr_distance
+        if args.pi_cbr_angle != defaults.get("pi_cbr_angle"):
+            params.pi_cbr_angle_cutoff = args.pi_cbr_angle
+        if args.pi_ci_distance != defaults.get("pi_ci_distance"):
+            params.pi_ci_distance_cutoff = args.pi_ci_distance
+        if args.pi_ci_angle != defaults.get("pi_ci_angle"):
+            params.pi_ci_angle_cutoff = args.pi_ci_angle
+        if args.pi_ch_distance != defaults.get("pi_ch_distance"):
+            params.pi_ch_distance_cutoff = args.pi_ch_distance
+        if args.pi_ch_angle != defaults.get("pi_ch_angle"):
+            params.pi_ch_angle_cutoff = args.pi_ch_angle
+        if args.pi_nh_distance != defaults.get("pi_nh_distance"):
+            params.pi_nh_distance_cutoff = args.pi_nh_distance
+        if args.pi_nh_angle != defaults.get("pi_nh_angle"):
+            params.pi_nh_angle_cutoff = args.pi_nh_angle
+        if args.pi_oh_distance != defaults.get("pi_oh_distance"):
+            params.pi_oh_distance_cutoff = args.pi_oh_distance
+        if args.pi_oh_angle != defaults.get("pi_oh_angle"):
+            params.pi_oh_angle_cutoff = args.pi_oh_angle
+        if args.pi_sh_distance != defaults.get("pi_sh_distance"):
+            params.pi_sh_distance_cutoff = args.pi_sh_distance
+        if args.pi_sh_angle != defaults.get("pi_sh_angle"):
+            params.pi_sh_angle_cutoff = args.pi_sh_angle
+        
         if args.covalent_factor != defaults.get("covalent_factor"):
             params.covalent_cutoff_factor = args.covalent_factor
         if args.mode != defaults.get("mode"):
@@ -491,10 +686,28 @@ def load_parameters_from_args(args: argparse.Namespace) -> AnalysisParameters:
             hb_distance_cutoff=args.hb_distance,
             hb_angle_cutoff=args.hb_angle,
             hb_donor_acceptor_cutoff=args.da_distance,
+            whb_distance_cutoff=args.whb_distance,
+            whb_angle_cutoff=args.whb_angle,
+            whb_donor_acceptor_cutoff=args.whb_da_distance,
             xb_distance_cutoff=args.xb_distance,
             xb_angle_cutoff=args.xb_angle,
             pi_distance_cutoff=args.pi_distance,
             pi_angle_cutoff=args.pi_angle,
+            # π interaction subtype parameters
+            pi_ccl_distance_cutoff=args.pi_ccl_distance,
+            pi_ccl_angle_cutoff=args.pi_ccl_angle,
+            pi_cbr_distance_cutoff=args.pi_cbr_distance,
+            pi_cbr_angle_cutoff=args.pi_cbr_angle,
+            pi_ci_distance_cutoff=args.pi_ci_distance,
+            pi_ci_angle_cutoff=args.pi_ci_angle,
+            pi_ch_distance_cutoff=args.pi_ch_distance,
+            pi_ch_angle_cutoff=args.pi_ch_angle,
+            pi_nh_distance_cutoff=args.pi_nh_distance,
+            pi_nh_angle_cutoff=args.pi_nh_angle,
+            pi_oh_distance_cutoff=args.pi_oh_distance,
+            pi_oh_angle_cutoff=args.pi_oh_angle,
+            pi_sh_distance_cutoff=args.pi_sh_distance,
+            pi_sh_angle_cutoff=args.pi_sh_angle,
             covalent_cutoff_factor=args.covalent_factor,
             analysis_mode=args.mode,
             # PDB fixing parameters
@@ -1314,10 +1527,20 @@ def run_analysis(args: argparse.Namespace) -> int:
 
 
 def main() -> int:
-    """Main CLI entry point.
+    """Main CLI entry point for HBAT molecular interaction analysis.
 
-    Parses command-line arguments and dispatches to appropriate
-    functionality (preset listing or analysis execution).
+    Parses command-line arguments and dispatches to appropriate functionality.
+    Supports comprehensive analysis of molecular interactions including:
+    
+    - Hydrogen bonds (classical N-H···O, O-H···O)
+    - Weak hydrogen bonds (C-H···O interactions)
+    - Halogen bonds (C-X···A with default 150° angle cutoff)
+    - π interactions with multiple subtypes:
+      • Hydrogen-π: C-H···π, N-H···π, O-H···π, S-H···π
+      • Halogen-π: C-Cl···π, C-Br···π, C-I···π
+    - Cooperativity chains and interaction networks
+    
+    Includes built-in parameter presets and PDB structure fixing capabilities.
 
     :returns: Exit code (0 for success, non-zero for failure)
     :rtype: int

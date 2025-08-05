@@ -102,9 +102,14 @@ class TestCLIParameterIntegration:
                     "dha_angle_cutoff": 128.0,
                     "d_a_distance_cutoff": 4.1
                 },
+                "weak_hydrogen_bonds": {
+                    "h_a_distance_cutoff": 3.7,
+                    "dha_angle_cutoff": 145.0,
+                    "d_a_distance_cutoff": 3.8
+                },
                 "halogen_bonds": {
                     "x_a_distance_cutoff": 4.0,
-                    "cxa_angle_cutoff": 120.0
+                    "dxa_angle_cutoff": 120.0
                 },
                 "pi_interactions": {
                     "h_pi_distance_cutoff": 4.5,
@@ -138,6 +143,9 @@ class TestCLIParameterIntegration:
             # Verify preset parameters
             assert params.hb_distance_cutoff == 3.3
             assert params.hb_angle_cutoff == 128.0
+            assert params.whb_distance_cutoff == 3.7
+            assert params.whb_angle_cutoff == 145.0
+            assert params.whb_donor_acceptor_cutoff == 3.8
             assert params.analysis_mode == "local"
             
             # Use preset parameters in analysis
@@ -276,9 +284,14 @@ class TestCLIPresetIntegration:
                     "dha_angle_cutoff": 126.0,
                     "d_a_distance_cutoff": 4.2
                 },
+                "weak_hydrogen_bonds": {
+                    "h_a_distance_cutoff": 3.8,
+                    "dha_angle_cutoff": 148.0,
+                    "d_a_distance_cutoff": 3.6
+                },
                 "halogen_bonds": {
                     "x_a_distance_cutoff": 4.1,
-                    "cxa_angle_cutoff": 125.0
+                    "dxa_angle_cutoff": 125.0
                 },
                 "pi_interactions": {
                     "h_pi_distance_cutoff": 4.6,
@@ -312,6 +325,9 @@ class TestCLIPresetIntegration:
             # Verify all parameters loaded correctly
             assert params.hb_distance_cutoff == 3.4
             assert params.hb_angle_cutoff == 126.0
+            assert params.whb_distance_cutoff == 3.8
+            assert params.whb_angle_cutoff == 148.0
+            assert params.whb_donor_acceptor_cutoff == 3.6
             assert params.xb_distance_cutoff == 4.1
             assert params.xb_angle_cutoff == 125.0
             assert params.pi_distance_cutoff == 4.6
@@ -339,11 +355,16 @@ class TestCLIPresetIntegration:
                 "hydrogen_bonds": {
                     "h_a_distance_cutoff": 3.0,
                     "dha_angle_cutoff": 120.0,
+                    "d_a_distance_cutoff": 3.5
+                },
+                "weak_hydrogen_bonds": {
+                    "h_a_distance_cutoff": 3.5,
+                    "dha_angle_cutoff": 145.0,
                     "d_a_distance_cutoff": 4.0
                 },
                 "halogen_bonds": {
                     "x_a_distance_cutoff": 4.0,
-                    "cxa_angle_cutoff": 120.0
+                    "dxa_angle_cutoff": 120.0
                 },
                 "pi_interactions": {
                     "h_pi_distance_cutoff": 4.5,

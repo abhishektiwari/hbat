@@ -7,7 +7,7 @@ like files, analysis engines, or complex integrations.
 
 import pytest
 from hbat.cli.main import create_parser, load_parameters_from_args
-from hbat.core.analysis import AnalysisParameters
+from hbat.constants.parameters import AnalysisParameters
 
 
 @pytest.mark.unit
@@ -51,6 +51,21 @@ class TestCLIArgumentParsing:
         assert args.hb_distance == 3.0
         assert args.hb_angle == 130.0
         assert args.mode == "local"
+    
+    def test_weak_hydrogen_bond_arguments(self):
+        """Test weak hydrogen bond parameter arguments."""
+        parser = create_parser()
+        
+        args = parser.parse_args([
+            "test.pdb",
+            "--whb-distance", "3.8",
+            "--whb-angle", "145",
+            "--whb-da-distance", "3.4"
+        ])
+        
+        assert args.whb_distance == 3.8
+        assert args.whb_angle == 145.0
+        assert args.whb_da_distance == 3.4
     
     def test_preset_arguments(self):
         """Test preset-related arguments."""
@@ -151,6 +166,56 @@ class TestCLIArgumentParsing:
         assert args.pi_distance == 5.0
         assert args.pi_angle == 30.0
     
+    def test_pi_interaction_subtype_arguments(self):
+        """Test π interaction subtype specific arguments."""
+        parser = create_parser()
+        
+        # Test C-Cl...π and C-Br...π arguments
+        args = parser.parse_args([
+            "test.pdb",
+            "--pi-ccl-distance", "3.5",
+            "--pi-ccl-angle", "125",
+            "--pi-cbr-distance", "3.6",
+            "--pi-cbr-angle", "120"
+        ])
+        
+        assert args.pi_ccl_distance == 3.5
+        assert args.pi_ccl_angle == 125.0
+        assert args.pi_cbr_distance == 3.6
+        assert args.pi_cbr_angle == 120.0
+        
+        # Test C-I...π and C-H...π arguments
+        args = parser.parse_args([
+            "test.pdb",
+            "--pi-ci-distance", "3.7",
+            "--pi-ci-angle", "115",
+            "--pi-ch-distance", "4.0",
+            "--pi-ch-angle", "130"
+        ])
+        
+        assert args.pi_ci_distance == 3.7
+        assert args.pi_ci_angle == 115.0
+        assert args.pi_ch_distance == 4.0
+        assert args.pi_ch_angle == 130.0
+        
+        # Test N-H...π, O-H...π, and S-H...π arguments
+        args = parser.parse_args([
+            "test.pdb",
+            "--pi-nh-distance", "3.8",
+            "--pi-nh-angle", "135",
+            "--pi-oh-distance", "3.6",
+            "--pi-oh-angle", "140",
+            "--pi-sh-distance", "3.9",
+            "--pi-sh-angle", "125"
+        ])
+        
+        assert args.pi_nh_distance == 3.8
+        assert args.pi_nh_angle == 135.0
+        assert args.pi_oh_distance == 3.6
+        assert args.pi_oh_angle == 140.0
+        assert args.pi_sh_distance == 3.9
+        assert args.pi_sh_angle == 125.0
+    
     def test_advanced_analysis_arguments(self):
         """Test advanced analysis arguments."""
         parser = create_parser()
@@ -191,6 +256,21 @@ class TestParameterConversion:
         assert params.hb_distance_cutoff == 3.2
         assert params.hb_angle_cutoff == 140.0
         assert params.analysis_mode == "local"
+    
+    def test_weak_hydrogen_bond_parameter_loading(self):
+        """Test loading weak hydrogen bond parameters."""
+        parser = create_parser()
+        args = parser.parse_args([
+            "test.pdb",
+            "--whb-distance", "3.8",
+            "--whb-angle", "145",
+            "--whb-da-distance", "3.4"
+        ])
+        
+        params = load_parameters_from_args(args)
+        assert params.whb_distance_cutoff == 3.8
+        assert params.whb_angle_cutoff == 145.0
+        assert params.whb_donor_acceptor_cutoff == 3.4
     
     def test_pdb_fixing_parameter_loading(self):
         """Test loading PDB fixing parameters."""
@@ -252,6 +332,43 @@ class TestParameterConversion:
         params = load_parameters_from_args(args)
         assert params.pi_distance_cutoff == 4.8
         assert params.pi_angle_cutoff == 25.0
+    
+    def test_pi_interaction_subtype_parameter_loading(self):
+        """Test loading π interaction subtype parameters."""
+        parser = create_parser()
+        args = parser.parse_args([
+            "test.pdb",
+            "--pi-ccl-distance", "3.5",
+            "--pi-ccl-angle", "125",
+            "--pi-cbr-distance", "3.6",
+            "--pi-cbr-angle", "120",
+            "--pi-ci-distance", "3.7",
+            "--pi-ci-angle", "115",
+            "--pi-ch-distance", "4.0",
+            "--pi-ch-angle", "130",
+            "--pi-nh-distance", "3.8",
+            "--pi-nh-angle", "135",
+            "--pi-oh-distance", "3.6",
+            "--pi-oh-angle", "140",
+            "--pi-sh-distance", "3.9",
+            "--pi-sh-angle", "125"
+        ])
+        
+        params = load_parameters_from_args(args)
+        assert params.pi_ccl_distance_cutoff == 3.5
+        assert params.pi_ccl_angle_cutoff == 125.0
+        assert params.pi_cbr_distance_cutoff == 3.6
+        assert params.pi_cbr_angle_cutoff == 120.0
+        assert params.pi_ci_distance_cutoff == 3.7
+        assert params.pi_ci_angle_cutoff == 115.0
+        assert params.pi_ch_distance_cutoff == 4.0
+        assert params.pi_ch_angle_cutoff == 130.0
+        assert params.pi_nh_distance_cutoff == 3.8
+        assert params.pi_nh_angle_cutoff == 135.0
+        assert params.pi_oh_distance_cutoff == 3.6
+        assert params.pi_oh_angle_cutoff == 140.0
+        assert params.pi_sh_distance_cutoff == 3.9
+        assert params.pi_sh_angle_cutoff == 125.0
     
     def test_advanced_parameter_loading(self):
         """Test loading advanced analysis parameters."""

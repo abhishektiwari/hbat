@@ -5,7 +5,6 @@ This module contains the AnalysisParameters class that defines all configurable
 parameters for hydrogen bond, halogen bond, and π interaction analysis.
 """
 
-from dataclasses import dataclass
 from typing import List
 
 
@@ -13,29 +12,53 @@ class ParametersDefault:
     """Default values for molecular interaction analysis parameters."""
 
     # Hydrogen bond parameters
-    HB_DISTANCE_CUTOFF = 3.5  # Å - H...A distance cutoff
+    HB_DISTANCE_CUTOFF = 2.5  # Å - H...A distance cutoff
     HB_ANGLE_CUTOFF = 120.0  # degrees - D-H...A angle cutoff
-    HB_DA_DISTANCE = 4.0  # Å - Donor-acceptor distance cutoff
+    HB_DA_DISTANCE = 3.5  # Å - Donor-acceptor distance cutoff
 
-    # Halogen bond parameters
-    XB_DISTANCE_CUTOFF = 4.0  # Å - X...A distance cutoff
-    XB_ANGLE_CUTOFF = 120.0  # degrees - C-X...A angle cutoff
+    # Weak hydrogen bond parameters (for carbon donors)
+    WHB_DISTANCE_CUTOFF = 3.6  # Å - H...A distance cutoff
+    WHB_ANGLE_CUTOFF = 150.0  # degrees - D-H...A angle cutoff
+    WHB_DA_DISTANCE = 3.5  # Å - Donor-acceptor distance cutoff
+
+    # Halogen bond parameters (updated defaults)
+    XB_DISTANCE_CUTOFF = 3.9  # Å - X...A distance cutoff <= vdW sum (Max vdW sum: I with SE → 3.88 Å)
+    XB_ANGLE_CUTOFF = 150.0  # degrees - C-X...A angle cutoff (updated from 120° to 150°)
 
     # π interaction parameters
-    PI_DISTANCE_CUTOFF = 4.5  # Å - H...π distance cutoff
-    PI_ANGLE_CUTOFF = 90.0  # degrees - D-H...π angle cutoff
+    PI_DISTANCE_CUTOFF = 3.5  # Å - H...π distance cutoff (legacy, kept for compatibility)
+    PI_ANGLE_CUTOFF = 110.0  # degrees - D-H...π angle cutoff (legacy, kept for compatibility)
+
+    # π interaction subtype parameters
+    # Halogen-π interactions
+    PI_CCL_DISTANCE_CUTOFF = 3.5  # Å - C-Cl...π distance cutoff
+    PI_CCL_ANGLE_CUTOFF = 145  # degrees - C-Cl...π angle cutoff
+    PI_CBR_DISTANCE_CUTOFF = 3.5  # Å - C-Br...π distance cutoff
+    PI_CBR_ANGLE_CUTOFF = 155  # degrees - C-Br...π angle cutoff
+    PI_CI_DISTANCE_CUTOFF = 3.6  # Å - C-I...π distance cutoff
+    PI_CI_ANGLE_CUTOFF = 165.0  # degrees - C-I...π angle cutoff
+    
+    # Hydrogen-π interactions
+    PI_CH_DISTANCE_CUTOFF = 3.5  # Å - C-H...π distance cutoff
+    PI_CH_ANGLE_CUTOFF = 110.0  # degrees - C-H...π angle cutoff
+    PI_NH_DISTANCE_CUTOFF = 3.2  # Å - N-H...π distance cutoff
+    PI_NH_ANGLE_CUTOFF = 115.0  # degrees - N-H...π angle cutoff
+    PI_OH_DISTANCE_CUTOFF = 3.0  # Å - O-H...π distance cutoff
+    PI_OH_ANGLE_CUTOFF = 115.0  # degrees - O-H...π angle cutoff
+    PI_SH_DISTANCE_CUTOFF = 3.8  # Å - S-H...π distance cutoff
+    PI_SH_ANGLE_CUTOFF = 105.0  # degrees - S-H...π angle cutoff
 
     # General analysis parameters
-    COVALENT_CUTOFF_FACTOR = 0.6  # Covalent bond detection factor (0.0-1.0)
+    COVALENT_CUTOFF_FACTOR = 0.85  # Covalent bond detection factor (0.0-1.0)
     ANALYSIS_MODE = "complete"  # Analysis mode: "complete" or "local"
 
     # Bond distance thresholds
     MAX_BOND_DISTANCE = 2.5  # Reasonable maximum for most covalent bonds (Angstroms)
     MIN_BOND_DISTANCE = 0.5  # Minimum realistic bond distance (Angstroms)
 
-    # PDB structure fixing parameters
-    FIX_PDB_ENABLED = True  # Enable PDB structure fixing
-    FIX_PDB_METHOD = "pdbfixer"  # Method: "openbabel" or "pdbfixer"
+    # PDB structure fixing parameters (updated defaults)
+    FIX_PDB_ENABLED = True  # Enable PDB structure fixing (changed from False to True)
+    FIX_PDB_METHOD = "pdbfixer"  # Method: "openbabel" or "pdbfixer" (changed from "openbabel" to "pdbfixer")
 
     # Fixing operations (explicit control)
     FIX_PDB_ADD_HYDROGENS = (
@@ -47,13 +70,30 @@ class ParametersDefault:
     FIX_PDB_KEEP_WATER = True  # Keep water when removing heterogens (PDBFixer only)
 
 
-@dataclass
 class AnalysisParameters:
-    """Parameters for molecular interaction analysis.
+    """Parameters for comprehensive molecular interaction analysis.
 
-    This class contains all configurable parameters used during
-    molecular interaction analysis, including distance cutoffs,
-    angle thresholds, and analysis modes.
+    This class contains all configurable parameters for detecting and analyzing
+    molecular interactions in protein structures. Supports multiple interaction
+    types with subtype-specific parameters.
+    
+    **Hydrogen Bonds (Classical):**
+    - Strong N-H···O, O-H···O, N-H···N interactions
+    - Default: 2.5Å H···A distance, 120° D-H···A angle
+    
+    **Weak Hydrogen Bonds (C-H···O):**
+    - Carbon-hydrogen donor interactions with oxygen acceptors
+    - Default: 3.6Å H···A distance, 150° D-H···A angle
+    - Important in protein-ligand binding and aromatic interactions
+    
+    **Halogen Bonds:**
+    - C-X···A interactions where X is Cl, Br, I
+    - Default: 3.9Å X···A distance, 150° C-X···A angle (updated default)
+    
+    **π Interactions (Multiple Subtypes):**
+    - Hydrogen-π: C-H···π, N-H···π, O-H···π, S-H···π
+    - Halogen-π: C-Cl···π, C-Br···π, C-I···π
+    - Each subtype has optimized distance/angle cutoffs
 
     :param hb_distance_cutoff: Maximum H...A distance for hydrogen bonds (Å)
     :type hb_distance_cutoff: float
@@ -61,14 +101,48 @@ class AnalysisParameters:
     :type hb_angle_cutoff: float
     :param hb_donor_acceptor_cutoff: Maximum D...A distance for hydrogen bonds (Å)
     :type hb_donor_acceptor_cutoff: float
+    :param whb_distance_cutoff: Maximum H...A distance for weak hydrogen bonds (Å)
+    :type whb_distance_cutoff: float
+    :param whb_angle_cutoff: Minimum D-H...A angle for weak hydrogen bonds (degrees)
+    :type whb_angle_cutoff: float
+    :param whb_donor_acceptor_cutoff: Maximum D...A distance for weak hydrogen bonds (Å)
+    :type whb_donor_acceptor_cutoff: float
     :param xb_distance_cutoff: Maximum X...A distance for halogen bonds (Å)
     :type xb_distance_cutoff: float
-    :param xb_angle_cutoff: Minimum C-X...A angle for halogen bonds (degrees)
+    :param xb_angle_cutoff: Minimum C-X...A angle for halogen bonds (degrees, default: 150°)
     :type xb_angle_cutoff: float
-    :param pi_distance_cutoff: Maximum H...π distance for π interactions (Å)
+    :param pi_distance_cutoff: Maximum H...π distance for π interactions (Å, legacy)
     :type pi_distance_cutoff: float
-    :param pi_angle_cutoff: Minimum D-H...π angle for π interactions (degrees)
+    :param pi_angle_cutoff: Minimum D-H...π angle for π interactions (degrees, legacy)
     :type pi_angle_cutoff: float
+    :param pi_ccl_distance_cutoff: Maximum C-Cl...π distance for halogen-π interactions (Å)
+    :type pi_ccl_distance_cutoff: float
+    :param pi_ccl_angle_cutoff: Minimum C-Cl...π angle for halogen-π interactions (degrees)
+    :type pi_ccl_angle_cutoff: float
+    :param pi_cbr_distance_cutoff: Maximum C-Br...π distance for halogen-π interactions (Å)
+    :type pi_cbr_distance_cutoff: float
+    :param pi_cbr_angle_cutoff: Minimum C-Br...π angle for halogen-π interactions (degrees)
+    :type pi_cbr_angle_cutoff: float
+    :param pi_ci_distance_cutoff: Maximum C-I...π distance for halogen-π interactions (Å)
+    :type pi_ci_distance_cutoff: float
+    :param pi_ci_angle_cutoff: Minimum C-I...π angle for halogen-π interactions (degrees)
+    :type pi_ci_angle_cutoff: float
+    :param pi_ch_distance_cutoff: Maximum C-H...π distance for hydrogen-π interactions (Å)
+    :type pi_ch_distance_cutoff: float
+    :param pi_ch_angle_cutoff: Minimum C-H...π angle for hydrogen-π interactions (degrees)
+    :type pi_ch_angle_cutoff: float
+    :param pi_nh_distance_cutoff: Maximum N-H...π distance for hydrogen-π interactions (Å)
+    :type pi_nh_distance_cutoff: float
+    :param pi_nh_angle_cutoff: Minimum N-H...π angle for hydrogen-π interactions (degrees)
+    :type pi_nh_angle_cutoff: float
+    :param pi_oh_distance_cutoff: Maximum O-H...π distance for hydrogen-π interactions (Å)
+    :type pi_oh_distance_cutoff: float
+    :param pi_oh_angle_cutoff: Minimum O-H...π angle for hydrogen-π interactions (degrees)
+    :type pi_oh_angle_cutoff: float
+    :param pi_sh_distance_cutoff: Maximum S-H...π distance for hydrogen-π interactions (Å)
+    :type pi_sh_distance_cutoff: float
+    :param pi_sh_angle_cutoff: Minimum S-H...π angle for hydrogen-π interactions (degrees)
+    :type pi_sh_angle_cutoff: float
     :param covalent_cutoff_factor: Factor for covalent bond detection
     :type covalent_cutoff_factor: float
     :param analysis_mode: Analysis mode ('local' or 'global')
@@ -89,31 +163,340 @@ class AnalysisParameters:
     :type fix_pdb_keep_water: bool
     """
 
-    # Hydrogen bond parameters
-    hb_distance_cutoff: float = ParametersDefault.HB_DISTANCE_CUTOFF
-    hb_angle_cutoff: float = ParametersDefault.HB_ANGLE_CUTOFF
-    hb_donor_acceptor_cutoff: float = ParametersDefault.HB_DA_DISTANCE
+    def __init__(self,
+                 # Hydrogen bond parameters
+                 hb_distance_cutoff: float = ParametersDefault.HB_DISTANCE_CUTOFF,
+                 hb_angle_cutoff: float = ParametersDefault.HB_ANGLE_CUTOFF,
+                 hb_donor_acceptor_cutoff: float = ParametersDefault.HB_DA_DISTANCE,
+                 # Weak hydrogen bond parameters (for carbon donors)
+                 whb_distance_cutoff: float = ParametersDefault.WHB_DISTANCE_CUTOFF,
+                 whb_angle_cutoff: float = ParametersDefault.WHB_ANGLE_CUTOFF,
+                 whb_donor_acceptor_cutoff: float = ParametersDefault.WHB_DA_DISTANCE,
+                 # Halogen bond parameters
+                 xb_distance_cutoff: float = ParametersDefault.XB_DISTANCE_CUTOFF,
+                 xb_angle_cutoff: float = ParametersDefault.XB_ANGLE_CUTOFF,
+                 # Pi interaction parameters (legacy)
+                 pi_distance_cutoff: float = ParametersDefault.PI_DISTANCE_CUTOFF,
+                 pi_angle_cutoff: float = ParametersDefault.PI_ANGLE_CUTOFF,
+                 # Pi interaction subtype parameters
+                 pi_ccl_distance_cutoff: float = ParametersDefault.PI_CCL_DISTANCE_CUTOFF,
+                 pi_ccl_angle_cutoff: float = ParametersDefault.PI_CCL_ANGLE_CUTOFF,
+                 pi_cbr_distance_cutoff: float = ParametersDefault.PI_CBR_DISTANCE_CUTOFF,
+                 pi_cbr_angle_cutoff: float = ParametersDefault.PI_CBR_ANGLE_CUTOFF,
+                 pi_ci_distance_cutoff: float = ParametersDefault.PI_CI_DISTANCE_CUTOFF,
+                 pi_ci_angle_cutoff: float = ParametersDefault.PI_CI_ANGLE_CUTOFF,
+                 pi_ch_distance_cutoff: float = ParametersDefault.PI_CH_DISTANCE_CUTOFF,
+                 pi_ch_angle_cutoff: float = ParametersDefault.PI_CH_ANGLE_CUTOFF,
+                 pi_nh_distance_cutoff: float = ParametersDefault.PI_NH_DISTANCE_CUTOFF,
+                 pi_nh_angle_cutoff: float = ParametersDefault.PI_NH_ANGLE_CUTOFF,
+                 pi_oh_distance_cutoff: float = ParametersDefault.PI_OH_DISTANCE_CUTOFF,
+                 pi_oh_angle_cutoff: float = ParametersDefault.PI_OH_ANGLE_CUTOFF,
+                 pi_sh_distance_cutoff: float = ParametersDefault.PI_SH_DISTANCE_CUTOFF,
+                 pi_sh_angle_cutoff: float = ParametersDefault.PI_SH_ANGLE_CUTOFF,
+                 # General parameters
+                 covalent_cutoff_factor: float = ParametersDefault.COVALENT_CUTOFF_FACTOR,
+                 analysis_mode: str = ParametersDefault.ANALYSIS_MODE,
+                 # PDB structure fixing parameters
+                 fix_pdb_enabled: bool = ParametersDefault.FIX_PDB_ENABLED,
+                 fix_pdb_method: str = ParametersDefault.FIX_PDB_METHOD,
+                 fix_pdb_add_hydrogens: bool = ParametersDefault.FIX_PDB_ADD_HYDROGENS,
+                 fix_pdb_add_heavy_atoms: bool = ParametersDefault.FIX_PDB_ADD_HEAVY_ATOMS,
+                 fix_pdb_replace_nonstandard: bool = ParametersDefault.FIX_PDB_REPLACE_NONSTANDARD,
+                 fix_pdb_remove_heterogens: bool = ParametersDefault.FIX_PDB_REMOVE_HETEROGENS,
+                 fix_pdb_keep_water: bool = ParametersDefault.FIX_PDB_KEEP_WATER,
+                 **kwargs):
+        """Initialize analysis parameters.
+        
+        :param hb_distance_cutoff: Maximum H...A distance for hydrogen bonds (Å)
+        :type hb_distance_cutoff: float
+        :param hb_angle_cutoff: Minimum D-H...A angle for hydrogen bonds (degrees)
+        :type hb_angle_cutoff: float
+        :param hb_donor_acceptor_cutoff: Maximum D...A distance for hydrogen bonds (Å)
+        :type hb_donor_acceptor_cutoff: float
+        :param whb_distance_cutoff: Maximum H...A distance for weak hydrogen bonds (Å)
+        :type whb_distance_cutoff: float
+        :param whb_angle_cutoff: Minimum D-H...A angle for weak hydrogen bonds (degrees)
+        :type whb_angle_cutoff: float
+        :param whb_donor_acceptor_cutoff: Maximum D...A distance for weak hydrogen bonds (Å)
+        :type whb_donor_acceptor_cutoff: float
+        :param xb_distance_cutoff: Maximum X...A distance for halogen bonds (Å)
+        :type xb_distance_cutoff: float
+        :param xb_angle_cutoff: Minimum C-X...A angle for halogen bonds (degrees)
+        :type xb_angle_cutoff: float
+        :param pi_distance_cutoff: Maximum H...π distance for π interactions (Å)
+        :type pi_distance_cutoff: float
+        :param pi_angle_cutoff: Minimum D-H...π angle for π interactions (degrees)
+        :type pi_angle_cutoff: float
+        :param covalent_cutoff_factor: Factor for covalent bond detection
+        :type covalent_cutoff_factor: float
+        :param analysis_mode: Analysis mode ('local' or 'global')
+        :type analysis_mode: str
+        :param fix_pdb_enabled: Enable PDB structure fixing
+        :type fix_pdb_enabled: bool
+        :param fix_pdb_method: PDB fixing method ('openbabel' or 'pdbfixer')
+        :type fix_pdb_method: str
+        :param fix_pdb_add_hydrogens: Add missing hydrogen atoms (both methods)
+        :type fix_pdb_add_hydrogens: bool
+        :param fix_pdb_add_heavy_atoms: Add missing heavy atoms (PDBFixer only)
+        :type fix_pdb_add_heavy_atoms: bool
+        :param fix_pdb_replace_nonstandard: Replace nonstandard residues (PDBFixer only)
+        :type fix_pdb_replace_nonstandard: bool
+        :param fix_pdb_remove_heterogens: Remove heterogens (PDBFixer only)
+        :type fix_pdb_remove_heterogens: bool
+        :param fix_pdb_keep_water: Keep water when removing heterogens (PDBFixer only)
+        :type fix_pdb_keep_water: bool
+        :param kwargs: Additional parameters (for future extensibility)
+        :type kwargs: dict
+        """
+        # Hydrogen bond parameters
+        self.hb_distance_cutoff = hb_distance_cutoff
+        self.hb_angle_cutoff = hb_angle_cutoff
+        self.hb_donor_acceptor_cutoff = hb_donor_acceptor_cutoff
 
-    # Halogen bond parameters
-    xb_distance_cutoff: float = ParametersDefault.XB_DISTANCE_CUTOFF
-    xb_angle_cutoff: float = ParametersDefault.XB_ANGLE_CUTOFF
+        # Weak hydrogen bond parameters (for carbon donors)
+        self.whb_distance_cutoff = whb_distance_cutoff
+        self.whb_angle_cutoff = whb_angle_cutoff
+        self.whb_donor_acceptor_cutoff = whb_donor_acceptor_cutoff
 
-    # Pi interaction parameters
-    pi_distance_cutoff: float = ParametersDefault.PI_DISTANCE_CUTOFF
-    pi_angle_cutoff: float = ParametersDefault.PI_ANGLE_CUTOFF
+        # Halogen bond parameters
+        self.xb_distance_cutoff = xb_distance_cutoff
+        self.xb_angle_cutoff = xb_angle_cutoff
 
-    # General parameters
-    covalent_cutoff_factor: float = ParametersDefault.COVALENT_CUTOFF_FACTOR
-    analysis_mode: str = ParametersDefault.ANALYSIS_MODE
+        # π interaction parameters (legacy)
+        self.pi_distance_cutoff = pi_distance_cutoff
+        self.pi_angle_cutoff = pi_angle_cutoff
 
-    # PDB structure fixing parameters
-    fix_pdb_enabled: bool = ParametersDefault.FIX_PDB_ENABLED
-    fix_pdb_method: str = ParametersDefault.FIX_PDB_METHOD
-    fix_pdb_add_hydrogens: bool = ParametersDefault.FIX_PDB_ADD_HYDROGENS
-    fix_pdb_add_heavy_atoms: bool = ParametersDefault.FIX_PDB_ADD_HEAVY_ATOMS
-    fix_pdb_replace_nonstandard: bool = ParametersDefault.FIX_PDB_REPLACE_NONSTANDARD
-    fix_pdb_remove_heterogens: bool = ParametersDefault.FIX_PDB_REMOVE_HETEROGENS
-    fix_pdb_keep_water: bool = ParametersDefault.FIX_PDB_KEEP_WATER
+        # π interaction subtype parameters
+        self.pi_ccl_distance_cutoff = pi_ccl_distance_cutoff
+        self.pi_ccl_angle_cutoff = pi_ccl_angle_cutoff
+        self.pi_cbr_distance_cutoff = pi_cbr_distance_cutoff
+        self.pi_cbr_angle_cutoff = pi_cbr_angle_cutoff
+        self.pi_ci_distance_cutoff = pi_ci_distance_cutoff
+        self.pi_ci_angle_cutoff = pi_ci_angle_cutoff
+        self.pi_ch_distance_cutoff = pi_ch_distance_cutoff
+        self.pi_ch_angle_cutoff = pi_ch_angle_cutoff
+        self.pi_nh_distance_cutoff = pi_nh_distance_cutoff
+        self.pi_nh_angle_cutoff = pi_nh_angle_cutoff
+        self.pi_oh_distance_cutoff = pi_oh_distance_cutoff
+        self.pi_oh_angle_cutoff = pi_oh_angle_cutoff
+        self.pi_sh_distance_cutoff = pi_sh_distance_cutoff
+        self.pi_sh_angle_cutoff = pi_sh_angle_cutoff
+
+        # General parameters
+        self.covalent_cutoff_factor = covalent_cutoff_factor
+        self.analysis_mode = analysis_mode
+
+        # PDB structure fixing parameters
+        self.fix_pdb_enabled = fix_pdb_enabled
+        self.fix_pdb_method = fix_pdb_method
+        self.fix_pdb_add_hydrogens = fix_pdb_add_hydrogens
+        self.fix_pdb_add_heavy_atoms = fix_pdb_add_heavy_atoms
+        self.fix_pdb_replace_nonstandard = fix_pdb_replace_nonstandard
+        self.fix_pdb_remove_heterogens = fix_pdb_remove_heterogens
+        self.fix_pdb_keep_water = fix_pdb_keep_water
+
+        # Store any additional parameters
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def __repr__(self) -> str:
+        """Return string representation of the parameters object.
+        
+        :returns: String representation showing all parameters
+        :rtype: str
+        """
+        params = []
+        # Hydrogen bond parameters
+        params.append(f"hb_distance_cutoff={self.hb_distance_cutoff}")
+        params.append(f"hb_angle_cutoff={self.hb_angle_cutoff}")
+        params.append(f"hb_donor_acceptor_cutoff={self.hb_donor_acceptor_cutoff}")
+        # Weak hydrogen bond parameters
+        params.append(f"whb_distance_cutoff={self.whb_distance_cutoff}")
+        params.append(f"whb_angle_cutoff={self.whb_angle_cutoff}")
+        params.append(f"whb_donor_acceptor_cutoff={self.whb_donor_acceptor_cutoff}")
+        # Halogen bond parameters
+        params.append(f"xb_distance_cutoff={self.xb_distance_cutoff}")
+        params.append(f"xb_angle_cutoff={self.xb_angle_cutoff}")
+        # π interaction parameters (legacy)
+        params.append(f"pi_distance_cutoff={self.pi_distance_cutoff}")
+        params.append(f"pi_angle_cutoff={self.pi_angle_cutoff}")
+        # π interaction subtype parameters
+        params.append(f"pi_ccl_distance_cutoff={self.pi_ccl_distance_cutoff}")
+        params.append(f"pi_ccl_angle_cutoff={self.pi_ccl_angle_cutoff}")
+        params.append(f"pi_cbr_distance_cutoff={self.pi_cbr_distance_cutoff}")
+        params.append(f"pi_cbr_angle_cutoff={self.pi_cbr_angle_cutoff}")
+        params.append(f"pi_ci_distance_cutoff={self.pi_ci_distance_cutoff}")
+        params.append(f"pi_ci_angle_cutoff={self.pi_ci_angle_cutoff}")
+        params.append(f"pi_ch_distance_cutoff={self.pi_ch_distance_cutoff}")
+        params.append(f"pi_ch_angle_cutoff={self.pi_ch_angle_cutoff}")
+        params.append(f"pi_nh_distance_cutoff={self.pi_nh_distance_cutoff}")
+        params.append(f"pi_nh_angle_cutoff={self.pi_nh_angle_cutoff}")
+        params.append(f"pi_oh_distance_cutoff={self.pi_oh_distance_cutoff}")
+        params.append(f"pi_oh_angle_cutoff={self.pi_oh_angle_cutoff}")
+        params.append(f"pi_sh_distance_cutoff={self.pi_sh_distance_cutoff}")
+        params.append(f"pi_sh_angle_cutoff={self.pi_sh_angle_cutoff}")
+        # General parameters
+        params.append(f"covalent_cutoff_factor={self.covalent_cutoff_factor}")
+        params.append(f"analysis_mode='{self.analysis_mode}'")
+        # PDB fixing parameters
+        params.append(f"fix_pdb_enabled={self.fix_pdb_enabled}")
+        params.append(f"fix_pdb_method='{self.fix_pdb_method}'")
+        params.append(f"fix_pdb_add_hydrogens={self.fix_pdb_add_hydrogens}")
+        params.append(f"fix_pdb_add_heavy_atoms={self.fix_pdb_add_heavy_atoms}")
+        params.append(f"fix_pdb_replace_nonstandard={self.fix_pdb_replace_nonstandard}")
+        params.append(f"fix_pdb_remove_heterogens={self.fix_pdb_remove_heterogens}")
+        params.append(f"fix_pdb_keep_water={self.fix_pdb_keep_water}")
+        
+        return f"AnalysisParameters({', '.join(params)})"
+
+    def __eq__(self, other) -> bool:
+        """Compare two AnalysisParameters objects for equality.
+        
+        :param other: Other AnalysisParameters object to compare
+        :type other: AnalysisParameters
+        :returns: True if all parameters are equal
+        :rtype: bool
+        """
+        if not isinstance(other, AnalysisParameters):
+            return False
+            
+        return (
+            self.hb_distance_cutoff == other.hb_distance_cutoff and
+            self.hb_angle_cutoff == other.hb_angle_cutoff and
+            self.hb_donor_acceptor_cutoff == other.hb_donor_acceptor_cutoff and
+            self.whb_distance_cutoff == other.whb_distance_cutoff and
+            self.whb_angle_cutoff == other.whb_angle_cutoff and
+            self.whb_donor_acceptor_cutoff == other.whb_donor_acceptor_cutoff and
+            self.xb_distance_cutoff == other.xb_distance_cutoff and
+            self.xb_angle_cutoff == other.xb_angle_cutoff and
+            self.pi_distance_cutoff == other.pi_distance_cutoff and
+            self.pi_angle_cutoff == other.pi_angle_cutoff and
+            self.pi_ccl_distance_cutoff == other.pi_ccl_distance_cutoff and
+            self.pi_ccl_angle_cutoff == other.pi_ccl_angle_cutoff and
+            self.pi_cbr_distance_cutoff == other.pi_cbr_distance_cutoff and
+            self.pi_cbr_angle_cutoff == other.pi_cbr_angle_cutoff and
+            self.pi_ci_distance_cutoff == other.pi_ci_distance_cutoff and
+            self.pi_ci_angle_cutoff == other.pi_ci_angle_cutoff and
+            self.pi_ch_distance_cutoff == other.pi_ch_distance_cutoff and
+            self.pi_ch_angle_cutoff == other.pi_ch_angle_cutoff and
+            self.pi_nh_distance_cutoff == other.pi_nh_distance_cutoff and
+            self.pi_nh_angle_cutoff == other.pi_nh_angle_cutoff and
+            self.pi_oh_distance_cutoff == other.pi_oh_distance_cutoff and
+            self.pi_oh_angle_cutoff == other.pi_oh_angle_cutoff and
+            self.pi_sh_distance_cutoff == other.pi_sh_distance_cutoff and
+            self.pi_sh_angle_cutoff == other.pi_sh_angle_cutoff and
+            self.covalent_cutoff_factor == other.covalent_cutoff_factor and
+            self.analysis_mode == other.analysis_mode and
+            self.fix_pdb_enabled == other.fix_pdb_enabled and
+            self.fix_pdb_method == other.fix_pdb_method and
+            self.fix_pdb_add_hydrogens == other.fix_pdb_add_hydrogens and
+            self.fix_pdb_add_heavy_atoms == other.fix_pdb_add_heavy_atoms and
+            self.fix_pdb_replace_nonstandard == other.fix_pdb_replace_nonstandard and
+            self.fix_pdb_remove_heterogens == other.fix_pdb_remove_heterogens and
+            self.fix_pdb_keep_water == other.fix_pdb_keep_water
+        )
+
+    def __hash__(self) -> int:
+        """Return hash of the parameters object for use in sets/dicts.
+        
+        :returns: Hash value based on all parameters
+        :rtype: int
+        """
+        return hash((
+            self.hb_distance_cutoff,
+            self.hb_angle_cutoff,
+            self.hb_donor_acceptor_cutoff,
+            self.whb_distance_cutoff,
+            self.whb_angle_cutoff,
+            self.whb_donor_acceptor_cutoff,
+            self.xb_distance_cutoff,
+            self.xb_angle_cutoff,
+            self.pi_distance_cutoff,
+            self.pi_angle_cutoff,
+            self.pi_ccl_distance_cutoff,
+            self.pi_ccl_angle_cutoff,
+            self.pi_cbr_distance_cutoff,
+            self.pi_cbr_angle_cutoff,
+            self.pi_ci_distance_cutoff,
+            self.pi_ci_angle_cutoff,
+            self.pi_ch_distance_cutoff,
+            self.pi_ch_angle_cutoff,
+            self.pi_nh_distance_cutoff,
+            self.pi_nh_angle_cutoff,
+            self.pi_oh_distance_cutoff,
+            self.pi_oh_angle_cutoff,
+            self.pi_sh_distance_cutoff,
+            self.pi_sh_angle_cutoff,
+            self.covalent_cutoff_factor,
+            self.analysis_mode,
+            self.fix_pdb_enabled,
+            self.fix_pdb_method,
+            self.fix_pdb_add_hydrogens,
+            self.fix_pdb_add_heavy_atoms,
+            self.fix_pdb_replace_nonstandard,
+            self.fix_pdb_remove_heterogens,
+            self.fix_pdb_keep_water
+        ))
+
+    def to_dict(self) -> dict:
+        """Convert parameters to dictionary format.
+        
+        :returns: Dictionary representation of all parameters
+        :rtype: dict
+        """
+        return {
+            # Hydrogen bond parameters
+            'hb_distance_cutoff': self.hb_distance_cutoff,
+            'hb_angle_cutoff': self.hb_angle_cutoff,
+            'hb_donor_acceptor_cutoff': self.hb_donor_acceptor_cutoff,
+            # Weak hydrogen bond parameters
+            'whb_distance_cutoff': self.whb_distance_cutoff,
+            'whb_angle_cutoff': self.whb_angle_cutoff,
+            'whb_donor_acceptor_cutoff': self.whb_donor_acceptor_cutoff,
+            # Halogen bond parameters
+            'xb_distance_cutoff': self.xb_distance_cutoff,
+            'xb_angle_cutoff': self.xb_angle_cutoff,
+            # π interaction parameters
+            'pi_distance_cutoff': self.pi_distance_cutoff,
+            'pi_angle_cutoff': self.pi_angle_cutoff,
+            # π interaction subtype parameters
+            'pi_ccl_distance_cutoff': self.pi_ccl_distance_cutoff,
+            'pi_ccl_angle_cutoff': self.pi_ccl_angle_cutoff,
+            'pi_cbr_distance_cutoff': self.pi_cbr_distance_cutoff,
+            'pi_cbr_angle_cutoff': self.pi_cbr_angle_cutoff,
+            'pi_ci_distance_cutoff': self.pi_ci_distance_cutoff,
+            'pi_ci_angle_cutoff': self.pi_ci_angle_cutoff,
+            'pi_ch_distance_cutoff': self.pi_ch_distance_cutoff,
+            'pi_ch_angle_cutoff': self.pi_ch_angle_cutoff,
+            'pi_nh_distance_cutoff': self.pi_nh_distance_cutoff,
+            'pi_nh_angle_cutoff': self.pi_nh_angle_cutoff,
+            'pi_oh_distance_cutoff': self.pi_oh_distance_cutoff,
+            'pi_oh_angle_cutoff': self.pi_oh_angle_cutoff,
+            'pi_sh_distance_cutoff': self.pi_sh_distance_cutoff,
+            'pi_sh_angle_cutoff': self.pi_sh_angle_cutoff,
+            # General parameters
+            'covalent_cutoff_factor': self.covalent_cutoff_factor,
+            'analysis_mode': self.analysis_mode,
+            # PDB fixing parameters
+            'fix_pdb_enabled': self.fix_pdb_enabled,
+            'fix_pdb_method': self.fix_pdb_method,
+            'fix_pdb_add_hydrogens': self.fix_pdb_add_hydrogens,
+            'fix_pdb_add_heavy_atoms': self.fix_pdb_add_heavy_atoms,
+            'fix_pdb_replace_nonstandard': self.fix_pdb_replace_nonstandard,
+            'fix_pdb_remove_heterogens': self.fix_pdb_remove_heterogens,
+            'fix_pdb_keep_water': self.fix_pdb_keep_water
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'AnalysisParameters':
+        """Create AnalysisParameters object from dictionary.
+        
+        :param data: Dictionary containing parameter values
+        :type data: dict
+        :returns: New AnalysisParameters object
+        :rtype: AnalysisParameters
+        """
+        return cls(**data)
 
     def validate(self) -> List[str]:
         """Validate parameter values and return list of validation errors.
@@ -148,6 +531,24 @@ class AnalysisParameters:
 
         if not (
             ParameterRanges.MIN_DISTANCE
+            <= self.whb_distance_cutoff
+            <= ParameterRanges.MAX_DISTANCE
+        ):
+            errors.append(
+                f"Weak hydrogen bond distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
+            )
+
+        if not (
+            ParameterRanges.MIN_DISTANCE
+            <= self.whb_donor_acceptor_cutoff
+            <= ParameterRanges.MAX_DISTANCE
+        ):
+            errors.append(
+                f"Weak hydrogen bond donor-acceptor distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
+            )
+
+        if not (
+            ParameterRanges.MIN_DISTANCE
             <= self.xb_distance_cutoff
             <= ParameterRanges.MAX_DISTANCE
         ):
@@ -164,6 +565,28 @@ class AnalysisParameters:
                 f"π interaction distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
             )
 
+        # π interaction subtype distance validation
+        pi_subtypes = [
+            ('pi_ccl_distance_cutoff', 'C-Cl...π'),
+            ('pi_cbr_distance_cutoff', 'C-Br...π'),
+            ('pi_ci_distance_cutoff', 'C-I...π'),
+            ('pi_ch_distance_cutoff', 'C-H...π'),
+            ('pi_nh_distance_cutoff', 'N-H...π'),
+            ('pi_oh_distance_cutoff', 'O-H...π'),
+            ('pi_sh_distance_cutoff', 'S-H...π')
+        ]
+        
+        for param_name, desc in pi_subtypes:
+            param_value = getattr(self, param_name)
+            if not (
+                ParameterRanges.MIN_DISTANCE
+                <= param_value
+                <= ParameterRanges.MAX_DISTANCE
+            ):
+                errors.append(
+                    f"{desc} distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
+                )
+
         # Angle parameter validation
         if not (
             ParameterRanges.MIN_ANGLE
@@ -172,6 +595,15 @@ class AnalysisParameters:
         ):
             errors.append(
                 f"Hydrogen bond angle cutoff must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
+            )
+
+        if not (
+            ParameterRanges.MIN_ANGLE
+            <= self.whb_angle_cutoff
+            <= ParameterRanges.MAX_ANGLE
+        ):
+            errors.append(
+                f"Weak hydrogen bond angle cutoff must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
             )
 
         if not (
@@ -191,6 +623,28 @@ class AnalysisParameters:
             errors.append(
                 f"π interaction angle cutoff must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
             )
+
+        # π interaction subtype angle validation
+        pi_subtype_angles = [
+            ('pi_ccl_angle_cutoff', 'C-Cl...π'),
+            ('pi_cbr_angle_cutoff', 'C-Br...π'),
+            ('pi_ci_angle_cutoff', 'C-I...π'),
+            ('pi_ch_angle_cutoff', 'C-H...π'),
+            ('pi_nh_angle_cutoff', 'N-H...π'),
+            ('pi_oh_angle_cutoff', 'O-H...π'),
+            ('pi_sh_angle_cutoff', 'S-H...π')
+        ]
+        
+        for param_name, desc in pi_subtype_angles:
+            param_value = getattr(self, param_name)
+            if not (
+                ParameterRanges.MIN_ANGLE
+                <= param_value
+                <= ParameterRanges.MAX_ANGLE
+            ):
+                errors.append(
+                    f"{desc} angle cutoff must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
+                )
 
         # Covalent factor validation
         if not (
