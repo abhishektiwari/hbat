@@ -1,288 +1,325 @@
 """
-Tests for GUI components.
+GUI component tests for HBAT.
 
-Note: These tests are designed to work even when GUI components cannot be 
-fully instantiated due to missing display or tkinter issues.
+Tests the new modal dialog architecture including GeometryCutoffsDialog,
+PDBFixingDialog, PresetManagerDialog, and MainWindow integration.
 """
 
 import pytest
-import sys
-import os
+import tkinter as tk
 import tempfile
-import json
-import unittest.mock
-
-
+import os
+from unittest.mock import Mock, patch
+from pathlib import Path
 
 
 @pytest.mark.gui
-class TestParameterPanel:
-    """Test parameter panel functionality."""
+class TestGeometryCutoffsDialog:
+    """Test geometry cutoffs dialog functionality."""
     
     def setup_method(self):
         """Set up test environment."""
-        try:
-            import tkinter as tk
-            from hbat.gui.parameter_panel import ParameterPanel
-            
-            # Create root window for testing
-            self.root = tk.Tk()
-            self.root.withdraw()  # Hide window during testing
-            
-            # Create parameter panel
-            self.panel = ParameterPanel(self.root)
-            
-        except ImportError:
-            pytest.skip("tkinter not available")
-        except Exception as e:
-            pytest.skip(f"GUI setup failed: {e}")
-    
+        self.root = tk.Tk()
+        self.root.withdraw()  # Hide window during testing
+        
     def teardown_method(self):
         """Clean up test environment."""
-        if hasattr(self, 'root'):
-            try:
-                self.root.destroy()
-            except Exception:
-                pass
+        try:
+            self.root.quit()
+            self.root.destroy()
+        except Exception:
+            pass
     
-    def test_parameter_panel_creation(self):
-        """Test parameter panel creation."""
-        assert self.panel is not None
-        assert hasattr(self.panel, 'frame')
-        assert hasattr(self.panel, 'get_parameters')
-        assert hasattr(self.panel, 'set_parameters')
-    
-    def test_default_parameters(self):
-        """Test default parameter values."""
-        params = self.panel.get_parameters()
-        
-        assert params.hb_distance_cutoff > 0
-        assert params.hb_angle_cutoff > 0
-        assert params.hb_donor_acceptor_cutoff > 0
-        assert params.analysis_mode in ["complete", "local"]
-    
-    def test_parameter_setting(self):
-        """Test setting parameters programmatically."""
+    def test_dialog_creation(self):
+        """Test that geometry cutoffs dialog can be created."""
+        from hbat.gui.geometry_cutoffs_dialog import GeometryCutoffsDialog
         from hbat.core.analysis import AnalysisParameters
         
-        test_params = AnalysisParameters(
-            hb_distance_cutoff=3.0,
-            hb_angle_cutoff=130.0,
-            analysis_mode="local"
-        )
-        
-        self.panel.set_parameters(test_params)
-        retrieved_params = self.panel.get_parameters()
-        
-        assert retrieved_params.hb_distance_cutoff == 3.0
-        assert retrieved_params.hb_angle_cutoff == 130.0
-        assert retrieved_params.analysis_mode == "local"
-    
-    def test_pdb_fixing_parameter_setting(self):
-        """Test setting PDB fixing parameters programmatically."""
-        from hbat.core.analysis import AnalysisParameters
-        
-        test_params = AnalysisParameters(
-            fix_pdb_enabled=True,
-            fix_pdb_method="pdbfixer",
-            fix_pdb_add_hydrogens=True,
-            fix_pdb_add_heavy_atoms=True,
-            fix_pdb_replace_nonstandard=False,
-            fix_pdb_remove_heterogens=True,
-            fix_pdb_keep_water=False
-        )
-        
-        self.panel.set_parameters(test_params)
-        retrieved_params = self.panel.get_parameters()
-        
-        assert retrieved_params.fix_pdb_enabled is True
-        assert retrieved_params.fix_pdb_method == "pdbfixer"
-        assert retrieved_params.fix_pdb_add_hydrogens is True
-        assert retrieved_params.fix_pdb_add_heavy_atoms is True
-        assert retrieved_params.fix_pdb_replace_nonstandard is False
-        assert retrieved_params.fix_pdb_remove_heterogens is True
-        assert retrieved_params.fix_pdb_keep_water is False
-    
-    def test_reset_to_defaults(self):
-        """Test resetting parameters to defaults."""
-        from hbat.core.analysis import AnalysisParameters
-        
-        # Set custom parameters
-        test_params = AnalysisParameters(hb_distance_cutoff=2.5)
-        self.panel.set_parameters(test_params)
-        
-        # Reset to defaults
-        self.panel.reset_to_defaults()
-        
-        # Check that parameters are back to defaults
-        params = self.panel.get_parameters()
-        default_params = AnalysisParameters()
-        assert params.hb_distance_cutoff == default_params.hb_distance_cutoff
-    
-    def test_preset_file_operations(self):
-        """Test preset file creation and validation."""
-        from hbat.core.analysis import AnalysisParameters
-        
-        # Create test parameters
-        test_params = AnalysisParameters(
-            hb_distance_cutoff=3.2,
-            hb_angle_cutoff=140.0,
-            analysis_mode="complete"
-        )
-        
-        # Test preset data creation
-        preset_data = self.panel._create_preset_data(test_params)
-        
-        assert 'format_version' in preset_data
-        assert 'parameters' in preset_data
-        assert 'hydrogen_bonds' in preset_data['parameters']
-        assert preset_data['parameters']['hydrogen_bonds']['h_a_distance_cutoff'] == 3.2
-        
-        # Test preset validation
-        is_valid = self.panel._validate_preset_data(preset_data)
-        assert is_valid, "Generated preset should be valid"
-    
-    def test_preset_data_validation(self):
-        """Test preset data validation with various inputs."""
-        # Valid preset data
-        valid_preset = {
-            "format_version": "1.0",
-            "parameters": {
-                "hydrogen_bonds": {
-                    "h_a_distance_cutoff": 3.5,
-                    "dha_angle_cutoff": 120.0,
-                    "d_a_distance_cutoff": 4.0
-                },
-                "halogen_bonds": {
-                    "x_a_distance_cutoff": 4.0,
-                    "cxa_angle_cutoff": 120.0
-                },
-                "pi_interactions": {
-                    "h_pi_distance_cutoff": 4.5,
-                    "dh_pi_angle_cutoff": 90.0
-                },
-                "general": {
-                    "covalent_cutoff_factor": 0.85,
-                    "analysis_mode": "complete"
-                },
-                "pdb_fixing": {
-                    "enabled": False,
-                    "method": "openbabel",
-                    "add_hydrogens": True,
-                    "add_heavy_atoms": False,
-                    "replace_nonstandard": False,
-                    "remove_heterogens": False,
-                    "keep_water": True
-                }
-            }
-        }
-        
-        assert self.panel._validate_preset_data(valid_preset), "Valid preset should pass validation"
-        
-        # Invalid preset data - missing required section
-        invalid_preset = {
-            "format_version": "1.0",
-            "parameters": {
-                "hydrogen_bonds": {
-                    "h_a_distance_cutoff": 3.5
-                }
-                # Missing other required sections
-            }
-        }
-        
-        assert not self.panel._validate_preset_data(invalid_preset), "Invalid preset should fail validation"
-    
-    def test_preset_file_save_load_cycle(self):
-        """Test complete preset save/load cycle."""
-        from hbat.core.analysis import AnalysisParameters
-        
-        # Create test parameters
-        original_params = AnalysisParameters(
-            hb_distance_cutoff=3.1,
-            hb_angle_cutoff=135.0,
-            xb_distance_cutoff=3.8,
-            analysis_mode="local",
-            fix_pdb_enabled=True,
-            fix_pdb_method="openbabel",
-            fix_pdb_add_hydrogens=True
-        )
-        
-        # Create preset data
-        preset_data = self.panel._create_preset_data(original_params)
-        
-        # Save to temporary file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.hbat', delete=False) as f:
-            self.panel._save_preset_file(f.name, preset_data)
-            temp_path = f.name
+        test_params = AnalysisParameters(hb_distance_cutoff=3.2)
+        dialog = GeometryCutoffsDialog(self.root, test_params)
         
         try:
-            # Load from file and validate
-            loaded_data = self.panel._load_preset_file(temp_path)
+            assert dialog is not None
+            assert hasattr(dialog, 'dialog')
+            assert hasattr(dialog, 'result')
+            assert hasattr(dialog, 'current_params')
+            assert dialog.current_params.hb_distance_cutoff == 3.2
+        finally:
+            dialog.dialog.destroy()
+    
+    def test_dialog_modal_properties(self):
+        """Test that dialog is properly configured as modal."""
+        from hbat.gui.geometry_cutoffs_dialog import GeometryCutoffsDialog
+        from hbat.core.analysis import AnalysisParameters
+        
+        dialog = GeometryCutoffsDialog(self.root, AnalysisParameters())
+        
+        try:
+            # Check modal properties
+            assert dialog.dialog.transient() is not None
+            assert dialog.dialog.winfo_class() == 'Toplevel'
+        finally:
+            dialog.dialog.destroy()
+    
+    def test_preset_manager_integration(self):
+        """Test preset manager can be opened from geometry dialog."""
+        from hbat.gui.geometry_cutoffs_dialog import GeometryCutoffsDialog
+        from hbat.core.analysis import AnalysisParameters
+        
+        dialog = GeometryCutoffsDialog(self.root, AnalysisParameters())
+        
+        try:
+            assert hasattr(dialog, '_open_preset_manager')
             
-            # Apply loaded data
-            self.panel._apply_preset_data(loaded_data)
+            # Mock preset manager to avoid creating another modal dialog
+            with patch('hbat.gui.preset_manager_dialog.PresetManagerDialog') as mock_preset:
+                mock_instance = Mock()
+                mock_instance.get_result.return_value = None  # User cancelled
+                mock_preset.return_value = mock_instance
+                
+                # Should not raise exceptions
+                dialog._open_preset_manager()
+                mock_preset.assert_called_once()
+                
+        finally:
+            dialog.dialog.destroy()
+
+
+@pytest.mark.gui  
+class TestPDBFixingDialog:
+    """Test PDB fixing dialog functionality."""
+    
+    def setup_method(self):
+        """Set up test environment."""
+        self.root = tk.Tk()
+        self.root.withdraw()
+        
+    def teardown_method(self):
+        """Clean up test environment."""
+        try:
+            self.root.quit()
+            self.root.destroy()
+        except Exception:
+            pass
+    
+    def test_dialog_creation(self):
+        """Test PDB fixing dialog creation."""
+        from hbat.gui.pdb_fixing_dialog import PDBFixingDialog
+        
+        dialog = PDBFixingDialog(self.root)
+        
+        try:
+            assert dialog is not None
+            assert hasattr(dialog, 'dialog')
+            assert hasattr(dialog, 'result')
+        finally:
+            dialog.dialog.destroy()
+    
+    def test_preset_manager_integration(self):
+        """Test preset manager integration in PDB fixing dialog."""
+        from hbat.gui.pdb_fixing_dialog import PDBFixingDialog
+        
+        dialog = PDBFixingDialog(self.root)
+        
+        try:
+            assert hasattr(dialog, '_open_preset_manager')
             
-            # Get parameters and verify they match original
-            loaded_params = self.panel.get_parameters()
+            # Mock preset manager
+            with patch('hbat.gui.preset_manager_dialog.PresetManagerDialog') as mock_preset:
+                mock_instance = Mock()
+                mock_instance.get_result.return_value = None
+                mock_preset.return_value = mock_instance
+                
+                dialog._open_preset_manager()
+                mock_preset.assert_called_once()
+                
+        finally:
+            dialog.dialog.destroy()
+
+
+@pytest.mark.gui
+class TestPresetManagerDialog:
+    """Test preset manager dialog functionality."""
+    
+    def setup_method(self):
+        """Set up test environment."""
+        self.root = tk.Tk()
+        self.root.withdraw()
+        
+    def teardown_method(self):
+        """Clean up test environment."""
+        try:
+            self.root.quit()
+            self.root.destroy()
+        except Exception:
+            pass
+    
+    def test_dialog_creation(self):
+        """Test preset manager dialog creation."""
+        from hbat.gui.preset_manager_dialog import PresetManagerDialog
+        from hbat.core.analysis import AnalysisParameters
+        
+        dialog = PresetManagerDialog(self.root, AnalysisParameters())
+        
+        try:
+            assert dialog is not None
+            assert hasattr(dialog, 'dialog')
+            assert hasattr(dialog, 'result')
+            assert hasattr(dialog, 'preset_tree')
+            assert hasattr(dialog, 'preset_file_paths')
+        finally:
+            dialog.dialog.destroy()
+    
+    def test_preset_tree_functionality(self):
+        """Test preset tree view functionality."""
+        from hbat.gui.preset_manager_dialog import PresetManagerDialog
+        from hbat.core.analysis import AnalysisParameters
+        
+        dialog = PresetManagerDialog(self.root, AnalysisParameters())
+        
+        try:
+            # Test tree refresh doesn't crash
+            dialog._refresh_preset_list()
             
-            assert loaded_params.hb_distance_cutoff == 3.1
-            assert loaded_params.hb_angle_cutoff == 135.0
-            assert loaded_params.xb_distance_cutoff == 3.8
-            assert loaded_params.analysis_mode == "local"
-            assert loaded_params.fix_pdb_enabled is True
-            assert loaded_params.fix_pdb_method == "openbabel"
-            assert loaded_params.fix_pdb_add_hydrogens is True
+            # Verify tree structure
+            assert hasattr(dialog.preset_tree, 'get_children')
             
         finally:
-            os.unlink(temp_path)
+            dialog.dialog.destroy()
+
+
+@pytest.mark.gui
+class TestMainWindow:
+    """Test main window functionality with new dialog architecture."""
+    
+    def setup_method(self):
+        """Set up test environment."""
+        # Stop any existing async executor to prevent event loop conflicts  
+        try:
+            import tk_async_execute as tae
+            tae.stop()
+        except Exception:
+            pass
+        
+    def teardown_method(self):
+        """Clean up test environment."""
+        # Stop async executor to prevent event loop conflicts
+        try:
+            import tk_async_execute as tae
+            tae.stop()
+        except Exception:
+            pass
+    
+    def test_main_window_import(self):
+        """Test importing main window class."""
+        from hbat.gui.main_window import MainWindow
+        assert MainWindow is not None
+    
+    def test_main_window_creation(self):
+        """Test main window creation and cleanup."""
+        from hbat.gui.main_window import MainWindow
+        import tk_async_execute as tae
+        
+        main_window = None
+        try:
+            main_window = MainWindow()
+            main_window.root.withdraw()  # Hide during testing
+            
+            # Test essential attributes for new architecture
+            assert hasattr(main_window, 'root'), "MainWindow should have root attribute"
+            assert hasattr(main_window, 'results_panel'), "MainWindow should have results_panel attribute"
+            assert hasattr(main_window, 'analyzer'), "MainWindow should have analyzer attribute"
+            assert main_window.session_parameters is None, "session_parameters should be initialized as None"
+            
+            # Test that menu actions exist for new dialogs
+            assert hasattr(main_window, '_open_parameters_window'), "Should have _open_parameters_window method"
+            assert hasattr(main_window, '_open_pdb_fixing_window'), "Should have _open_pdb_fixing_window method"
+            
+        finally:
+            if main_window and hasattr(main_window, 'root'):
+                try:
+                    tae.stop()  # Stop async executor first
+                    main_window.root.quit()
+                    main_window.root.destroy()
+                except Exception:
+                    pass
+    
+    def test_dialog_integration(self):
+        """Test main window integration with new dialogs."""
+        from hbat.gui.main_window import MainWindow
+        import tk_async_execute as tae
+        
+        main_window = None
+        try:
+            main_window = MainWindow()
+            main_window.root.withdraw()
+            
+            # Mock dialogs to avoid creating modal windows
+            with patch('hbat.gui.main_window.GeometryCutoffsDialog') as mock_geo:
+                mock_instance = Mock()
+                mock_instance.get_result.return_value = None
+                mock_geo.return_value = mock_instance
+                
+                # Test opening geometry cutoffs dialog
+                main_window._open_parameters_window()
+                mock_geo.assert_called_once()
+            
+            with patch('hbat.gui.main_window.PDBFixingDialog') as mock_pdb:
+                mock_instance = Mock()
+                mock_instance.get_result.return_value = None
+                mock_pdb.return_value = mock_instance
+                
+                # Test opening PDB fixing dialog
+                main_window._open_pdb_fixing_window()
+                mock_pdb.assert_called_once()
+                
+        finally:
+            if main_window and hasattr(main_window, 'root'):
+                try:
+                    tae.stop()  # Stop async executor first
+                    main_window.root.quit()
+                    main_window.root.destroy()
+                except Exception:
+                    pass
 
 
 @pytest.mark.gui
 class TestResultsPanel:
-    """Test results panel functionality."""
+    """Test results panel functionality (unchanged from before)."""
     
     def setup_method(self):
         """Set up test environment."""
-        try:
-            import tkinter as tk
-            from hbat.gui.results_panel import ResultsPanel
-            
-            # Create root window for testing
-            self.root = tk.Tk()
-            self.root.withdraw()  # Hide window during testing
-            
-            # Create results panel
-            self.panel = ResultsPanel(self.root)
-            
-        except ImportError:
-            pytest.skip("tkinter not available")
-        except Exception as e:
-            pytest.skip(f"GUI setup failed: {e}")
-    
+        self.root = tk.Tk()
+        self.root.withdraw()
+        
     def teardown_method(self):
         """Clean up test environment."""
-        if hasattr(self, 'root'):
-            try:
-                self.root.destroy()
-            except Exception:
-                pass
+        try:
+            self.root.quit()
+            self.root.destroy()
+        except Exception:
+            pass
     
     def test_results_panel_creation(self):
         """Test results panel creation."""
-        assert self.panel is not None
-        assert hasattr(self.panel, 'notebook')
+        from hbat.gui.results_panel import ResultsPanel
+        
+        panel = ResultsPanel(self.root)
+        assert panel is not None
+        assert hasattr(panel, 'notebook')
     
     def test_results_display_methods(self):
         """Test methods for displaying results."""
+        from hbat.gui.results_panel import ResultsPanel
+        
+        panel = ResultsPanel(self.root)
+        
         # Test that display methods exist
-        assert hasattr(self.panel, 'update_results'), "Should have update_results method"
-        assert hasattr(self.panel, 'clear_results'), "Should have clear_results method"
+        assert hasattr(panel, 'update_results'), "Should have update_results method"
+        assert hasattr(panel, 'clear_results'), "Should have clear_results method"
         
         # Test calling clear_results doesn't raise errors
-        try:
-            self.panel.clear_results()
-        except Exception as e:
-            pytest.fail(f"clear_results should not raise error: {e}")
+        panel.clear_results()
 
 
 @pytest.mark.gui
@@ -297,159 +334,73 @@ class TestChainVisualization:
         except ImportError:
             pytest.skip("Chain visualization module not available")
     
-    def test_ellipse_node_functionality(self):
-        """Test ellipse node drawing functionality."""
+    def test_chain_visualization_creation(self):
+        """Test chain visualization window creation."""
         try:
             import tkinter as tk
             from hbat.gui.chain_visualization import ChainVisualizationWindow
             from hbat.core.app_config import HBATConfig
+            from unittest.mock import Mock
             
-            # Check if visualization dependencies are available
+            # Skip if dependencies not available
             try:
                 import networkx as nx
                 import matplotlib.pyplot as plt
             except ImportError:
-                pytest.skip("Visualization dependencies (networkx, matplotlib) not available")
+                pytest.skip("Visualization dependencies not available")
             
-            # Create root window for testing
             root = tk.Tk()
             root.withdraw()
             
             try:
-                # Create a mock chain object for testing
-                from unittest.mock import Mock
+                # Create mock chain
                 mock_chain = Mock()
                 mock_chain.interactions = []
                 mock_chain.chain_length = 0
-                mock_chain.chain_type = "mock"
+                mock_chain.chain_type = "test"
                 
-                # Create config for testing
                 config = HBATConfig()
                 
-                # Test that we can create the visualization window with proper parameters
-                with unittest.mock.patch('tkinter.Toplevel'):  # Mock window creation
-                    viz_window = ChainVisualizationWindow(root, mock_chain, "test_chain", config)
-                assert viz_window is not None
-                assert hasattr(viz_window, 'viz_window')
-                assert hasattr(viz_window, 'G')  # NetworkX graph
-                
-                # Clean up the visualization window
-                if viz_window.viz_window:
-                    viz_window.viz_window.destroy()
-                
+                # Mock the Toplevel creation to avoid display issues
+                with patch('tkinter.Toplevel'):
+                    viz_window = ChainVisualizationWindow(root, mock_chain, "test", config)
+                    assert viz_window is not None
+                    assert hasattr(viz_window, 'G')  # NetworkX graph
+                    
             finally:
+                root.quit()
                 root.destroy()
                 
         except ImportError as e:
-            pytest.skip(f"Dependencies not available for chain visualization: {e}")
-        except Exception as e:
-            pytest.skip(f"Chain visualization test failed: {e}")
+            pytest.skip(f"Chain visualization dependencies not available: {e}")
 
 
 @pytest.mark.gui
-class TestMainWindow:
-    """Test main window functionality."""
+class TestGUIImports:
+    """Test that all GUI modules can be imported."""
     
-    def test_main_window_import(self):
-        """Test importing main window."""
+    def test_gui_module_imports(self):
+        """Test importing all GUI modules."""
         try:
             from hbat.gui.main_window import MainWindow
-            assert MainWindow is not None
-        except ImportError:
-            pytest.skip("Main window module not available")
+            from hbat.gui.geometry_cutoffs_dialog import GeometryCutoffsDialog
+            from hbat.gui.pdb_fixing_dialog import PDBFixingDialog
+            from hbat.gui.preset_manager_dialog import PresetManagerDialog
+            from hbat.gui.results_panel import ResultsPanel
+            
+            # All imports successful
+            assert True
+            
+        except ImportError as e:
+            pytest.skip(f"GUI modules not available: {e}")
     
-    def test_main_window_components(self):
-        """Test main window has required components."""
+    def test_renderer_imports(self):
+        """Test importing visualization renderers."""
         try:
-            from hbat.gui.main_window import MainWindow
+            from hbat.gui.graphviz_renderer import GraphVizRenderer
+            from hbat.gui.matplotlib_renderer import MatplotlibRenderer
             
-            try:
-                # Create main window (MainWindow creates its own root)
-                main_window = MainWindow()
-                main_window.root.withdraw()  # Hide window during testing
-                
-                # Test that main window has essential attributes
-                assert hasattr(main_window, 'parameter_panel'), "Should have parameter panel"
-                assert hasattr(main_window, 'results_panel'), "Should have results panel"
-                assert hasattr(main_window, 'root'), "Should have root window"
-                assert hasattr(main_window, 'analyzer'), "Should have analyzer attribute"
-                
-                # Clean up - call _on_closing to properly stop async executor
-                main_window._on_closing()
-                
-            except Exception as e:
-                pytest.skip(f"Main window test failed: {e}")
-                
-        except ImportError:
-            pytest.skip("GUI dependencies not available")
-
-
-@pytest.mark.integration
-class TestGUIPresetIntegration:
-    """Test GUI preset integration without requiring full GUI."""
-    
-    def test_preset_directory_access(self):
-        """Test GUI can access preset directory."""
-        try:
-            from hbat.gui.parameter_panel import ParameterPanel
+            assert True
             
-            # Create mock parameter panel
-            panel = ParameterPanel.__new__(ParameterPanel)
-            
-            # Test directory access methods
-            example_dir = panel._get_example_presets_directory()
-            user_dir = panel._get_presets_directory()
-            
-            assert isinstance(example_dir, str), "Example presets directory should be string"
-            assert isinstance(user_dir, str), "User presets directory should be string"
-            
-            # User directory should be created if it doesn't exist
-            assert os.path.exists(user_dir), "User presets directory should be created"
-            
-        except ImportError:
-            pytest.skip("GUI modules not available")
-    
-    def test_preset_file_format_compatibility(self):
-        """Test GUI preset file format compatibility."""
-        try:
-            from hbat.gui.parameter_panel import ParameterPanel
-            from hbat.cli.main import load_preset_file
-            
-            # Create a preset using GUI format
-            panel = ParameterPanel.__new__(ParameterPanel)
-            
-            from hbat.core.analysis import AnalysisParameters
-            test_params = AnalysisParameters(
-                hb_distance_cutoff=3.3,
-                hb_angle_cutoff=125.0,
-                fix_pdb_enabled=True,
-                fix_pdb_method="pdbfixer",
-                fix_pdb_add_hydrogens=True,
-                fix_pdb_add_heavy_atoms=False
-            )
-            
-            gui_preset_data = panel._create_preset_data(test_params)
-            
-            # Save to temporary file
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.hbat', delete=False) as f:
-                json.dump(gui_preset_data, f)
-                temp_path = f.name
-            
-            try:
-                # Test that CLI can load GUI-created preset
-                cli_params = load_preset_file(temp_path)
-                
-                assert cli_params.hb_distance_cutoff == 3.3
-                assert cli_params.hb_angle_cutoff == 125.0
-                assert cli_params.fix_pdb_enabled is True
-                assert cli_params.fix_pdb_method == "pdbfixer"
-                assert cli_params.fix_pdb_add_hydrogens is True
-                
-            except SystemExit:
-                # Acceptable if CLI loading fails in test environment
-                pass
-            finally:
-                os.unlink(temp_path)
-                
-        except ImportError:
-            pytest.skip("GUI or CLI modules not available")
+        except ImportError as e:
+            pytest.skip(f"Renderer modules not available: {e}")

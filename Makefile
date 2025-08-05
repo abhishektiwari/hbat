@@ -76,7 +76,13 @@ test-coverage:
 
 test-gui:
 	@echo "Running GUI tests..."
-	pytest tests/ -v -m "gui"
+	@if command -v xvfb-run >/dev/null 2>&1; then \
+		echo "Using virtual display (xvfb-run)..."; \
+		xvfb-run -a -s "-screen 0 1024x768x24" pytest tests/ -v -m "gui"; \
+	else \
+		echo "xvfb-run not available, running tests with current display..."; \
+		pytest tests/ -v -m "gui"; \
+	fi
 
 test-unit:
 	@echo "Running unit tests..."

@@ -13,17 +13,19 @@ import tkinter as tk
 import webbrowser
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import tk_async_execute as tae
 
 from ..constants import APP_NAME, APP_VERSION, GUIDefaults
+from ..constants.parameters import ParametersDefault
 from ..core.analysis import (
     AnalysisParameters,
     NPMolecularInteractionAnalyzer,
 )
-from .parameter_panel import ParameterPanel
+from .geometry_cutoffs_dialog import GeometryCutoffsDialog
 from .results_panel import ResultsPanel
+from .pdb_fixing_dialog import PDBFixingDialog
 
 
 class MainWindow:
@@ -130,12 +132,19 @@ class MainWindow:
         settings_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Settings", menu=settings_menu)
         settings_menu.add_command(
-            label="Edit Parameters...", command=self._open_parameters_window
+            label="Geometry Cutoffs...", command=self._open_parameters_window
         )
+        settings_menu.add_command(
+            label="PDB Fixing...", command=self._open_pdb_fixing_window
+        )
+        settings_menu.add_separator()
+        settings_menu.add_command(
+            label="Manage Presets...", command=self._open_preset_manager
+        )
+        settings_menu.add_separator()
         settings_menu.add_command(
             label="Reset Parameters", command=self._reset_parameters
         )
-        settings_menu.add_separator()
 
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -254,10 +263,8 @@ class MainWindow:
         # Add context menu for Fixed PDB tab
         self._create_fixed_pdb_context_menu()
 
-        # Store parameters separately (no longer in tab)
-        self.parameter_panel = None
-        self.parameters_window = None
-        self.session_parameters = None  # Store parameters for session persistence
+        # Store parameters for session persistence
+        self.session_parameters = None
 
         # Bottom panel - Results (70% of height)
         bottom_frame = ttk.Frame(main_paned)
@@ -449,17 +456,25 @@ class MainWindow:
             messagebox.showinfo("Info", "Analysis is already running.")
             return
 
-        # Get parameters from the parameter panel or session storage
-        if self.parameter_panel:
-            params = self.parameter_panel.get_parameters()
-        elif self.session_parameters:
+        # Get parameters from session storage or use defaults
+        if self.session_parameters:
             params = self.session_parameters
         else:
             # Use default parameters if none have been set
-            from ..core.analysis import AnalysisParameters
-
             params = AnalysisParameters()
             self.session_parameters = params
+            
+        # Apply PDB fixing parameters if available
+        # Note: Default AnalysisParameters() should have PDB fixing enabled by default
+        if hasattr(self, 'session_pdb_fixing_params') and self.session_pdb_fixing_params:
+            # Update the params object with session PDB fixing settings
+            params.fix_pdb_enabled = self.session_pdb_fixing_params['enabled']
+            params.fix_pdb_method = self.session_pdb_fixing_params['method']
+            params.fix_pdb_add_hydrogens = self.session_pdb_fixing_params['add_hydrogens']
+            params.fix_pdb_add_heavy_atoms = self.session_pdb_fixing_params['add_heavy_atoms']
+            params.fix_pdb_replace_nonstandard = self.session_pdb_fixing_params['replace_nonstandard']
+            params.fix_pdb_remove_heterogens = self.session_pdb_fixing_params['remove_heterogens']
+            params.fix_pdb_keep_water = self.session_pdb_fixing_params['keep_water']
 
         # Start async analysis without popup window
         tae.async_execute(
@@ -1087,14 +1102,7 @@ class MainWindow:
         :rtype: None
         """
         # Reset session parameters to defaults
-        from ..core.analysis import AnalysisParameters
-
         self.session_parameters = AnalysisParameters()
-
-        # If parameters window is open, update it too
-        if self.parameter_panel:
-            self.parameter_panel.reset_to_defaults()
-
         self.status_var.set("Parameters reset to defaults")
 
     def _show_about(self) -> None:
@@ -1123,100 +1131,57 @@ Author: Abhishek Tiwari
         messagebox.showinfo("About HBAT", about_text.strip())
 
     def _open_parameters_window(self) -> None:
-        """Open parameters configuration in a popup window.
+        """Open geometry cutoffs configuration dialog.
 
-        Creates a popup window containing the parameter panel, preserving
-        any existing parameter values for the session.
-
-        :returns: None
-        :rtype: None
-        """
-        if self.parameters_window and self.parameters_window.winfo_exists():
-            # Bring existing window to front
-            self.parameters_window.lift()
-            self.parameters_window.focus_force()
-            return
-
-        # Create new parameters window
-        self.parameters_window = tk.Toplevel(self.root)
-        self.parameters_window.title("Analysis Parameters")
-        self.parameters_window.geometry("700x600")
-        self.parameters_window.resizable(True, True)
-
-        # Create parameter panel in popup window
-        self.parameter_panel = ParameterPanel(self.parameters_window)
-        self.parameter_panel.frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        # Restore previous session parameters if they exist
-        if self.session_parameters:
-            self.parameter_panel.set_parameters(self.session_parameters)
-
-        # Add Apply and Cancel buttons
-        button_frame = ttk.Frame(self.parameters_window)
-        button_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-
-        ttk.Button(button_frame, text="Apply", command=self._apply_parameters).pack(
-            side=tk.RIGHT, padx=(5, 0)
-        )
-
-        ttk.Button(button_frame, text="Cancel", command=self._cancel_parameters).pack(
-            side=tk.RIGHT
-        )
-
-        # Center the window
-        self.parameters_window.transient(self.root)
-        self.parameters_window.grab_set()
-
-        # Handle window closing
-        self.parameters_window.protocol("WM_DELETE_WINDOW", self._on_parameters_close)
-
-    def _apply_parameters(self) -> None:
-        """Apply parameter changes and close the window.
-
-        Saves parameters to session storage for persistence.
+        Creates a modal dialog for configuring geometry cutoff parameters,
+        preserving any existing parameter values for the session.
 
         :returns: None
         :rtype: None
         """
-        if self.parameter_panel:
-            # Save current parameters to session storage
-            self.session_parameters = self.parameter_panel.get_parameters()
-            self.status_var.set("Parameters updated")
-        self._close_parameters_window()
+        # Get current session parameters or defaults
+        current_params = self.session_parameters or AnalysisParameters()
+        
+        # Create dialog
+        dialog = GeometryCutoffsDialog(self.root, current_params)
+        
+        # Get results
+        result = dialog.get_result()
+        
+        if result:
+            # Store the updated parameters in session
+            self.session_parameters = result
+            self.status_var.set("Geometry cutoffs updated")
 
-    def _cancel_parameters(self) -> None:
-        """Cancel parameter changes and revert to session values.
-
-        Restores the last saved session parameters if they exist.
-
+        
+    def _open_pdb_fixing_window(self) -> None:
+        """Open PDB fixing settings dialog.
+        
+        Creates a modal dialog for configuring PDB fixing parameters.
+        
         :returns: None
         :rtype: None
         """
-        if self.parameter_panel and self.session_parameters:
-            # Revert to last saved session parameters
-            self.parameter_panel.set_parameters(self.session_parameters)
-        self._close_parameters_window()
-
-    def _close_parameters_window(self) -> None:
-        """Close the parameters window.
-
-        :returns: None
-        :rtype: None
-        """
-        if self.parameters_window:
-            self.parameters_window.destroy()
-            self.parameters_window = None
-            self.parameter_panel = None
-
-    def _on_parameters_close(self) -> None:
-        """Handle parameters window closing via window manager.
-
-        Treats window closing as a cancel operation.
-
-        :returns: None
-        :rtype: None
-        """
-        self._cancel_parameters()
+        # Create dialog
+        dialog = PDBFixingDialog(self.root)
+        
+        # Set current parameters if available
+        if hasattr(self, 'session_pdb_fixing_params') and self.session_pdb_fixing_params:
+            dialog.set_parameters(self.session_pdb_fixing_params)
+        
+        # Get results
+        result = dialog.get_parameters()
+        
+        if result:
+            # Store the PDB fixing parameters
+            self.session_pdb_fixing_params = result
+            
+            # Update the status bar if appropriate
+            if hasattr(self, 'status_bar'):
+                fixing_status = "enabled" if result["enabled"] else "disabled"
+                self.status_bar.config(text=f"PDB fixing {fixing_status} ({result['method']})")
+                # Clear status after 3 seconds
+                self.root.after(3000, lambda: self.status_bar.config(text="Ready"))
 
     def _show_help(self) -> None:
         """Show help dialog.
@@ -1293,7 +1258,7 @@ Author: Abhishek Tiwari
                 )
                 self.fixed_file_text.insert(tk.END, "To apply PDB fixing:\n")
                 self.fixed_file_text.insert(
-                    tk.END, "1. Open Settings → Edit Parameters\n"
+                    tk.END, "1. Open Settings → Geometry Cutoffs\n"
                 )
                 self.fixed_file_text.insert(tk.END, "2. Enable 'Fix PDB' option\n")
                 self.fixed_file_text.insert(
@@ -1520,6 +1485,82 @@ Author: Abhishek Tiwari
 
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to save fixed PDB:\n{str(e)}")
+
+    def _open_preset_manager(self) -> None:
+        """Open the preset manager dialog.
+        
+        Creates a standalone preset manager that can load/save presets
+        and apply them to the current session parameters.
+        
+        :returns: None
+        :rtype: None
+        """
+        from .preset_manager_dialog import PresetManagerDialog
+        
+        # Get current session parameters or defaults
+        current_params = self.session_parameters or AnalysisParameters()
+        
+        # Open preset manager
+        dialog = PresetManagerDialog(self.root, current_params)
+        result = dialog.get_result()
+        
+        if result:
+            # Apply the loaded preset to session parameters
+            self._apply_preset_to_session(result)
+            self.status_var.set("Preset loaded and applied to session")
+
+    def _apply_preset_to_session(self, preset_data: Dict[str, Any]) -> None:
+        """Apply preset data to session parameters.
+        
+        :param preset_data: Preset data to apply
+        :type preset_data: Dict[str, Any]
+        :returns: None
+        :rtype: None
+        """
+        if "parameters" not in preset_data:
+            messagebox.showerror("Error", "Invalid preset format: missing 'parameters' section")
+            return
+            
+        params_data = preset_data["parameters"]
+        
+        # Create new AnalysisParameters with preset values
+        kwargs = {}
+        
+        # Apply hydrogen bond parameters
+        if "hydrogen_bonds" in params_data:
+            hb = params_data["hydrogen_bonds"]
+            kwargs.update({
+                "hb_distance_cutoff": hb.get("h_a_distance_cutoff", ParametersDefault.HB_DISTANCE_CUTOFF),
+                "hb_angle_cutoff": hb.get("dha_angle_cutoff", ParametersDefault.HB_ANGLE_CUTOFF),
+                "hb_donor_acceptor_cutoff": hb.get("d_a_distance_cutoff", ParametersDefault.HB_DA_DISTANCE)
+            })
+            
+        # Apply halogen bond parameters
+        if "halogen_bonds" in params_data:
+            xb = params_data["halogen_bonds"]
+            kwargs.update({
+                "xb_distance_cutoff": xb.get("x_a_distance_cutoff", ParametersDefault.XB_DISTANCE_CUTOFF),
+                "xb_angle_cutoff": xb.get("cxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF)
+            })
+            
+        # Apply π interaction parameters
+        if "pi_interactions" in params_data:
+            pi = params_data["pi_interactions"]
+            kwargs.update({
+                "pi_distance_cutoff": pi.get("h_pi_distance_cutoff", ParametersDefault.PI_DISTANCE_CUTOFF),
+                "pi_angle_cutoff": pi.get("dh_pi_angle_cutoff", ParametersDefault.PI_ANGLE_CUTOFF)
+            })
+            
+        # Apply general parameters
+        if "general" in params_data:
+            gen = params_data["general"]
+            kwargs.update({
+                "covalent_cutoff_factor": gen.get("covalent_cutoff_factor", ParametersDefault.COVALENT_CUTOFF_FACTOR),
+                "analysis_mode": gen.get("analysis_mode", ParametersDefault.ANALYSIS_MODE)
+            })
+        
+        # Create new parameters object and store in session
+        self.session_parameters = AnalysisParameters(**kwargs)
 
     def _on_closing(self) -> None:
         """Handle window closing event.
