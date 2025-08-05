@@ -98,7 +98,7 @@ class TestPresetManagement:
                 },
                 "halogen_bonds": {
                     "x_a_distance_cutoff": 4.0,
-                    "cxa_angle_cutoff": 120.0
+                    "dxa_angle_cutoff": 120.0
                 },
                 "pi_interactions": {
                     "h_pi_distance_cutoff": 4.5,

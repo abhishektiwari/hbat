@@ -15,8 +15,8 @@
       "d_a_distance_cutoff": 3.2
     },
     "halogen_bonds": {
-      "x_a_distance_cutoff": 3.8,
-      "cxa_angle_cutoff": 125.0
+      "x_a_distance_cutoff": 3.9,
+      "dxa_angle_cutoff": 150.0
     },
     "pi_interactions": {
       "h_pi_distance_cutoff": 4.2,

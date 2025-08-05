@@ -517,7 +517,7 @@ PDB Fixing Parameters:
                 },
                 "halogen_bonds": {
                     "x_a_distance_cutoff": params.xb_distance_cutoff,
-                    "cxa_angle_cutoff": params.xb_angle_cutoff
+                    "dxa_angle_cutoff": params.xb_angle_cutoff
                 },
                 "pi_interactions": {
                     "h_pi_distance_cutoff": params.pi_distance_cutoff,

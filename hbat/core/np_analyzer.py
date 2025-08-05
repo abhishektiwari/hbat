@@ -21,6 +21,7 @@ from ..constants import (
     PI_INTERACTION_DONOR,
     RESIDUES_WITH_AROMATIC_RINGS,
 )
+from ..constants.atomic_data import AtomicData
 from ..constants.parameters import AnalysisParameters
 from .interactions import CooperativityChain, HalogenBond, HydrogenBond, PiInteraction
 from .np_vector import NPVec3D, batch_angle_between, compute_distance_matrix
@@ -449,8 +450,10 @@ class NPMolecularInteractionAnalyzer:
         # Compute distance matrix
         distances = compute_distance_matrix(x_coords, a_coords)
 
-        # Find pairs within distance cutoff
-        x_indices, a_indices = np.where(distances <= self.parameters.xb_distance_cutoff)
+        # Find pairs within generous distance cutoff for initial filtering
+        # We'll apply the actual vdW/fixed cutoff criteria per pair below
+        max_possible_cutoff = max(self.parameters.xb_distance_cutoff, 6.0)  # 6.0 Å as upper bound
+        x_indices, a_indices = np.where(distances <= max_possible_cutoff)
 
         # Process pairs in chunks for large datasets
         total_pairs = len(x_indices)
@@ -481,6 +484,12 @@ class NPMolecularInteractionAnalyzer:
                     if self._are_same_residue(halogen_idx, acceptor_idx):
                         continue
 
+                # Check distance criteria: vdW sum OR fixed cutoff
+                distance = float(distances[x_idx, a_idx])
+                vdw_sum = self._get_vdw_sum(x_atom, a_atom)
+                if not (distance <= vdw_sum or distance <= self.parameters.xb_distance_cutoff):
+                    continue  # Skip this pair - doesn't meet either distance criterion
+
                 # Find carbon atom bonded to halogen
                 carbon_atom = self._find_carbon_for_halogen(x_atom)
                 if not carbon_atom:
@@ -508,7 +517,7 @@ class NPMolecularInteractionAnalyzer:
 
                 # Check angle cutoff
                 if angle_deg >= self.parameters.xb_angle_cutoff:
-                    distance = float(distances[x_idx, a_idx])
+                    # distance already calculated above
                     bond_type = f"C-{x_atom.element}...{a_atom.element}"
                     halogen_residue = (
                         f"{x_atom.chain_id}{x_atom.res_seq}{x_atom.res_name}"
@@ -720,6 +729,20 @@ class NPMolecularInteractionAnalyzer:
                         ):
                             return atom
         return None
+
+    def _get_vdw_sum(self, atom1: Atom, atom2: Atom) -> float:
+        """Get van der Waals radii sum for two atoms.
+        
+        :param atom1: First atom
+        :type atom1: Atom
+        :param atom2: Second atom
+        :type atom2: Atom
+        :returns: Sum of van der Waals radii in Angstroms
+        :rtype: float
+        """
+        radius1 = AtomicData.VDW_RADII.get(atom1.element, 2.0)  # Default 2.0 Å if unknown
+        radius2 = AtomicData.VDW_RADII.get(atom2.element, 2.0)  # Default 2.0 Å if unknown
+        return radius1 + radius2
 
     def _get_aromatic_centers(self) -> List[Dict[str, Any]]:
         """Get aromatic ring centers using NumPy."""

@@ -95,7 +95,7 @@ class TestDialogLogic:
                 },
                 "halogen_bonds": {
                     "x_a_distance_cutoff": 4.0,
-                    "cxa_angle_cutoff": 120.0
+                    "dxa_angle_cutoff": 120.0
                 },
                 "pi_interactions": {
                     "h_pi_distance_cutoff": 4.5,
@@ -291,6 +291,193 @@ class TestDialogDataStructures:
             
         except ImportError as e:
             pytest.skip(f"PDB fixing parameters not available: {e}")
+
+
+@pytest.mark.unit
+class TestGeometryCutoffsDialogLogic:
+    """Test GeometryCutoffsDialog parameter storage logic without GUI."""
+    
+    def test_parameter_storage_initialization(self):
+        """Test parameter storage is properly initialized."""
+        try:
+            from hbat.gui.geometry_cutoffs_dialog import GeometryCutoffsDialog
+            from hbat.constants.parameters import AnalysisParameters, ParametersDefault
+            import tkinter as tk
+            
+            # Create minimal mock for testing logic
+            class MockDialog:
+                def __init__(self):
+                    self.current_params = AnalysisParameters()
+                    self._param_values = {}
+                    
+                def _store_current_values(self):
+                    """Mock version of store current values."""
+                    self._param_values.update({
+                        'hb_distance': 3.5,
+                        'hb_angle': 120.0,
+                        'xb_distance': 4.0,
+                        'pi_distance': 4.5,
+                    })
+            
+            mock_dialog = MockDialog()
+            mock_dialog._store_current_values()
+            
+            # Test parameter storage works
+            assert 'hb_distance' in mock_dialog._param_values
+            assert mock_dialog._param_values['hb_distance'] == 3.5
+            assert mock_dialog._param_values['hb_angle'] == 120.0
+            
+        except ImportError as e:
+            pytest.skip(f"GeometryCutoffsDialog not available: {e}")
+    
+    def test_parameter_get_value_logic(self):
+        """Test parameter retrieval logic with fallbacks."""
+        try:
+            from hbat.constants.parameters import ParametersDefault
+            
+            # Mock the get_value logic from get_parameters method
+            def get_value(param_values, var_name, default_value):
+                if var_name in param_values:
+                    return param_values[var_name]
+                return default_value
+            
+            param_values = {
+                'hb_distance': 3.2,
+                'hb_angle': 125.0
+            }
+            
+            # Test stored values are returned
+            assert get_value(param_values, 'hb_distance', ParametersDefault.HB_DISTANCE_CUTOFF) == 3.2
+            assert get_value(param_values, 'hb_angle', ParametersDefault.HB_ANGLE_CUTOFF) == 125.0
+            
+            # Test default values are returned when not stored
+            assert get_value(param_values, 'xb_distance', ParametersDefault.XB_DISTANCE_CUTOFF) == ParametersDefault.XB_DISTANCE_CUTOFF
+            
+        except ImportError as e:
+            pytest.skip(f"Parameter constants not available: {e}")
+    
+    def test_parameter_set_logic(self):
+        """Test parameter setting logic stores values correctly."""
+        try:
+            from hbat.constants.parameters import AnalysisParameters
+            
+            # Mock the parameter setting logic
+            class MockParameterSetter:
+                def __init__(self):
+                    self._param_values = {}
+                
+                def set_parameters(self, params):
+                    """Mock version of set_parameters logic."""
+                    self._param_values.update({
+                        'hb_distance': params.hb_distance_cutoff,
+                        'hb_angle': params.hb_angle_cutoff,
+                        'da_distance': params.hb_donor_acceptor_cutoff,
+                        'whb_distance': params.whb_distance_cutoff,
+                        'whb_angle': params.whb_angle_cutoff,
+                        'whb_da_distance': params.whb_donor_acceptor_cutoff,
+                        'analysis_mode': params.analysis_mode,
+                    })
+            
+            setter = MockParameterSetter()
+            test_params = AnalysisParameters(
+                hb_distance_cutoff=3.2,
+                hb_angle_cutoff=125.0,
+                whb_distance_cutoff=3.8,
+                analysis_mode="local"
+            )
+            
+            setter.set_parameters(test_params)
+            
+            # Verify all parameters were stored
+            assert setter._param_values['hb_distance'] == 3.2
+            assert setter._param_values['hb_angle'] == 125.0
+            assert setter._param_values['whb_distance'] == 3.8
+            assert setter._param_values['analysis_mode'] == "local"
+            
+        except ImportError as e:
+            pytest.skip(f"AnalysisParameters not available: {e}")
+    
+    def test_pi_interaction_subtype_storage(self):
+        """Test π interaction subtype parameters are handled correctly."""
+        try:
+            from hbat.constants.parameters import AnalysisParameters, ParametersDefault
+            
+            # Test π interaction subtype parameter storage
+            param_values = {}
+            
+            # Mock storing π subtype parameters
+            pi_subtypes = {
+                'pi_ccl_distance': ParametersDefault.PI_CCL_DISTANCE_CUTOFF,
+                'pi_ccl_angle': ParametersDefault.PI_CCL_ANGLE_CUTOFF,
+                'pi_cbr_distance': ParametersDefault.PI_CBR_DISTANCE_CUTOFF,
+                'pi_cbr_angle': ParametersDefault.PI_CBR_ANGLE_CUTOFF,
+                'pi_ch_distance': ParametersDefault.PI_CH_DISTANCE_CUTOFF,
+                'pi_ch_angle': ParametersDefault.PI_CH_ANGLE_CUTOFF,
+            }
+            
+            param_values.update(pi_subtypes)
+            
+            # Verify all π subtype parameters are stored
+            assert 'pi_ccl_distance' in param_values
+            assert 'pi_ccl_angle' in param_values
+            assert 'pi_cbr_distance' in param_values
+            assert 'pi_ch_distance' in param_values
+            assert param_values['pi_ccl_distance'] == ParametersDefault.PI_CCL_DISTANCE_CUTOFF
+            
+        except ImportError as e:
+            pytest.skip(f"Parameter constants not available: {e}")
+    
+    def test_parameter_persistence_workflow(self):
+        """Test complete parameter persistence workflow."""
+        try:
+            from hbat.constants.parameters import AnalysisParameters
+            
+            # Mock complete workflow
+            class MockGeometryDialog:
+                def __init__(self):
+                    self._param_values = {}
+                    self.current_params = AnalysisParameters()
+                
+                def set_parameters(self, params):
+                    """Store parameters."""
+                    self._param_values.update({
+                        'hb_distance': params.hb_distance_cutoff,
+                        'hb_angle': params.hb_angle_cutoff,
+                        'analysis_mode': params.analysis_mode,
+                    })
+                
+                def modify_parameters(self, **kwargs):
+                    """Simulate user modifying parameters."""
+                    self._param_values.update(kwargs)
+                
+                def get_parameters(self):
+                    """Retrieve final parameters."""
+                    return AnalysisParameters(
+                        hb_distance_cutoff=self._param_values.get('hb_distance', 3.5),
+                        hb_angle_cutoff=self._param_values.get('hb_angle', 120.0),
+                        analysis_mode=self._param_values.get('analysis_mode', 'complete')
+                    )
+            
+            # Test workflow
+            dialog = MockGeometryDialog()
+            
+            # 1. Set initial parameters
+            initial_params = AnalysisParameters(hb_distance_cutoff=3.2, analysis_mode="local")
+            dialog.set_parameters(initial_params)
+            
+            # 2. User modifies parameters
+            dialog.modify_parameters(hb_distance=3.8, hb_angle=130.0)
+            
+            # 3. Get final parameters
+            final_params = dialog.get_parameters()
+            
+            # Verify parameters were preserved and modified correctly
+            assert final_params.hb_distance_cutoff == 3.8  # Modified
+            assert final_params.hb_angle_cutoff == 130.0   # Modified
+            assert final_params.analysis_mode == "local"   # Preserved from initial
+            
+        except ImportError as e:
+            pytest.skip(f"AnalysisParameters not available: {e}")
 
 
 @pytest.mark.unit

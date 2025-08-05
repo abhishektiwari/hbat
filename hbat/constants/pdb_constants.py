@@ -646,7 +646,7 @@ electrostatic interactions with the partial positive charge on hydrogen.
 - CL: Chlorine (moderate acceptor, sometimes found in modified residues)
 """
 
-HALOGEN_BOND_ACCEPTOR_ELEMENTS: List[str] = ["N", "O", "S"]
+HALOGEN_BOND_ACCEPTOR_ELEMENTS: List[str] = ["N", "O", "S", "P", "SE"]
 """List[str]: Elements that can act as halogen bond acceptors.
 
 These electronegative atoms can donate electron density to the σ-hole of
@@ -656,6 +656,8 @@ that can interact with the positive electrostatic potential of the halogen.
 - N: Nitrogen (lone pairs on amino groups, ring nitrogens)
 - O: Oxygen (lone pairs on carbonyl, hydroxyl, ether groups)
 - S: Sulfur (lone pairs on thiol, sulfide groups, weaker than N/O)
+- P: Phosphorus (lone pairs in phosphate groups, moderate acceptor)
+- SE: Selenium (lone pairs in selenocysteine, rare but possible acceptor)
 """
 
 PI_INTERACTION_DONOR: List[str] = ["C", "N", "O", "S"]

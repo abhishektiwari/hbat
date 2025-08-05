@@ -471,7 +471,7 @@ def load_preset_file(preset_path: str) -> AnalysisParameters:
                 "x_a_distance_cutoff", ParametersDefault.XB_DISTANCE_CUTOFF
             ),
             xb_angle_cutoff=xb_params.get(
-                "cxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF
+                "dxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF
             ),
             pi_distance_cutoff=pi_params.get(
                 "h_pi_distance_cutoff", ParametersDefault.PI_DISTANCE_CUTOFF

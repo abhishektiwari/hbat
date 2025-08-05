@@ -1540,7 +1540,7 @@ Author: Abhishek Tiwari
             xb = params_data["halogen_bonds"]
             kwargs.update({
                 "xb_distance_cutoff": xb.get("x_a_distance_cutoff", ParametersDefault.XB_DISTANCE_CUTOFF),
-                "xb_angle_cutoff": xb.get("cxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF)
+                "xb_angle_cutoff": xb.get("dxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF)
             })
             
         # Apply π interaction parameters

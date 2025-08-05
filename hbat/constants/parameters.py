@@ -22,7 +22,7 @@ class ParametersDefault:
     WHB_DA_DISTANCE = 3.5  # Å - Donor-acceptor distance cutoff
 
     # Halogen bond parameters
-    XB_DISTANCE_CUTOFF = 3.5  # Å - X...A distance cutoff <= vdW sum
+    XB_DISTANCE_CUTOFF = 3.9  # Å - X...A distance cutoff <= vdW sum (Max vdW sum: I with SE → 3.88 Å)
     XB_ANGLE_CUTOFF = 150.0  # degrees - C-X...A angle cutoff
 
     # π interaction parameters

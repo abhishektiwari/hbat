@@ -855,7 +855,7 @@ class GeometryCutoffsDialog:
         if "halogen_bonds" in params:
             xb = params["halogen_bonds"]
             self.xb_distance.set(xb.get("x_a_distance_cutoff", ParametersDefault.XB_DISTANCE_CUTOFF))
-            self.xb_angle.set(xb.get("cxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF))
+            self.xb_angle.set(xb.get("dxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF))
             
         # Apply π interaction parameters
         if "pi_interactions" in params:

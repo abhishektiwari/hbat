@@ -109,7 +109,7 @@ class TestCLIParameterIntegration:
                 },
                 "halogen_bonds": {
                     "x_a_distance_cutoff": 4.0,
-                    "cxa_angle_cutoff": 120.0
+                    "dxa_angle_cutoff": 120.0
                 },
                 "pi_interactions": {
                     "h_pi_distance_cutoff": 4.5,
@@ -291,7 +291,7 @@ class TestCLIPresetIntegration:
                 },
                 "halogen_bonds": {
                     "x_a_distance_cutoff": 4.1,
-                    "cxa_angle_cutoff": 125.0
+                    "dxa_angle_cutoff": 125.0
                 },
                 "pi_interactions": {
                     "h_pi_distance_cutoff": 4.6,
@@ -364,7 +364,7 @@ class TestCLIPresetIntegration:
                 },
                 "halogen_bonds": {
                     "x_a_distance_cutoff": 4.0,
-                    "cxa_angle_cutoff": 120.0
+                    "dxa_angle_cutoff": 120.0
                 },
                 "pi_interactions": {
                     "h_pi_distance_cutoff": 4.5,

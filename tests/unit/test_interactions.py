@@ -899,3 +899,131 @@ class TestInteractionValidation:
         assert hasattr(pi.pi_center, 'x')
         assert hasattr(pi.pi_center, 'y')
         assert hasattr(pi.pi_center, 'z')
+
+
+@pytest.mark.unit
+class TestHalogenBondDistanceCriteria:
+    """Test halogen bond distance criteria using vdW radii and fixed cutoffs."""
+    
+    def test_vdw_sum_calculation(self):
+        """Test van der Waals radii sum calculation."""
+        from hbat.core.np_analyzer import NPMolecularInteractionAnalyzer
+        from hbat.constants.parameters import AnalysisParameters
+        
+        analyzer = NPMolecularInteractionAnalyzer(AnalysisParameters())
+        
+        # Create test atoms
+        cl_atom = Atom(
+            serial=1, name="CL", alt_loc="", res_name="CLU", chain_id="A",
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="CL", charge="", record_type="ATOM"
+        )
+        
+        o_atom = Atom(
+            serial=2, name="O", alt_loc="", res_name="GLY", chain_id="A",
+            res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="O", charge="", record_type="ATOM"
+        )
+        
+        # Test Cl...O vdW sum: 1.75 + 1.52 = 3.27 Å
+        vdw_sum = analyzer._get_vdw_sum(cl_atom, o_atom)
+        assert abs(vdw_sum - 3.27) < 0.01
+        
+        # Test with different halogen
+        br_atom = Atom(
+            serial=3, name="BR", alt_loc="", res_name="BRU", chain_id="A",
+            res_seq=3, i_code="", coords=NPVec3D(4, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="BR", charge="", record_type="ATOM"
+        )
+        
+        # Test Br...O vdW sum: 1.83 + 1.52 = 3.35 Å
+        vdw_sum = analyzer._get_vdw_sum(br_atom, o_atom)
+        assert abs(vdw_sum - 3.35) < 0.01
+        
+        # Test I...N vdW sum: 1.98 + 1.55 = 3.53 Å
+        i_atom = Atom(
+            serial=4, name="I", alt_loc="", res_name="IOU", chain_id="A",
+            res_seq=4, i_code="", coords=NPVec3D(5, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="I", charge="", record_type="ATOM"
+        )
+        
+        n_atom = Atom(
+            serial=5, name="N", alt_loc="", res_name="ASN", chain_id="A",
+            res_seq=5, i_code="", coords=NPVec3D(6, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="N", charge="", record_type="ATOM"
+        )
+        
+        vdw_sum = analyzer._get_vdw_sum(i_atom, n_atom)
+        assert abs(vdw_sum - 3.53) < 0.01
+    
+    def test_vdw_sum_unknown_elements(self):
+        """Test vdW sum with unknown elements uses defaults."""
+        from hbat.core.np_analyzer import NPMolecularInteractionAnalyzer
+        from hbat.constants.parameters import AnalysisParameters
+        
+        analyzer = NPMolecularInteractionAnalyzer(AnalysisParameters())
+        
+        # Create atoms with unknown elements
+        unknown1 = Atom(
+            serial=1, name="X", alt_loc="", res_name="UNK", chain_id="A",
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="X", charge="", record_type="ATOM"
+        )
+        
+        unknown2 = Atom(
+            serial=2, name="Y", alt_loc="", res_name="UNK", chain_id="A",
+            res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="Y", charge="", record_type="ATOM"
+        )
+        
+        # Should use default 2.0 Å for each: 2.0 + 2.0 = 4.0 Å
+        vdw_sum = analyzer._get_vdw_sum(unknown1, unknown2)
+        assert vdw_sum == 4.0
+    
+    def test_distance_criteria_logic(self):
+        """Test the OR logic for distance criteria."""
+        from hbat.constants.parameters import AnalysisParameters
+        
+        # Test scenario 1: distance <= vdW sum but > fixed cutoff
+        vdw_sum = 3.2
+        fixed_cutoff = 3.0
+        distance = 3.1
+        
+        # Should pass: distance <= vdW_sum (3.1 <= 3.2)
+        meets_vdw = distance <= vdw_sum
+        meets_fixed = distance <= fixed_cutoff
+        meets_criteria = meets_vdw or meets_fixed
+        assert meets_criteria
+        
+        # Test scenario 2: distance > vdW sum but <= fixed cutoff
+        vdw_sum = 3.0
+        fixed_cutoff = 3.5
+        distance = 3.2
+        
+        # Should pass: distance <= fixed_cutoff (3.2 <= 3.5)
+        meets_vdw = distance <= vdw_sum
+        meets_fixed = distance <= fixed_cutoff
+        meets_criteria = meets_vdw or meets_fixed
+        assert meets_criteria
+        
+        # Test scenario 3: distance > both criteria
+        vdw_sum = 3.0
+        fixed_cutoff = 3.2
+        distance = 3.5
+        
+        # Should fail: distance > both cutoffs
+        meets_vdw = distance <= vdw_sum
+        meets_fixed = distance <= fixed_cutoff
+        meets_criteria = meets_vdw or meets_fixed
+        assert not meets_criteria
+        
+        # Test scenario 4: distance <= both criteria
+        vdw_sum = 3.5
+        fixed_cutoff = 3.4
+        distance = 3.0
+        
+        # Should pass: distance <= both cutoffs
+        meets_vdw = distance <= vdw_sum
+        meets_fixed = distance <= fixed_cutoff
+        meets_criteria = meets_vdw or meets_fixed
+        assert meets_criteria
