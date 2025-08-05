@@ -52,12 +52,15 @@ class TestDialogLogic:
     def test_analysis_parameters_integration(self):
         """Test that analysis parameters work with dialog architecture."""
         try:
-            from hbat.core.analysis import AnalysisParameters
+            from hbat.constants.parameters import AnalysisParameters
             
             # Test creating parameters that would be used by dialogs
             params = AnalysisParameters(
                 hb_distance_cutoff=3.2,
                 hb_angle_cutoff=125.0,
+                whb_distance_cutoff=3.8,
+                whb_angle_cutoff=145.0,
+                whb_donor_acceptor_cutoff=3.6,
                 fix_pdb_enabled=True,
                 fix_pdb_method="pdbfixer"
             )
@@ -65,6 +68,9 @@ class TestDialogLogic:
             # Verify parameters have expected attributes
             assert params.hb_distance_cutoff == 3.2
             assert params.hb_angle_cutoff == 125.0
+            assert params.whb_distance_cutoff == 3.8
+            assert params.whb_angle_cutoff == 145.0
+            assert params.whb_donor_acceptor_cutoff == 3.6
             assert params.fix_pdb_enabled is True
             assert params.fix_pdb_method == "pdbfixer"
             
@@ -81,6 +87,11 @@ class TestDialogLogic:
                     "h_a_distance_cutoff": 3.5,
                     "dha_angle_cutoff": 120.0,
                     "d_a_distance_cutoff": 4.0
+                },
+                "weak_hydrogen_bonds": {
+                    "h_a_distance_cutoff": 3.6,
+                    "dha_angle_cutoff": 150.0,
+                    "d_a_distance_cutoff": 3.5
                 },
                 "halogen_bonds": {
                     "x_a_distance_cutoff": 4.0,

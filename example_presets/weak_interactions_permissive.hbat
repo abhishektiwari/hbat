@@ -9,6 +9,11 @@
       "dha_angle_cutoff": 100.0,
       "d_a_distance_cutoff": 4.5
     },
+    "weak_hydrogen_bonds": {
+      "h_a_distance_cutoff": 4.2,
+      "dha_angle_cutoff": 120.0,
+      "d_a_distance_cutoff": 4.0
+    },
     "halogen_bonds": {
       "x_a_distance_cutoff": 4.5,
       "cxa_angle_cutoff": 100.0

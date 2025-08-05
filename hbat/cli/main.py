@@ -131,6 +131,24 @@ Examples:
         help=f"Donor-acceptor distance cutoff in Å (default: {ParametersDefault.HB_DA_DISTANCE})",
     )
     param_group.add_argument(
+        "--whb-distance",
+        type=float,
+        default=ParametersDefault.WHB_DISTANCE_CUTOFF,
+        help=f"Weak hydrogen bond H...A distance cutoff in Å for carbon donors (default: {ParametersDefault.WHB_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--whb-angle",
+        type=float,
+        default=ParametersDefault.WHB_ANGLE_CUTOFF,
+        help=f"Weak hydrogen bond D-H...A angle cutoff in degrees for carbon donors (default: {ParametersDefault.WHB_ANGLE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--whb-da-distance",
+        type=float,
+        default=ParametersDefault.WHB_DA_DISTANCE,
+        help=f"Weak hydrogen bond donor-acceptor distance cutoff in Å for carbon donors (default: {ParametersDefault.WHB_DA_DISTANCE})",
+    )
+    param_group.add_argument(
         "--xb-distance",
         type=float,
         default=ParametersDefault.XB_DISTANCE_CUTOFF,
@@ -337,6 +355,7 @@ def load_preset_file(preset_path: str) -> AnalysisParameters:
 
         # Extract parameters with defaults
         hb_params = params.get("hydrogen_bonds", {})
+        whb_params = params.get("weak_hydrogen_bonds", {})
         xb_params = params.get("halogen_bonds", {})
         pi_params = params.get("pi_interactions", {})
         general_params = params.get("general", {})
@@ -351,6 +370,15 @@ def load_preset_file(preset_path: str) -> AnalysisParameters:
             ),
             hb_donor_acceptor_cutoff=hb_params.get(
                 "d_a_distance_cutoff", ParametersDefault.HB_DA_DISTANCE
+            ),
+            whb_distance_cutoff=whb_params.get(
+                "h_a_distance_cutoff", ParametersDefault.WHB_DISTANCE_CUTOFF
+            ),
+            whb_angle_cutoff=whb_params.get(
+                "dha_angle_cutoff", ParametersDefault.WHB_ANGLE_CUTOFF
+            ),
+            whb_donor_acceptor_cutoff=whb_params.get(
+                "d_a_distance_cutoff", ParametersDefault.WHB_DA_DISTANCE
             ),
             xb_distance_cutoff=xb_params.get(
                 "x_a_distance_cutoff", ParametersDefault.XB_DISTANCE_CUTOFF
@@ -471,6 +499,12 @@ def load_parameters_from_args(args: argparse.Namespace) -> AnalysisParameters:
             params.hb_angle_cutoff = args.hb_angle
         if args.da_distance != defaults.get("da_distance"):
             params.hb_donor_acceptor_cutoff = args.da_distance
+        if args.whb_distance != defaults.get("whb_distance"):
+            params.whb_distance_cutoff = args.whb_distance
+        if args.whb_angle != defaults.get("whb_angle"):
+            params.whb_angle_cutoff = args.whb_angle
+        if args.whb_da_distance != defaults.get("whb_da_distance"):
+            params.whb_donor_acceptor_cutoff = args.whb_da_distance
         if args.xb_distance != defaults.get("xb_distance"):
             params.xb_distance_cutoff = args.xb_distance
         if args.xb_angle != defaults.get("xb_angle"):
@@ -491,6 +525,9 @@ def load_parameters_from_args(args: argparse.Namespace) -> AnalysisParameters:
             hb_distance_cutoff=args.hb_distance,
             hb_angle_cutoff=args.hb_angle,
             hb_donor_acceptor_cutoff=args.da_distance,
+            whb_distance_cutoff=args.whb_distance,
+            whb_angle_cutoff=args.whb_angle,
+            whb_donor_acceptor_cutoff=args.whb_da_distance,
             xb_distance_cutoff=args.xb_distance,
             xb_angle_cutoff=args.xb_angle,
             pi_distance_cutoff=args.pi_distance,

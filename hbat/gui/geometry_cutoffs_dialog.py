@@ -67,6 +67,9 @@ class GeometryCutoffsDialog:
         self.hb_distance = tk.DoubleVar(value=ParametersDefault.HB_DISTANCE_CUTOFF)
         self.hb_angle = tk.DoubleVar(value=ParametersDefault.HB_ANGLE_CUTOFF)
         self.da_distance = tk.DoubleVar(value=ParametersDefault.HB_DA_DISTANCE)
+        self.whb_distance = tk.DoubleVar(value=ParametersDefault.WHB_DISTANCE_CUTOFF)
+        self.whb_angle = tk.DoubleVar(value=ParametersDefault.WHB_ANGLE_CUTOFF)
+        self.whb_da_distance = tk.DoubleVar(value=ParametersDefault.WHB_DA_DISTANCE)
         self.xb_distance = tk.DoubleVar(value=ParametersDefault.XB_DISTANCE_CUTOFF)
         self.xb_angle = tk.DoubleVar(value=ParametersDefault.XB_ANGLE_CUTOFF)
         self.pi_distance = tk.DoubleVar(value=ParametersDefault.PI_DISTANCE_CUTOFF)
@@ -109,6 +112,7 @@ class GeometryCutoffsDialog:
         # Create parameter groups in order
         self._create_general_parameters(scrollable_frame)
         self._create_hydrogen_bond_parameters(scrollable_frame)
+        self._create_weak_hydrogen_bond_parameters(scrollable_frame)
         self._create_halogen_bond_parameters(scrollable_frame)
         self._create_pi_interaction_parameters(scrollable_frame)
 
@@ -262,6 +266,77 @@ class GeometryCutoffsDialog:
         self.da_distance.trace("w", update_da_dist)
         update_da_dist()
 
+    def _create_weak_hydrogen_bond_parameters(self, parent):
+        """Create weak hydrogen bond parameter controls for carbon donors."""
+        group = ttk.LabelFrame(parent, text="Weak Hydrogen Bond Parameters (Carbon Donors)", padding=10)
+        group.pack(fill=tk.X, padx=10, pady=5)
+
+        # WHB H...A distance
+        ttk.Label(group, text="H...A Distance (Å):").grid(
+            row=0, column=0, sticky=tk.W, pady=2
+        )
+        ttk.Scale(
+            group,
+            from_=ParameterRanges.MIN_DISTANCE,
+            to=ParameterRanges.MAX_DISTANCE,
+            variable=self.whb_distance,
+            orient=tk.HORIZONTAL,
+            length=200,
+        ).grid(row=0, column=1, sticky=tk.W, padx=10, pady=2)
+
+        whb_dist_label = ttk.Label(group, text="")
+        whb_dist_label.grid(row=0, column=2, sticky=tk.W, padx=5, pady=2)
+
+        def update_whb_dist(*args):
+            whb_dist_label.config(text=f"{self.whb_distance.get():.1f}")
+
+        self.whb_distance.trace("w", update_whb_dist)
+        update_whb_dist()
+
+        # WHB D-H...A angle
+        ttk.Label(group, text="D-H...A Angle (°):").grid(
+            row=1, column=0, sticky=tk.W, pady=2
+        )
+        ttk.Scale(
+            group,
+            from_=ParameterRanges.MIN_ANGLE,
+            to=ParameterRanges.MAX_ANGLE,
+            variable=self.whb_angle,
+            orient=tk.HORIZONTAL,
+            length=200,
+        ).grid(row=1, column=1, sticky=tk.W, padx=10, pady=2)
+
+        whb_angle_label = ttk.Label(group, text="")
+        whb_angle_label.grid(row=1, column=2, sticky=tk.W, padx=5, pady=2)
+
+        def update_whb_angle(*args):
+            whb_angle_label.config(text=f"{self.whb_angle.get():.0f}")
+
+        self.whb_angle.trace("w", update_whb_angle)
+        update_whb_angle()
+
+        # WHB D...A distance
+        ttk.Label(group, text="D...A Distance (Å):").grid(
+            row=2, column=0, sticky=tk.W, pady=2
+        )
+        ttk.Scale(
+            group,
+            from_=ParameterRanges.MIN_DISTANCE,
+            to=ParameterRanges.MAX_DISTANCE,
+            variable=self.whb_da_distance,
+            orient=tk.HORIZONTAL,
+            length=200,
+        ).grid(row=2, column=1, sticky=tk.W, padx=10, pady=2)
+
+        whb_da_dist_label = ttk.Label(group, text="")
+        whb_da_dist_label.grid(row=2, column=2, sticky=tk.W, padx=5, pady=2)
+
+        def update_whb_da_dist(*args):
+            whb_da_dist_label.config(text=f"{self.whb_da_distance.get():.1f}")
+
+        self.whb_da_distance.trace("w", update_whb_da_dist)
+        update_whb_da_dist()
+
     def _create_halogen_bond_parameters(self, parent):
         """Create halogen bond parameter controls."""
         group = ttk.LabelFrame(parent, text="Halogen Bond Parameters", padding=10)
@@ -374,6 +449,9 @@ class GeometryCutoffsDialog:
             hb_distance_cutoff=self.hb_distance.get(),
             hb_angle_cutoff=self.hb_angle.get(),
             hb_donor_acceptor_cutoff=self.da_distance.get(),
+            whb_distance_cutoff=self.whb_distance.get(),
+            whb_angle_cutoff=self.whb_angle.get(),
+            whb_donor_acceptor_cutoff=self.whb_da_distance.get(),
             xb_distance_cutoff=self.xb_distance.get(),
             xb_angle_cutoff=self.xb_angle.get(),
             pi_distance_cutoff=self.pi_distance.get(),
@@ -391,6 +469,9 @@ class GeometryCutoffsDialog:
         self.hb_distance.set(params.hb_distance_cutoff)
         self.hb_angle.set(params.hb_angle_cutoff)
         self.da_distance.set(params.hb_donor_acceptor_cutoff)
+        self.whb_distance.set(params.whb_distance_cutoff)
+        self.whb_angle.set(params.whb_angle_cutoff)
+        self.whb_da_distance.set(params.whb_donor_acceptor_cutoff)
         self.xb_distance.set(params.xb_distance_cutoff)
         self.xb_angle.set(params.xb_angle_cutoff)
         self.pi_distance.set(params.pi_distance_cutoff)

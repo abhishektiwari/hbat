@@ -619,7 +619,7 @@ with electron-rich regions on acceptor atoms.
 - I: Iodine (strongest halogen bond donor due to large, polarizable electron cloud)
 """
 
-HYDROGEN_BOND_DONOR_ELEMENTS: List[str] = ["N", "O", "S", "F"]
+HYDROGEN_BOND_DONOR_ELEMENTS: List[str] = ["N", "O", "S", "F", "C"]
 """List[str]: Elements that can act as hydrogen bond donors.
 
 These elements can form hydrogen bonds when covalently bonded to hydrogen atoms

@@ -7,7 +7,7 @@ like files, analysis engines, or complex integrations.
 
 import pytest
 from hbat.cli.main import create_parser, load_parameters_from_args
-from hbat.core.analysis import AnalysisParameters
+from hbat.constants.parameters import AnalysisParameters
 
 
 @pytest.mark.unit
@@ -51,6 +51,21 @@ class TestCLIArgumentParsing:
         assert args.hb_distance == 3.0
         assert args.hb_angle == 130.0
         assert args.mode == "local"
+    
+    def test_weak_hydrogen_bond_arguments(self):
+        """Test weak hydrogen bond parameter arguments."""
+        parser = create_parser()
+        
+        args = parser.parse_args([
+            "test.pdb",
+            "--whb-distance", "3.8",
+            "--whb-angle", "145",
+            "--whb-da-distance", "3.4"
+        ])
+        
+        assert args.whb_distance == 3.8
+        assert args.whb_angle == 145.0
+        assert args.whb_da_distance == 3.4
     
     def test_preset_arguments(self):
         """Test preset-related arguments."""
@@ -191,6 +206,21 @@ class TestParameterConversion:
         assert params.hb_distance_cutoff == 3.2
         assert params.hb_angle_cutoff == 140.0
         assert params.analysis_mode == "local"
+    
+    def test_weak_hydrogen_bond_parameter_loading(self):
+        """Test loading weak hydrogen bond parameters."""
+        parser = create_parser()
+        args = parser.parse_args([
+            "test.pdb",
+            "--whb-distance", "3.8",
+            "--whb-angle", "145",
+            "--whb-da-distance", "3.4"
+        ])
+        
+        params = load_parameters_from_args(args)
+        assert params.whb_distance_cutoff == 3.8
+        assert params.whb_angle_cutoff == 145.0
+        assert params.whb_donor_acceptor_cutoff == 3.4
     
     def test_pdb_fixing_parameter_loading(self):
         """Test loading PDB fixing parameters."""

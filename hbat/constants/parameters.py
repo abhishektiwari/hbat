@@ -12,17 +12,22 @@ class ParametersDefault:
     """Default values for molecular interaction analysis parameters."""
 
     # Hydrogen bond parameters
-    HB_DISTANCE_CUTOFF = 3.5  # Å - H...A distance cutoff
+    HB_DISTANCE_CUTOFF = 2.5  # Å - H...A distance cutoff
     HB_ANGLE_CUTOFF = 120.0  # degrees - D-H...A angle cutoff
-    HB_DA_DISTANCE = 4.0  # Å - Donor-acceptor distance cutoff
+    HB_DA_DISTANCE = 3.5  # Å - Donor-acceptor distance cutoff
+
+    # Weak hydrogen bond parameters (for carbon donors)
+    WHB_DISTANCE_CUTOFF = 3.6  # Å - H...A distance cutoff
+    WHB_ANGLE_CUTOFF = 150.0  # degrees - D-H...A angle cutoff
+    WHB_DA_DISTANCE = 3.5  # Å - Donor-acceptor distance cutoff
 
     # Halogen bond parameters
-    XB_DISTANCE_CUTOFF = 4.0  # Å - X...A distance cutoff
-    XB_ANGLE_CUTOFF = 120.0  # degrees - C-X...A angle cutoff
+    XB_DISTANCE_CUTOFF = 3.5  # Å - X...A distance cutoff <= vdW sum
+    XB_ANGLE_CUTOFF = 150.0  # degrees - C-X...A angle cutoff
 
     # π interaction parameters
-    PI_DISTANCE_CUTOFF = 4.5  # Å - H...π distance cutoff
-    PI_ANGLE_CUTOFF = 90.0  # degrees - D-H...π angle cutoff
+    PI_DISTANCE_CUTOFF = 3.5  # Å - H...π distance cutoff
+    PI_ANGLE_CUTOFF = 110.0  # degrees - D-H...π angle cutoff
 
     # General analysis parameters
     COVALENT_CUTOFF_FACTOR = 0.6  # Covalent bond detection factor (0.0-1.0)
@@ -59,6 +64,12 @@ class AnalysisParameters:
     :type hb_angle_cutoff: float
     :param hb_donor_acceptor_cutoff: Maximum D...A distance for hydrogen bonds (Å)
     :type hb_donor_acceptor_cutoff: float
+    :param whb_distance_cutoff: Maximum H...A distance for weak hydrogen bonds (Å)
+    :type whb_distance_cutoff: float
+    :param whb_angle_cutoff: Minimum D-H...A angle for weak hydrogen bonds (degrees)
+    :type whb_angle_cutoff: float
+    :param whb_donor_acceptor_cutoff: Maximum D...A distance for weak hydrogen bonds (Å)
+    :type whb_donor_acceptor_cutoff: float
     :param xb_distance_cutoff: Maximum X...A distance for halogen bonds (Å)
     :type xb_distance_cutoff: float
     :param xb_angle_cutoff: Minimum C-X...A angle for halogen bonds (degrees)
@@ -92,6 +103,10 @@ class AnalysisParameters:
                  hb_distance_cutoff: float = ParametersDefault.HB_DISTANCE_CUTOFF,
                  hb_angle_cutoff: float = ParametersDefault.HB_ANGLE_CUTOFF,
                  hb_donor_acceptor_cutoff: float = ParametersDefault.HB_DA_DISTANCE,
+                 # Weak hydrogen bond parameters (for carbon donors)
+                 whb_distance_cutoff: float = ParametersDefault.WHB_DISTANCE_CUTOFF,
+                 whb_angle_cutoff: float = ParametersDefault.WHB_ANGLE_CUTOFF,
+                 whb_donor_acceptor_cutoff: float = ParametersDefault.WHB_DA_DISTANCE,
                  # Halogen bond parameters
                  xb_distance_cutoff: float = ParametersDefault.XB_DISTANCE_CUTOFF,
                  xb_angle_cutoff: float = ParametersDefault.XB_ANGLE_CUTOFF,
@@ -118,6 +133,12 @@ class AnalysisParameters:
         :type hb_angle_cutoff: float
         :param hb_donor_acceptor_cutoff: Maximum D...A distance for hydrogen bonds (Å)
         :type hb_donor_acceptor_cutoff: float
+        :param whb_distance_cutoff: Maximum H...A distance for weak hydrogen bonds (Å)
+        :type whb_distance_cutoff: float
+        :param whb_angle_cutoff: Minimum D-H...A angle for weak hydrogen bonds (degrees)
+        :type whb_angle_cutoff: float
+        :param whb_donor_acceptor_cutoff: Maximum D...A distance for weak hydrogen bonds (Å)
+        :type whb_donor_acceptor_cutoff: float
         :param xb_distance_cutoff: Maximum X...A distance for halogen bonds (Å)
         :type xb_distance_cutoff: float
         :param xb_angle_cutoff: Minimum C-X...A angle for halogen bonds (degrees)
@@ -151,6 +172,11 @@ class AnalysisParameters:
         self.hb_distance_cutoff = hb_distance_cutoff
         self.hb_angle_cutoff = hb_angle_cutoff
         self.hb_donor_acceptor_cutoff = hb_donor_acceptor_cutoff
+
+        # Weak hydrogen bond parameters (for carbon donors)
+        self.whb_distance_cutoff = whb_distance_cutoff
+        self.whb_angle_cutoff = whb_angle_cutoff
+        self.whb_donor_acceptor_cutoff = whb_donor_acceptor_cutoff
 
         # Halogen bond parameters
         self.xb_distance_cutoff = xb_distance_cutoff
@@ -188,6 +214,10 @@ class AnalysisParameters:
         params.append(f"hb_distance_cutoff={self.hb_distance_cutoff}")
         params.append(f"hb_angle_cutoff={self.hb_angle_cutoff}")
         params.append(f"hb_donor_acceptor_cutoff={self.hb_donor_acceptor_cutoff}")
+        # Weak hydrogen bond parameters
+        params.append(f"whb_distance_cutoff={self.whb_distance_cutoff}")
+        params.append(f"whb_angle_cutoff={self.whb_angle_cutoff}")
+        params.append(f"whb_donor_acceptor_cutoff={self.whb_donor_acceptor_cutoff}")
         # Halogen bond parameters
         params.append(f"xb_distance_cutoff={self.xb_distance_cutoff}")
         params.append(f"xb_angle_cutoff={self.xb_angle_cutoff}")
@@ -223,6 +253,9 @@ class AnalysisParameters:
             self.hb_distance_cutoff == other.hb_distance_cutoff and
             self.hb_angle_cutoff == other.hb_angle_cutoff and
             self.hb_donor_acceptor_cutoff == other.hb_donor_acceptor_cutoff and
+            self.whb_distance_cutoff == other.whb_distance_cutoff and
+            self.whb_angle_cutoff == other.whb_angle_cutoff and
+            self.whb_donor_acceptor_cutoff == other.whb_donor_acceptor_cutoff and
             self.xb_distance_cutoff == other.xb_distance_cutoff and
             self.xb_angle_cutoff == other.xb_angle_cutoff and
             self.pi_distance_cutoff == other.pi_distance_cutoff and
@@ -248,6 +281,9 @@ class AnalysisParameters:
             self.hb_distance_cutoff,
             self.hb_angle_cutoff,
             self.hb_donor_acceptor_cutoff,
+            self.whb_distance_cutoff,
+            self.whb_angle_cutoff,
+            self.whb_donor_acceptor_cutoff,
             self.xb_distance_cutoff,
             self.xb_angle_cutoff,
             self.pi_distance_cutoff,
@@ -274,6 +310,10 @@ class AnalysisParameters:
             'hb_distance_cutoff': self.hb_distance_cutoff,
             'hb_angle_cutoff': self.hb_angle_cutoff,
             'hb_donor_acceptor_cutoff': self.hb_donor_acceptor_cutoff,
+            # Weak hydrogen bond parameters
+            'whb_distance_cutoff': self.whb_distance_cutoff,
+            'whb_angle_cutoff': self.whb_angle_cutoff,
+            'whb_donor_acceptor_cutoff': self.whb_donor_acceptor_cutoff,
             # Halogen bond parameters
             'xb_distance_cutoff': self.xb_distance_cutoff,
             'xb_angle_cutoff': self.xb_angle_cutoff,
@@ -337,6 +377,24 @@ class AnalysisParameters:
 
         if not (
             ParameterRanges.MIN_DISTANCE
+            <= self.whb_distance_cutoff
+            <= ParameterRanges.MAX_DISTANCE
+        ):
+            errors.append(
+                f"Weak hydrogen bond distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
+            )
+
+        if not (
+            ParameterRanges.MIN_DISTANCE
+            <= self.whb_donor_acceptor_cutoff
+            <= ParameterRanges.MAX_DISTANCE
+        ):
+            errors.append(
+                f"Weak hydrogen bond donor-acceptor distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
+            )
+
+        if not (
+            ParameterRanges.MIN_DISTANCE
             <= self.xb_distance_cutoff
             <= ParameterRanges.MAX_DISTANCE
         ):
@@ -361,6 +419,15 @@ class AnalysisParameters:
         ):
             errors.append(
                 f"Hydrogen bond angle cutoff must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
+            )
+
+        if not (
+            ParameterRanges.MIN_ANGLE
+            <= self.whb_angle_cutoff
+            <= ParameterRanges.MAX_ANGLE
+        ):
+            errors.append(
+                f"Weak hydrogen bond angle cutoff must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
             )
 
         if not (

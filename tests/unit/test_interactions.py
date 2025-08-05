@@ -205,6 +205,77 @@ class TestHydrogenBondString:
 
 
 @pytest.mark.unit
+class TestWeakHydrogenBondsWithCarbonDonors:
+    """Test weak hydrogen bonds with carbon donors."""
+    
+    @pytest.fixture
+    def carbon_donor_atoms(self):
+        """Create sample atoms for testing weak hydrogen bonds with carbon donors."""
+        carbon_donor = Atom(
+            serial=1, name="CA", alt_loc="", res_name="GLY", chain_id="A",
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="C", charge="", record_type="ATOM"
+        )
+        
+        hydrogen = Atom(
+            serial=2, name="HA", alt_loc="", res_name="GLY", chain_id="A",
+            res_seq=1, i_code="", coords=NPVec3D(1, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="H", charge="", record_type="ATOM"
+        )
+        
+        acceptor = Atom(
+            serial=3, name="O", alt_loc="", res_name="ALA", chain_id="A",
+            res_seq=2, i_code="", coords=NPVec3D(4, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="O", charge="", record_type="ATOM"
+        )
+        
+        return carbon_donor, hydrogen, acceptor
+    
+    def test_weak_hydrogen_bond_creation_with_carbon_donor(self, carbon_donor_atoms):
+        """Test creation of weak hydrogen bond with carbon donor."""
+        carbon_donor, hydrogen, acceptor = carbon_donor_atoms
+        
+        # Create a weak hydrogen bond typical of C-H...O interactions
+        whb = HydrogenBond(
+            _donor=carbon_donor,
+            hydrogen=hydrogen,
+            _acceptor=acceptor,
+            distance=3.6,  # WHB distance cutoff
+            angle=math.radians(150.0),  # WHB angle cutoff
+            _donor_acceptor_distance=3.5,  # WHB D-A distance cutoff
+            bond_type="C-H...O",
+            _donor_residue="A1GLY",
+            _acceptor_residue="A2ALA"
+        )
+        
+        assert whb.donor == carbon_donor
+        assert whb.donor.element == "C"  # Verify it's a carbon donor
+        assert whb.hydrogen == hydrogen
+        assert whb.acceptor == acceptor
+        assert whb.distance == 3.6
+        assert abs(whb.angle - math.radians(150.0)) < 1e-10
+        assert whb.donor_acceptor_distance == 3.5
+        assert whb.bond_type == "C-H...O"
+    
+    def test_weak_hydrogen_bond_longer_distances(self, carbon_donor_atoms):
+        """Test that weak hydrogen bonds can have longer distances than regular H-bonds."""
+        carbon_donor, hydrogen, acceptor = carbon_donor_atoms
+        
+        # Test with distances that would be too long for regular H-bonds but acceptable for WHB
+        whb = HydrogenBond(
+            _donor=carbon_donor, hydrogen=hydrogen, _acceptor=acceptor,
+            distance=3.8,  # Longer than typical HB_DISTANCE_CUTOFF (2.5)
+            angle=math.radians(140.0),
+            _donor_acceptor_distance=4.0,  # Longer than typical HB_DA_DISTANCE (3.5)
+            bond_type="C-H...O", _donor_residue="A1GLY", _acceptor_residue="A2ALA"
+        )
+        
+        assert whb.distance == 3.8
+        assert whb.donor_acceptor_distance == 4.0
+        assert whb.donor.element == "C"
+
+
+@pytest.mark.unit
 class TestHalogenBondCreation:
     """Test halogen bond creation and properties."""
     

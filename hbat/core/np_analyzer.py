@@ -300,8 +300,21 @@ class NPMolecularInteractionAnalyzer:
         # Compute distance matrix between hydrogens (from donors) and acceptors
         distances = compute_distance_matrix(h_coords, a_coords)
 
-        # Find pairs within distance cutoff
-        h_indices, a_indices = np.where(distances <= self.parameters.hb_distance_cutoff)
+        # Create separate distance masks for regular HB and WHB
+        regular_hb_mask = np.zeros_like(distances, dtype=bool)
+        weak_hb_mask = np.zeros_like(distances, dtype=bool)
+        
+        for h_idx, (donor_atom, _, _, _) in enumerate(donors):
+            if donor_atom.element == "C":
+                # Use WHB cutoffs for carbon donors
+                weak_hb_mask[h_idx, :] = distances[h_idx, :] <= self.parameters.whb_distance_cutoff
+            else:
+                # Use regular HB cutoffs for other donors
+                regular_hb_mask[h_idx, :] = distances[h_idx, :] <= self.parameters.hb_distance_cutoff
+        
+        # Combine masks to find all valid pairs
+        combined_mask = regular_hb_mask | weak_hb_mask
+        h_indices, a_indices = np.where(combined_mask)
 
         # Process pairs in chunks for large datasets
         total_pairs = len(h_indices)
@@ -353,18 +366,22 @@ class NPMolecularInteractionAnalyzer:
                 angle_rad = batch_angle_between(donor_vec, h_vec, a_vec)
                 angle_deg = math.degrees(float(angle_rad))
 
+                # Determine if this is a weak hydrogen bond (carbon donor)
+                is_weak_hb = donor_atom.element == "C"
+                
+                # Use appropriate angle cutoff
+                angle_cutoff = self.parameters.whb_angle_cutoff if is_weak_hb else self.parameters.hb_angle_cutoff
+                da_distance_cutoff = self.parameters.whb_donor_acceptor_cutoff if is_weak_hb else self.parameters.hb_donor_acceptor_cutoff
+
                 # Check angle cutoff
-                if angle_deg >= self.parameters.hb_angle_cutoff:
+                if angle_deg >= angle_cutoff:
                     distance = float(distances[h_idx, a_idx])
                     donor_acceptor_distance = donor_atom.coords.distance_to(
                         a_atom.coords
                     )
 
-                    # Check donor-acceptor distance cutoff (like original analyzer)
-                    if (
-                        donor_acceptor_distance
-                        > self.parameters.hb_donor_acceptor_cutoff
-                    ):
+                    # Check donor-acceptor distance cutoff
+                    if donor_acceptor_distance > da_distance_cutoff:
                         continue
 
                     bond_type = f"{donor_atom.element}-H...{a_atom.element}"
