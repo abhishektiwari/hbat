@@ -172,6 +172,93 @@ Examples:
         default=ParametersDefault.PI_ANGLE_CUTOFF,
         help=f"π interaction D-H...π angle cutoff in degrees (default: {ParametersDefault.PI_ANGLE_CUTOFF})",
     )
+    
+    # π interaction subtype parameters
+    param_group.add_argument(
+        "--pi-ccl-distance",
+        type=float,
+        default=ParametersDefault.PI_CCL_DISTANCE_CUTOFF,
+        help=f"C-Cl...π interaction distance cutoff in Å (default: {ParametersDefault.PI_CCL_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-ccl-angle",
+        type=float,
+        default=ParametersDefault.PI_CCL_ANGLE_CUTOFF,
+        help=f"C-Cl...π interaction angle cutoff in degrees (default: {ParametersDefault.PI_CCL_ANGLE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-cbr-distance",
+        type=float,
+        default=ParametersDefault.PI_CBR_DISTANCE_CUTOFF,
+        help=f"C-Br...π interaction distance cutoff in Å (default: {ParametersDefault.PI_CBR_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-cbr-angle",
+        type=float,
+        default=ParametersDefault.PI_CBR_ANGLE_CUTOFF,
+        help=f"C-Br...π interaction angle cutoff in degrees (default: {ParametersDefault.PI_CBR_ANGLE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-ci-distance",
+        type=float,
+        default=ParametersDefault.PI_CI_DISTANCE_CUTOFF,
+        help=f"C-I...π interaction distance cutoff in Å (default: {ParametersDefault.PI_CI_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-ci-angle",
+        type=float,
+        default=ParametersDefault.PI_CI_ANGLE_CUTOFF,
+        help=f"C-I...π interaction angle cutoff in degrees (default: {ParametersDefault.PI_CI_ANGLE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-ch-distance",
+        type=float,
+        default=ParametersDefault.PI_CH_DISTANCE_CUTOFF,
+        help=f"C-H...π interaction distance cutoff in Å (default: {ParametersDefault.PI_CH_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-ch-angle",
+        type=float,
+        default=ParametersDefault.PI_CH_ANGLE_CUTOFF,
+        help=f"C-H...π interaction angle cutoff in degrees (default: {ParametersDefault.PI_CH_ANGLE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-nh-distance",
+        type=float,
+        default=ParametersDefault.PI_NH_DISTANCE_CUTOFF,
+        help=f"N-H...π interaction distance cutoff in Å (default: {ParametersDefault.PI_NH_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-nh-angle",
+        type=float,
+        default=ParametersDefault.PI_NH_ANGLE_CUTOFF,
+        help=f"N-H...π interaction angle cutoff in degrees (default: {ParametersDefault.PI_NH_ANGLE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-oh-distance",
+        type=float,
+        default=ParametersDefault.PI_OH_DISTANCE_CUTOFF,
+        help=f"O-H...π interaction distance cutoff in Å (default: {ParametersDefault.PI_OH_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-oh-angle",
+        type=float,
+        default=ParametersDefault.PI_OH_ANGLE_CUTOFF,
+        help=f"O-H...π interaction angle cutoff in degrees (default: {ParametersDefault.PI_OH_ANGLE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-sh-distance",
+        type=float,
+        default=ParametersDefault.PI_SH_DISTANCE_CUTOFF,
+        help=f"S-H...π interaction distance cutoff in Å (default: {ParametersDefault.PI_SH_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-sh-angle",
+        type=float,
+        default=ParametersDefault.PI_SH_ANGLE_CUTOFF,
+        help=f"S-H...π interaction angle cutoff in degrees (default: {ParametersDefault.PI_SH_ANGLE_CUTOFF})",
+    )
+    
     param_group.add_argument(
         "--covalent-factor",
         type=float,
@@ -392,6 +479,49 @@ def load_preset_file(preset_path: str) -> AnalysisParameters:
             pi_angle_cutoff=pi_params.get(
                 "dh_pi_angle_cutoff", ParametersDefault.PI_ANGLE_CUTOFF
             ),
+            # π interaction subtype parameters
+            pi_ccl_distance_cutoff=pi_params.get(
+                "ccl_pi_distance_cutoff", ParametersDefault.PI_CCL_DISTANCE_CUTOFF
+            ),
+            pi_ccl_angle_cutoff=pi_params.get(
+                "ccl_pi_angle_cutoff", ParametersDefault.PI_CCL_ANGLE_CUTOFF
+            ),
+            pi_cbr_distance_cutoff=pi_params.get(
+                "cbr_pi_distance_cutoff", ParametersDefault.PI_CBR_DISTANCE_CUTOFF
+            ),
+            pi_cbr_angle_cutoff=pi_params.get(
+                "cbr_pi_angle_cutoff", ParametersDefault.PI_CBR_ANGLE_CUTOFF
+            ),
+            pi_ci_distance_cutoff=pi_params.get(
+                "ci_pi_distance_cutoff", ParametersDefault.PI_CI_DISTANCE_CUTOFF
+            ),
+            pi_ci_angle_cutoff=pi_params.get(
+                "ci_pi_angle_cutoff", ParametersDefault.PI_CI_ANGLE_CUTOFF
+            ),
+            pi_ch_distance_cutoff=pi_params.get(
+                "ch_pi_distance_cutoff", ParametersDefault.PI_CH_DISTANCE_CUTOFF
+            ),
+            pi_ch_angle_cutoff=pi_params.get(
+                "ch_pi_angle_cutoff", ParametersDefault.PI_CH_ANGLE_CUTOFF
+            ),
+            pi_nh_distance_cutoff=pi_params.get(
+                "nh_pi_distance_cutoff", ParametersDefault.PI_NH_DISTANCE_CUTOFF
+            ),
+            pi_nh_angle_cutoff=pi_params.get(
+                "nh_pi_angle_cutoff", ParametersDefault.PI_NH_ANGLE_CUTOFF
+            ),
+            pi_oh_distance_cutoff=pi_params.get(
+                "oh_pi_distance_cutoff", ParametersDefault.PI_OH_DISTANCE_CUTOFF
+            ),
+            pi_oh_angle_cutoff=pi_params.get(
+                "oh_pi_angle_cutoff", ParametersDefault.PI_OH_ANGLE_CUTOFF
+            ),
+            pi_sh_distance_cutoff=pi_params.get(
+                "sh_pi_distance_cutoff", ParametersDefault.PI_SH_DISTANCE_CUTOFF
+            ),
+            pi_sh_angle_cutoff=pi_params.get(
+                "sh_pi_angle_cutoff", ParametersDefault.PI_SH_ANGLE_CUTOFF
+            ),
             covalent_cutoff_factor=general_params.get(
                 "covalent_cutoff_factor", ParametersDefault.COVALENT_CUTOFF_FACTOR
             ),
@@ -513,6 +643,37 @@ def load_parameters_from_args(args: argparse.Namespace) -> AnalysisParameters:
             params.pi_distance_cutoff = args.pi_distance
         if args.pi_angle != defaults.get("pi_angle"):
             params.pi_angle_cutoff = args.pi_angle
+        
+        # π interaction subtype parameter overrides
+        if args.pi_ccl_distance != defaults.get("pi_ccl_distance"):
+            params.pi_ccl_distance_cutoff = args.pi_ccl_distance
+        if args.pi_ccl_angle != defaults.get("pi_ccl_angle"):
+            params.pi_ccl_angle_cutoff = args.pi_ccl_angle
+        if args.pi_cbr_distance != defaults.get("pi_cbr_distance"):
+            params.pi_cbr_distance_cutoff = args.pi_cbr_distance
+        if args.pi_cbr_angle != defaults.get("pi_cbr_angle"):
+            params.pi_cbr_angle_cutoff = args.pi_cbr_angle
+        if args.pi_ci_distance != defaults.get("pi_ci_distance"):
+            params.pi_ci_distance_cutoff = args.pi_ci_distance
+        if args.pi_ci_angle != defaults.get("pi_ci_angle"):
+            params.pi_ci_angle_cutoff = args.pi_ci_angle
+        if args.pi_ch_distance != defaults.get("pi_ch_distance"):
+            params.pi_ch_distance_cutoff = args.pi_ch_distance
+        if args.pi_ch_angle != defaults.get("pi_ch_angle"):
+            params.pi_ch_angle_cutoff = args.pi_ch_angle
+        if args.pi_nh_distance != defaults.get("pi_nh_distance"):
+            params.pi_nh_distance_cutoff = args.pi_nh_distance
+        if args.pi_nh_angle != defaults.get("pi_nh_angle"):
+            params.pi_nh_angle_cutoff = args.pi_nh_angle
+        if args.pi_oh_distance != defaults.get("pi_oh_distance"):
+            params.pi_oh_distance_cutoff = args.pi_oh_distance
+        if args.pi_oh_angle != defaults.get("pi_oh_angle"):
+            params.pi_oh_angle_cutoff = args.pi_oh_angle
+        if args.pi_sh_distance != defaults.get("pi_sh_distance"):
+            params.pi_sh_distance_cutoff = args.pi_sh_distance
+        if args.pi_sh_angle != defaults.get("pi_sh_angle"):
+            params.pi_sh_angle_cutoff = args.pi_sh_angle
+        
         if args.covalent_factor != defaults.get("covalent_factor"):
             params.covalent_cutoff_factor = args.covalent_factor
         if args.mode != defaults.get("mode"):
@@ -532,6 +693,21 @@ def load_parameters_from_args(args: argparse.Namespace) -> AnalysisParameters:
             xb_angle_cutoff=args.xb_angle,
             pi_distance_cutoff=args.pi_distance,
             pi_angle_cutoff=args.pi_angle,
+            # π interaction subtype parameters
+            pi_ccl_distance_cutoff=args.pi_ccl_distance,
+            pi_ccl_angle_cutoff=args.pi_ccl_angle,
+            pi_cbr_distance_cutoff=args.pi_cbr_distance,
+            pi_cbr_angle_cutoff=args.pi_cbr_angle,
+            pi_ci_distance_cutoff=args.pi_ci_distance,
+            pi_ci_angle_cutoff=args.pi_ci_angle,
+            pi_ch_distance_cutoff=args.pi_ch_distance,
+            pi_ch_angle_cutoff=args.pi_ch_angle,
+            pi_nh_distance_cutoff=args.pi_nh_distance,
+            pi_nh_angle_cutoff=args.pi_nh_angle,
+            pi_oh_distance_cutoff=args.pi_oh_distance,
+            pi_oh_angle_cutoff=args.pi_oh_angle,
+            pi_sh_distance_cutoff=args.pi_sh_distance,
+            pi_sh_angle_cutoff=args.pi_sh_angle,
             covalent_cutoff_factor=args.covalent_factor,
             analysis_mode=args.mode,
             # PDB fixing parameters

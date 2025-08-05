@@ -26,8 +26,27 @@ class ParametersDefault:
     XB_ANGLE_CUTOFF = 150.0  # degrees - C-X...A angle cutoff
 
     # π interaction parameters
-    PI_DISTANCE_CUTOFF = 3.5  # Å - H...π distance cutoff
-    PI_ANGLE_CUTOFF = 110.0  # degrees - D-H...π angle cutoff
+    PI_DISTANCE_CUTOFF = 3.5  # Å - H...π distance cutoff (legacy, kept for compatibility)
+    PI_ANGLE_CUTOFF = 110.0  # degrees - D-H...π angle cutoff (legacy, kept for compatibility)
+
+    # π interaction subtype parameters
+    # Halogen-π interactions
+    PI_CCL_DISTANCE_CUTOFF = 3.5  # Å - C-Cl...π distance cutoff
+    PI_CCL_ANGLE_CUTOFF = 145  # degrees - C-Cl...π angle cutoff
+    PI_CBR_DISTANCE_CUTOFF = 3.5  # Å - C-Br...π distance cutoff
+    PI_CBR_ANGLE_CUTOFF = 155  # degrees - C-Br...π angle cutoff
+    PI_CI_DISTANCE_CUTOFF = 3.6  # Å - C-I...π distance cutoff
+    PI_CI_ANGLE_CUTOFF = 165.0  # degrees - C-I...π angle cutoff
+    
+    # Hydrogen-π interactions
+    PI_CH_DISTANCE_CUTOFF = 3.5  # Å - C-H...π distance cutoff
+    PI_CH_ANGLE_CUTOFF = 110.0  # degrees - C-H...π angle cutoff
+    PI_NH_DISTANCE_CUTOFF = 3.2  # Å - N-H...π distance cutoff
+    PI_NH_ANGLE_CUTOFF = 115.0  # degrees - N-H...π angle cutoff
+    PI_OH_DISTANCE_CUTOFF = 3.0  # Å - O-H...π distance cutoff
+    PI_OH_ANGLE_CUTOFF = 115.0  # degrees - O-H...π angle cutoff
+    PI_SH_DISTANCE_CUTOFF = 3.8  # Å - S-H...π distance cutoff
+    PI_SH_ANGLE_CUTOFF = 105.0  # degrees - S-H...π angle cutoff
 
     # General analysis parameters
     COVALENT_CUTOFF_FACTOR = 0.6  # Covalent bond detection factor (0.0-1.0)
@@ -74,10 +93,38 @@ class AnalysisParameters:
     :type xb_distance_cutoff: float
     :param xb_angle_cutoff: Minimum C-X...A angle for halogen bonds (degrees)
     :type xb_angle_cutoff: float
-    :param pi_distance_cutoff: Maximum H...π distance for π interactions (Å)
+    :param pi_distance_cutoff: Maximum H...π distance for π interactions (Å, legacy)
     :type pi_distance_cutoff: float
-    :param pi_angle_cutoff: Minimum D-H...π angle for π interactions (degrees)
+    :param pi_angle_cutoff: Minimum D-H...π angle for π interactions (degrees, legacy)
     :type pi_angle_cutoff: float
+    :param pi_ccl_distance_cutoff: Maximum C-Cl...π distance for halogen-π interactions (Å)
+    :type pi_ccl_distance_cutoff: float
+    :param pi_ccl_angle_cutoff: Minimum C-Cl...π angle for halogen-π interactions (degrees)
+    :type pi_ccl_angle_cutoff: float
+    :param pi_cbr_distance_cutoff: Maximum C-Br...π distance for halogen-π interactions (Å)
+    :type pi_cbr_distance_cutoff: float
+    :param pi_cbr_angle_cutoff: Minimum C-Br...π angle for halogen-π interactions (degrees)
+    :type pi_cbr_angle_cutoff: float
+    :param pi_ci_distance_cutoff: Maximum C-I...π distance for halogen-π interactions (Å)
+    :type pi_ci_distance_cutoff: float
+    :param pi_ci_angle_cutoff: Minimum C-I...π angle for halogen-π interactions (degrees)
+    :type pi_ci_angle_cutoff: float
+    :param pi_ch_distance_cutoff: Maximum C-H...π distance for hydrogen-π interactions (Å)
+    :type pi_ch_distance_cutoff: float
+    :param pi_ch_angle_cutoff: Minimum C-H...π angle for hydrogen-π interactions (degrees)
+    :type pi_ch_angle_cutoff: float
+    :param pi_nh_distance_cutoff: Maximum N-H...π distance for hydrogen-π interactions (Å)
+    :type pi_nh_distance_cutoff: float
+    :param pi_nh_angle_cutoff: Minimum N-H...π angle for hydrogen-π interactions (degrees)
+    :type pi_nh_angle_cutoff: float
+    :param pi_oh_distance_cutoff: Maximum O-H...π distance for hydrogen-π interactions (Å)
+    :type pi_oh_distance_cutoff: float
+    :param pi_oh_angle_cutoff: Minimum O-H...π angle for hydrogen-π interactions (degrees)
+    :type pi_oh_angle_cutoff: float
+    :param pi_sh_distance_cutoff: Maximum S-H...π distance for hydrogen-π interactions (Å)
+    :type pi_sh_distance_cutoff: float
+    :param pi_sh_angle_cutoff: Minimum S-H...π angle for hydrogen-π interactions (degrees)
+    :type pi_sh_angle_cutoff: float
     :param covalent_cutoff_factor: Factor for covalent bond detection
     :type covalent_cutoff_factor: float
     :param analysis_mode: Analysis mode ('local' or 'global')
@@ -110,9 +157,24 @@ class AnalysisParameters:
                  # Halogen bond parameters
                  xb_distance_cutoff: float = ParametersDefault.XB_DISTANCE_CUTOFF,
                  xb_angle_cutoff: float = ParametersDefault.XB_ANGLE_CUTOFF,
-                 # Pi interaction parameters
+                 # Pi interaction parameters (legacy)
                  pi_distance_cutoff: float = ParametersDefault.PI_DISTANCE_CUTOFF,
                  pi_angle_cutoff: float = ParametersDefault.PI_ANGLE_CUTOFF,
+                 # Pi interaction subtype parameters
+                 pi_ccl_distance_cutoff: float = ParametersDefault.PI_CCL_DISTANCE_CUTOFF,
+                 pi_ccl_angle_cutoff: float = ParametersDefault.PI_CCL_ANGLE_CUTOFF,
+                 pi_cbr_distance_cutoff: float = ParametersDefault.PI_CBR_DISTANCE_CUTOFF,
+                 pi_cbr_angle_cutoff: float = ParametersDefault.PI_CBR_ANGLE_CUTOFF,
+                 pi_ci_distance_cutoff: float = ParametersDefault.PI_CI_DISTANCE_CUTOFF,
+                 pi_ci_angle_cutoff: float = ParametersDefault.PI_CI_ANGLE_CUTOFF,
+                 pi_ch_distance_cutoff: float = ParametersDefault.PI_CH_DISTANCE_CUTOFF,
+                 pi_ch_angle_cutoff: float = ParametersDefault.PI_CH_ANGLE_CUTOFF,
+                 pi_nh_distance_cutoff: float = ParametersDefault.PI_NH_DISTANCE_CUTOFF,
+                 pi_nh_angle_cutoff: float = ParametersDefault.PI_NH_ANGLE_CUTOFF,
+                 pi_oh_distance_cutoff: float = ParametersDefault.PI_OH_DISTANCE_CUTOFF,
+                 pi_oh_angle_cutoff: float = ParametersDefault.PI_OH_ANGLE_CUTOFF,
+                 pi_sh_distance_cutoff: float = ParametersDefault.PI_SH_DISTANCE_CUTOFF,
+                 pi_sh_angle_cutoff: float = ParametersDefault.PI_SH_ANGLE_CUTOFF,
                  # General parameters
                  covalent_cutoff_factor: float = ParametersDefault.COVALENT_CUTOFF_FACTOR,
                  analysis_mode: str = ParametersDefault.ANALYSIS_MODE,
@@ -182,9 +244,25 @@ class AnalysisParameters:
         self.xb_distance_cutoff = xb_distance_cutoff
         self.xb_angle_cutoff = xb_angle_cutoff
 
-        # π interaction parameters
+        # π interaction parameters (legacy)
         self.pi_distance_cutoff = pi_distance_cutoff
         self.pi_angle_cutoff = pi_angle_cutoff
+
+        # π interaction subtype parameters
+        self.pi_ccl_distance_cutoff = pi_ccl_distance_cutoff
+        self.pi_ccl_angle_cutoff = pi_ccl_angle_cutoff
+        self.pi_cbr_distance_cutoff = pi_cbr_distance_cutoff
+        self.pi_cbr_angle_cutoff = pi_cbr_angle_cutoff
+        self.pi_ci_distance_cutoff = pi_ci_distance_cutoff
+        self.pi_ci_angle_cutoff = pi_ci_angle_cutoff
+        self.pi_ch_distance_cutoff = pi_ch_distance_cutoff
+        self.pi_ch_angle_cutoff = pi_ch_angle_cutoff
+        self.pi_nh_distance_cutoff = pi_nh_distance_cutoff
+        self.pi_nh_angle_cutoff = pi_nh_angle_cutoff
+        self.pi_oh_distance_cutoff = pi_oh_distance_cutoff
+        self.pi_oh_angle_cutoff = pi_oh_angle_cutoff
+        self.pi_sh_distance_cutoff = pi_sh_distance_cutoff
+        self.pi_sh_angle_cutoff = pi_sh_angle_cutoff
 
         # General parameters
         self.covalent_cutoff_factor = covalent_cutoff_factor
@@ -221,9 +299,24 @@ class AnalysisParameters:
         # Halogen bond parameters
         params.append(f"xb_distance_cutoff={self.xb_distance_cutoff}")
         params.append(f"xb_angle_cutoff={self.xb_angle_cutoff}")
-        # π interaction parameters
+        # π interaction parameters (legacy)
         params.append(f"pi_distance_cutoff={self.pi_distance_cutoff}")
         params.append(f"pi_angle_cutoff={self.pi_angle_cutoff}")
+        # π interaction subtype parameters
+        params.append(f"pi_ccl_distance_cutoff={self.pi_ccl_distance_cutoff}")
+        params.append(f"pi_ccl_angle_cutoff={self.pi_ccl_angle_cutoff}")
+        params.append(f"pi_cbr_distance_cutoff={self.pi_cbr_distance_cutoff}")
+        params.append(f"pi_cbr_angle_cutoff={self.pi_cbr_angle_cutoff}")
+        params.append(f"pi_ci_distance_cutoff={self.pi_ci_distance_cutoff}")
+        params.append(f"pi_ci_angle_cutoff={self.pi_ci_angle_cutoff}")
+        params.append(f"pi_ch_distance_cutoff={self.pi_ch_distance_cutoff}")
+        params.append(f"pi_ch_angle_cutoff={self.pi_ch_angle_cutoff}")
+        params.append(f"pi_nh_distance_cutoff={self.pi_nh_distance_cutoff}")
+        params.append(f"pi_nh_angle_cutoff={self.pi_nh_angle_cutoff}")
+        params.append(f"pi_oh_distance_cutoff={self.pi_oh_distance_cutoff}")
+        params.append(f"pi_oh_angle_cutoff={self.pi_oh_angle_cutoff}")
+        params.append(f"pi_sh_distance_cutoff={self.pi_sh_distance_cutoff}")
+        params.append(f"pi_sh_angle_cutoff={self.pi_sh_angle_cutoff}")
         # General parameters
         params.append(f"covalent_cutoff_factor={self.covalent_cutoff_factor}")
         params.append(f"analysis_mode='{self.analysis_mode}'")
@@ -260,6 +353,20 @@ class AnalysisParameters:
             self.xb_angle_cutoff == other.xb_angle_cutoff and
             self.pi_distance_cutoff == other.pi_distance_cutoff and
             self.pi_angle_cutoff == other.pi_angle_cutoff and
+            self.pi_ccl_distance_cutoff == other.pi_ccl_distance_cutoff and
+            self.pi_ccl_angle_cutoff == other.pi_ccl_angle_cutoff and
+            self.pi_cbr_distance_cutoff == other.pi_cbr_distance_cutoff and
+            self.pi_cbr_angle_cutoff == other.pi_cbr_angle_cutoff and
+            self.pi_ci_distance_cutoff == other.pi_ci_distance_cutoff and
+            self.pi_ci_angle_cutoff == other.pi_ci_angle_cutoff and
+            self.pi_ch_distance_cutoff == other.pi_ch_distance_cutoff and
+            self.pi_ch_angle_cutoff == other.pi_ch_angle_cutoff and
+            self.pi_nh_distance_cutoff == other.pi_nh_distance_cutoff and
+            self.pi_nh_angle_cutoff == other.pi_nh_angle_cutoff and
+            self.pi_oh_distance_cutoff == other.pi_oh_distance_cutoff and
+            self.pi_oh_angle_cutoff == other.pi_oh_angle_cutoff and
+            self.pi_sh_distance_cutoff == other.pi_sh_distance_cutoff and
+            self.pi_sh_angle_cutoff == other.pi_sh_angle_cutoff and
             self.covalent_cutoff_factor == other.covalent_cutoff_factor and
             self.analysis_mode == other.analysis_mode and
             self.fix_pdb_enabled == other.fix_pdb_enabled and
@@ -288,6 +395,20 @@ class AnalysisParameters:
             self.xb_angle_cutoff,
             self.pi_distance_cutoff,
             self.pi_angle_cutoff,
+            self.pi_ccl_distance_cutoff,
+            self.pi_ccl_angle_cutoff,
+            self.pi_cbr_distance_cutoff,
+            self.pi_cbr_angle_cutoff,
+            self.pi_ci_distance_cutoff,
+            self.pi_ci_angle_cutoff,
+            self.pi_ch_distance_cutoff,
+            self.pi_ch_angle_cutoff,
+            self.pi_nh_distance_cutoff,
+            self.pi_nh_angle_cutoff,
+            self.pi_oh_distance_cutoff,
+            self.pi_oh_angle_cutoff,
+            self.pi_sh_distance_cutoff,
+            self.pi_sh_angle_cutoff,
             self.covalent_cutoff_factor,
             self.analysis_mode,
             self.fix_pdb_enabled,
@@ -320,6 +441,21 @@ class AnalysisParameters:
             # π interaction parameters
             'pi_distance_cutoff': self.pi_distance_cutoff,
             'pi_angle_cutoff': self.pi_angle_cutoff,
+            # π interaction subtype parameters
+            'pi_ccl_distance_cutoff': self.pi_ccl_distance_cutoff,
+            'pi_ccl_angle_cutoff': self.pi_ccl_angle_cutoff,
+            'pi_cbr_distance_cutoff': self.pi_cbr_distance_cutoff,
+            'pi_cbr_angle_cutoff': self.pi_cbr_angle_cutoff,
+            'pi_ci_distance_cutoff': self.pi_ci_distance_cutoff,
+            'pi_ci_angle_cutoff': self.pi_ci_angle_cutoff,
+            'pi_ch_distance_cutoff': self.pi_ch_distance_cutoff,
+            'pi_ch_angle_cutoff': self.pi_ch_angle_cutoff,
+            'pi_nh_distance_cutoff': self.pi_nh_distance_cutoff,
+            'pi_nh_angle_cutoff': self.pi_nh_angle_cutoff,
+            'pi_oh_distance_cutoff': self.pi_oh_distance_cutoff,
+            'pi_oh_angle_cutoff': self.pi_oh_angle_cutoff,
+            'pi_sh_distance_cutoff': self.pi_sh_distance_cutoff,
+            'pi_sh_angle_cutoff': self.pi_sh_angle_cutoff,
             # General parameters
             'covalent_cutoff_factor': self.covalent_cutoff_factor,
             'analysis_mode': self.analysis_mode,
@@ -411,6 +547,28 @@ class AnalysisParameters:
                 f"π interaction distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
             )
 
+        # π interaction subtype distance validation
+        pi_subtypes = [
+            ('pi_ccl_distance_cutoff', 'C-Cl...π'),
+            ('pi_cbr_distance_cutoff', 'C-Br...π'),
+            ('pi_ci_distance_cutoff', 'C-I...π'),
+            ('pi_ch_distance_cutoff', 'C-H...π'),
+            ('pi_nh_distance_cutoff', 'N-H...π'),
+            ('pi_oh_distance_cutoff', 'O-H...π'),
+            ('pi_sh_distance_cutoff', 'S-H...π')
+        ]
+        
+        for param_name, desc in pi_subtypes:
+            param_value = getattr(self, param_name)
+            if not (
+                ParameterRanges.MIN_DISTANCE
+                <= param_value
+                <= ParameterRanges.MAX_DISTANCE
+            ):
+                errors.append(
+                    f"{desc} distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
+                )
+
         # Angle parameter validation
         if not (
             ParameterRanges.MIN_ANGLE
@@ -447,6 +605,28 @@ class AnalysisParameters:
             errors.append(
                 f"π interaction angle cutoff must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
             )
+
+        # π interaction subtype angle validation
+        pi_subtype_angles = [
+            ('pi_ccl_angle_cutoff', 'C-Cl...π'),
+            ('pi_cbr_angle_cutoff', 'C-Br...π'),
+            ('pi_ci_angle_cutoff', 'C-I...π'),
+            ('pi_ch_angle_cutoff', 'C-H...π'),
+            ('pi_nh_angle_cutoff', 'N-H...π'),
+            ('pi_oh_angle_cutoff', 'O-H...π'),
+            ('pi_sh_angle_cutoff', 'S-H...π')
+        ]
+        
+        for param_name, desc in pi_subtype_angles:
+            param_value = getattr(self, param_name)
+            if not (
+                ParameterRanges.MIN_ANGLE
+                <= param_value
+                <= ParameterRanges.MAX_ANGLE
+            ):
+                errors.append(
+                    f"{desc} angle cutoff must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
+                )
 
         # Covalent factor validation
         if not (

@@ -20,7 +20,21 @@
     },
     "pi_interactions": {
       "h_pi_distance_cutoff": 4.2,
-      "dh_pi_angle_cutoff": 85.0
+      "dh_pi_angle_cutoff": 85.0,
+      "ccl_pi_distance_cutoff": 3.6,
+      "ccl_pi_angle_cutoff": 125.0,
+      "cbr_pi_distance_cutoff": 3.7,
+      "cbr_pi_angle_cutoff": 125.0,
+      "ci_pi_distance_cutoff": 3.8,
+      "ci_pi_angle_cutoff": 125.0,
+      "ch_pi_distance_cutoff": 4.2,
+      "ch_pi_angle_cutoff": 125.0,
+      "nh_pi_distance_cutoff": 4.0,
+      "nh_pi_angle_cutoff": 135.0,
+      "oh_pi_distance_cutoff": 3.8,
+      "oh_pi_angle_cutoff": 135.0,
+      "sh_pi_distance_cutoff": 4.1,
+      "sh_pi_angle_cutoff": 125.0
     },
     "general": {
       "covalent_cutoff_factor": 0.85,

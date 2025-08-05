@@ -594,20 +594,23 @@ class HalogenBond(MolecularInteraction):
 
 
 class PiInteraction(MolecularInteraction):
-    """Represents an X-H...π interaction.
+    """Represents a D-X...π interaction.
 
-    This class stores information about a detected X-H...π interaction,
-    where a hydrogen bond donor interacts with an aromatic π system.
+    This class stores information about a detected D-X...π interaction,
+    where a donor atom with an interaction atom (H, F, Cl, Br, I) interacts 
+    with an aromatic π system. Supports multiple subtypes:
+    - C-H...π, N-H...π, O-H...π, S-H...π (hydrogen-π interactions)
+    - C-Cl...π, C-Br...π, C-I...π (halogen-π interactions)
 
-    :param _donor: The hydrogen bond donor atom
+    :param _donor: The donor atom (C, N, O, S)
     :type _donor: Atom
-    :param hydrogen: The hydrogen atom
+    :param hydrogen: The interaction atom (H, F, Cl, Br, I) - name kept for backward compatibility
     :type hydrogen: Atom
     :param pi_center: Center of the aromatic π system
     :type pi_center: NPVec3D
-    :param distance: H...π distance in Angstroms
+    :param distance: X...π distance in Angstroms
     :type distance: float
-    :param angle: D-H...π angle in radians
+    :param angle: D-X...π angle in radians
     :type angle: float
     :param _donor_residue: Identifier for donor residue
     :type _donor_residue: str
@@ -627,15 +630,15 @@ class PiInteraction(MolecularInteraction):
     ):
         """Initialize a PiInteraction object.
 
-        :param _donor: The hydrogen bond donor atom
+        :param _donor: The donor atom (C, N, O, S)
         :type _donor: Atom
-        :param hydrogen: The hydrogen atom
+        :param hydrogen: The interaction atom (H, F, Cl, Br, I) - name kept for backward compatibility
         :type hydrogen: Atom
         :param pi_center: Center of the aromatic π system
         :type pi_center: NPVec3D
-        :param distance: H...π distance in Angstroms
+        :param distance: X...π distance in Angstroms
         :type distance: float
-        :param angle: D-H...π angle in radians
+        :param angle: D-X...π angle in radians
         :type angle: float
         :param _donor_residue: Identifier for donor residue
         :type _donor_residue: str
@@ -692,7 +695,7 @@ class PiInteraction(MolecularInteraction):
         return "π–Inter"
 
     def get_donor_interaction_distance(self) -> float:
-        """Distance from donor to hydrogen."""
+        """Distance from donor to interaction atom."""
         return float(self._donor.coords.distance_to(self.hydrogen.coords))
 
     def get_donor_acceptor_distance(self) -> float:
@@ -790,14 +793,17 @@ class PiInteraction(MolecularInteraction):
     def get_interaction_type_display(self) -> str:
         """Get the interaction type for display purposes.
 
-        :returns: Display format like "D-H...π"
+        :returns: Display format like "C-H...π", "N-H...π", "C-Cl...π", etc.
         :rtype: str
         """
-        return "D-H...π"
+        donor_element = self._donor.element
+        interaction_element = self.hydrogen.element  # Still named hydrogen for backward compatibility
+        return f"{donor_element}-{interaction_element}...π"
 
     def __str__(self) -> str:
+        interaction_type = self.get_interaction_type_display()
         return (
-            f"π-Int: {self._donor_residue}({self._donor.name}) - H...π - "
+            f"π-Int: {self._donor_residue}({self._donor.name}) - {interaction_type} - "
             f"{self._pi_residue} [{self.distance:.2f}Å, {math.degrees(self.angle):.1f}°] "
             f"[{self.get_backbone_sidechain_interaction()}] [{self.donor_acceptor_properties}]"
         )

@@ -27,6 +27,21 @@ class TestAnalysisParametersCreation:
         assert params.xb_angle_cutoff > 0
         assert params.pi_distance_cutoff > 0
         assert params.pi_angle_cutoff > 0
+        # Test π interaction subtype parameters
+        assert params.pi_ccl_distance_cutoff > 0
+        assert params.pi_ccl_angle_cutoff > 0
+        assert params.pi_cbr_distance_cutoff > 0
+        assert params.pi_cbr_angle_cutoff > 0
+        assert params.pi_ci_distance_cutoff > 0
+        assert params.pi_ci_angle_cutoff > 0
+        assert params.pi_ch_distance_cutoff > 0
+        assert params.pi_ch_angle_cutoff > 0
+        assert params.pi_nh_distance_cutoff > 0
+        assert params.pi_nh_angle_cutoff > 0
+        assert params.pi_oh_distance_cutoff > 0
+        assert params.pi_oh_angle_cutoff > 0
+        assert params.pi_sh_distance_cutoff > 0
+        assert params.pi_sh_angle_cutoff > 0
         assert params.covalent_cutoff_factor > 0
         assert params.analysis_mode in ["complete", "local"]
         
@@ -51,6 +66,21 @@ class TestAnalysisParametersCreation:
         assert isinstance(params.xb_angle_cutoff, (int, float))
         assert isinstance(params.pi_distance_cutoff, (int, float))
         assert isinstance(params.pi_angle_cutoff, (int, float))
+        # π interaction subtype parameters
+        assert isinstance(params.pi_ccl_distance_cutoff, (int, float))
+        assert isinstance(params.pi_ccl_angle_cutoff, (int, float))
+        assert isinstance(params.pi_cbr_distance_cutoff, (int, float))
+        assert isinstance(params.pi_cbr_angle_cutoff, (int, float))
+        assert isinstance(params.pi_ci_distance_cutoff, (int, float))
+        assert isinstance(params.pi_ci_angle_cutoff, (int, float))
+        assert isinstance(params.pi_ch_distance_cutoff, (int, float))
+        assert isinstance(params.pi_ch_angle_cutoff, (int, float))
+        assert isinstance(params.pi_nh_distance_cutoff, (int, float))
+        assert isinstance(params.pi_nh_angle_cutoff, (int, float))
+        assert isinstance(params.pi_oh_distance_cutoff, (int, float))
+        assert isinstance(params.pi_oh_angle_cutoff, (int, float))
+        assert isinstance(params.pi_sh_distance_cutoff, (int, float))
+        assert isinstance(params.pi_sh_angle_cutoff, (int, float))
         assert isinstance(params.covalent_cutoff_factor, (int, float))
         
         # String parameters
@@ -110,6 +140,40 @@ class TestAnalysisParametersCustomization:
         
         assert params.pi_distance_cutoff == 4.2
         assert params.pi_angle_cutoff == 85.0
+    
+    def test_custom_pi_interaction_subtype_parameters(self):
+        """Test setting custom π interaction subtype parameters."""
+        params = AnalysisParameters(
+            pi_ccl_distance_cutoff=3.5,
+            pi_ccl_angle_cutoff=125.0,
+            pi_cbr_distance_cutoff=3.6,
+            pi_cbr_angle_cutoff=120.0,
+            pi_ci_distance_cutoff=3.7,
+            pi_ci_angle_cutoff=115.0,
+            pi_ch_distance_cutoff=4.0,
+            pi_ch_angle_cutoff=130.0,
+            pi_nh_distance_cutoff=3.8,
+            pi_nh_angle_cutoff=135.0,
+            pi_oh_distance_cutoff=3.6,
+            pi_oh_angle_cutoff=140.0,
+            pi_sh_distance_cutoff=3.9,
+            pi_sh_angle_cutoff=125.0
+        )
+        
+        assert params.pi_ccl_distance_cutoff == 3.5
+        assert params.pi_ccl_angle_cutoff == 125.0
+        assert params.pi_cbr_distance_cutoff == 3.6
+        assert params.pi_cbr_angle_cutoff == 120.0
+        assert params.pi_ci_distance_cutoff == 3.7
+        assert params.pi_ci_angle_cutoff == 115.0
+        assert params.pi_ch_distance_cutoff == 4.0
+        assert params.pi_ch_angle_cutoff == 130.0
+        assert params.pi_nh_distance_cutoff == 3.8
+        assert params.pi_nh_angle_cutoff == 135.0
+        assert params.pi_oh_distance_cutoff == 3.6
+        assert params.pi_oh_angle_cutoff == 140.0
+        assert params.pi_sh_distance_cutoff == 3.9
+        assert params.pi_sh_angle_cutoff == 125.0
     
     def test_custom_general_parameters(self):
         """Test setting custom general parameters."""

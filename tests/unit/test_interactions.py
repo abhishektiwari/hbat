@@ -489,6 +489,168 @@ class TestPiInteractionString:
 
 
 @pytest.mark.unit
+class TestPiInteractionTypeDisplay:
+    """Test π interaction type display functionality for different subtypes."""
+    
+    def create_test_atom(self, name: str, element: str, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> Atom:
+        """Helper method to create test atoms."""
+        return Atom(
+            serial=1, name=name, alt_loc="", res_name="TST", chain_id="A",
+            res_seq=1, i_code="", coords=NPVec3D(x, y, z), occupancy=1.0,
+            temp_factor=20.0, element=element, charge="", record_type="ATOM",
+            residue_type="P", backbone_sidechain="S", aromatic="N"
+        )
+    
+    def test_c_h_pi_interaction_type(self):
+        """Test C-H...π interaction type display."""
+        carbon = self.create_test_atom("C1", "C")
+        hydrogen = self.create_test_atom("H1", "H", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(4.5, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=carbon,
+            hydrogen=hydrogen,
+            pi_center=pi_center,
+            distance=4.5,
+            angle=math.radians(120),
+            _donor_residue="TST1A",
+            _pi_residue="PHE2A"
+        )
+        
+        assert pi.get_interaction_type_display() == "C-H...π"
+    
+    def test_c_cl_pi_interaction_type(self):
+        """Test C-Cl...π interaction type display."""
+        carbon = self.create_test_atom("C1", "C")
+        chlorine = self.create_test_atom("CL1", "CL", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(3.8, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=carbon,
+            hydrogen=chlorine,
+            pi_center=pi_center,
+            distance=3.8,
+            angle=math.radians(125),
+            _donor_residue="TST1A",
+            _pi_residue="PHE2A"
+        )
+        
+        assert pi.get_interaction_type_display() == "C-CL...π"
+    
+    def test_c_br_pi_interaction_type(self):
+        """Test C-Br...π interaction type display."""
+        carbon = self.create_test_atom("C1", "C")
+        bromine = self.create_test_atom("BR1", "BR", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(3.9, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=carbon,
+            hydrogen=bromine,
+            pi_center=pi_center,
+            distance=3.9,
+            angle=math.radians(120),
+            _donor_residue="TST1A",
+            _pi_residue="PHE2A"
+        )
+        
+        assert pi.get_interaction_type_display() == "C-BR...π"
+    
+    def test_c_i_pi_interaction_type(self):
+        """Test C-I...π interaction type display."""
+        carbon = self.create_test_atom("C1", "C")
+        iodine = self.create_test_atom("I1", "I", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(4.0, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=carbon,
+            hydrogen=iodine,
+            pi_center=pi_center,
+            distance=4.0,
+            angle=math.radians(115),
+            _donor_residue="TST1A",
+            _pi_residue="PHE2A"
+        )
+        
+        assert pi.get_interaction_type_display() == "C-I...π"
+    
+    def test_n_h_pi_interaction_type(self):
+        """Test N-H...π interaction type display."""
+        nitrogen = self.create_test_atom("N1", "N")
+        hydrogen = self.create_test_atom("H1", "H", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(4.2, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=nitrogen,
+            hydrogen=hydrogen,
+            pi_center=pi_center,
+            distance=4.2,
+            angle=math.radians(135),
+            _donor_residue="ARG1A",
+            _pi_residue="PHE2A"
+        )
+        
+        assert pi.get_interaction_type_display() == "N-H...π"
+    
+    def test_o_h_pi_interaction_type(self):
+        """Test O-H...π interaction type display."""
+        oxygen = self.create_test_atom("O1", "O")
+        hydrogen = self.create_test_atom("H1", "H", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(4.0, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=oxygen,
+            hydrogen=hydrogen,
+            pi_center=pi_center,
+            distance=4.0,
+            angle=math.radians(140),
+            _donor_residue="SER1A",
+            _pi_residue="PHE2A"
+        )
+        
+        assert pi.get_interaction_type_display() == "O-H...π"
+    
+    def test_s_h_pi_interaction_type(self):
+        """Test S-H...π interaction type display."""
+        sulfur = self.create_test_atom("S1", "S")
+        hydrogen = self.create_test_atom("H1", "H", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(4.3, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=sulfur,
+            hydrogen=hydrogen,
+            pi_center=pi_center,
+            distance=4.3,
+            angle=math.radians(125),
+            _donor_residue="CYS1A",
+            _pi_residue="PHE2A"
+        )
+        
+        assert pi.get_interaction_type_display() == "S-H...π"
+    
+    def test_pi_interaction_string_includes_type(self):
+        """Test that string representation includes the specific interaction type."""
+        carbon = self.create_test_atom("C1", "C")
+        chlorine = self.create_test_atom("CL1", "CL", 1.0, 0.0, 0.0)
+        pi_center = NPVec3D(3.8, 0.0, 0.0)
+        
+        pi = PiInteraction(
+            _donor=carbon,
+            hydrogen=chlorine,
+            pi_center=pi_center,
+            distance=3.8,
+            angle=math.radians(125),
+            _donor_residue="TST1A",
+            _pi_residue="PHE2A"
+        )
+        
+        str_repr = str(pi)
+        assert "C-CL...π" in str_repr
+        assert "π-Int:" in str_repr
+        assert "TST1A" in str_repr
+        assert "PHE2A" in str_repr
+
+
+@pytest.mark.unit
 class TestCooperativityChainCreation:
     """Test cooperativity chain creation and properties."""
     
