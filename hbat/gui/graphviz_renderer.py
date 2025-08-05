@@ -188,7 +188,8 @@ class GraphVizRenderer(BaseVisualizationRenderer):
         """
         # Get GraphViz configuration - use configured engine instead of layout mapping
         engine = self.config.get_graphviz_engine()
-        bgcolor = self.config.get_graphviz_preference("background_color", "white")
+        # Force background color to white for better visibility
+        bgcolor = "white"
         rankdir = self.config.get_graphviz_preference("rankdir", "TB")
         node_shape = self.config.get_graphviz_preference("node_shape", "ellipse")
 
