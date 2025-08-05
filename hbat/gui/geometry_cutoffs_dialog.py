@@ -18,7 +18,20 @@ from ..constants.parameters import (
 
 
 class GeometryCutoffsDialog:
-    """Dialog for configuring geometry cutoffs parameters."""
+    """Dialog for configuring comprehensive molecular interaction parameters.
+    
+    Provides GUI interface for setting parameters for multiple interaction types:
+    
+    - **Hydrogen Bonds:** Classical strong interactions (N/O-H···O/N)
+    - **Weak Hydrogen Bonds:** C-H···O interactions (important for binding)
+    - **Halogen Bonds:** C-X···A interactions (X = Cl, Br, I) with 150° default
+    - **π Interactions:** Multiple subtypes including:
+    
+      - Hydrogen-π: C-H···π, N-H···π, O-H···π, S-H···π
+      - Halogen-π: C-Cl···π, C-Br···π, C-I···π
+    
+    Uses tabbed interface to organize parameters by interaction type.
+    """
 
     def __init__(self, parent: tk.Tk, current_params: Optional[AnalysisParameters] = None):
         """Initialize geometry cutoffs dialog.

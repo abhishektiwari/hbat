@@ -479,23 +479,24 @@ DNA_RNA_BASE_ATOMS: List[str] = [
 """List[str]: Common DNA/RNA base atom names in PDB format.
 
 Base atoms found in nucleotides:
+
 Purine bases (Adenine, Guanine):
-    - N1, C2, N3, C4, C5, C6: Six-membered ring atoms
-    - N7, C8, N9: Five-membered ring atoms
-    - N6: Amino group on adenine
-    - O6, N2: Functional groups on guanine
+  - N1, C2, N3, C4, C5, C6: Six-membered ring atoms
+  - N7, C8, N9: Five-membered ring atoms
+  - N6: Amino group on adenine
+  - O6, N2: Functional groups on guanine
 
 Pyrimidine bases (Cytosine, Thymine, Uracil):
-    - N1, C2, N3, C4, C5, C6: Six-membered ring atoms
-    - O2: Carbonyl oxygen at position 2
-    - N4: Amino group on cytosine
-    - O4: Carbonyl oxygen at position 4 (thymine/uracil)
-    - C5M: Methyl group on thymine (also called C7)
+  - N1, C2, N3, C4, C5, C6: Six-membered ring atoms
+  - O2: Carbonyl oxygen at position 2
+  - N4: Amino group on cytosine
+  - O4: Carbonyl oxygen at position 4 (thymine/uracil)
+  - C5M: Methyl group on thymine (also called C7)
 
 Used for:
-    - Base-base interactions (hydrogen bonding, stacking)
-    - Protein-nucleic acid recognition
-    - Base functional group identification
+  - Base-base interactions (hydrogen bonding, stacking)
+  - Protein-nucleic acid recognition
+  - Base functional group identification
 """
 
 SIDECHAIN_ATOMS: List[str] = PROTEIN_SIDECHAIN_ATOMS + DNA_RNA_BASE_ATOMS
@@ -567,28 +568,33 @@ RESIDUES_WITH_AROMATIC_RINGS: List[str] = [
 ]
 
 """List[str]: Residues containing aromatic rings in their structures.
+
 This list includes:
+
 Protein residues:
-    - PHE: Phenylalanine (benzene ring)
-    - TYR: Tyrosine (phenolic ring)
-    - TRP: Tryptophan (indole ring)
-    - HIS: Histidine (imidazole ring)
-    - HID, HIE, HIP: Different protonation states of histidine
-    - TYI, TYQ, TYB: Variants of tyrosine with modifications
+  - PHE: Phenylalanine (benzene ring)
+  - TYR: Tyrosine (phenolic ring)
+  - TRP: Tryptophan (indole ring)
+  - HIS: Histidine (imidazole ring)
+  - HID, HIE, HIP: Different protonation states of histidine
+  - TYI, TYQ, TYB: Variants of tyrosine with modifications
+
 DNA nucleotides:
-    - DA: Deoxyadenosine (purine ring: adenine)
-    - DG: Deoxyguanosine (purine ring: guanine)
-    - DC: Deoxycytidine (pyrimidine ring: cytosine)
-    - DT: Deoxythymidine (pyrimidine ring: thymine)
+  - DA: Deoxyadenosine (purine ring: adenine)
+  - DG: Deoxyguanosine (purine ring: guanine)
+  - DC: Deoxycytidine (pyrimidine ring: cytosine)
+  - DT: Deoxythymidine (pyrimidine ring: thymine)
+
 RNA nucleotides:
-    - A: Adenine (purine ring)
-    - G: Guanine (purine ring)
-    - C: Cytosine (pyrimidine ring)
-    - U: Uracil (pyrimidine ring)
+  - A: Adenine (purine ring)
+  - G: Guanine (purine ring)
+  - C: Cytosine (pyrimidine ring)
+  - U: Uracil (pyrimidine ring)
+
 Used for:
-    - Aromatic interaction analysis
-    - π-π stacking detection between proteins and nucleic acids
-    - DNA/RNA-protein interface studies
+  - Aromatic interaction analysis
+  - π-π stacking detection between proteins and nucleic acids
+  - DNA/RNA-protein interface studies
 """
 
 # Molecular interaction element lists
@@ -712,49 +718,49 @@ This dictionary provides the specific atom names that form aromatic ring systems
 for each residue type containing aromatic groups:
 
 Protein residues:
-Phenylalanine (PHE) and variants:
+  Phenylalanine (PHE) and variants:
     - 6-membered benzene ring: CG-CD1-CE1-CZ-CE2-CD2
     
-Tyrosine (TYR, TYI, TYQ, TYB) and variants:
+  Tyrosine (TYR, TYI, TYQ, TYB) and variants:
     - 6-membered phenolic ring: CG-CD1-CE1-CZ-CE2-CD2
     - TYI: Ionized tyrosine (deprotonated hydroxyl)
     - TYQ: Quinone form of tyrosine
     - TYB: Brominated tyrosine
     
-Tryptophan (TRP):
+  Tryptophan (TRP):
     - 5-membered pyrrole ring: CG-CD1-NE1-CE2-CD2
     - 6-membered benzene ring: CD2-CE2-CZ2-CH2-CZ3-CE3
     - Forms bicyclic indole system
     
-Histidine (HIS, HID, HIE, HIP):
+  Histidine (HIS, HID, HIE, HIP):
     - 5-membered imidazole ring: CG-ND1-CE1-NE2-CD2
     - HID: Delta protonated (H on ND1)
     - HIE: Epsilon protonated (H on NE2)
     - HIP: Both nitrogens protonated (positive charge)
 
 DNA nucleotides:
-Adenine (DA) and Guanine (DG) - Purine bases:
+  Adenine (DA) and Guanine (DG) - Purine bases:
     - 5-membered ring: N9-C8-N7-C5-C4
     - 6-membered ring: C5-C6-N1-C2-N3-C4
     - Forms bicyclic purine system
 
-Cytosine (DC) and Thymine (DT) - Pyrimidine bases:
+  Cytosine (DC) and Thymine (DT) - Pyrimidine bases:
     - 6-membered ring: N1-C2-N3-C4-C5-C6
 
 RNA nucleotides:
-Adenine (A) and Guanine (G) - Purine bases:
+  Adenine (A) and Guanine (G) - Purine bases:
     - Same purine ring system as DNA counterparts
     
-Cytosine (C) and Uracil (U) - Pyrimidine bases:
+  Cytosine (C) and Uracil (U) - Pyrimidine bases:
     - Same pyrimidine ring system as DNA counterparts
 
 Used for:
-    - Calculating aromatic ring centroids for π interactions
-    - Identifying atoms involved in π-π stacking
-    - Determining ring plane orientations
-    - X-H...π interaction analysis where these atoms form the π system
-    - DNA/RNA-protein interface interactions
-    - Nucleotide base stacking analysis
+  - Calculating aromatic ring centroids for π interactions
+  - Identifying atoms involved in π-π stacking
+  - Determining ring plane orientations
+  - X-H...π interaction analysis where these atoms form the π system
+  - DNA/RNA-protein interface interactions
+  - Nucleotide base stacking analysis
 """
 
 HYDROPHOBIC_RESIDUES: List[str] = [

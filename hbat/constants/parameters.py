@@ -21,9 +21,9 @@ class ParametersDefault:
     WHB_ANGLE_CUTOFF = 150.0  # degrees - D-H...A angle cutoff
     WHB_DA_DISTANCE = 3.5  # Å - Donor-acceptor distance cutoff
 
-    # Halogen bond parameters
+    # Halogen bond parameters (updated defaults)
     XB_DISTANCE_CUTOFF = 3.9  # Å - X...A distance cutoff <= vdW sum (Max vdW sum: I with SE → 3.88 Å)
-    XB_ANGLE_CUTOFF = 150.0  # degrees - C-X...A angle cutoff
+    XB_ANGLE_CUTOFF = 150.0  # degrees - C-X...A angle cutoff (updated from 120° to 150°)
 
     # π interaction parameters
     PI_DISTANCE_CUTOFF = 3.5  # Å - H...π distance cutoff (legacy, kept for compatibility)
@@ -56,9 +56,9 @@ class ParametersDefault:
     MAX_BOND_DISTANCE = 2.5  # Reasonable maximum for most covalent bonds (Angstroms)
     MIN_BOND_DISTANCE = 0.5  # Minimum realistic bond distance (Angstroms)
 
-    # PDB structure fixing parameters
-    FIX_PDB_ENABLED = True  # Enable PDB structure fixing
-    FIX_PDB_METHOD = "pdbfixer"  # Method: "openbabel" or "pdbfixer"
+    # PDB structure fixing parameters (updated defaults)
+    FIX_PDB_ENABLED = True  # Enable PDB structure fixing (changed from False to True)
+    FIX_PDB_METHOD = "pdbfixer"  # Method: "openbabel" or "pdbfixer" (changed from "openbabel" to "pdbfixer")
 
     # Fixing operations (explicit control)
     FIX_PDB_ADD_HYDROGENS = (
@@ -71,11 +71,29 @@ class ParametersDefault:
 
 
 class AnalysisParameters:
-    """Parameters for molecular interaction analysis.
+    """Parameters for comprehensive molecular interaction analysis.
 
-    This class contains all configurable parameters used during
-    molecular interaction analysis, including distance cutoffs,
-    angle thresholds, and analysis modes.
+    This class contains all configurable parameters for detecting and analyzing
+    molecular interactions in protein structures. Supports multiple interaction
+    types with subtype-specific parameters.
+    
+    **Hydrogen Bonds (Classical):**
+    - Strong N-H···O, O-H···O, N-H···N interactions
+    - Default: 2.5Å H···A distance, 120° D-H···A angle
+    
+    **Weak Hydrogen Bonds (C-H···O):**
+    - Carbon-hydrogen donor interactions with oxygen acceptors
+    - Default: 3.6Å H···A distance, 150° D-H···A angle
+    - Important in protein-ligand binding and aromatic interactions
+    
+    **Halogen Bonds:**
+    - C-X···A interactions where X is Cl, Br, I
+    - Default: 3.9Å X···A distance, 150° C-X···A angle (updated default)
+    
+    **π Interactions (Multiple Subtypes):**
+    - Hydrogen-π: C-H···π, N-H···π, O-H···π, S-H···π
+    - Halogen-π: C-Cl···π, C-Br···π, C-I···π
+    - Each subtype has optimized distance/angle cutoffs
 
     :param hb_distance_cutoff: Maximum H...A distance for hydrogen bonds (Å)
     :type hb_distance_cutoff: float
@@ -91,7 +109,7 @@ class AnalysisParameters:
     :type whb_donor_acceptor_cutoff: float
     :param xb_distance_cutoff: Maximum X...A distance for halogen bonds (Å)
     :type xb_distance_cutoff: float
-    :param xb_angle_cutoff: Minimum C-X...A angle for halogen bonds (degrees)
+    :param xb_angle_cutoff: Minimum C-X...A angle for halogen bonds (degrees, default: 150°)
     :type xb_angle_cutoff: float
     :param pi_distance_cutoff: Maximum H...π distance for π interactions (Å, legacy)
     :type pi_distance_cutoff: float

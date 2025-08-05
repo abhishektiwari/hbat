@@ -24,7 +24,7 @@ Default Parameter Values
      - Units
      - Description
    * - H...A Distance
-     - 3.5
+     - 2.5
      - Å
      - Hydrogen-acceptor distance cutoff
    * - D-H...A Angle
@@ -32,31 +32,99 @@ Default Parameter Values
      - degrees
      - Donor-hydrogen-acceptor angle cutoff
    * - D...A Distance
-     - 4.0
+     - 3.5
      - Å
      - Donor-acceptor distance cutoff
+   * - Weak H...A Distance
+     - 3.6
+     - Å
+     - Weak hydrogen-acceptor distance cutoff (C-H···O)
+   * - Weak D-H...A Angle
+     - 150.0
+     - degrees
+     - Weak donor-hydrogen-acceptor angle cutoff
+   * - Weak D...A Distance
+     - 3.5
+     - Å
+     - Weak donor-acceptor distance cutoff
    * - X...A Distance
-     - 4.0
+     - 3.9
      - Å
      - Halogen-acceptor distance cutoff
    * - C-X...A Angle
-     - 120.0
+     - 150.0
      - degrees
      - Carbon-halogen-acceptor angle cutoff
-   * - H...π Distance
-     - 4.5
+   * - H...π Distance (legacy)
+     - 3.5
      - Å
-     - Hydrogen-π center distance cutoff
-   * - D-H...π Angle
-     - 90.0
+     - Hydrogen-π center distance cutoff (legacy parameter)
+   * - D-H...π Angle (legacy)
+     - 110.0
      - degrees
-     - Donor-hydrogen-π angle cutoff
+     - Donor-hydrogen-π angle cutoff (legacy parameter)
+   * - C-Cl...π Distance
+     - 3.5
+     - Å
+     - Chlorine-π center distance cutoff
+   * - C-Cl...π Angle
+     - 145.0
+     - degrees
+     - Carbon-chlorine-π angle cutoff
+   * - C-Br...π Distance
+     - 3.5
+     - Å
+     - Bromine-π center distance cutoff
+   * - C-Br...π Angle
+     - 155.0
+     - degrees
+     - Carbon-bromine-π angle cutoff
+   * - C-I...π Distance
+     - 3.6
+     - Å
+     - Iodine-π center distance cutoff
+   * - C-I...π Angle
+     - 165.0
+     - degrees
+     - Carbon-iodine-π angle cutoff
+   * - C-H...π Distance
+     - 3.5
+     - Å
+     - Carbon-hydrogen-π distance cutoff
+   * - C-H...π Angle
+     - 110.0
+     - degrees
+     - Carbon-hydrogen-π angle cutoff
+   * - N-H...π Distance
+     - 3.2
+     - Å
+     - Nitrogen-hydrogen-π distance cutoff
+   * - N-H...π Angle
+     - 115.0
+     - degrees
+     - Nitrogen-hydrogen-π angle cutoff
+   * - O-H...π Distance
+     - 3.0
+     - Å
+     - Oxygen-hydrogen-π distance cutoff
+   * - O-H...π Angle
+     - 115.0
+     - degrees
+     - Oxygen-hydrogen-π angle cutoff
+   * - S-H...π Distance
+     - 3.8
+     - Å
+     - Sulfur-hydrogen-π distance cutoff
+   * - S-H...π Angle
+     - 105.0
+     - degrees
+     - Sulfur-hydrogen-π angle cutoff
    * - PDB Fixing Enabled
-     - False
+     - True
      - boolean
      - Enable automatic structure fixing
    * - PDB Fixing Method
-     - "openbabel"
+     - "pdbfixer"
      - string
      - Method for structure enhancement
    * - Add Hydrogens
@@ -108,6 +176,7 @@ H...A Distance Cutoff (Default: 3.5 Å)
 - **Strong H-bonds**: 1.5 - 2.2 Å (e.g., O-H···O⁻)
 - **Moderate H-bonds**: 2.2 - 2.5 Å (e.g., N-H···O)
 - **Weak H-bonds**: 2.5 - 3.5 Å (e.g., C-H···O)
+- **C-H···O interactions**: 2.8 - 3.6 Å (weak but significant)
 
 **Examples**:
 
@@ -177,12 +246,63 @@ D...A Distance Cutoff (Default: 4.0 Å)
 - If H...A = 2.8 Å, then D...A ≈ 3.1 Å
 - If H...A = 3.2 Å, then D...A ≈ 3.5 Å
 
+Weak Hydrogen Bond Parameters (C-H···O)
+----------------------------------------
+
+HBAT includes specific parameters for weak hydrogen bonds, particularly C-H···O interactions, which are important in protein structures and protein-ligand interactions.
+
+H...A Distance Cutoff (Default: 3.6 Å)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Definition**: The direct distance between the carbon-bound hydrogen atom (H) and the acceptor atom (A).
+
+**Physical significance**:
+
+- Longer than conventional H-bonds due to weaker C-H donor
+- Accommodates the weak electrostatic nature of C-H bonds
+- Critical for detecting aromatic C-H donors
+
+**Typical ranges**:
+
+- **Aromatic C-H donors**: 2.8 - 3.4 Å
+- **Aliphatic C-H donors**: 3.0 - 3.6 Å
+- **Constrained geometries**: up to 3.6 Å
+
+D-H...A Angle Cutoff (Default: 150°)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Definition**: The angle formed by the donor carbon atom (D), hydrogen atom (H), and acceptor atom (A).
+
+**Physical significance**:
+
+- More permissive than strong H-bonds (150° vs 120°)
+- Reflects the less directional nature of C-H···O interactions
+- Allows detection of geometrically constrained interactions
+
+**Examples of C-H···O Interactions**:
+
+- Aromatic C-H of Phe, Tyr, Trp with backbone carbonyls
+- Methyl C-H groups with polar acceptors
+- Important in drug-protein binding interfaces
+- Contribute to protein stability and ligand binding affinity
+
+D...A Distance Cutoff (Default: 3.5 Å)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Definition**: The distance between the donor carbon atom (D) and acceptor atom (A).
+
+**Physical significance**:
+
+- Acts as a geometric constraint for weak hydrogen bonds
+- Similar to regular H-bonds but accounts for C-H bond geometry
+- Prevents detection of unrealistic interactions
+
 Halogen Bond Parameters
 -----------------------
 
 Halogen bonds involve halogen atoms (F, Cl, Br, I) acting as electrophilic centers interacting with nucleophilic acceptors.
 
-X...A Distance Cutoff (Default: 4.0 Å)
+X...A Distance Cutoff (Default: 3.9 Å)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Definition**: The distance between the halogen atom (X) and the acceptor atom (A).
@@ -206,7 +326,7 @@ X...A Distance Cutoff (Default: 4.0 Å)
 - ``Cl···O backbone``: 3.2 Å (moderate)
 - ``I···S Met``: 3.8 Å (weak but significant)
 
-C-X...A Angle Cutoff (Default: 120°)
+C-X...A Angle Cutoff (Default: 150°)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Definition**: The angle formed by the carbon atom (C), halogen atom (X), and acceptor atom (A).
@@ -229,69 +349,108 @@ C-X...A Angle Cutoff (Default: 120°)
 **Typical ranges**:
 
 - **Strong halogen bonds**: 160° - 180°
-- **Moderate**: 140° - 160°
-- **Weak but detectable**: 120° - 140°
+- **Moderate**: 150° - 160°
+- **Weak but detectable**: 130° - 150°
+- **HBAT default**: 150° (balanced detection)
 
 π Interaction Parameters
 ------------------------
 
-π interactions involve hydrogen atoms interacting with aromatic ring systems (PHE, TYR, TRP, HIS).
+HBAT now supports comprehensive π interaction analysis with specific parameters for different interaction subtypes. π interactions involve atoms interacting with aromatic ring systems (PHE, TYR, TRP, HIS).
 
-H...π Distance Cutoff (Default: 4.5 Å)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Interaction Subtypes
+~~~~~~~~~~~~~~~~~~~~
 
-**Definition**: The distance between a hydrogen atom and the centroid of an aromatic ring.
+HBAT distinguishes between several types of π interactions:
 
-**Physical significance**:
+1. **Halogen-π interactions**: C-Cl...π, C-Br...π, C-I...π
+2. **Hydrogen-π interactions**: C-H...π, N-H...π, O-H...π, S-H...π
 
-- Represents the interaction between H and the π electron cloud
-- Generally longer than conventional hydrogen bonds
-- Includes both direct H...π and edge-to-face interactions
+Halogen-π Interaction Parameters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Ring centroid calculation**:
+**C-Cl...π Interactions (Default: 3.5 Å, 145°)**
 
-- Average position of aromatic carbon atoms
-- Represents the center of electron density
+- **Distance**: Cl...π centroid distance cutoff
+- **Angle**: C-Cl...π centroid angle cutoff
+- Chlorine forms moderate-strength π interactions
+- Common in halogenated drug compounds
 
-**Typical ranges**:
+**C-Br...π Interactions (Default: 3.5 Å, 155°)**
 
-- **Strong π interactions**: 2.4 - 3.2 Å
-- **Moderate**: 3.2 - 4.0 Å
-- **Weak**: 4.0 - 4.5 Å
+- Bromine has larger electron cloud than chlorine
+- More directional interactions (higher angle cutoff)
+- Stronger halogen-π interactions than chlorine
+- Important in medicinal chemistry
 
-**Examples**:
+**C-I...π Interactions (Default: 3.6 Å, 165°)**
 
-- ``Arg NH···π Phe``: 3.1 Å (cation-π interaction)
-- ``backbone NH···π Trp``: 3.6 Å (moderate)
-- ``side chain OH···π Tyr``: 4.2 Å (weak)
+- Iodine forms the strongest halogen-π interactions
+- Highly directional (approaching linear geometry)
+- Longer distance cutoff due to larger van der Waals radius
+- Most polarizable halogen
 
-D-H...π Angle Cutoff (Default: 90°)
+Hydrogen-π Interaction Parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Definition**: The angle between the D-H bond vector and the vector from H to the π centroid.
+**C-H...π Interactions (Default: 3.5 Å, 110°)**
 
-**Physical significance**:
+- Weak but ubiquitous interactions in protein structures
+- Important for protein-ligand binding and protein folding
+- Angle measured as C-H...π centroid angle
+- Critical for drug design applications
 
-- Different from other angle definitions (measures approach angle)
-- Smaller angles indicate more perpendicular approach to ring
-- Reflects optimal orbital overlap with π system
+**N-H...π Interactions (Default: 3.2 Å, 115°)**
 
-**Geometric relationship**:
+- Stronger than C-H...π due to more polarized N-H bond
+- Common in backbone-aromatic interactions
+- Important in secondary structure stabilization
+- Found in protein-protein interfaces
+
+**O-H...π Interactions (Default: 3.0 Å, 115°)**
+
+- Strongest hydrogen-π interactions
+- Often found in active sites and binding pockets
+- Can compete with conventional hydrogen bonding
+- Important in enzyme catalysis
+
+**S-H...π Interactions (Default: 3.8 Å, 105°)**
+
+- Less common but significant in sulfur-containing residues
+- Longer distance due to larger sulfur radius
+- Important in Cys and Met interactions
+- Relevant for disulfide bond environments
+
+Ring Centroid Calculation
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Average position of aromatic carbon atoms in the ring
+- Represents the center of π electron density
+- Used as interaction target for all π interactions
+- Calculated for PHE, TYR, TRP, and HIS residues
+
+Geometric Relationships
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: text
 
-       π Ring Centroid
-            ↑
-            |
-   Donor(D) — Hydrogen(H)
-        ↳ D-H...π angle ↲
+   Halogen-π:     Carbon(C) — Halogen(X) ··· π Ring Centroid
+                       ↳ C-X...π angle ↲
+                           ↳ X...π distance ↲
 
-**Angle interpretation**:
+   Hydrogen-π:    Donor(D) — Hydrogen(H) ··· π Ring Centroid
+                      ↳ D-H...π angle ↲
+                          ↳ H...π distance ↲
 
-- **0° - 30°**: Perpendicular approach (optimal)
-- **30° - 60°**: Good π interaction geometry
-- **60° - 90°**: Acceptable but weaker
-- **> 90°**: Generally not considered π interactions
+Legacy Parameters (Maintained for Compatibility)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**H...π Distance Cutoff (Legacy: 3.5 Å)**
+**D-H...π Angle Cutoff (Legacy: 110°)**
+
+These parameters are maintained for backward compatibility but are superseded by the specific subtype parameters above. When using the GUI or CLI, the subtype-specific parameters take precedence.
+
+**Migration Note**: Existing analysis scripts and presets will continue to work, but it's recommended to update to the new subtype-specific parameters for more accurate interaction detection.
 
 PDB Structure Fixing Parameters
 --------------------------------
@@ -449,8 +608,8 @@ fix_pdb_keep_water (Default: True, PDBFixer only)
 General Analysis Parameters
 ----------------------------
 
-Covalent Bond Detection Factor (Default: 0.6)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Covalent Bond Detection Factor (Default: 0.85)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Definition**: Multiplier applied to Van der Waals radii sum for covalent bond detection.
 
@@ -471,7 +630,7 @@ Covalent Bond Detection Factor (Default: 0.6)
 **Typical values**:
 
 - **0.55**: Strict covalent bond detection
-- **0.60** (default): Standard bond detection based on typical covalent/VdW ratio
+- **0.85** (default): Standard bond detection based on typical covalent/VdW ratio
 - **1.00**: Maximum permissive (uses full Van der Waals radii sum)
 
 Analysis Mode
@@ -586,129 +745,16 @@ Enzyme Mechanism Studies
 Parameter Presets
 -----------------
 
-HBAT provides example parameter presets for common analysis scenarios, as well as the ability to save and load custom presets.
+HBAT provides comprehensive preset management for optimizing analysis parameters for different scenarios.
 
-Example Presets
-~~~~~~~~~~~~~~~
+.. note::
+   For detailed information about preset management, including GUI usage, CLI commands, and creating custom presets, see :doc:`presets`.
 
-The ``example_presets/`` folder contains predefined parameter sets optimized for different structure types and analysis goals:
+**Quick Reference:**
 
-.. list-table::
-   :header-rows: 1
-   :widths: 30 35 35
-
-   * - Preset File
-     - Description
-     - Use Case
-   * - 🔬 **high_resolution.hbat**
-     - Strict criteria for high-quality structures
-     - X-ray structures with excellent resolution (< 1.5Å)
-   * - ⚙️ **standard_resolution.hbat**
-     - Default HBAT parameters
-     - Most protein crystal structures (1.5-2.5Å)
-   * - 📐 **low_resolution.hbat**
-     - More permissive criteria
-     - Lower resolution structures (> 2.5Å)
-   * - 🧬 **nmr_structures.hbat**
-     - Accounts for structural flexibility
-     - Solution NMR structures
-   * - 💪 **strong_interactions_only.hbat**
-     - Very strict criteria
-     - Focus on the strongest interactions
-   * - 💊 **drug_design_strict.hbat**
-     - Optimized for protein-ligand analysis
-     - Drug discovery applications
-   * - 🧱 **membrane_proteins.hbat**
-     - Adapted for membrane environments
-     - Transmembrane proteins
-   * - 🌐 **weak_interactions_permissive.hbat**
-     - Captures weak but significant interactions
-     - Comprehensive interaction analysis
-
-Preset Management
-~~~~~~~~~~~~~~~~~
-
-Loading Example Presets
-^^^^^^^^^^^^^^^^^^^^^^^
-
-1. Click "Load Preset..." button in the GUI
-2. Navigate to the ``example_presets/`` folder (opens by default)
-3. Select the appropriate ``.hbat`` preset file
-4. Parameters are automatically applied
-
-Saving Custom Presets
-^^^^^^^^^^^^^^^^^^^^^
-
-1. Configure your desired parameters in the GUI
-2. Click "Save Preset..." button
-3. Choose filename and location
-4. The preset is saved as a ``.hbat`` file
-
-Using Presets
-^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   # Example: Load a preset and analyze
-   # 1. Open HBAT GUI
-   # 2. Load preset: example_presets/drug_design_strict.hbat
-   # 3. Load PDB file and run analysis
-
-Preset File Format
-^^^^^^^^^^^^^^^^^^
-
-HBAT presets are saved as JSON files with the following structure:
-
-.. code-block:: json
-
-   {
-     "format_version": "1.0",
-     "application": "HBAT",
-     "created": "2024-01-15T10:30:00.000000",
-     "description": "Custom preset description",
-     "parameters": {
-       "hydrogen_bonds": {
-         "h_a_distance_cutoff": 3.5,
-         "dha_angle_cutoff": 120.0,
-         "d_a_distance_cutoff": 4.0
-       },
-       "halogen_bonds": {
-         "x_a_distance_cutoff": 4.0,
-         "dxa_angle_cutoff": 120.0
-       },
-       "pi_interactions": {
-         "h_pi_distance_cutoff": 4.5,
-         "dh_pi_angle_cutoff": 90.0
-       },
-       "general": {
-         "covalent_cutoff_factor": 0.85,
-         "analysis_mode": "complete"
-       },
-       "pdb_fixing": {
-         "enabled": false,
-         "method": "openbabel",
-         "add_hydrogens": true,
-         "add_heavy_atoms": false,
-         "replace_nonstandard": false,
-         "remove_heterogens": false,
-         "keep_water": true
-       }
-     }
-   }
-
-Preset Storage Locations
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-**Example Presets** (built-in):
-
-- Located in ``example_presets/`` folder within the HBAT installation
-- Read-only preset files optimized for common scenarios
-
-**Custom Presets** (user-created):
-
-- **Windows**: ``%USERPROFILE%\.hbat\presets\``
-- **macOS/Linux**: ``~/.hbat/presets/``
-- Created when you save custom parameter configurations
+- **GUI**: Access presets via **Settings → Manage Presets**
+- **CLI**: Use ``--preset preset_name`` or ``--list-presets``
+- **Built-in presets**: high_resolution, standard_resolution, low_resolution, nmr_structures, strong_interactions_only, drug_design_strict, membrane_proteins, weak_interactions_permissive
 
 Command Line Usage
 ------------------
@@ -760,11 +806,14 @@ Setting Custom Parameters
    # Include weak interactions
    hbat protein.pdb --hb-distance 3.8 --hb-angle 110 --da-distance 4.3
 
-   # Focus on strong halogen bonds
-   hbat protein.pdb --xb-distance 3.5 --xb-angle 140
+   # Include weak C-H···O interactions
+   hbat protein.pdb --whb-distance 3.6 --whb-angle 150
 
-   # Comprehensive π interaction analysis
-   hbat protein.pdb --pi-distance 5.0 --pi-angle 100
+   # Focus on strong halogen bonds
+   hbat protein.pdb --xb-distance 3.5 --xb-angle 160
+
+   # Comprehensive π interaction analysis with subtypes
+   hbat protein.pdb --pi-ch-distance 3.8 --pi-nh-distance 3.5 --pi-ccl-distance 3.7
 
 Parameter Validation
 ~~~~~~~~~~~~~~~~~~~~

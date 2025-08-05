@@ -32,10 +32,20 @@ from .structure import Atom, Residue
 class NPMolecularInteractionAnalyzer:
     """High-performance analyzer for molecular interactions.
 
-    This analyzer uses vectorized NumPy operations for efficient
-    analysis of molecular interactions in protein structures.
+    This analyzer uses vectorized NumPy operations for efficient analysis of molecular 
+    interactions in protein structures. Supports comprehensive detection of:
+    
+    - **Hydrogen bonds:** Classical N-H···O, O-H···O, N-H···N interactions
+    - **Weak hydrogen bonds:** C-H···O interactions (important in protein-ligand binding)
+    - **Halogen bonds:** C-X···A interactions where X is Cl, Br, I (default angle: 150°)
+    - **π interactions:** Multiple subtypes including:
+    
+      - Hydrogen-π: C-H···π, N-H···π, O-H···π, S-H···π
+      - Halogen-π: C-Cl···π, C-Br···π, C-I···π
+      
+    - **Cooperativity chains:** Networks of linked interactions
 
-    :param parameters: Analysis parameters to use
+    :param parameters: Analysis parameters with subtype-specific cutoffs
     :type parameters: Optional[AnalysisParameters]
     """
 
@@ -80,9 +90,10 @@ class NPMolecularInteractionAnalyzer:
     def analyze_file(self, pdb_file: str) -> bool:
         """Analyze a PDB file for molecular interactions.
 
-        Performs comprehensive analysis of hydrogen bonds, halogen bonds, π interactions,
-        and cooperativity chains in the provided PDB structure. Optionally applies PDB
-        fixing to add missing atoms if enabled in parameters.
+        Performs comprehensive analysis of hydrogen bonds, weak hydrogen bonds (C-H···O),
+        halogen bonds, π interactions (including subtypes: C-H···π, N-H···π, O-H···π, 
+        S-H···π, C-Cl···π, C-Br···π, C-I···π), and cooperativity chains in the provided 
+        PDB structure. Optionally applies PDB fixing to add missing atoms if enabled in parameters.
 
         :param pdb_file: Path to PDB file to analyze
         :type pdb_file: str
@@ -538,7 +549,25 @@ class NPMolecularInteractionAnalyzer:
                     self.halogen_bonds.append(xbond)
 
     def _find_pi_interactions_vectorized(self) -> None:
-        """Find π interactions using vectorized operations."""
+        """Find π interactions using vectorized operations.
+        
+        Detects multiple types of π interactions with aromatic rings:
+        
+        **Hydrogen-π interactions:**
+        - C-H···π: Carbon-hydrogen to π system (weak but important)
+        - N-H···π: Nitrogen-hydrogen to π system (moderate strength)
+        - O-H···π: Oxygen-hydrogen to π system (strongest H-π interaction)
+        - S-H···π: Sulfur-hydrogen to π system (rare but significant)
+        
+        **Halogen-π interactions:**
+        - C-Cl···π: Chlorine to π system interactions
+        - C-Br···π: Bromine to π system interactions (stronger than Cl)
+        - C-I···π: Iodine to π system interactions (strongest halogen-π)
+        
+        Each subtype uses specific distance and angle cutoffs optimized for 
+        the particular interaction type. Aromatic rings are detected in 
+        PHE, TYR, TRP, and HIS residues.
+        """
         aromatic_centers = self._get_aromatic_centers()
         if not aromatic_centers:
             return
@@ -635,8 +664,21 @@ class NPMolecularInteractionAnalyzer:
     def _get_pi_subtype_cutoffs(self, donor_element: str, interaction_element: str) -> Tuple[Optional[float], Optional[float]]:
         """Get distance and angle cutoffs for specific π interaction subtype.
         
-        :param donor_element: Element symbol of the donor atom (typically C)
-        :param interaction_element: Element symbol of the interaction atom (H, F, Cl, Br, I)
+        Maps donor-interaction element combinations to their specific parameters:
+        
+        **Supported subtypes:**
+        - (C, H): C-H···π interactions - weak but ubiquitous
+        - (N, H): N-H···π interactions - moderate strength
+        - (O, H): O-H···π interactions - strongest hydrogen-π type
+        - (S, H): S-H···π interactions - less common
+        - (C, Cl): C-Cl···π interactions - halogen bonding to π system
+        - (C, Br): C-Br···π interactions - stronger than chlorine
+        - (C, I): C-I···π interactions - strongest halogen-π type
+        
+        Falls back to legacy π interaction parameters for unsupported combinations.
+        
+        :param donor_element: Element symbol of the donor atom (C, N, O, S)
+        :param interaction_element: Element symbol of the interaction atom (H, Cl, Br, I)
         :returns: Tuple of (distance_cutoff, angle_cutoff) or (None, None) if unsupported
         """
         # Map donor-interaction combinations to parameter attributes
@@ -664,11 +706,19 @@ class NPMolecularInteractionAnalyzer:
         return (self.parameters.pi_distance_cutoff, self.parameters.pi_angle_cutoff)
 
     def _get_pi_interaction_pairs(self) -> List[Tuple[Atom, Atom]]:
-        """Get interaction atoms (H, F, Cl, Br, I) that are bonded to donor atoms.
+        """Get interaction atoms that are bonded to donor atoms for π interaction analysis.
 
-        For π interactions, we need D-X...π geometry where D is a donor atom
-        (C, N, O, S) and X is an interaction atom (H, F, Cl, Br, I).
-        Returns list of tuples (donor_atom, interaction_atom).
+        Identifies donor-interaction atom pairs with D-X···π geometry where:
+        - D is a donor atom (C, N, O, S) 
+        - X is an interaction atom (H, Cl, Br, I) bonded to D
+        - π is an aromatic ring system
+        
+        **Interaction types detected:**
+        - H bonded to C, N, O, S (hydrogen-π interactions)
+        - Cl, Br, I bonded to C (halogen-π interactions)
+        
+        :returns: List of (donor_atom, interaction_atom) tuples for analysis
+        :rtype: List[Tuple[Atom, Atom]]
         """
         interactions = []
 

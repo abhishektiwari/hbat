@@ -410,8 +410,10 @@ class HydrogenBond(MolecularInteraction):
 class HalogenBond(MolecularInteraction):
     """Represents a halogen bond interaction.
 
-    This class stores information about a detected halogen bond,
-    where a halogen atom acts as an electron acceptor.
+    This class stores information about a detected halogen bond, where a halogen
+    atom (Cl, Br, I) acts as an electrophilic center interacting with nucleophilic
+    acceptors. HBAT uses updated default parameters with a 150° angle cutoff for
+    improved detection of biologically relevant halogen bonds.
 
     :param halogen: The halogen atom (F, Cl, Br, I)
     :type halogen: Atom
@@ -419,7 +421,7 @@ class HalogenBond(MolecularInteraction):
     :type _acceptor: Atom
     :param distance: X...A distance in Angstroms
     :type distance: float
-    :param angle: C-X...A angle in radians
+    :param angle: C-X...A angle in radians (default cutoff: 150°)
     :type angle: float
     :param bond_type: Classification of the halogen bond type
     :type bond_type: str
@@ -792,8 +794,21 @@ class PiInteraction(MolecularInteraction):
 
     def get_interaction_type_display(self) -> str:
         """Get the interaction type for display purposes.
+        
+        Generates display strings for different π interaction subtypes:
+        
+        **Hydrogen-π interactions:**
+        - "C-H...π" for carbon-hydrogen to π system
+        - "N-H...π" for nitrogen-hydrogen to π system  
+        - "O-H...π" for oxygen-hydrogen to π system
+        - "S-H...π" for sulfur-hydrogen to π system
+        
+        **Halogen-π interactions:**
+        - "C-Cl...π" for carbon-chlorine to π system
+        - "C-Br...π" for carbon-bromine to π system
+        - "C-I...π" for carbon-iodine to π system
 
-        :returns: Display format like "C-H...π", "N-H...π", "C-Cl...π", etc.
+        :returns: Display format showing donor-interaction...π pattern
         :rtype: str
         """
         donor_element = self._donor.element

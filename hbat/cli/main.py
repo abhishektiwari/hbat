@@ -1527,10 +1527,20 @@ def run_analysis(args: argparse.Namespace) -> int:
 
 
 def main() -> int:
-    """Main CLI entry point.
+    """Main CLI entry point for HBAT molecular interaction analysis.
 
-    Parses command-line arguments and dispatches to appropriate
-    functionality (preset listing or analysis execution).
+    Parses command-line arguments and dispatches to appropriate functionality.
+    Supports comprehensive analysis of molecular interactions including:
+    
+    - Hydrogen bonds (classical N-H···O, O-H···O)
+    - Weak hydrogen bonds (C-H···O interactions)
+    - Halogen bonds (C-X···A with default 150° angle cutoff)
+    - π interactions with multiple subtypes:
+      • Hydrogen-π: C-H···π, N-H···π, O-H···π, S-H···π
+      • Halogen-π: C-Cl···π, C-Br···π, C-I···π
+    - Cooperativity chains and interaction networks
+    
+    Includes built-in parameter presets and PDB structure fixing capabilities.
 
     :returns: Exit code (0 for success, non-zero for failure)
     :rtype: int
