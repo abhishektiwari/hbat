@@ -24,28 +24,28 @@ HBAT includes several predefined presets in the ``example_presets/`` directory:
    * - Preset File
      - Description
      - Use Case
-   * - 🔬 high_resolution.hbat
+   * - high_resolution.hbat
      - Strict criteria for high-quality structures
      - X-ray structures with excellent resolution (< 1.5Å)
-   * - ⚙️ standard_resolution.hbat
+   * - standard_resolution.hbat
      - Default HBAT parameters
      - Most protein crystal structures (1.5-2.5Å)
-   * - 📐 low_resolution.hbat
+   * - low_resolution.hbat
      - More permissive criteria
      - Lower resolution structures (> 2.5Å)
-   * - 🧬 nmr_structures.hbat
+   * - nmr_structures.hbat
      - Accounts for structural flexibility
      - Solution NMR structures
-   * - 💪 strong_interactions_only.hbat
+   * - strong_interactions_only.hbat
      - Very strict criteria
      - Focus on the strongest interactions
-   * - 💊 drug_design_strict.hbat
+   * - drug_design_strict.hbat
      - Optimized for protein-ligand analysis
      - Drug discovery applications
-   * - 🧱 membrane_proteins.hbat
+   * - membrane_proteins.hbat
      - Adapted for membrane environments
      - Transmembrane proteins
-   * - 🌐 weak_interactions_permissive.hbat
+   * - weak_interactions_permissive.hbat
      - Captures weak but significant interactions
      - Comprehensive interaction analysis
 
@@ -60,28 +60,17 @@ Accessing Preset Manager
 1. Open HBAT GUI
 2. Navigate to Settings menu
 3. Select Manage Presets
-4. The Preset Manager dialog will open
+4. Preset Manager dialog will open
 
 Loading Presets
 ~~~~~~~~~~~~~~~~
 
 To load an example preset:
 
-1. Open Preset Manager (Settings → Manage Presets)
+1. Open Preset Manager (Settings → Manage Presets → Load Preset)
 2. In the preset list, select your desired preset
 3. Click Load Preset button
 4. The parameters will be applied to your current analysis settings
-5. Click Close to return to the main interface
-
-Available example presets will be listed by name:
-- high_resolution
-- standard_resolution  
-- low_resolution
-- nmr_structures
-- strong_interactions_only
-- drug_design_strict
-- membrane_proteins
-- weak_interactions_permissive
 
 Saving Custom Presets
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -89,21 +78,9 @@ Saving Custom Presets
 To save your current parameters as a preset:
 
 1. Configure your desired parameters in the Geometry Cutoffs dialog
-2. Open Preset Manager (Settings → Manage Presets)
-3. Click Save Current as Preset button
-4. Enter a descriptive name for your preset
-5. Click Save
-6. Your custom preset will be saved and appear in the preset list
-
-Managing Custom Presets
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-To delete a custom preset:
-
-1. Open Preset Manager (Settings → Manage Presets)
-2. Select the preset you want to delete from the list
-3. Click Delete Preset button
-4. Confirm the deletion when prompted
+2. Open Preset Manager (Settings → Manage Presets → Save Preset)
+3. Enter name and description for your preset
+4. Click Save Preset button
 
 Note: Built-in example presets cannot be deleted, only custom presets can be removed.
 
@@ -307,20 +284,24 @@ Common Issues
 ~~~~~~~~~~~~~
 
 Preset not found:
+
 - Check preset name spelling
 - Verify preset file exists in expected location
 - Use ``--list-presets`` to see available options
 
 Invalid preset format:
+
 - Ensure JSON syntax is correct
 - Verify all required fields are present
 - Check parameter value ranges
 
 Permission errors:
+
 - Ensure write permissions to custom preset directory
 - Check file system permissions for preset files
 
 Parameter conflicts:
+
 - Verify parameter combinations are logical
 - Test preset with known structures before production use
 

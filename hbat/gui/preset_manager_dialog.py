@@ -471,13 +471,29 @@ class PresetManagerDialog:
   D-H...A Angle: {params.hb_angle_cutoff:.0f}°
   D...A Distance: {params.hb_donor_acceptor_cutoff:.1f} Å
 
+Weak Hydrogen Bond Parameters (C-H···O):
+  H...A Distance: {params.whb_distance_cutoff:.1f} Å
+  D-H...A Angle: {params.whb_angle_cutoff:.0f}°
+  D...A Distance: {params.whb_donor_acceptor_cutoff:.1f} Å
+
 Halogen Bond Parameters:
   X...A Distance: {params.xb_distance_cutoff:.1f} Å
   C-X...A Angle: {params.xb_angle_cutoff:.0f}°
 
 π Interaction Parameters:
-  H...π Distance: {params.pi_distance_cutoff:.1f} Å
-  D-H...π Angle: {params.pi_angle_cutoff:.0f}°
+  General H...π Distance: {params.pi_distance_cutoff:.1f} Å
+  General D-H...π Angle: {params.pi_angle_cutoff:.0f}°
+  
+  Hydrogen-π Interactions:
+    C-H...π Distance: {params.pi_ch_distance_cutoff:.1f} Å, Angle: {params.pi_ch_angle_cutoff:.0f}°
+    N-H...π Distance: {params.pi_nh_distance_cutoff:.1f} Å, Angle: {params.pi_nh_angle_cutoff:.0f}°
+    O-H...π Distance: {params.pi_oh_distance_cutoff:.1f} Å, Angle: {params.pi_oh_angle_cutoff:.0f}°
+    S-H...π Distance: {params.pi_sh_distance_cutoff:.1f} Å, Angle: {params.pi_sh_angle_cutoff:.0f}°
+  
+  Halogen-π Interactions:
+    C-Cl...π Distance: {params.pi_ccl_distance_cutoff:.1f} Å, Angle: {params.pi_ccl_angle_cutoff:.0f}°
+    C-Br...π Distance: {params.pi_cbr_distance_cutoff:.1f} Å, Angle: {params.pi_cbr_angle_cutoff:.0f}°
+    C-I...π Distance: {params.pi_ci_distance_cutoff:.1f} Å, Angle: {params.pi_ci_angle_cutoff:.0f}°
 
 General Parameters:
   Covalent Bond Factor: {params.covalent_cutoff_factor:.2f}
