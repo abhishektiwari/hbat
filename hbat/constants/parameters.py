@@ -49,7 +49,7 @@ class ParametersDefault:
     PI_SH_ANGLE_CUTOFF = 105.0  # degrees - S-H...π angle cutoff
 
     # General analysis parameters
-    COVALENT_CUTOFF_FACTOR = 0.6  # Covalent bond detection factor (0.0-1.0)
+    COVALENT_CUTOFF_FACTOR = 0.85  # Covalent bond detection factor (0.0-1.0)
     ANALYSIS_MODE = "complete"  # Analysis mode: "complete" or "local"
 
     # Bond distance thresholds

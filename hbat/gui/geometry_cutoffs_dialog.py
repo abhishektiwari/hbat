@@ -35,7 +35,7 @@ class GeometryCutoffsDialog:
         # Create dialog window
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Geometry Cutoffs")
-        self.dialog.geometry("850x650")
+        self.dialog.geometry("1200x600")
         self.dialog.resizable(True, True)
         
         # Make dialog modal
@@ -90,9 +90,45 @@ class GeometryCutoffsDialog:
         self.pi_oh_angle = None
         self.pi_sh_distance = None
         self.pi_sh_angle = None
+        
+        # Store parameter values directly
+        self._param_values = {}
+    
+    def _store_current_values(self):
+        """Store current parameter values before switching categories."""
+        try:
+            self._param_values.update({
+                'hb_distance': self.hb_distance.get() if hasattr(self, 'hb_distance') else ParametersDefault.HB_DISTANCE_CUTOFF,
+                'hb_angle': self.hb_angle.get() if hasattr(self, 'hb_angle') else ParametersDefault.HB_ANGLE_CUTOFF,
+                'da_distance': self.da_distance.get() if hasattr(self, 'da_distance') else ParametersDefault.HB_DA_DISTANCE,
+                'whb_distance': self.whb_distance.get() if hasattr(self, 'whb_distance') else ParametersDefault.WHB_DISTANCE_CUTOFF,
+                'whb_angle': self.whb_angle.get() if hasattr(self, 'whb_angle') else ParametersDefault.WHB_ANGLE_CUTOFF,
+                'whb_da_distance': self.whb_da_distance.get() if hasattr(self, 'whb_da_distance') else ParametersDefault.WHB_DA_DISTANCE,
+                'xb_distance': self.xb_distance.get() if hasattr(self, 'xb_distance') else ParametersDefault.XB_DISTANCE_CUTOFF,
+                'xb_angle': self.xb_angle.get() if hasattr(self, 'xb_angle') else ParametersDefault.XB_ANGLE_CUTOFF,
+                'pi_distance': self.pi_distance.get() if hasattr(self, 'pi_distance') else ParametersDefault.PI_DISTANCE_CUTOFF,
+                'pi_angle': self.pi_angle.get() if hasattr(self, 'pi_angle') else ParametersDefault.PI_ANGLE_CUTOFF,
+                'covalent_factor': self.covalent_factor.get() if hasattr(self, 'covalent_factor') else ParametersDefault.COVALENT_CUTOFF_FACTOR,
+                'analysis_mode': self.analysis_mode.get() if hasattr(self, 'analysis_mode') else ParametersDefault.ANALYSIS_MODE,
+            })
+            
+            # Store π interaction subtype values if they exist
+            pi_vars = ['pi_ccl_distance', 'pi_ccl_angle', 'pi_cbr_distance', 'pi_cbr_angle', 
+                      'pi_ci_distance', 'pi_ci_angle', 'pi_ch_distance', 'pi_ch_angle',
+                      'pi_nh_distance', 'pi_nh_angle', 'pi_oh_distance', 'pi_oh_angle',
+                      'pi_sh_distance', 'pi_sh_angle']
+            
+            for var_name in pi_vars:
+                if hasattr(self, var_name):
+                    var = getattr(self, var_name)
+                    if var:
+                        self._param_values[var_name] = var.get()
+                        
+        except tk.TclError:
+            pass  # Variables destroyed, ignore
 
     def _create_widgets(self) -> None:
-        """Create and layout all parameter widgets with tabbed interface.
+        """Create and layout all parameter widgets with list selection interface.
 
         :returns: None
         :rtype: None
@@ -105,17 +141,69 @@ class GeometryCutoffsDialog:
         content_frame = ttk.Frame(main_frame)
         content_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
 
-        # General parameters at the top (outside tabs)
-        self._create_general_parameters(content_frame)
+        # Create paned window for list and content
+        paned = ttk.PanedWindow(content_frame, orient=tk.HORIZONTAL)
+        paned.pack(fill=tk.BOTH, expand=True)
         
-        # Create notebook (tabbed interface)
-        self.notebook = ttk.Notebook(content_frame)
-        self.notebook.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+        # Left side - Category list
+        list_frame = ttk.Frame(paned, relief=tk.GROOVE, borderwidth=1)
+        paned.add(list_frame, weight=1)
         
-        # Create tabs
-        self._create_hydrogen_bond_tab()
-        self._create_halogen_bond_tab()
-        self._create_pi_interaction_tab()
+        # List label
+        ttk.Label(list_frame, text="Parameter Categories", font=('TkDefaultFont', 10, 'bold')).pack(pady=(10, 5))
+        
+        # Create listbox for categories
+        self.category_listbox = tk.Listbox(list_frame, selectmode=tk.SINGLE, height=10)
+        self.category_listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+        
+        # Add categories
+        categories = [
+            "General Parameters",
+            "Hydrogen Bonds", 
+            "Weak Hydrogen Bonds",
+            "Halogen Bonds",
+            "π Interactions"
+        ]
+        for cat in categories:
+            self.category_listbox.insert(tk.END, cat)
+        
+        # Bind selection event
+        self.category_listbox.bind('<<ListboxSelect>>', self._on_category_selected)
+        
+        # Right side - Content area
+        self.content_container = ttk.Frame(paned)
+        paned.add(self.content_container, weight=3)
+        
+        # Create scrollable area for content
+        self.content_canvas = tk.Canvas(self.content_container)
+        scrollbar = ttk.Scrollbar(self.content_container, orient="vertical", command=self.content_canvas.yview)
+        self.content_frame = ttk.Frame(self.content_canvas)
+        
+        self.content_frame.bind(
+            "<Configure>",
+            lambda e: self.content_canvas.configure(scrollregion=self.content_canvas.bbox("all"))
+        )
+        
+        self.content_canvas.create_window((0, 0), window=self.content_frame, anchor="nw")
+        self.content_canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Enable mouse wheel scrolling
+        def _on_mousewheel(event):
+            self.content_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        self.content_canvas.bind("<MouseWheel>", _on_mousewheel)  # Windows
+        self.content_canvas.bind("<Button-4>", lambda e: self.content_canvas.yview_scroll(-1, "units"))  # Linux
+        self.content_canvas.bind("<Button-5>", lambda e: self.content_canvas.yview_scroll(1, "units"))  # Linux
+        
+        # Pack canvas and scrollbar
+        self.content_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Store current content widget
+        self.current_content = None
+        
+        # Select first category by default
+        self.category_listbox.selection_set(0)
+        self._on_category_selected(None)
 
         # Buttons at bottom
         button_frame = ttk.Frame(main_frame)
@@ -150,7 +238,8 @@ class GeometryCutoffsDialog:
         ttk.Label(group, text="Analysis Mode:").grid(
             row=0, column=0, sticky=tk.W, pady=2
         )
-        self.analysis_mode = tk.StringVar(value=ParametersDefault.ANALYSIS_MODE)
+        stored_mode = self._param_values.get('analysis_mode', ParametersDefault.ANALYSIS_MODE)
+        self.analysis_mode = tk.StringVar(value=stored_mode)
         mode_frame = ttk.Frame(group)
         mode_frame.grid(row=0, column=1, sticky=tk.W, padx=10, pady=2)
 
@@ -171,9 +260,8 @@ class GeometryCutoffsDialog:
         ttk.Label(group, text="Covalent Bond Factor:").grid(
             row=1, column=0, sticky=tk.W, pady=2
         )
-        self.covalent_factor = tk.DoubleVar(
-            value=ParametersDefault.COVALENT_CUTOFF_FACTOR
-        )
+        stored_factor = self._param_values.get('covalent_factor', ParametersDefault.COVALENT_CUTOFF_FACTOR)
+        self.covalent_factor = tk.DoubleVar(value=stored_factor)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_COVALENT_FACTOR,
@@ -188,119 +276,46 @@ class GeometryCutoffsDialog:
         factor_label.grid(row=1, column=2, sticky=tk.W, padx=5, pady=2)
 
         def update_factor_label(*args):
-            factor_label.config(text=f"{self.covalent_factor.get():.2f}")
+            try:
+                factor_label.config(text=f"{self.covalent_factor.get():.2f}")
+            except tk.TclError:
+                pass  # Widget destroyed, ignore
 
         self.covalent_factor.trace("w", update_factor_label)
         update_factor_label()
-
-    def _create_hydrogen_bond_tab(self):
-        """Create hydrogen bond parameters tab."""
-        # Create tab frame
-        hb_frame = ttk.Frame(self.notebook)
-        self.notebook.add(hb_frame, text="Hydrogen Bonds")
-        
-        # Create scrollable area for this tab
-        canvas = tk.Canvas(hb_frame)
-        scrollbar = ttk.Scrollbar(hb_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
-        
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-        
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        # Enable mouse wheel scrolling
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        canvas.bind("<MouseWheel>", _on_mousewheel)  # Windows
-        canvas.bind("<Button-4>", lambda e: canvas.yview_scroll(-1, "units"))  # Linux
-        canvas.bind("<Button-5>", lambda e: canvas.yview_scroll(1, "units"))   # Linux
-        
-        # Grid layout for canvas and scrollbar
-        canvas.grid(row=0, column=0, sticky="nsew")
-        scrollbar.grid(row=0, column=1, sticky="ns")
-        
-        hb_frame.grid_rowconfigure(0, weight=1)
-        hb_frame.grid_columnconfigure(0, weight=1)
-        
-        # Add parameter groups to this tab
-        self._create_hydrogen_bond_parameters(scrollable_frame)
-        self._create_weak_hydrogen_bond_parameters(scrollable_frame)
     
-    def _create_halogen_bond_tab(self):
-        """Create halogen bond parameters tab."""
-        # Create tab frame
-        xb_frame = ttk.Frame(self.notebook)
-        self.notebook.add(xb_frame, text="Halogen Bonds")
+    def _on_category_selected(self, event):
+        """Handle category selection from list."""
+        selection = self.category_listbox.curselection()
+        if not selection:
+            return
+            
+        # Store current values before switching
+        self._store_current_values()
+            
+        # Clear current content
+        if self.current_content:
+            self.current_content.destroy()
         
-        # Create scrollable area for this tab
-        canvas = tk.Canvas(xb_frame)
-        scrollbar = ttk.Scrollbar(xb_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
+        # Create new content frame
+        self.current_content = ttk.Frame(self.content_frame, padding="20")
+        self.current_content.pack(fill=tk.BOTH, expand=True)
         
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
+        # Show appropriate content based on selection
+        category_index = selection[0]
+        if category_index == 0:  # General Parameters
+            self._create_general_parameters(self.current_content)
+        elif category_index == 1:  # Hydrogen Bonds
+            self._create_hydrogen_bond_parameters(self.current_content)
+        elif category_index == 2:  # Weak Hydrogen Bonds
+            self._create_weak_hydrogen_bond_parameters(self.current_content)
+        elif category_index == 3:  # Halogen Bonds
+            self._create_halogen_bond_parameters(self.current_content)
+        elif category_index == 4:  # π Interactions
+            self._create_pi_interaction_parameters(self.current_content)
         
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        # Enable mouse wheel scrolling
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        canvas.bind("<MouseWheel>", _on_mousewheel)  # Windows
-        canvas.bind("<Button-4>", lambda e: canvas.yview_scroll(-1, "units"))  # Linux
-        canvas.bind("<Button-5>", lambda e: canvas.yview_scroll(1, "units"))   # Linux
-        
-        # Grid layout for canvas and scrollbar
-        canvas.grid(row=0, column=0, sticky="nsew")
-        scrollbar.grid(row=0, column=1, sticky="ns")
-        
-        xb_frame.grid_rowconfigure(0, weight=1)
-        xb_frame.grid_columnconfigure(0, weight=1)
-        
-        # Add parameter groups to this tab
-        self._create_halogen_bond_parameters(scrollable_frame)
-    
-    def _create_pi_interaction_tab(self):
-        """Create π interaction parameters tab."""
-        # Create tab frame
-        pi_frame = ttk.Frame(self.notebook)
-        self.notebook.add(pi_frame, text="π Interactions")
-        
-        # Create scrollable area for this tab
-        canvas = tk.Canvas(pi_frame)
-        scrollbar = ttk.Scrollbar(pi_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
-        
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-        
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        # Enable mouse wheel scrolling
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        canvas.bind("<MouseWheel>", _on_mousewheel)  # Windows
-        canvas.bind("<Button-4>", lambda e: canvas.yview_scroll(-1, "units"))  # Linux
-        canvas.bind("<Button-5>", lambda e: canvas.yview_scroll(1, "units"))   # Linux
-        
-        # Grid layout for canvas and scrollbar
-        canvas.grid(row=0, column=0, sticky="nsew")
-        scrollbar.grid(row=0, column=1, sticky="ns")
-        
-        pi_frame.grid_rowconfigure(0, weight=1)
-        pi_frame.grid_columnconfigure(0, weight=1)
-        
-        # Add parameter groups to this tab
-        self._create_pi_interaction_parameters(scrollable_frame)
+        # Reset scroll position
+        self.content_canvas.yview_moveto(0)
 
     def _create_hydrogen_bond_parameters(self, parent):
         """Create hydrogen bond parameter controls."""
@@ -311,7 +326,8 @@ class GeometryCutoffsDialog:
         ttk.Label(group, text="H...A Distance (Å):").grid(
             row=0, column=0, sticky=tk.W, pady=2
         )
-        self.hb_distance = tk.DoubleVar(value=ParametersDefault.HB_DISTANCE_CUTOFF)
+        stored_dist = self._param_values.get('hb_distance', ParametersDefault.HB_DISTANCE_CUTOFF)
+        self.hb_distance = tk.DoubleVar(value=stored_dist)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
@@ -325,7 +341,10 @@ class GeometryCutoffsDialog:
         hb_dist_label.grid(row=0, column=2, sticky=tk.W, padx=5, pady=2)
 
         def update_hb_dist(*args):
-            hb_dist_label.config(text=f"{self.hb_distance.get():.1f}")
+            try:
+                hb_dist_label.config(text=f"{self.hb_distance.get():.1f}")
+            except tk.TclError:
+                pass
 
         self.hb_distance.trace("w", update_hb_dist)
         update_hb_dist()
@@ -334,7 +353,8 @@ class GeometryCutoffsDialog:
         ttk.Label(group, text="D-H...A Angle (°):").grid(
             row=1, column=0, sticky=tk.W, pady=2
         )
-        self.hb_angle = tk.DoubleVar(value=ParametersDefault.HB_ANGLE_CUTOFF)
+        stored_angle = self._param_values.get('hb_angle', ParametersDefault.HB_ANGLE_CUTOFF)
+        self.hb_angle = tk.DoubleVar(value=stored_angle)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_ANGLE,
@@ -348,7 +368,10 @@ class GeometryCutoffsDialog:
         hb_angle_label.grid(row=1, column=2, sticky=tk.W, padx=5, pady=2)
 
         def update_hb_angle(*args):
-            hb_angle_label.config(text=f"{self.hb_angle.get():.0f}")
+            try:
+                hb_angle_label.config(text=f"{self.hb_angle.get():.0f}")
+            except tk.TclError:
+                pass
 
         self.hb_angle.trace("w", update_hb_angle)
         update_hb_angle()
@@ -357,7 +380,8 @@ class GeometryCutoffsDialog:
         ttk.Label(group, text="D...A Distance (Å):").grid(
             row=2, column=0, sticky=tk.W, pady=2
         )
-        self.da_distance = tk.DoubleVar(value=ParametersDefault.HB_DA_DISTANCE)
+        stored_da = self._param_values.get('da_distance', ParametersDefault.HB_DA_DISTANCE)
+        self.da_distance = tk.DoubleVar(value=stored_da)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
@@ -371,7 +395,10 @@ class GeometryCutoffsDialog:
         da_dist_label.grid(row=2, column=2, sticky=tk.W, padx=5, pady=2)
 
         def update_da_dist(*args):
-            da_dist_label.config(text=f"{self.da_distance.get():.1f}")
+            try:
+                da_dist_label.config(text=f"{self.da_distance.get():.1f}")
+            except tk.TclError:
+                pass
 
         self.da_distance.trace("w", update_da_dist)
         update_da_dist()
@@ -385,6 +412,8 @@ class GeometryCutoffsDialog:
         ttk.Label(group, text="H...A Distance (Å):").grid(
             row=0, column=0, sticky=tk.W, pady=2
         )
+        stored_whb_dist = self._param_values.get('whb_distance', ParametersDefault.WHB_DISTANCE_CUTOFF)
+        self.whb_distance = tk.DoubleVar(value=stored_whb_dist)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
@@ -398,7 +427,10 @@ class GeometryCutoffsDialog:
         whb_dist_label.grid(row=0, column=2, sticky=tk.W, padx=5, pady=2)
 
         def update_whb_dist(*args):
-            whb_dist_label.config(text=f"{self.whb_distance.get():.1f}")
+            try:
+                whb_dist_label.config(text=f"{self.whb_distance.get():.1f}")
+            except tk.TclError:
+                pass
 
         self.whb_distance.trace("w", update_whb_dist)
         update_whb_dist()
@@ -407,6 +439,8 @@ class GeometryCutoffsDialog:
         ttk.Label(group, text="D-H...A Angle (°):").grid(
             row=1, column=0, sticky=tk.W, pady=2
         )
+        stored_whb_angle = self._param_values.get('whb_angle', ParametersDefault.WHB_ANGLE_CUTOFF)
+        self.whb_angle = tk.DoubleVar(value=stored_whb_angle)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_ANGLE,
@@ -420,7 +454,10 @@ class GeometryCutoffsDialog:
         whb_angle_label.grid(row=1, column=2, sticky=tk.W, padx=5, pady=2)
 
         def update_whb_angle(*args):
-            whb_angle_label.config(text=f"{self.whb_angle.get():.0f}")
+            try:
+                whb_angle_label.config(text=f"{self.whb_angle.get():.0f}")
+            except tk.TclError:
+                pass
 
         self.whb_angle.trace("w", update_whb_angle)
         update_whb_angle()
@@ -429,6 +466,8 @@ class GeometryCutoffsDialog:
         ttk.Label(group, text="D...A Distance (Å):").grid(
             row=2, column=0, sticky=tk.W, pady=2
         )
+        stored_whb_da = self._param_values.get('whb_da_distance', ParametersDefault.WHB_DA_DISTANCE)
+        self.whb_da_distance = tk.DoubleVar(value=stored_whb_da)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
@@ -442,7 +481,10 @@ class GeometryCutoffsDialog:
         whb_da_dist_label.grid(row=2, column=2, sticky=tk.W, padx=5, pady=2)
 
         def update_whb_da_dist(*args):
-            whb_da_dist_label.config(text=f"{self.whb_da_distance.get():.1f}")
+            try:
+                whb_da_dist_label.config(text=f"{self.whb_da_distance.get():.1f}")
+            except tk.TclError:
+                pass
 
         self.whb_da_distance.trace("w", update_whb_da_dist)
         update_whb_da_dist()
@@ -456,7 +498,8 @@ class GeometryCutoffsDialog:
         ttk.Label(group, text="X...A Distance (Å):").grid(
             row=0, column=0, sticky=tk.W, pady=2
         )
-        self.xb_distance = tk.DoubleVar(value=ParametersDefault.XB_DISTANCE_CUTOFF)
+        stored_xb_dist = self._param_values.get('xb_distance', ParametersDefault.XB_DISTANCE_CUTOFF)
+        self.xb_distance = tk.DoubleVar(value=stored_xb_dist)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
@@ -470,7 +513,10 @@ class GeometryCutoffsDialog:
         xb_dist_label.grid(row=0, column=2, sticky=tk.W, padx=5, pady=2)
 
         def update_xb_dist(*args):
-            xb_dist_label.config(text=f"{self.xb_distance.get():.1f}")
+            try:
+                xb_dist_label.config(text=f"{self.xb_distance.get():.1f}")
+            except tk.TclError:
+                pass
 
         self.xb_distance.trace("w", update_xb_dist)
         update_xb_dist()
@@ -479,7 +525,8 @@ class GeometryCutoffsDialog:
         ttk.Label(group, text="C-X...A Angle (°):").grid(
             row=1, column=0, sticky=tk.W, pady=2
         )
-        self.xb_angle = tk.DoubleVar(value=ParametersDefault.XB_ANGLE_CUTOFF)
+        stored_xb_angle = self._param_values.get('xb_angle', ParametersDefault.XB_ANGLE_CUTOFF)
+        self.xb_angle = tk.DoubleVar(value=stored_xb_angle)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_ANGLE,
@@ -493,7 +540,10 @@ class GeometryCutoffsDialog:
         xb_angle_label.grid(row=1, column=2, sticky=tk.W, padx=5, pady=2)
 
         def update_xb_angle(*args):
-            xb_angle_label.config(text=f"{self.xb_angle.get():.0f}")
+            try:
+                xb_angle_label.config(text=f"{self.xb_angle.get():.0f}")
+            except tk.TclError:
+                pass
 
         self.xb_angle.trace("w", update_xb_angle)
         update_xb_angle()
@@ -508,7 +558,8 @@ class GeometryCutoffsDialog:
         ttk.Label(general_group, text="H...π Distance (Å):").grid(
             row=0, column=0, sticky=tk.W, pady=2
         )
-        self.pi_distance = tk.DoubleVar(value=ParametersDefault.PI_DISTANCE_CUTOFF)
+        stored_pi_dist = self._param_values.get('pi_distance', ParametersDefault.PI_DISTANCE_CUTOFF)
+        self.pi_distance = tk.DoubleVar(value=stored_pi_dist)
         ttk.Scale(
             general_group,
             from_=ParameterRanges.MIN_DISTANCE,
@@ -522,7 +573,10 @@ class GeometryCutoffsDialog:
         pi_dist_label.grid(row=0, column=2, sticky=tk.W, padx=5, pady=2)
 
         def update_pi_dist(*args):
-            pi_dist_label.config(text=f"{self.pi_distance.get():.1f}")
+            try:
+                pi_dist_label.config(text=f"{self.pi_distance.get():.1f}")
+            except tk.TclError:
+                pass
 
         self.pi_distance.trace("w", update_pi_dist)
         update_pi_dist()
@@ -531,7 +585,8 @@ class GeometryCutoffsDialog:
         ttk.Label(general_group, text="D-H...π Angle (°):").grid(
             row=1, column=0, sticky=tk.W, pady=2
         )
-        self.pi_angle = tk.DoubleVar(value=ParametersDefault.PI_ANGLE_CUTOFF)
+        stored_pi_angle = self._param_values.get('pi_angle', ParametersDefault.PI_ANGLE_CUTOFF)
+        self.pi_angle = tk.DoubleVar(value=stored_pi_angle)
         ttk.Scale(
             general_group,
             from_=ParameterRanges.MIN_ANGLE,
@@ -545,7 +600,10 @@ class GeometryCutoffsDialog:
         pi_angle_label.grid(row=1, column=2, sticky=tk.W, padx=5, pady=2)
 
         def update_pi_angle(*args):
-            pi_angle_label.config(text=f"{self.pi_angle.get():.0f}")
+            try:
+                pi_angle_label.config(text=f"{self.pi_angle.get():.0f}")
+            except tk.TclError:
+                pass
 
         self.pi_angle.trace("w", update_pi_angle)
         update_pi_angle()
@@ -556,11 +614,15 @@ class GeometryCutoffsDialog:
         
         # Helper function to create parameter pair
         def create_parameter_pair(parent_frame, row, label_text, dist_var_name, angle_var_name, dist_default, angle_default):
+            # Get stored values or use defaults
+            stored_dist = self._param_values.get(dist_var_name, dist_default)
+            stored_angle = self._param_values.get(angle_var_name, angle_default)
+            
             # Distance parameter
             ttk.Label(parent_frame, text=f"{label_text} Distance (Å):").grid(
                 row=row, column=0, sticky=tk.W, pady=2
             )
-            dist_var = tk.DoubleVar(value=dist_default)
+            dist_var = tk.DoubleVar(value=stored_dist)
             setattr(self, dist_var_name, dist_var)
             ttk.Scale(
                 parent_frame,
@@ -578,7 +640,7 @@ class GeometryCutoffsDialog:
             ttk.Label(parent_frame, text=f"{label_text} Angle (°):").grid(
                 row=row, column=3, sticky=tk.W, pady=2, padx=(20,0)
             )
-            angle_var = tk.DoubleVar(value=angle_default)
+            angle_var = tk.DoubleVar(value=stored_angle)
             setattr(self, angle_var_name, angle_var)
             ttk.Scale(
                 parent_frame,
@@ -594,9 +656,15 @@ class GeometryCutoffsDialog:
             
             # Update functions
             def update_dist(*args):
-                dist_label.config(text=f"{dist_var.get():.1f}")
+                try:
+                    dist_label.config(text=f"{dist_var.get():.1f}")
+                except tk.TclError:
+                    pass
             def update_angle(*args):
-                angle_label.config(text=f"{angle_var.get():.0f}")
+                try:
+                    angle_label.config(text=f"{angle_var.get():.0f}")
+                except tk.TclError:
+                    pass
                 
             dist_var.trace("w", update_dist)
             angle_var.trace("w", update_angle)
@@ -625,34 +693,50 @@ class GeometryCutoffsDialog:
         :returns: Current analysis parameters
         :rtype: AnalysisParameters
         """
+        # Store current values first
+        self._store_current_values()
+        
+        # Get values from stored parameters or current variables
+        def get_value(var_name, default_value):
+            if var_name in self._param_values:
+                return self._param_values[var_name]
+            elif hasattr(self, var_name):
+                var = getattr(self, var_name)
+                if var:
+                    try:
+                        return var.get()
+                    except tk.TclError:
+                        pass
+            return default_value
+        
         return AnalysisParameters(
-            hb_distance_cutoff=self.hb_distance.get(),
-            hb_angle_cutoff=self.hb_angle.get(),
-            hb_donor_acceptor_cutoff=self.da_distance.get(),
-            whb_distance_cutoff=self.whb_distance.get(),
-            whb_angle_cutoff=self.whb_angle.get(),
-            whb_donor_acceptor_cutoff=self.whb_da_distance.get(),
-            xb_distance_cutoff=self.xb_distance.get(),
-            xb_angle_cutoff=self.xb_angle.get(),
-            pi_distance_cutoff=self.pi_distance.get(),
-            pi_angle_cutoff=self.pi_angle.get(),
+            hb_distance_cutoff=get_value('hb_distance', ParametersDefault.HB_DISTANCE_CUTOFF),
+            hb_angle_cutoff=get_value('hb_angle', ParametersDefault.HB_ANGLE_CUTOFF),
+            hb_donor_acceptor_cutoff=get_value('da_distance', ParametersDefault.HB_DA_DISTANCE),
+            whb_distance_cutoff=get_value('whb_distance', ParametersDefault.WHB_DISTANCE_CUTOFF),
+            whb_angle_cutoff=get_value('whb_angle', ParametersDefault.WHB_ANGLE_CUTOFF),
+            whb_donor_acceptor_cutoff=get_value('whb_da_distance', ParametersDefault.WHB_DA_DISTANCE),
+            xb_distance_cutoff=get_value('xb_distance', ParametersDefault.XB_DISTANCE_CUTOFF),
+            xb_angle_cutoff=get_value('xb_angle', ParametersDefault.XB_ANGLE_CUTOFF),
+            pi_distance_cutoff=get_value('pi_distance', ParametersDefault.PI_DISTANCE_CUTOFF),
+            pi_angle_cutoff=get_value('pi_angle', ParametersDefault.PI_ANGLE_CUTOFF),
             # π interaction subtype parameters
-            pi_ccl_distance_cutoff=self.pi_ccl_distance.get(),
-            pi_ccl_angle_cutoff=self.pi_ccl_angle.get(),
-            pi_cbr_distance_cutoff=self.pi_cbr_distance.get(),
-            pi_cbr_angle_cutoff=self.pi_cbr_angle.get(),
-            pi_ci_distance_cutoff=self.pi_ci_distance.get(),
-            pi_ci_angle_cutoff=self.pi_ci_angle.get(),
-            pi_ch_distance_cutoff=self.pi_ch_distance.get(),
-            pi_ch_angle_cutoff=self.pi_ch_angle.get(),
-            pi_nh_distance_cutoff=self.pi_nh_distance.get(),
-            pi_nh_angle_cutoff=self.pi_nh_angle.get(),
-            pi_oh_distance_cutoff=self.pi_oh_distance.get(),
-            pi_oh_angle_cutoff=self.pi_oh_angle.get(),
-            pi_sh_distance_cutoff=self.pi_sh_distance.get(),
-            pi_sh_angle_cutoff=self.pi_sh_angle.get(),
-            covalent_cutoff_factor=self.covalent_factor.get(),
-            analysis_mode=self.analysis_mode.get(),
+            pi_ccl_distance_cutoff=get_value('pi_ccl_distance', ParametersDefault.PI_CCL_DISTANCE_CUTOFF),
+            pi_ccl_angle_cutoff=get_value('pi_ccl_angle', ParametersDefault.PI_CCL_ANGLE_CUTOFF),
+            pi_cbr_distance_cutoff=get_value('pi_cbr_distance', ParametersDefault.PI_CBR_DISTANCE_CUTOFF),
+            pi_cbr_angle_cutoff=get_value('pi_cbr_angle', ParametersDefault.PI_CBR_ANGLE_CUTOFF),
+            pi_ci_distance_cutoff=get_value('pi_ci_distance', ParametersDefault.PI_CI_DISTANCE_CUTOFF),
+            pi_ci_angle_cutoff=get_value('pi_ci_angle', ParametersDefault.PI_CI_ANGLE_CUTOFF),
+            pi_ch_distance_cutoff=get_value('pi_ch_distance', ParametersDefault.PI_CH_DISTANCE_CUTOFF),
+            pi_ch_angle_cutoff=get_value('pi_ch_angle', ParametersDefault.PI_CH_ANGLE_CUTOFF),
+            pi_nh_distance_cutoff=get_value('pi_nh_distance', ParametersDefault.PI_NH_DISTANCE_CUTOFF),
+            pi_nh_angle_cutoff=get_value('pi_nh_angle', ParametersDefault.PI_NH_ANGLE_CUTOFF),
+            pi_oh_distance_cutoff=get_value('pi_oh_distance', ParametersDefault.PI_OH_DISTANCE_CUTOFF),
+            pi_oh_angle_cutoff=get_value('pi_oh_angle', ParametersDefault.PI_OH_ANGLE_CUTOFF),
+            pi_sh_distance_cutoff=get_value('pi_sh_distance', ParametersDefault.PI_SH_DISTANCE_CUTOFF),
+            pi_sh_angle_cutoff=get_value('pi_sh_angle', ParametersDefault.PI_SH_ANGLE_CUTOFF),
+            covalent_cutoff_factor=get_value('covalent_factor', ParametersDefault.COVALENT_CUTOFF_FACTOR),
+            analysis_mode=get_value('analysis_mode', ParametersDefault.ANALYSIS_MODE),
         )
 
     def set_parameters(self, params: AnalysisParameters) -> None:
@@ -661,33 +745,72 @@ class GeometryCutoffsDialog:
         :param params: Analysis parameters to set
         :type params: AnalysisParameters
         """
-        self.hb_distance.set(params.hb_distance_cutoff)
-        self.hb_angle.set(params.hb_angle_cutoff)
-        self.da_distance.set(params.hb_donor_acceptor_cutoff)
-        self.whb_distance.set(params.whb_distance_cutoff)
-        self.whb_angle.set(params.whb_angle_cutoff)
-        self.whb_da_distance.set(params.whb_donor_acceptor_cutoff)
-        self.xb_distance.set(params.xb_distance_cutoff)
-        self.xb_angle.set(params.xb_angle_cutoff)
-        self.pi_distance.set(params.pi_distance_cutoff)
-        self.pi_angle.set(params.pi_angle_cutoff)
-        # π interaction subtype parameters
-        self.pi_ccl_distance.set(params.pi_ccl_distance_cutoff)
-        self.pi_ccl_angle.set(params.pi_ccl_angle_cutoff)
-        self.pi_cbr_distance.set(params.pi_cbr_distance_cutoff)
-        self.pi_cbr_angle.set(params.pi_cbr_angle_cutoff)
-        self.pi_ci_distance.set(params.pi_ci_distance_cutoff)
-        self.pi_ci_angle.set(params.pi_ci_angle_cutoff)
-        self.pi_ch_distance.set(params.pi_ch_distance_cutoff)
-        self.pi_ch_angle.set(params.pi_ch_angle_cutoff)
-        self.pi_nh_distance.set(params.pi_nh_distance_cutoff)
-        self.pi_nh_angle.set(params.pi_nh_angle_cutoff)
-        self.pi_oh_distance.set(params.pi_oh_distance_cutoff)
-        self.pi_oh_angle.set(params.pi_oh_angle_cutoff)
-        self.pi_sh_distance.set(params.pi_sh_distance_cutoff)
-        self.pi_sh_angle.set(params.pi_sh_angle_cutoff)
-        self.covalent_factor.set(params.covalent_cutoff_factor)
-        self.analysis_mode.set(params.analysis_mode)
+        # Store values directly in our parameter storage
+        self._param_values.update({
+            'hb_distance': params.hb_distance_cutoff,
+            'hb_angle': params.hb_angle_cutoff,
+            'da_distance': params.hb_donor_acceptor_cutoff,
+            'whb_distance': params.whb_distance_cutoff,
+            'whb_angle': params.whb_angle_cutoff,
+            'whb_da_distance': params.whb_donor_acceptor_cutoff,
+            'xb_distance': params.xb_distance_cutoff,
+            'xb_angle': params.xb_angle_cutoff,
+            'pi_distance': params.pi_distance_cutoff,
+            'pi_angle': params.pi_angle_cutoff,
+            'pi_ccl_distance': params.pi_ccl_distance_cutoff,
+            'pi_ccl_angle': params.pi_ccl_angle_cutoff,
+            'pi_cbr_distance': params.pi_cbr_distance_cutoff,
+            'pi_cbr_angle': params.pi_cbr_angle_cutoff,
+            'pi_ci_distance': params.pi_ci_distance_cutoff,
+            'pi_ci_angle': params.pi_ci_angle_cutoff,
+            'pi_ch_distance': params.pi_ch_distance_cutoff,
+            'pi_ch_angle': params.pi_ch_angle_cutoff,
+            'pi_nh_distance': params.pi_nh_distance_cutoff,
+            'pi_nh_angle': params.pi_nh_angle_cutoff,
+            'pi_oh_distance': params.pi_oh_distance_cutoff,
+            'pi_oh_angle': params.pi_oh_angle_cutoff,
+            'pi_sh_distance': params.pi_sh_distance_cutoff,
+            'pi_sh_angle': params.pi_sh_angle_cutoff,
+            'covalent_factor': params.covalent_cutoff_factor,
+            'analysis_mode': params.analysis_mode,
+        })
+        
+        # Set values on existing variables if they exist
+        def safe_set(var_name, value):
+            if hasattr(self, var_name):
+                var = getattr(self, var_name)
+                if var:
+                    try:
+                        var.set(value)
+                    except tk.TclError:
+                        pass  # Variable destroyed, ignore
+        
+        safe_set('hb_distance', params.hb_distance_cutoff)
+        safe_set('hb_angle', params.hb_angle_cutoff)
+        safe_set('da_distance', params.hb_donor_acceptor_cutoff)
+        safe_set('whb_distance', params.whb_distance_cutoff)
+        safe_set('whb_angle', params.whb_angle_cutoff)
+        safe_set('whb_da_distance', params.whb_donor_acceptor_cutoff)
+        safe_set('xb_distance', params.xb_distance_cutoff)
+        safe_set('xb_angle', params.xb_angle_cutoff)
+        safe_set('pi_distance', params.pi_distance_cutoff)
+        safe_set('pi_angle', params.pi_angle_cutoff)
+        safe_set('pi_ccl_distance', params.pi_ccl_distance_cutoff)
+        safe_set('pi_ccl_angle', params.pi_ccl_angle_cutoff)
+        safe_set('pi_cbr_distance', params.pi_cbr_distance_cutoff)
+        safe_set('pi_cbr_angle', params.pi_cbr_angle_cutoff)
+        safe_set('pi_ci_distance', params.pi_ci_distance_cutoff)
+        safe_set('pi_ci_angle', params.pi_ci_angle_cutoff)
+        safe_set('pi_ch_distance', params.pi_ch_distance_cutoff)
+        safe_set('pi_ch_angle', params.pi_ch_angle_cutoff)
+        safe_set('pi_nh_distance', params.pi_nh_distance_cutoff)
+        safe_set('pi_nh_angle', params.pi_nh_angle_cutoff)
+        safe_set('pi_oh_distance', params.pi_oh_distance_cutoff)
+        safe_set('pi_oh_angle', params.pi_oh_angle_cutoff)
+        safe_set('pi_sh_distance', params.pi_sh_distance_cutoff)
+        safe_set('pi_sh_angle', params.pi_sh_angle_cutoff)
+        safe_set('covalent_factor', params.covalent_cutoff_factor)
+        safe_set('analysis_mode', params.analysis_mode)
 
     def _set_defaults(self):
         """Reset all parameters to default values."""
