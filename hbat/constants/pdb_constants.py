@@ -870,3 +870,77 @@ Mapping of aromatic property classification to compact single letter codes:
 
 Used for identifying atoms involved in π-interactions and aromatic stacking.
 """
+
+# Carbonyl interaction constants
+RESIDUES_WITH_BACKBONE_CARBONYLS: List[str] = [
+    "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE",
+    "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL",
+    # Common variants
+    "HID", "HIE", "HIP", "CYX", "MSE"
+]
+"""List[str]: Residues that have backbone carbonyl groups (C=O).
+
+All standard amino acid residues contain a backbone carbonyl group as part
+of the peptide bond. This list includes:
+- All 20 standard amino acids
+- Common histidine protonation variants (HID, HIE, HIP)
+- Cysteine disulfide variant (CYX)
+- Selenomethionine (MSE)
+
+Used for:
+    - Backbone carbonyl identification
+    - n→π* interaction detection between peptide bonds
+    - Secondary structure analysis
+"""
+
+RESIDUES_WITH_SIDECHAIN_CARBONYLS: Dict[str, List[str]] = {
+    "ASN": ["CG", "OD1"],  # Asparagine amide
+    "GLN": ["CD", "OE1"],  # Glutamine amide
+    "ASP": ["CG", "OD1"],  # Aspartate carboxylate (representative)
+    "GLU": ["CD", "OE1"],  # Glutamate carboxylate (representative)
+}
+"""Dict[str, List[str]]: Residues with sidechain carbonyl groups and their atom names.
+
+Maps residue names to [carbon_atom, oxygen_atom] pairs for sidechain carbonyls:
+    - ASN: CG-OD1 (asparagine amide group)
+    - GLN: CD-OE1 (glutamine amide group)
+    - ASP: CG-OD1 (aspartate carboxylate, representative oxygen)
+    - GLU: CD-OE1 (glutamate carboxylate, representative oxygen)
+
+Note: Carboxylates (ASP, GLU) have two oxygen atoms; OD1/OE1 is used as 
+representative for interaction detection.
+
+Used for:
+    - Sidechain carbonyl identification
+    - n→π* interaction detection
+    - Electrostatic interaction analysis
+"""
+
+BACKBONE_CARBONYL_ATOMS: Dict[str, str] = {"C": "O"}
+"""Dict[str, str]: Backbone carbonyl carbon to oxygen atom mapping.
+
+Standard peptide bond atoms:
+    - C: Backbone carbonyl carbon
+    - O: Backbone carbonyl oxygen
+
+Used for:
+    - Backbone carbonyl group identification
+    - Peptide bond interaction analysis
+"""
+
+CARBONYL_BOND_LENGTH_RANGE: Dict[str, tuple] = {
+    "amide": (1.15, 1.35),      # C=O in peptide bonds and amide sidechains
+    "carboxylate": (1.15, 1.40) # C-O in carboxylate groups (longer due to resonance)
+}
+"""Dict[str, tuple]: Acceptable C-O bond length ranges for different carbonyl types.
+
+Bond length validation ranges in Angstroms:
+    - "amide": (1.15, 1.35) Å - Peptide bonds and amide sidechains (ASN, GLN)
+    - "carboxylate": (1.15, 1.40) Å - Carboxylate groups (ASP, GLU)
+
+Carboxylate bonds are slightly longer due to resonance delocalization.
+
+Used for:
+    - Carbonyl group validation
+    - Chemical bond verification
+"""

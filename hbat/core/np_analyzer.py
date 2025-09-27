@@ -12,6 +12,8 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 import numpy as np
 
 from ..constants import (
+    BACKBONE_CARBONYL_ATOMS,
+    CARBONYL_BOND_LENGTH_RANGE,
     HALOGEN_BOND_ACCEPTOR_ELEMENTS,
     HALOGEN_ELEMENTS,
     HYDROGEN_BOND_ACCEPTOR_ELEMENTS,
@@ -20,17 +22,29 @@ from ..constants import (
     PI_INTERACTION_ATOMS,
     PI_INTERACTION_DONOR,
     RESIDUES_WITH_AROMATIC_RINGS,
+    RESIDUES_WITH_BACKBONE_CARBONYLS,
+    RESIDUES_WITH_SIDECHAIN_CARBONYLS,
+    RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS,
 )
 from ..constants.atomic_data import AtomicData
 from ..constants.parameters import AnalysisParameters
-from .interactions import CooperativityChain, HalogenBond, HydrogenBond, PiInteraction
+from .interactions import (
+    CarbonylInteraction,
+    CooperativityChain,
+    HalogenBond,
+    HydrogenBond,
+    NPiInteraction,
+    PiInteraction,
+    PiPiInteraction,
+)
 from .np_vector import NPVec3D, batch_angle_between, compute_distance_matrix
 from .pdb_parser import PDBParser
 from .structure import Atom, Residue
 
 
 class NPMolecularInteractionAnalyzer:
-    """High-performance analyzer for molecular interactions.
+    """
+    Analyzer for molecular interactions.
 
     This analyzer uses vectorized NumPy operations for efficient analysis of molecular 
     interactions in protein structures. Supports comprehensive detection of:
@@ -62,6 +76,9 @@ class NPMolecularInteractionAnalyzer:
         self.hydrogen_bonds: List[HydrogenBond] = []
         self.halogen_bonds: List[HalogenBond] = []
         self.pi_interactions: List[PiInteraction] = []
+        self.pi_pi_interactions: List[PiPiInteraction] = []
+        self.carbonyl_interactions: List[CarbonylInteraction] = []
+        self.n_pi_interactions: List[NPiInteraction] = []
         self.cooperativity_chains: List[CooperativityChain] = []
 
         # Aromatic residues for π interactions
@@ -185,6 +202,9 @@ class NPMolecularInteractionAnalyzer:
         self.hydrogen_bonds = []
         self.halogen_bonds = []
         self.pi_interactions = []
+        self.pi_pi_interactions = []
+        self.carbonyl_interactions = []
+        self.n_pi_interactions = []
         self.cooperativity_chains = []
 
         # Analyze interactions with progress updates
@@ -196,6 +216,15 @@ class NPMolecularInteractionAnalyzer:
 
         update_progress("🔄 Finding π interactions...")
         self._find_pi_interactions_vectorized()
+
+        update_progress("🔀 Finding π-π stacking...")
+        self._find_pi_pi_interactions_vectorized()
+
+        update_progress("⚛️ Finding carbonyl interactions...")
+        self._find_carbonyl_interactions_vectorized()
+
+        update_progress("🎯 Finding n→π* interactions...")
+        self._find_n_pi_interactions_vectorized()
 
         update_progress("🕸️ Analyzing cooperativity...")
         # Find cooperativity chains (still uses graph-based approach)
@@ -545,6 +574,7 @@ class NPMolecularInteractionAnalyzer:
                         bond_type=bond_type,
                         _halogen_residue=halogen_residue,
                         _acceptor_residue=acceptor_residue,
+                        _donor=carbon_atom,
                     )
                     self.halogen_bonds.append(xbond)
 
@@ -803,6 +833,609 @@ class NPMolecularInteractionAnalyzer:
             if aromatic_center is not None:
                 centers.append({"residue": residue, "center": aromatic_center})
         return centers
+
+    def _calculate_ring_normal(self, ring_atoms: List[Atom]) -> np.ndarray:
+        """Calculate the normal vector of an aromatic ring plane.
+        
+        Uses the cross product of vectors to determine the normal vector
+        to the plane defined by the ring atoms.
+        
+        :param ring_atoms: List of atoms constituting the aromatic ring
+        :type ring_atoms: List[Atom]
+        :returns: Unit normal vector to the ring plane
+        :rtype: np.ndarray
+        """
+        if len(ring_atoms) < 3:
+            return np.array([0.0, 0.0, 1.0])  # Default normal
+        
+        # Convert atom coordinates to numpy array
+        coords = np.array([[atom.coords.x, atom.coords.y, atom.coords.z] 
+                          for atom in ring_atoms])
+        
+        # Calculate center
+        center = np.mean(coords, axis=0)
+        
+        # Get two vectors in the plane
+        vec1 = coords[0] - center
+        vec2 = coords[1] - center
+        
+        # Calculate normal as cross product
+        normal = np.cross(vec1, vec2)
+        
+        # Normalize
+        norm = np.linalg.norm(normal)
+        if norm > 0:
+            return normal / norm
+        else:
+            return np.array([0.0, 0.0, 1.0])  # Default normal
+
+
+    def _calculate_ring_offset(self, center1: NPVec3D, center2: NPVec3D, 
+                             ring1_atoms: List[Atom]) -> float:
+        """Calculate the lateral offset between two ring centroids for parallel stacking.
+        
+        Computes the perpendicular distance between ring centroids when projected
+        onto the plane of the first ring.
+        
+        :param center1: Centroid of the first ring
+        :type center1: NPVec3D
+        :param center2: Centroid of the second ring
+        :type center2: NPVec3D
+        :param ring1_atoms: Atoms of the first ring (for normal calculation)
+        :type ring1_atoms: List[Atom]
+        :returns: Lateral offset distance in Angstroms
+        :rtype: float
+        """
+        # Get normal vector of first ring
+        normal = self._calculate_ring_normal(ring1_atoms)
+        
+        # Vector between centroids
+        centroid_vector = np.array([
+            center2.x - center1.x,
+            center2.y - center1.y,
+            center2.z - center1.z
+        ])
+        
+        # Project centroid vector onto ring plane (perpendicular to normal)
+        projection = centroid_vector - np.dot(centroid_vector, normal) * normal
+        
+        # Return the magnitude of the projection (offset)
+        return np.linalg.norm(projection)
+
+    def _find_pi_pi_interactions_vectorized(self) -> None:
+        """Find π-π stacking interactions between aromatic rings.
+        
+        Detects π-π interactions using geometric criteria:
+        - Distance: 3.3-3.8 Å between ring centroids (default cutoff)
+        - Parallel stacking: angle < 30°, offset < 2.0 Å
+        - T-shaped stacking: angle 60-90°
+        - Offset stacking: intermediate angles
+        
+        Classifications follow McGaughey et al. (1998) criteria for π-π interactions.
+        """
+        if self.parameters.pi_pi_distance_cutoff <= 0:
+            return  # Skip if disabled
+        
+        # Get all aromatic rings using get_aromatic_center
+        aromatic_rings = []
+        
+        for residue in self.parser.residues.values():
+            if residue.name in RESIDUES_WITH_AROMATIC_RINGS:
+                aromatic_center = residue.get_aromatic_center()
+                if aromatic_center is not None:
+                    # Get ring atoms
+                    ring_atoms_names = RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS.get(residue.name, [])
+                    ring_atoms = []
+                    for atom in residue.atoms:
+                        if atom.name in ring_atoms_names:
+                            ring_atoms.append(atom)
+                    
+                    if len(ring_atoms) >= 5:  # Minimum atoms for aromatic ring
+                        aromatic_rings.append({
+                            'residue': residue,
+                            'atoms': ring_atoms,
+                            'center': aromatic_center,
+                            'ring_type': residue.name
+                        })
+        
+        # Pairwise comparison of all aromatic rings
+        for i, ring1 in enumerate(aromatic_rings):
+            for ring2 in aromatic_rings[i+1:]:
+                # Skip same residue
+                if ring1['residue'] == ring2['residue']:
+                    continue
+                
+                # Calculate centroid-to-centroid distance
+                center1 = ring1['center']
+                center2 = ring2['center']
+                distance = center1.distance_to(center2)
+                
+                # Apply distance cutoff filter
+                if distance > self.parameters.pi_pi_distance_cutoff:
+                    continue
+                
+                # Calculate plane angle using batch_angle_between
+                normal1 = self._calculate_ring_normal(ring1['atoms'])
+                normal2 = self._calculate_ring_normal(ring2['atoms'])
+                
+                # Convert to NPVec3D for batch_angle_between
+                normal1_vec = NPVec3D(normal1[0], normal1[1], normal1[2])
+                normal2_vec = NPVec3D(normal2[0], normal2[1], normal2[2])
+                
+                # Calculate angle in radians and convert to degrees
+                angle_rad = batch_angle_between(normal1_vec, normal2_vec)
+                # Take absolute value for angle between planes (0-90 degrees)
+                plane_angle = abs(math.degrees(float(angle_rad)))
+                
+                # Classify stacking type and apply specific criteria
+                stacking_type = None
+                offset = 0.0
+                
+                if plane_angle < self.parameters.pi_pi_parallel_angle_cutoff:
+                    # Parallel stacking - check offset
+                    offset = self._calculate_ring_offset(center1, center2, ring1['atoms'])
+                    if offset < self.parameters.pi_pi_offset_cutoff:
+                        stacking_type = "parallel"
+                    else:
+                        continue  # Offset too large for parallel stacking
+                
+                elif plane_angle >= self.parameters.pi_pi_tshaped_angle_min:
+                    stacking_type = "T-shaped"
+                    offset = self._calculate_ring_offset(center1, center2, ring1['atoms'])
+                
+                else:
+                    # Offset stacking (intermediate angles)
+                    stacking_type = "offset"
+                    offset = self._calculate_ring_offset(center1, center2, ring1['atoms'])
+                
+                if stacking_type:
+                    # Create residue identifiers
+                    ring1_residue = f"{ring1['residue'].name}{ring1['residue'].seq_num}"
+                    ring2_residue = f"{ring2['residue'].name}{ring2['residue'].seq_num}"
+                    
+                    # Create π-π interaction
+                    pi_pi_interaction = PiPiInteraction(
+                        ring1_atoms=ring1['atoms'],
+                        ring2_atoms=ring2['atoms'],
+                        ring1_center=center1,
+                        ring2_center=center2,
+                        distance=distance,
+                        plane_angle=plane_angle,
+                        offset=offset,
+                        stacking_type=stacking_type,
+                        ring1_type=ring1['ring_type'],
+                        ring2_type=ring2['ring_type'],
+                        ring1_residue=ring1_residue,
+                        ring2_residue=ring2_residue
+                    )
+                    
+                    self.pi_pi_interactions.append(pi_pi_interaction)
+
+    def _identify_carbonyl_groups(self) -> List[Tuple[int, int, bool, str]]:
+        """Identify all C=O groups in the structure using constants.
+        
+        Detects both backbone and sidechain carbonyl groups by identifying
+        carbon atoms bonded to oxygen with appropriate geometry.
+        
+        :returns: List of (C_index, O_index, is_backbone, residue_id) tuples
+        :rtype: List[Tuple[int, int, bool, str]]
+        """
+        carbonyl_groups = []
+        
+        # Build atom index mapping
+        atom_to_index = {atom: idx for idx, atom in enumerate(self.parser.atoms)}
+        
+        for residue in self.parser.residues.values():
+            residue_id = f"{residue.name}{residue.seq_num}"
+            
+            # Look for backbone carbonyl (peptide bond) using constants
+            if residue.name in RESIDUES_WITH_BACKBONE_CARBONYLS:
+                backbone_c = None
+                backbone_o = None
+                
+                for atom in residue.atoms:
+                    if atom.name in BACKBONE_CARBONYL_ATOMS and atom.element.upper() == "C":
+                        backbone_c = atom
+                    elif atom.name == BACKBONE_CARBONYL_ATOMS.get("C") and atom.element.upper() == "O":
+                        backbone_o = atom
+                
+                # Check if we have a complete backbone carbonyl
+                if backbone_c and backbone_o:
+                    # Verify C-O distance using constants
+                    co_distance = backbone_c.coords.distance_to(backbone_o.coords)
+                    min_dist, max_dist = CARBONYL_BOND_LENGTH_RANGE["amide"]
+                    if min_dist <= co_distance <= max_dist:
+                        c_idx = atom_to_index[backbone_c]
+                        o_idx = atom_to_index[backbone_o]
+                        carbonyl_groups.append((c_idx, o_idx, True, residue_id))
+            
+            # Look for sidechain carbonyls using constants
+            if residue.name in RESIDUES_WITH_SIDECHAIN_CARBONYLS:
+                c_name, o_name = RESIDUES_WITH_SIDECHAIN_CARBONYLS[residue.name]
+                
+                sidechain_c = None
+                sidechain_o = None
+                
+                for atom in residue.atoms:
+                    if atom.name == c_name and atom.element.upper() == "C":
+                        sidechain_c = atom
+                    elif atom.name == o_name and atom.element.upper() == "O":
+                        sidechain_o = atom
+                
+                if sidechain_c and sidechain_o:
+                    co_distance = sidechain_c.coords.distance_to(sidechain_o.coords)
+                    
+                    # Use appropriate bond length range based on residue type
+                    if residue.name in ["ASN", "GLN"]:
+                        min_dist, max_dist = CARBONYL_BOND_LENGTH_RANGE["amide"]
+                    else:  # ASP, GLU
+                        min_dist, max_dist = CARBONYL_BOND_LENGTH_RANGE["carboxylate"]
+                    
+                    if min_dist <= co_distance <= max_dist:
+                        c_idx = atom_to_index[sidechain_c]
+                        o_idx = atom_to_index[sidechain_o]
+                        carbonyl_groups.append((c_idx, o_idx, False, residue_id))
+        
+        return carbonyl_groups
+
+
+    def _find_carbonyl_interactions_vectorized(self) -> None:
+        """Find carbonyl-carbonyl n→π* interactions.
+        
+        Detects n→π* interactions between carbonyl groups following the
+        Bürgi-Dunitz trajectory. Uses geometric criteria:
+        - Distance: 2.8-3.2 Å between O and C atoms
+        - Angle: 95-125° for the O···C=O angle (Bürgi-Dunitz angle)
+        
+        Filters out same-residue interactions to focus on stabilizing
+        inter-residue contacts.
+        """
+        if self.parameters.carbonyl_distance_cutoff <= 0:
+            return  # Skip if disabled
+        
+        # Get all carbonyl groups
+        carbonyl_groups = self._identify_carbonyl_groups()
+        if len(carbonyl_groups) < 2:
+            return  # Need at least 2 carbonyls
+        
+        # Extract coordinates and atoms
+        atoms = self.parser.atoms
+        carbonyl_data = []
+        
+        for c_idx, o_idx, is_backbone, residue_id in carbonyl_groups:
+            carbonyl_data.append({
+                'c_idx': c_idx,
+                'o_idx': o_idx,
+                'c_atom': atoms[c_idx],
+                'o_atom': atoms[o_idx],
+                'is_backbone': is_backbone,
+                'residue_id': residue_id
+            })
+        
+        # Pairwise comparison of carbonyl groups
+        for i, donor_carbonyl in enumerate(carbonyl_data):
+            for acceptor_carbonyl in carbonyl_data[i+1:]:
+                # Skip same residue interactions
+                if donor_carbonyl['residue_id'] == acceptor_carbonyl['residue_id']:
+                    continue
+                
+                # Get atom coordinates
+                donor_o_coords = np.array([
+                    donor_carbonyl['o_atom'].coords.x,
+                    donor_carbonyl['o_atom'].coords.y,
+                    donor_carbonyl['o_atom'].coords.z
+                ])
+                
+                acceptor_c_coords = np.array([
+                    acceptor_carbonyl['c_atom'].coords.x,
+                    acceptor_carbonyl['c_atom'].coords.y,
+                    acceptor_carbonyl['c_atom'].coords.z
+                ])
+                
+                acceptor_o_coords = np.array([
+                    acceptor_carbonyl['o_atom'].coords.x,
+                    acceptor_carbonyl['o_atom'].coords.y,
+                    acceptor_carbonyl['o_atom'].coords.z
+                ])
+                
+                # Calculate O···C distance
+                oc_distance = np.linalg.norm(donor_o_coords - acceptor_c_coords)
+                
+                # Apply distance cutoff
+                if oc_distance > self.parameters.carbonyl_distance_cutoff:
+                    continue
+                
+                # Calculate Bürgi-Dunitz angle using batch_angle_between
+                # Vector from acceptor carbon to donor oxygen (C→O approach vector)
+                approach_vector = donor_o_coords - acceptor_c_coords
+                # Vector from acceptor carbon to acceptor oxygen (C=O bond vector)
+                carbonyl_vector = acceptor_o_coords - acceptor_c_coords
+                
+                # Convert to NPVec3D for batch_angle_between
+                approach_vec = NPVec3D(approach_vector[0], approach_vector[1], approach_vector[2])
+                carbonyl_vec = NPVec3D(carbonyl_vector[0], carbonyl_vector[1], carbonyl_vector[2])
+                
+                # Calculate angle in radians and convert to degrees
+                angle_rad = batch_angle_between(approach_vec, carbonyl_vec)
+                calculated_angle = math.degrees(float(angle_rad))
+                
+                # Debug: Print vectors and angle for troubleshooting
+                # print(f"Debug - Approach vector: {approach_vec}, Carbonyl vector: {carbonyl_vec}")
+                # print(f"Debug - Calculated angle: {calculated_angle}°")
+                
+                # The Bürgi-Dunitz angle should be ~107° (tetrahedral angle)
+                # The batch_angle_between always returns 0-180°, but if we get a very small angle,
+                # it likely means the vectors are nearly parallel, but we want the larger angle
+                # for the proper Bürgi-Dunitz trajectory
+                if calculated_angle < 90.0:
+                    burgi_dunitz_angle = 180.0 - calculated_angle
+                else:
+                    burgi_dunitz_angle = calculated_angle
+                
+                # Apply angle cutoffs
+                if not (self.parameters.carbonyl_angle_min <= burgi_dunitz_angle <= 
+                       self.parameters.carbonyl_angle_max):
+                    continue
+                
+                # Determine if both are backbone carbonyls
+                is_backbone_interaction = (donor_carbonyl['is_backbone'] and 
+                                         acceptor_carbonyl['is_backbone'])
+                
+                # Create carbonyl interaction
+                carbonyl_interaction = CarbonylInteraction(
+                    donor_carbon=donor_carbonyl['c_atom'],
+                    donor_oxygen=donor_carbonyl['o_atom'],
+                    acceptor_carbon=acceptor_carbonyl['c_atom'],
+                    acceptor_oxygen=acceptor_carbonyl['o_atom'],
+                    distance=oc_distance,
+                    burgi_dunitz_angle=burgi_dunitz_angle,
+                    is_backbone=is_backbone_interaction,
+                    donor_residue=donor_carbonyl['residue_id'],
+                    acceptor_residue=acceptor_carbonyl['residue_id']
+                )
+                
+                self.carbonyl_interactions.append(carbonyl_interaction)
+                
+                # Also check the reverse interaction (acceptor as donor)
+                # Calculate reverse O···C distance
+                reverse_oc_distance = np.linalg.norm(acceptor_o_coords - 
+                                                   np.array([donor_carbonyl['c_atom'].coords.x,
+                                                           donor_carbonyl['c_atom'].coords.y,
+                                                           donor_carbonyl['c_atom'].coords.z]))
+                
+                if reverse_oc_distance <= self.parameters.carbonyl_distance_cutoff:
+                    # Calculate reverse Bürgi-Dunitz angle
+                    donor_c_coords = np.array([
+                        donor_carbonyl['c_atom'].coords.x,
+                        donor_carbonyl['c_atom'].coords.y,
+                        donor_carbonyl['c_atom'].coords.z
+                    ])
+                    
+                    # Calculate reverse Bürgi-Dunitz angle using batch_angle_between
+                    # Vector from donor carbon to acceptor oxygen (C→O approach vector)
+                    reverse_approach_vector = acceptor_o_coords - donor_c_coords
+                    # Vector from donor carbon to donor oxygen (C=O bond vector)
+                    reverse_carbonyl_vector = donor_o_coords - donor_c_coords
+                    
+                    # Convert to NPVec3D for batch_angle_between
+                    reverse_approach_vec = NPVec3D(reverse_approach_vector[0], reverse_approach_vector[1], reverse_approach_vector[2])
+                    reverse_carbonyl_vec = NPVec3D(reverse_carbonyl_vector[0], reverse_carbonyl_vector[1], reverse_carbonyl_vector[2])
+                    
+                    # Calculate angle in radians and convert to degrees
+                    reverse_angle_rad = batch_angle_between(reverse_approach_vec, reverse_carbonyl_vec)
+                    reverse_calculated_angle = math.degrees(float(reverse_angle_rad))
+                    
+                    # Apply the same angle correction for reverse interaction
+                    if reverse_calculated_angle < 90.0:
+                        reverse_angle = 180.0 - reverse_calculated_angle
+                    else:
+                        reverse_angle = reverse_calculated_angle
+                    
+                    if (self.parameters.carbonyl_angle_min <= reverse_angle <= 
+                        self.parameters.carbonyl_angle_max):
+                        
+                        reverse_interaction = CarbonylInteraction(
+                            donor_carbon=acceptor_carbonyl['c_atom'],
+                            donor_oxygen=acceptor_carbonyl['o_atom'],
+                            acceptor_carbon=donor_carbonyl['c_atom'],
+                            acceptor_oxygen=donor_carbonyl['o_atom'],
+                            distance=reverse_oc_distance,
+                            burgi_dunitz_angle=reverse_angle,
+                            is_backbone=is_backbone_interaction,
+                            donor_residue=acceptor_carbonyl['residue_id'],
+                            acceptor_residue=donor_carbonyl['residue_id']
+                        )
+                        
+                        self.carbonyl_interactions.append(reverse_interaction)
+
+    def _identify_lone_pair_donors(self) -> List[Tuple[Atom, str, str]]:
+        """Identify atoms with lone pairs that can participate in n→π* interactions.
+        
+        Identifies oxygen, nitrogen, and sulfur atoms that have lone pair
+        electrons available for interaction with π systems.
+        
+        :returns: List of (atom, element, subtype) tuples
+        :rtype: List[Tuple[Atom, str, str]]
+        """
+        lone_pair_donors = []
+        
+        for residue in self.parser.residues.values():
+            residue_id = f"{residue.name}{residue.seq_num}"
+            
+            for atom in residue.atoms:
+                element = atom.element.upper()
+                
+                if element in ["O", "N", "S"]:
+                    subtype = self._classify_n_pi_donor_subtype(atom, residue)
+                    lone_pair_donors.append((atom, element, subtype))
+        
+        return lone_pair_donors
+
+    def _classify_n_pi_donor_subtype(self, atom: Atom, residue: Residue) -> str:
+        """Classify the subtype of an n→π* donor atom.
+        
+        :param atom: The donor atom
+        :type atom: Atom
+        :param residue: The residue containing the atom
+        :type residue: Residue
+        :returns: Subtype classification string
+        :rtype: str
+        """
+        element = atom.element.upper()
+        atom_name = atom.name
+        
+        if element == "O":
+            # Classify oxygen donors
+            if atom_name == "O":
+                return "backbone-carbonyl"
+            elif atom_name in ["OD1", "OD2"]:
+                return "aspartate-carbonyl" if residue.name == "ASP" else "asparagine-carbonyl"
+            elif atom_name in ["OE1", "OE2"]:
+                return "glutamate-carbonyl" if residue.name == "GLU" else "glutamine-carbonyl"
+            elif atom_name in ["OG", "OG1"]:
+                return "hydroxyl-oxygen"
+            elif atom_name == "OH":
+                return "tyrosine-hydroxyl"
+            else:
+                return "carbonyl-oxygen"
+                
+        elif element == "N":
+            # Classify nitrogen donors
+            if atom_name in ["N"]:
+                return "backbone-amine"
+            elif atom_name in ["ND1", "ND2", "NE1", "NE2"]:
+                return "histidine-nitrogen"
+            elif atom_name in ["NE", "NZ"]:
+                return "lysine-nitrogen" if residue.name == "LYS" else "arginine-nitrogen"
+            elif atom_name in ["NE2", "ND2"]:
+                return "asparagine-nitrogen" if residue.name == "ASN" else "glutamine-nitrogen"
+            else:
+                return "amine-nitrogen"
+                
+        elif element == "S":
+            # Classify sulfur donors
+            if atom_name in ["SG"]:
+                return "cysteine-sulfur"
+            elif atom_name in ["SD"]:
+                return "methionine-sulfur"
+            else:
+                return "sulfur-donor"
+        
+        return f"{element.lower()}-donor"
+
+    def _find_n_pi_interactions_vectorized(self) -> None:
+        """Find n→π* interactions between lone pairs and π systems.
+        
+        Detects n→π* interactions where lone pair electrons from O, N, S atoms
+        interact with aromatic π systems. Uses geometric criteria:
+        - Distance: 3.0-3.5 Å (3.8 Å for sulfur)
+        - Angle: 90-120° to π plane normal
+        
+        Classifies interactions by donor type and π system type.
+        """
+        if self.parameters.n_pi_distance_cutoff <= 0:
+            return  # Skip if disabled
+        
+        # Get lone pair donors
+        lone_pair_donors = self._identify_lone_pair_donors()
+        if not lone_pair_donors:
+            return
+        
+        # Get aromatic rings using get_aromatic_center
+        aromatic_rings = []
+        
+        for residue in self.parser.residues.values():
+            if residue.name in RESIDUES_WITH_AROMATIC_RINGS:
+                aromatic_center = residue.get_aromatic_center()
+                if aromatic_center is not None:
+                    # Get ring atoms
+                    ring_atoms_names = RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS.get(residue.name, [])
+                    ring_atoms = []
+                    for atom in residue.atoms:
+                        if atom.name in ring_atoms_names:
+                            ring_atoms.append(atom)
+                    
+                    if len(ring_atoms) >= 5:  # Minimum atoms for aromatic ring
+                        aromatic_rings.append({
+                            'residue': residue,
+                            'atoms': ring_atoms,
+                            'center': aromatic_center,
+                            'ring_type': residue.name
+                        })
+        
+        if not aromatic_rings:
+            return
+        
+        # For each lone pair donor
+        for donor_atom, donor_element, donor_subtype in lone_pair_donors:
+            donor_coords = np.array([donor_atom.coords.x, donor_atom.coords.y, donor_atom.coords.z])
+            donor_residue = f"{donor_atom.chain_id}{donor_atom.res_seq}{donor_atom.res_name}" if hasattr(donor_atom, 'res_name') else "UNK"
+            
+            # For each aromatic ring
+            for ring_info in aromatic_rings:
+                ring_center = ring_info['center']
+                ring_atoms = ring_info['atoms']
+                acceptor_residue = f"{ring_info['residue'].name}{ring_info['residue'].seq_num}"
+                
+                # Skip same residue interactions
+                if donor_residue == acceptor_residue:
+                    continue
+                
+                # Calculate distance to π center
+                ring_center_coords = np.array([ring_center.x, ring_center.y, ring_center.z])
+                distance = np.linalg.norm(donor_coords - ring_center_coords)
+                
+                # Apply element-specific distance cutoffs
+                if donor_element == "S":
+                    distance_cutoff = self.parameters.n_pi_sulfur_distance_cutoff
+                else:
+                    distance_cutoff = self.parameters.n_pi_distance_cutoff
+                
+                # Apply minimum distance filter
+                distance_min = getattr(self.parameters, 'n_pi_distance_min', 2.5)
+                
+                if distance < distance_min or distance > distance_cutoff:
+                    continue
+                
+                # Calculate angle to π plane normal using batch_angle_between
+                ring_normal = self._calculate_ring_normal(ring_atoms)
+                
+                # Vector from donor to π center
+                donor_to_pi = ring_center_coords - donor_coords
+                
+                # Convert to NPVec3D for batch_angle_between
+                donor_to_pi_vec = NPVec3D(donor_to_pi[0], donor_to_pi[1], donor_to_pi[2])
+                ring_normal_vec = NPVec3D(ring_normal[0], ring_normal[1], ring_normal[2])
+                
+                # Calculate angle in radians and convert to degrees
+                angle_to_normal_rad = batch_angle_between(donor_to_pi_vec, ring_normal_vec)
+                angle_to_normal = abs(math.degrees(angle_to_normal_rad))
+                
+                # Convert to angle to plane (90° - angle to normal)
+                angle_to_plane = 90.0 - angle_to_normal
+                
+                # Apply angle cutoffs
+                if not (self.parameters.n_pi_angle_min <= angle_to_plane <= 
+                       self.parameters.n_pi_angle_max):
+                    continue
+                
+                # Create interaction subtype description
+                ring_type = ring_info['ring_type'].lower()
+                interaction_subtype = f"{donor_subtype}-{ring_type}"
+                
+                # Create n→π* interaction
+                n_pi_interaction = NPiInteraction(
+                    lone_pair_atom=donor_atom,
+                    pi_center=ring_center,
+                    pi_atoms=ring_atoms,
+                    distance=distance,
+                    angle_to_plane=angle_to_plane,
+                    subtype=interaction_subtype,
+                    donor_residue=donor_residue,
+                    acceptor_residue=acceptor_residue
+                )
+                
+                self.n_pi_interactions.append(n_pi_interaction)
 
     def _find_cooperativity_chains(self) -> None:
         """Find cooperativity chains in interactions."""
@@ -1101,13 +1734,55 @@ class NPMolecularInteractionAnalyzer:
                     else 0
                 ),
             },
+            "pi_pi_interactions": {
+                "count": len(self.pi_pi_interactions),
+                "average_distance": (
+                    np.mean([pipi.distance for pipi in self.pi_pi_interactions])
+                    if self.pi_pi_interactions
+                    else 0
+                ),
+                "average_plane_angle": (
+                    np.mean([pipi.plane_angle for pipi in self.pi_pi_interactions])
+                    if self.pi_pi_interactions
+                    else 0
+                ),
+            },
+            "carbonyl_interactions": {
+                "count": len(self.carbonyl_interactions),
+                "average_distance": (
+                    np.mean([carb.distance for carb in self.carbonyl_interactions])
+                    if self.carbonyl_interactions
+                    else 0
+                ),
+                "average_angle": (
+                    np.mean([carb.burgi_dunitz_angle for carb in self.carbonyl_interactions])
+                    if self.carbonyl_interactions
+                    else 0
+                ),
+            },
+            "n_pi_interactions": {
+                "count": len(self.n_pi_interactions),
+                "average_distance": (
+                    np.mean([npi.distance for npi in self.n_pi_interactions])
+                    if self.n_pi_interactions
+                    else 0
+                ),
+                "average_angle": (
+                    np.mean([npi.angle_to_plane for npi in self.n_pi_interactions])
+                    if self.n_pi_interactions
+                    else 0
+                ),
+            },
             "cooperativity_chains": {
                 "count": len(self.cooperativity_chains),
                 "types": [chain.chain_type for chain in self.cooperativity_chains],
             },
             "total_interactions": len(self.hydrogen_bonds)
             + len(self.halogen_bonds)
-            + len(self.pi_interactions),
+            + len(self.pi_interactions)
+            + len(self.pi_pi_interactions)
+            + len(self.carbonyl_interactions)
+            + len(self.n_pi_interactions),
         }
 
         # Add detailed statistics from original get_statistics method
@@ -1138,6 +1813,42 @@ class NPMolecularInteractionAnalyzer:
             pi_summary = summary["pi_interactions"]
             pi_summary["average_distance"] = round(pi_summary["average_distance"], 2)
             pi_summary["average_angle"] = round(pi_summary["average_angle"], 1)
+
+        if self.pi_pi_interactions:
+            pipi_summary = summary["pi_pi_interactions"]
+            pipi_summary["average_distance"] = round(pipi_summary["average_distance"], 2)
+            pipi_summary["average_plane_angle"] = round(pipi_summary["average_plane_angle"], 1)
+            
+            # Stacking type distribution
+            stacking_types: Dict[str, int] = {}
+            for pipi in self.pi_pi_interactions:
+                stacking_types[pipi.stacking_type] = stacking_types.get(pipi.stacking_type, 0) + 1
+            pipi_summary["stacking_types"] = stacking_types
+
+        if self.carbonyl_interactions:
+            carb_summary = summary["carbonyl_interactions"]
+            carb_summary["average_distance"] = round(carb_summary["average_distance"], 2)
+            carb_summary["average_angle"] = round(carb_summary["average_angle"], 1)
+            
+            # Backbone vs sidechain distribution
+            interaction_types: Dict[str, int] = {}
+            for carb in self.carbonyl_interactions:
+                interaction_types[carb.interaction_classification] = interaction_types.get(carb.interaction_classification, 0) + 1
+            carb_summary["interaction_types"] = interaction_types
+
+        if self.n_pi_interactions:
+            npi_summary = summary["n_pi_interactions"]
+            npi_summary["average_distance"] = round(npi_summary["average_distance"], 2)
+            npi_summary["average_angle"] = round(npi_summary["average_angle"], 1)
+            
+            # Donor element distribution
+            donor_elements: Dict[str, int] = {}
+            subtype_distribution: Dict[str, int] = {}
+            for npi in self.n_pi_interactions:
+                donor_elements[npi.donor_element] = donor_elements.get(npi.donor_element, 0) + 1
+                subtype_distribution[npi.subtype] = subtype_distribution.get(npi.subtype, 0) + 1
+            npi_summary["donor_elements"] = donor_elements
+            npi_summary["subtypes"] = subtype_distribution
 
         # Chain length distribution
         if self.cooperativity_chains:

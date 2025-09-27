@@ -45,6 +45,30 @@ class ResultsPanel:
         self.parent = parent
         self.analyzer: Optional[MolecularInteractionAnalyzer] = None
         self._create_widgets()
+    
+    def _parse_residue_string(self, residue_str: str) -> str:
+        """Parse a residue string like 'A123ALA' into 'A:ALA123'.
+        
+        :param residue_str: Residue string in format ChainResSeqResName
+        :type residue_str: str
+        :returns: Formatted string like 'Chain:ResNameResSeq'  
+        :rtype: str
+        """
+        if not residue_str:
+            return "Unknown"
+        
+        # Handle the format: ChainIdResSeqResName (e.g., "A123ALA")
+        # Chain ID is typically 1 character, residue name is typically 3 characters at the end
+        if len(residue_str) >= 4:
+            chain_id = residue_str[0]
+            # The residue name is typically the last 3 characters
+            res_name = residue_str[-3:]
+            # The residue sequence number is everything in between
+            res_seq = residue_str[1:-3]
+            return f"{chain_id}:{res_name}{res_seq}"
+        else:
+            # Fallback for unexpected formats
+            return residue_str
 
     def _create_widgets(self):
         """Create result display widgets."""
@@ -63,6 +87,13 @@ class ResultsPanel:
 
         # Pi interactions tab
         self._create_pi_interactions_tab()
+
+        # New interaction types tabs
+        self._create_pi_pi_stacking_tab()
+        
+        self._create_carbonyl_interactions_tab()
+        
+        self._create_n_pi_interactions_tab()
 
         # Cooperativity chains tab
         self._create_cooperativity_chains_tab()
@@ -115,6 +146,7 @@ class ResultsPanel:
         columns = (
             "donor_res",
             "donor_atom",
+            "hydrogen",
             "acceptor_res",
             "acceptor_atom",
             "distance",
@@ -132,6 +164,7 @@ class ResultsPanel:
         # Configure columns
         self.hb_tree.heading("donor_res", text="Donor Residue")
         self.hb_tree.heading("donor_atom", text="Donor Atom")
+        self.hb_tree.heading("hydrogen", text="Hydrogen Atom")
         self.hb_tree.heading("acceptor_res", text="Acceptor Residue")
         self.hb_tree.heading("acceptor_atom", text="Acceptor Atom")
         self.hb_tree.heading("distance", text="H...A (Å)")
@@ -143,6 +176,7 @@ class ResultsPanel:
 
         # Configure column widths
         self.hb_tree.column("donor_res", width=120)
+        self.hb_tree.column("hydrogen", width=120)
         self.hb_tree.column("donor_atom", width=100)
         self.hb_tree.column("acceptor_res", width=120)
         self.hb_tree.column("acceptor_atom", width=100)
@@ -206,6 +240,7 @@ class ResultsPanel:
 
         columns = (
             "halogen_res",
+            "donor_atom",
             "halogen_atom",
             "acceptor_res",
             "acceptor_atom",
@@ -222,6 +257,7 @@ class ResultsPanel:
 
         # Configure columns
         self.xb_tree.heading("halogen_res", text="Halogen Residue")
+        self.xb_tree.heading("donor_atom", text="Donor Atom")
         self.xb_tree.heading("halogen_atom", text="Halogen Atom")
         self.xb_tree.heading("acceptor_res", text="Acceptor Residue")
         self.xb_tree.heading("acceptor_atom", text="Acceptor Atom")
@@ -233,6 +269,7 @@ class ResultsPanel:
 
         # Configure column widths
         self.xb_tree.column("halogen_res", width=140)
+        self.xb_tree.column("donor_atom", width=100)
         self.xb_tree.column("halogen_atom", width=120)
         self.xb_tree.column("acceptor_res", width=140)
         self.xb_tree.column("acceptor_atom", width=120)
@@ -457,6 +494,294 @@ class ResultsPanel:
                 command=self._visualize_selected_chain,
             ).pack(side=tk.RIGHT, padx=5)
 
+    def _create_pi_pi_stacking_tab(self):
+        """Create π-π stacking interactions results tab."""
+        pi_pi_frame = ttk.Frame(self.notebook)
+        self.notebook.add(pi_pi_frame, text="π-π Stacking")
+
+        # Create treeview for π-π stacking
+        tree_frame = ttk.Frame(pi_pi_frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = (
+            "ring1_res",
+            "ring1_atoms", 
+            "ring2_res",
+            "ring2_atoms",
+            "distance",
+            "plane_angle",
+            "offset",
+            "stacking_type",
+            "bs_int",
+        )
+
+        self.pi_pi_tree = ttk.Treeview(
+            tree_frame, columns=columns, show="headings", height=15
+        )
+
+        # Configure columns
+        self.pi_pi_tree.heading("ring1_res", text="Ring 1 Residue")
+        self.pi_pi_tree.heading("ring1_atoms", text="Ring 1 Atoms")
+        self.pi_pi_tree.heading("ring2_res", text="Ring 2 Residue")
+        self.pi_pi_tree.heading("ring2_atoms", text="Ring 2 Atoms")
+        self.pi_pi_tree.heading("distance", text="Distance (Å)")
+        self.pi_pi_tree.heading("plane_angle", text="Plane Angle (°)")
+        self.pi_pi_tree.heading("offset", text="Offset (Å)")
+        self.pi_pi_tree.heading("stacking_type", text="Stacking Type")
+        self.pi_pi_tree.heading("bs_int", text="B/S")
+
+        # Configure column widths
+        self.pi_pi_tree.column("ring1_res", width=120)
+        self.pi_pi_tree.column("ring1_atoms", width=140)
+        self.pi_pi_tree.column("ring2_res", width=120)
+        self.pi_pi_tree.column("ring2_atoms", width=140)
+        self.pi_pi_tree.column("distance", width=100)
+        self.pi_pi_tree.column("plane_angle", width=110)
+        self.pi_pi_tree.column("offset", width=100)
+        self.pi_pi_tree.column("stacking_type", width=120)
+        self.pi_pi_tree.column("bs_int", width=70)
+
+        # Add scrollbars
+        pi_pi_v_scrollbar = ttk.Scrollbar(
+            tree_frame, orient=tk.VERTICAL, command=self.pi_pi_tree.yview
+        )
+        pi_pi_h_scrollbar = ttk.Scrollbar(
+            tree_frame, orient=tk.HORIZONTAL, command=self.pi_pi_tree.xview
+        )
+        self.pi_pi_tree.configure(
+            yscrollcommand=pi_pi_v_scrollbar.set, xscrollcommand=pi_pi_h_scrollbar.set
+        )
+
+        self.pi_pi_tree.grid(row=0, column=0, sticky="nsew")
+        pi_pi_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        pi_pi_h_scrollbar.grid(row=1, column=0, sticky="ew")
+
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
+
+        # Add info label
+        info_frame = ttk.Frame(pi_pi_frame)
+        info_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Label(
+            info_frame,
+            text="π-π Stacking Interactions: Parallel, T-shaped, and offset aromatic ring interactions",
+        ).pack(side=tk.LEFT)
+
+        # Add search functionality
+        search_frame = ttk.Frame(pi_pi_frame)
+        search_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+        self.pi_pi_search_var = tk.StringVar()
+        search_entry = ttk.Entry(
+            search_frame, textvariable=self.pi_pi_search_var, width=30
+        )
+        search_entry.pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            search_frame,
+            text="Filter",
+            command=lambda: self._filter_results(
+                self.pi_pi_tree, self.pi_pi_search_var.get()
+            ),
+        ).pack(side=tk.LEFT, padx=5)
+        ttk.Button(
+            search_frame,
+            text="Clear",
+            command=lambda: self._clear_filter(self.pi_pi_tree, self.pi_pi_search_var),
+        ).pack(side=tk.LEFT, padx=5)
+
+    def _create_carbonyl_interactions_tab(self):
+        """Create carbonyl n→π* interactions results tab."""
+        carbonyl_frame = ttk.Frame(self.notebook)
+        self.notebook.add(carbonyl_frame, text="Carbonyl Interactions")
+
+        # Create treeview for carbonyl interactions
+        tree_frame = ttk.Frame(carbonyl_frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = (
+            "acceptor_res",
+            "acceptor_atom",
+            "carbonyl_res",
+            "carbonyl_atoms",
+            "distance",
+            "angle",
+            "carbonyl_type",
+            "bs_int",
+        )
+
+        self.carbonyl_tree = ttk.Treeview(
+            tree_frame, columns=columns, show="headings", height=15
+        )
+
+        # Configure columns
+        self.carbonyl_tree.heading("acceptor_res", text="Acceptor Residue")
+        self.carbonyl_tree.heading("acceptor_atom", text="Acceptor Atom")
+        self.carbonyl_tree.heading("carbonyl_res", text="Carbonyl Residue")
+        self.carbonyl_tree.heading("carbonyl_atoms", text="Carbonyl C=O")
+        self.carbonyl_tree.heading("distance", text="O···C Distance (Å)")
+        self.carbonyl_tree.heading("angle", text="Bürgi-Dunitz Angle (°)")
+        self.carbonyl_tree.heading("carbonyl_type", text="Carbonyl Type")
+        self.carbonyl_tree.heading("bs_int", text="B/S")
+
+        # Configure column widths
+        self.carbonyl_tree.column("acceptor_res", width=130)
+        self.carbonyl_tree.column("acceptor_atom", width=120)
+        self.carbonyl_tree.column("carbonyl_res", width=130)
+        self.carbonyl_tree.column("carbonyl_atoms", width=120)
+        self.carbonyl_tree.column("distance", width=140)
+        self.carbonyl_tree.column("angle", width=150)
+        self.carbonyl_tree.column("carbonyl_type", width=120)
+        self.carbonyl_tree.column("bs_int", width=70)
+
+        # Add scrollbars
+        carbonyl_v_scrollbar = ttk.Scrollbar(
+            tree_frame, orient=tk.VERTICAL, command=self.carbonyl_tree.yview
+        )
+        carbonyl_h_scrollbar = ttk.Scrollbar(
+            tree_frame, orient=tk.HORIZONTAL, command=self.carbonyl_tree.xview
+        )
+        self.carbonyl_tree.configure(
+            yscrollcommand=carbonyl_v_scrollbar.set, xscrollcommand=carbonyl_h_scrollbar.set
+        )
+
+        self.carbonyl_tree.grid(row=0, column=0, sticky="nsew")
+        carbonyl_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        carbonyl_h_scrollbar.grid(row=1, column=0, sticky="ew")
+
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
+
+        # Add info label
+        info_frame = ttk.Frame(carbonyl_frame)
+        info_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Label(
+            info_frame,
+            text="Carbonyl n→π* Interactions: Lone pair electron donation to carbonyl π* orbitals",
+        ).pack(side=tk.LEFT)
+
+        # Add search functionality
+        search_frame = ttk.Frame(carbonyl_frame)
+        search_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+        self.carbonyl_search_var = tk.StringVar()
+        search_entry = ttk.Entry(
+            search_frame, textvariable=self.carbonyl_search_var, width=30
+        )
+        search_entry.pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            search_frame,
+            text="Filter",
+            command=lambda: self._filter_results(
+                self.carbonyl_tree, self.carbonyl_search_var.get()
+            ),
+        ).pack(side=tk.LEFT, padx=5)
+        ttk.Button(
+            search_frame,
+            text="Clear",
+            command=lambda: self._clear_filter(self.carbonyl_tree, self.carbonyl_search_var),
+        ).pack(side=tk.LEFT, padx=5)
+
+    def _create_n_pi_interactions_tab(self):
+        """Create n→π* interactions results tab."""
+        n_pi_frame = ttk.Frame(self.notebook)
+        self.notebook.add(n_pi_frame, text="n→π* Interactions")
+
+        # Create treeview for n→π* interactions
+        tree_frame = ttk.Frame(n_pi_frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = (
+            "donor_res",
+            "donor_atom",
+            "pi_res",
+            "pi_atoms",
+            "distance",
+            "angle",
+            "donor_element",
+            "bs_int",
+        )
+
+        self.n_pi_tree = ttk.Treeview(
+            tree_frame, columns=columns, show="headings", height=15
+        )
+
+        # Configure columns
+        self.n_pi_tree.heading("donor_res", text="Donor Residue")
+        self.n_pi_tree.heading("donor_atom", text="Donor Atom")
+        self.n_pi_tree.heading("pi_res", text="π Residue")
+        self.n_pi_tree.heading("pi_atoms", text="π Ring Atoms")
+        self.n_pi_tree.heading("distance", text="Distance (Å)")
+        self.n_pi_tree.heading("angle", text="Angle (°)")
+        self.n_pi_tree.heading("donor_element", text="Donor Element")
+        self.n_pi_tree.heading("bs_int", text="B/S")
+
+        # Configure column widths
+        self.n_pi_tree.column("donor_res", width=120)
+        self.n_pi_tree.column("donor_atom", width=120)
+        self.n_pi_tree.column("pi_res", width=120)
+        self.n_pi_tree.column("pi_atoms", width=140)
+        self.n_pi_tree.column("distance", width=110)
+        self.n_pi_tree.column("angle", width=110)
+        self.n_pi_tree.column("donor_element", width=120)
+        self.n_pi_tree.column("bs_int", width=70)
+
+        # Add scrollbars
+        n_pi_v_scrollbar = ttk.Scrollbar(
+            tree_frame, orient=tk.VERTICAL, command=self.n_pi_tree.yview
+        )
+        n_pi_h_scrollbar = ttk.Scrollbar(
+            tree_frame, orient=tk.HORIZONTAL, command=self.n_pi_tree.xview
+        )
+        self.n_pi_tree.configure(
+            yscrollcommand=n_pi_v_scrollbar.set, xscrollcommand=n_pi_h_scrollbar.set
+        )
+
+        self.n_pi_tree.grid(row=0, column=0, sticky="nsew")
+        n_pi_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        n_pi_h_scrollbar.grid(row=1, column=0, sticky="ew")
+
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
+
+        # Add info label
+        info_frame = ttk.Frame(n_pi_frame)
+        info_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Label(
+            info_frame,
+            text="n→π* Interactions: Lone pair electrons (O, N, S) interacting with aromatic π systems",
+        ).pack(side=tk.LEFT)
+
+        # Add search functionality
+        search_frame = ttk.Frame(n_pi_frame)
+        search_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+        self.n_pi_search_var = tk.StringVar()
+        search_entry = ttk.Entry(
+            search_frame, textvariable=self.n_pi_search_var, width=30
+        )
+        search_entry.pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            search_frame,
+            text="Filter",
+            command=lambda: self._filter_results(
+                self.n_pi_tree, self.n_pi_search_var.get()
+            ),
+        ).pack(side=tk.LEFT, padx=5)
+        ttk.Button(
+            search_frame,
+            text="Clear",
+            command=lambda: self._clear_filter(self.n_pi_tree, self.n_pi_search_var),
+        ).pack(side=tk.LEFT, padx=5)
+
     def update_results(self, analyzer: MolecularInteractionAnalyzer) -> None:
         """Update the results panel with new analysis results.
 
@@ -475,6 +800,9 @@ class ResultsPanel:
         self._update_hydrogen_bonds()
         self._update_halogen_bonds()
         self._update_pi_interactions()
+        self._update_pi_pi_stacking()
+        self._update_carbonyl_interactions()
+        self._update_n_pi_interactions()
         self._update_cooperativity_chains()
 
     def _update_summary(self):
@@ -543,6 +871,21 @@ class ResultsPanel:
         self.summary_text.insert(
             tk.END, f"  π Interactions: {summary['pi_interactions']['count']}\n"
         )
+        
+        # Add new interaction types if they exist in summary
+        if 'pi_pi_stacking' in summary:
+            self.summary_text.insert(
+                tk.END, f"  π-π Stacking: {summary['pi_pi_stacking']['count']}\n"
+            )
+        if 'carbonyl_interactions' in summary:
+            self.summary_text.insert(
+                tk.END, f"  Carbonyl Interactions: {summary['carbonyl_interactions']['count']}\n"
+            )
+        if 'n_pi_interactions' in summary:
+            self.summary_text.insert(
+                tk.END, f"  n→π* Interactions: {summary['n_pi_interactions']['count']}\n"
+            )
+            
         self.summary_text.insert(
             tk.END,
             f"  Cooperativity Chains: {summary['cooperativity_chains']['count']}\n",
@@ -689,6 +1032,7 @@ class ResultsPanel:
                 values=(
                     hb.donor_residue,
                     hb.donor.name,
+                    hb.hydrogen.name,
                     hb.acceptor_residue,
                     hb.acceptor.name,
                     f"{hb.distance:.2f}",
@@ -716,6 +1060,7 @@ class ResultsPanel:
                 tk.END,
                 values=(
                     xb.halogen_residue,
+                    xb.donor_atom.name,
                     xb.halogen.name,
                     xb.acceptor_residue,
                     xb.acceptor.name,
@@ -831,6 +1176,12 @@ class ResultsPanel:
                 self._update_halogen_bonds()
             elif tree == self.pi_tree:
                 self._update_pi_interactions()
+            elif tree == self.pi_pi_tree:
+                self._update_pi_pi_stacking()
+            elif tree == self.carbonyl_tree:
+                self._update_carbonyl_interactions()
+            elif tree == self.n_pi_tree:
+                self._update_n_pi_interactions()
             elif tree == self.coop_tree:
                 self._update_cooperativity_chains()
 
@@ -861,10 +1212,23 @@ class ResultsPanel:
         for item in self.coop_tree.get_children():
             self.coop_tree.delete(item)
 
+        # Clear new interaction tree views
+        for item in self.pi_pi_tree.get_children():
+            self.pi_pi_tree.delete(item)
+
+        for item in self.carbonyl_tree.get_children():
+            self.carbonyl_tree.delete(item)
+
+        for item in self.n_pi_tree.get_children():
+            self.n_pi_tree.delete(item)
+
         # Clear all search filters
         self.hb_search_var.set("")
         self.xb_search_var.set("")
         self.pi_search_var.set("")
+        self.pi_pi_search_var.set("")
+        self.carbonyl_search_var.set("")
+        self.n_pi_search_var.set("")
         self.coop_search_var.set("")
 
         # Add placeholder text
@@ -917,3 +1281,106 @@ class ResultsPanel:
             self.coop_tree.selection_set(item)
             # Then visualize it
             self._visualize_selected_chain()
+
+    def _update_pi_pi_stacking(self):
+        """Update the π-π stacking tab."""
+        if not self.analyzer:
+            return
+
+        # Clear existing items
+        for item in self.pi_pi_tree.get_children():
+            self.pi_pi_tree.delete(item)
+
+        # Add π-π stacking interactions if they exist
+        if hasattr(self.analyzer, 'pi_pi_interactions'):
+            for interaction in self.analyzer.pi_pi_interactions:
+                ring1_res = self._parse_residue_string(interaction.ring1_residue)
+                ring1_atoms = ",".join([atom.name for atom in interaction.ring1_atoms[:3]]) + "..."
+                ring2_res = self._parse_residue_string(interaction.ring2_residue)
+                ring2_atoms = ",".join([atom.name for atom in interaction.ring2_atoms[:3]]) + "..."
+                
+                bs_int = "B" if interaction.is_between_residues else "S"
+
+                self.pi_pi_tree.insert(
+                    "",
+                    tk.END,
+                    values=(
+                        ring1_res,
+                        ring1_atoms,
+                        ring2_res, 
+                        ring2_atoms,
+                        f"{interaction.distance:.2f}",
+                        f"{interaction.plane_angle:.1f}",
+                        f"{interaction.offset:.2f}",
+                        interaction.stacking_type,
+                        bs_int,
+                    ),
+                )
+
+    def _update_carbonyl_interactions(self):
+        """Update the carbonyl interactions tab."""
+        if not self.analyzer:
+            return
+
+        # Clear existing items
+        for item in self.carbonyl_tree.get_children():
+            self.carbonyl_tree.delete(item)
+
+        # Add carbonyl interactions if they exist
+        if hasattr(self.analyzer, 'carbonyl_interactions'):
+            for interaction in self.analyzer.carbonyl_interactions:
+                acceptor_res = self._parse_residue_string(interaction.acceptor_residue)
+                acceptor_atom = interaction.acceptor_carbon.name
+                carbonyl_res = self._parse_residue_string(interaction.donor_residue)
+                carbonyl_atoms = f"{interaction.donor_carbon.name}={interaction.donor_oxygen.name}"
+                
+                bs_int = "B" if interaction.is_between_residues else "S"
+
+                self.carbonyl_tree.insert(
+                    "",
+                    tk.END,
+                    values=(
+                        acceptor_res,
+                        acceptor_atom,
+                        carbonyl_res,
+                        carbonyl_atoms,
+                        f"{interaction.distance:.2f}",
+                        f"{interaction.burgi_dunitz_angle:.1f}",
+                        interaction.carbonyl_type,
+                        bs_int,
+                    ),
+                )
+
+    def _update_n_pi_interactions(self):
+        """Update the n→π* interactions tab."""
+        if not self.analyzer:
+            return
+
+        # Clear existing items
+        for item in self.n_pi_tree.get_children():
+            self.n_pi_tree.delete(item)
+
+        # Add n→π* interactions if they exist
+        if hasattr(self.analyzer, 'n_pi_interactions'):
+            for interaction in self.analyzer.n_pi_interactions:
+                donor_res = self._parse_residue_string(interaction.donor_residue)
+                donor_atom = interaction.lone_pair_atom.name
+                pi_res = self._parse_residue_string(interaction.acceptor_residue)
+                pi_atoms = ",".join([atom.name for atom in interaction.pi_atoms[:3]]) + "..."
+                
+                bs_int = "B" if interaction.is_between_residues else "S"
+
+                self.n_pi_tree.insert(
+                    "",
+                    tk.END,
+                    values=(
+                        donor_res,
+                        donor_atom,
+                        pi_res,
+                        pi_atoms,
+                        f"{interaction.distance:.2f}",
+                        f"{interaction.angle_to_plane:.1f}",
+                        interaction.donor_element,
+                        bs_int,
+                    ),
+                )

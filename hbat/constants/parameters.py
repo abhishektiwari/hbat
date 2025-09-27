@@ -48,6 +48,25 @@ class ParametersDefault:
     PI_SH_DISTANCE_CUTOFF = 3.8  # Å - S-H...π distance cutoff
     PI_SH_ANGLE_CUTOFF = 105.0  # degrees - S-H...π angle cutoff
 
+    # π-π stacking interaction parameters
+    PI_PI_DISTANCE_CUTOFF = 3.8  # Å - π-π centroid-to-centroid distance cutoff
+    PI_PI_PARALLEL_ANGLE_CUTOFF = 30.0  # degrees - max angle for parallel stacking
+    PI_PI_TSHAPED_ANGLE_MIN = 60.0  # degrees - min angle for T-shaped stacking
+    PI_PI_TSHAPED_ANGLE_MAX = 90.0  # degrees - max angle for T-shaped stacking
+    PI_PI_OFFSET_CUTOFF = 2.0  # Å - max lateral offset for parallel stacking
+
+    # Carbonyl-carbonyl interaction parameters (n→π*)
+    CARBONYL_DISTANCE_CUTOFF = 3.2  # Å - O···C distance cutoff (Bürgi-Dunitz trajectory)
+    CARBONYL_ANGLE_MIN = 95.0  # degrees - min O···C=O angle (Bürgi-Dunitz)
+    CARBONYL_ANGLE_MAX = 125.0  # degrees - max O···C=O angle (Bürgi-Dunitz)
+
+    # n→π* interaction parameters (lone pair to π system)
+    N_PI_DISTANCE_CUTOFF = 3.6  # Å - lone pair to π center distance cutoff
+    N_PI_DISTANCE_MIN = 2.5     # Å - minimum distance to avoid unrealistic close contacts
+    N_PI_SULFUR_DISTANCE_CUTOFF = 4.0  # Å - sulfur-specific distance cutoff (larger vdW radius)
+    N_PI_ANGLE_MIN = 0.0   # degrees - min angle to π plane (perpendicular approach)
+    N_PI_ANGLE_MAX = 45.0  # degrees - max angle to π plane (optimal geometry)
+
     # General analysis parameters
     COVALENT_CUTOFF_FACTOR = 0.85  # Covalent bond detection factor (0.0-1.0)
     ANALYSIS_MODE = "complete"  # Analysis mode: "complete" or "local"
@@ -193,6 +212,21 @@ class AnalysisParameters:
                  pi_oh_angle_cutoff: float = ParametersDefault.PI_OH_ANGLE_CUTOFF,
                  pi_sh_distance_cutoff: float = ParametersDefault.PI_SH_DISTANCE_CUTOFF,
                  pi_sh_angle_cutoff: float = ParametersDefault.PI_SH_ANGLE_CUTOFF,
+                 # π-π stacking parameters
+                 pi_pi_distance_cutoff: float = ParametersDefault.PI_PI_DISTANCE_CUTOFF,
+                 pi_pi_parallel_angle_cutoff: float = ParametersDefault.PI_PI_PARALLEL_ANGLE_CUTOFF,
+                 pi_pi_tshaped_angle_min: float = ParametersDefault.PI_PI_TSHAPED_ANGLE_MIN,
+                 pi_pi_tshaped_angle_max: float = ParametersDefault.PI_PI_TSHAPED_ANGLE_MAX,
+                 pi_pi_offset_cutoff: float = ParametersDefault.PI_PI_OFFSET_CUTOFF,
+                 # Carbonyl-carbonyl interaction parameters
+                 carbonyl_distance_cutoff: float = ParametersDefault.CARBONYL_DISTANCE_CUTOFF,
+                 carbonyl_angle_min: float = ParametersDefault.CARBONYL_ANGLE_MIN,
+                 carbonyl_angle_max: float = ParametersDefault.CARBONYL_ANGLE_MAX,
+                 # n→π* interaction parameters
+                 n_pi_distance_cutoff: float = ParametersDefault.N_PI_DISTANCE_CUTOFF,
+                 n_pi_sulfur_distance_cutoff: float = ParametersDefault.N_PI_SULFUR_DISTANCE_CUTOFF,
+                 n_pi_angle_min: float = ParametersDefault.N_PI_ANGLE_MIN,
+                 n_pi_angle_max: float = ParametersDefault.N_PI_ANGLE_MAX,
                  # General parameters
                  covalent_cutoff_factor: float = ParametersDefault.COVALENT_CUTOFF_FACTOR,
                  analysis_mode: str = ParametersDefault.ANALYSIS_MODE,
@@ -282,6 +316,24 @@ class AnalysisParameters:
         self.pi_sh_distance_cutoff = pi_sh_distance_cutoff
         self.pi_sh_angle_cutoff = pi_sh_angle_cutoff
 
+        # π-π stacking parameters
+        self.pi_pi_distance_cutoff = pi_pi_distance_cutoff
+        self.pi_pi_parallel_angle_cutoff = pi_pi_parallel_angle_cutoff
+        self.pi_pi_tshaped_angle_min = pi_pi_tshaped_angle_min
+        self.pi_pi_tshaped_angle_max = pi_pi_tshaped_angle_max
+        self.pi_pi_offset_cutoff = pi_pi_offset_cutoff
+
+        # Carbonyl-carbonyl interaction parameters
+        self.carbonyl_distance_cutoff = carbonyl_distance_cutoff
+        self.carbonyl_angle_min = carbonyl_angle_min
+        self.carbonyl_angle_max = carbonyl_angle_max
+
+        # n→π* interaction parameters
+        self.n_pi_distance_cutoff = n_pi_distance_cutoff
+        self.n_pi_sulfur_distance_cutoff = n_pi_sulfur_distance_cutoff
+        self.n_pi_angle_min = n_pi_angle_min
+        self.n_pi_angle_max = n_pi_angle_max
+
         # General parameters
         self.covalent_cutoff_factor = covalent_cutoff_factor
         self.analysis_mode = analysis_mode
@@ -335,6 +387,21 @@ class AnalysisParameters:
         params.append(f"pi_oh_angle_cutoff={self.pi_oh_angle_cutoff}")
         params.append(f"pi_sh_distance_cutoff={self.pi_sh_distance_cutoff}")
         params.append(f"pi_sh_angle_cutoff={self.pi_sh_angle_cutoff}")
+        # π-π stacking parameters
+        params.append(f"pi_pi_distance_cutoff={self.pi_pi_distance_cutoff}")
+        params.append(f"pi_pi_parallel_angle_cutoff={self.pi_pi_parallel_angle_cutoff}")
+        params.append(f"pi_pi_tshaped_angle_min={self.pi_pi_tshaped_angle_min}")
+        params.append(f"pi_pi_tshaped_angle_max={self.pi_pi_tshaped_angle_max}")
+        params.append(f"pi_pi_offset_cutoff={self.pi_pi_offset_cutoff}")
+        # Carbonyl interaction parameters
+        params.append(f"carbonyl_distance_cutoff={self.carbonyl_distance_cutoff}")
+        params.append(f"carbonyl_angle_min={self.carbonyl_angle_min}")
+        params.append(f"carbonyl_angle_max={self.carbonyl_angle_max}")
+        # n→π* interaction parameters
+        params.append(f"n_pi_distance_cutoff={self.n_pi_distance_cutoff}")
+        params.append(f"n_pi_sulfur_distance_cutoff={self.n_pi_sulfur_distance_cutoff}")
+        params.append(f"n_pi_angle_min={self.n_pi_angle_min}")
+        params.append(f"n_pi_angle_max={self.n_pi_angle_max}")
         # General parameters
         params.append(f"covalent_cutoff_factor={self.covalent_cutoff_factor}")
         params.append(f"analysis_mode='{self.analysis_mode}'")
@@ -385,6 +452,18 @@ class AnalysisParameters:
             self.pi_oh_angle_cutoff == other.pi_oh_angle_cutoff and
             self.pi_sh_distance_cutoff == other.pi_sh_distance_cutoff and
             self.pi_sh_angle_cutoff == other.pi_sh_angle_cutoff and
+            self.pi_pi_distance_cutoff == other.pi_pi_distance_cutoff and
+            self.pi_pi_parallel_angle_cutoff == other.pi_pi_parallel_angle_cutoff and
+            self.pi_pi_tshaped_angle_min == other.pi_pi_tshaped_angle_min and
+            self.pi_pi_tshaped_angle_max == other.pi_pi_tshaped_angle_max and
+            self.pi_pi_offset_cutoff == other.pi_pi_offset_cutoff and
+            self.carbonyl_distance_cutoff == other.carbonyl_distance_cutoff and
+            self.carbonyl_angle_min == other.carbonyl_angle_min and
+            self.carbonyl_angle_max == other.carbonyl_angle_max and
+            self.n_pi_distance_cutoff == other.n_pi_distance_cutoff and
+            self.n_pi_sulfur_distance_cutoff == other.n_pi_sulfur_distance_cutoff and
+            self.n_pi_angle_min == other.n_pi_angle_min and
+            self.n_pi_angle_max == other.n_pi_angle_max and
             self.covalent_cutoff_factor == other.covalent_cutoff_factor and
             self.analysis_mode == other.analysis_mode and
             self.fix_pdb_enabled == other.fix_pdb_enabled and
@@ -697,6 +776,135 @@ class AnalysisParameters:
                 errors.append(
                     "At least one PDB fixing operation must be selected when PDB fixing is enabled"
                 )
+
+        # π-π stacking interaction parameter validation
+        if not (
+            ParameterRanges.MIN_DISTANCE
+            <= self.pi_pi_distance_cutoff
+            <= ParameterRanges.MAX_DISTANCE
+        ):
+            errors.append(
+                f"π-π stacking distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
+            )
+
+        if not (
+            ParameterRanges.MIN_ANGLE
+            <= self.pi_pi_parallel_angle_cutoff
+            <= ParameterRanges.MAX_ANGLE
+        ):
+            errors.append(
+                f"π-π parallel angle cutoff must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
+            )
+
+        if not (
+            ParameterRanges.MIN_ANGLE
+            <= self.pi_pi_tshaped_angle_min
+            <= ParameterRanges.MAX_ANGLE
+        ):
+            errors.append(
+                f"π-π T-shaped angle minimum must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
+            )
+
+        if not (
+            ParameterRanges.MIN_ANGLE
+            <= self.pi_pi_tshaped_angle_max
+            <= ParameterRanges.MAX_ANGLE
+        ):
+            errors.append(
+                f"π-π T-shaped angle maximum must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
+            )
+
+        if not (
+            ParameterRanges.MIN_DISTANCE
+            <= self.pi_pi_offset_cutoff
+            <= ParameterRanges.MAX_DISTANCE
+        ):
+            errors.append(
+                f"π-π offset cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
+            )
+
+        # Logical consistency for π-π T-shaped angles
+        if self.pi_pi_tshaped_angle_min >= self.pi_pi_tshaped_angle_max:
+            errors.append(
+                "π-π T-shaped angle minimum must be less than maximum"
+            )
+
+        # Carbonyl interaction parameter validation
+        if not (
+            ParameterRanges.MIN_DISTANCE
+            <= self.carbonyl_distance_cutoff
+            <= ParameterRanges.MAX_DISTANCE
+        ):
+            errors.append(
+                f"Carbonyl interaction distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
+            )
+
+        if not (
+            ParameterRanges.MIN_ANGLE
+            <= self.carbonyl_angle_min
+            <= ParameterRanges.MAX_ANGLE
+        ):
+            errors.append(
+                f"Carbonyl interaction angle minimum must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
+            )
+
+        if not (
+            ParameterRanges.MIN_ANGLE
+            <= self.carbonyl_angle_max
+            <= ParameterRanges.MAX_ANGLE
+        ):
+            errors.append(
+                f"Carbonyl interaction angle maximum must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
+            )
+
+        # Logical consistency for carbonyl angles
+        if self.carbonyl_angle_min >= self.carbonyl_angle_max:
+            errors.append(
+                "Carbonyl interaction angle minimum must be less than maximum"
+            )
+
+        # n→π* interaction parameter validation
+        if not (
+            ParameterRanges.MIN_DISTANCE
+            <= self.n_pi_distance_cutoff
+            <= ParameterRanges.MAX_DISTANCE
+        ):
+            errors.append(
+                f"n→π* interaction distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
+            )
+
+        if not (
+            ParameterRanges.MIN_DISTANCE
+            <= self.n_pi_sulfur_distance_cutoff
+            <= ParameterRanges.MAX_DISTANCE
+        ):
+            errors.append(
+                f"n→π* sulfur interaction distance cutoff must be between {ParameterRanges.MIN_DISTANCE}-{ParameterRanges.MAX_DISTANCE}Å"
+            )
+
+        if not (
+            ParameterRanges.MIN_ANGLE
+            <= self.n_pi_angle_min
+            <= ParameterRanges.MAX_ANGLE
+        ):
+            errors.append(
+                f"n→π* interaction angle minimum must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
+            )
+
+        if not (
+            ParameterRanges.MIN_ANGLE
+            <= self.n_pi_angle_max
+            <= ParameterRanges.MAX_ANGLE
+        ):
+            errors.append(
+                f"n→π* interaction angle maximum must be between {ParameterRanges.MIN_ANGLE}-{ParameterRanges.MAX_ANGLE}°"
+            )
+
+        # Logical consistency for n→π* angles
+        if self.n_pi_angle_min >= self.n_pi_angle_max:
+            errors.append(
+                "n→π* interaction angle minimum must be less than maximum"
+            )
 
         return errors
 

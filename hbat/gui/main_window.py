@@ -66,6 +66,7 @@ class MainWindow:
         self.current_file: Optional[str] = None
         self.analysis_running = False
 
+
         # Create UI components
         self._create_menu()
         self._create_toolbar()
@@ -1424,6 +1425,7 @@ Author: Abhishek Tiwari
             self.fixed_pdb_context_menu.tk_popup(event.x_root, event.y_root)
         finally:
             self.fixed_pdb_context_menu.grab_release()
+
 
     def _save_fixed_pdb(self) -> None:
         """Save the Fixed PDB content to a file.

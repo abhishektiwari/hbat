@@ -489,6 +489,21 @@ Halogen Bond Parameters:
     N-H...π Distance: {params.pi_nh_distance_cutoff:.1f} Å, Angle: {params.pi_nh_angle_cutoff:.0f}°
     O-H...π Distance: {params.pi_oh_distance_cutoff:.1f} Å, Angle: {params.pi_oh_angle_cutoff:.0f}°
     S-H...π Distance: {params.pi_sh_distance_cutoff:.1f} Å, Angle: {params.pi_sh_angle_cutoff:.0f}°
+
+π-π Stacking Parameters:
+  Distance: {params.pi_pi_distance_cutoff:.1f} Å
+  Parallel Angle: {params.pi_pi_parallel_angle_cutoff:.0f}°
+  T-shaped Angles: {params.pi_pi_tshaped_angle_min:.0f}°-{params.pi_pi_tshaped_angle_max:.0f}°
+  Offset: {params.pi_pi_offset_cutoff:.1f} Å
+
+Carbonyl Interaction Parameters:
+  Distance: {params.carbonyl_distance_cutoff:.1f} Å
+  Angles: {params.carbonyl_angle_min:.0f}°-{params.carbonyl_angle_max:.0f}°
+
+n→π* Interaction Parameters:
+  Distance: {params.n_pi_distance_cutoff:.1f} Å
+  Sulfur Distance: {params.n_pi_sulfur_distance_cutoff:.1f} Å
+  Angles: {params.n_pi_angle_min:.0f}°-{params.n_pi_angle_max:.0f}°
   
   Halogen-π Interactions:
     C-Cl...π Distance: {params.pi_ccl_distance_cutoff:.1f} Å, Angle: {params.pi_ccl_angle_cutoff:.0f}°
@@ -531,13 +546,51 @@ PDB Fixing Parameters:
                     "dha_angle_cutoff": params.hb_angle_cutoff,
                     "d_a_distance_cutoff": params.hb_donor_acceptor_cutoff
                 },
+                "weak_hydrogen_bonds": {
+                    "h_a_distance_cutoff": params.whb_distance_cutoff,
+                    "dha_angle_cutoff": params.whb_angle_cutoff,
+                    "d_a_distance_cutoff": params.whb_donor_acceptor_cutoff
+                },
                 "halogen_bonds": {
                     "x_a_distance_cutoff": params.xb_distance_cutoff,
                     "dxa_angle_cutoff": params.xb_angle_cutoff
                 },
                 "pi_interactions": {
                     "h_pi_distance_cutoff": params.pi_distance_cutoff,
-                    "dh_pi_angle_cutoff": params.pi_angle_cutoff
+                    "dh_pi_angle_cutoff": params.pi_angle_cutoff,
+                    # π interaction subtype parameters
+                    "ccl_pi_distance_cutoff": params.pi_ccl_distance_cutoff,
+                    "ccl_pi_angle_cutoff": params.pi_ccl_angle_cutoff,
+                    "cbr_pi_distance_cutoff": params.pi_cbr_distance_cutoff,
+                    "cbr_pi_angle_cutoff": params.pi_cbr_angle_cutoff,
+                    "ci_pi_distance_cutoff": params.pi_ci_distance_cutoff,
+                    "ci_pi_angle_cutoff": params.pi_ci_angle_cutoff,
+                    "ch_pi_distance_cutoff": params.pi_ch_distance_cutoff,
+                    "ch_pi_angle_cutoff": params.pi_ch_angle_cutoff,
+                    "nh_pi_distance_cutoff": params.pi_nh_distance_cutoff,
+                    "nh_pi_angle_cutoff": params.pi_nh_angle_cutoff,
+                    "oh_pi_distance_cutoff": params.pi_oh_distance_cutoff,
+                    "oh_pi_angle_cutoff": params.pi_oh_angle_cutoff,
+                    "sh_pi_distance_cutoff": params.pi_sh_distance_cutoff,
+                    "sh_pi_angle_cutoff": params.pi_sh_angle_cutoff
+                },
+                "pi_pi_stacking": {
+                    "distance_cutoff": params.pi_pi_distance_cutoff,
+                    "parallel_angle_cutoff": params.pi_pi_parallel_angle_cutoff,
+                    "tshaped_angle_min": params.pi_pi_tshaped_angle_min,
+                    "tshaped_angle_max": params.pi_pi_tshaped_angle_max,
+                    "offset_cutoff": params.pi_pi_offset_cutoff
+                },
+                "carbonyl_interactions": {
+                    "distance_cutoff": params.carbonyl_distance_cutoff,
+                    "angle_min": params.carbonyl_angle_min,
+                    "angle_max": params.carbonyl_angle_max
+                },
+                "n_pi_interactions": {
+                    "distance_cutoff": params.n_pi_distance_cutoff,
+                    "sulfur_distance_cutoff": params.n_pi_sulfur_distance_cutoff,
+                    "angle_min": params.n_pi_angle_min,
+                    "angle_max": params.n_pi_angle_max
                 },
                 "general": {
                     "covalent_cutoff_factor": params.covalent_cutoff_factor,
