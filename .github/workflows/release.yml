@@ -38,8 +38,11 @@ jobs:
         SHORT_SHA=$(git rev-parse --short HEAD)
         PR_NUMBER=${{ github.event.number }}
         
+        # Convert short SHA to integer for PEP 440 compatibility
+        SHA_INT=$(printf "%d" "0x${SHORT_SHA}")
+        
         # Use PEP 440 compatible format
-        PRERELEASE_VERSION="${BASE_VERSION}.dev${PR_NUMBER}+${SHORT_SHA}"
+        PRERELEASE_VERSION="${BASE_VERSION}.rc${PR_NUMBER}${SHA_INT}"
         PRERELEASE_TAG="v${PRERELEASE_VERSION}"
         
         # GitHub tag for releases (without +sha)
