@@ -71,7 +71,7 @@ Welcome to HBAT (Hydrogen Bond Analysis Tool) documentation!
 
    <span class="__dimensions_badge_embed__" data-doi="10.3233/isi-2007-00337" data-legend="always" data-style="small_circle"></span><script async src="https://badge.dimensions.ai/badge.js" charset="utf-8"></script>
 
-A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions like halogen bonds and non-canonical interactions in macromolecular structures, available in Brookhaven Protein Database (PDB) file format. HBAT uses a geometric approach to identify potential hydrogen bonds by analyzing distance and angular criteria between donor-hydrogen-acceptor triplets.
+A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions like halogen bonds and non-canonical interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT uses a geometric approach to identify potential hydrogen bonds by analyzing distance and angular criteria between donor-hydrogen-acceptor triplets.
 
 .. image:: https://static.abhishek-tiwari.com/hbat/hbat-window-v1.png
    :alt: HBAT GUI
@@ -126,13 +126,17 @@ See full CLI options :doc:`cli`.
 Features
 --------
 
-- **Comprehensive Analysis**: Detects hydrogen bonds, halogen bonds, and X-H...π interactions
-- **Cooperativity Detection**: Identifies chains of cooperative molecular interactions
-- **Structure Enhancement**: Automated PDB fixing with OpenBabel and PDBFixer integration
-- **Flexible Parameters**: Customizable analysis parameters for different research needs
-- **Multiple Output Formats**: Support for CSV (default), JSON, and formatted text output with automated file generation for each interaction type
-- **GUI Interface**: User-friendly graphical interface for interactive analysis
-- **Command Line Tool**: Scriptable CLI for batch processing and automation
+- Detect and analyze potential hydrogen bonds, halogen bonds, and X-H...π interactions
+- Automated PDB fixing with OpenBabel and PDBFixer integration
+- Supports graphical (tkinter), command-line, and programming interfaces
+- Use graphical interfaces for interactive analysis, CLI/API for batch processing and automation
+- Cooperativity chain visualization using NetworkX/matplotlib and GraphViz
+- Export cooperativity chain visualizations to PNG, SVG, PDF formats
+- Built-in presets for different structure types (high-resolution, NMR, membrane proteins, etc.)
+- Customizable distance cutoffs, angle thresholds, and analysis modes.
+- Multiple Output Formats: Text, CSV, and JSON export options
+- Optimized algorithms for efficient analysis of large structures
+- Cross-Platform: Works on Windows, macOS, and Linux.
 
 .. image:: https://static.abhishek-tiwari.com/hbat/6rsa-pdb-chain-6.png
    :alt: Cooperativity chain visualization

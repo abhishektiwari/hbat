@@ -160,12 +160,7 @@ PDBFixer
 
 - Eastman, P. et al. "OpenMM 4: A Reusable, Extensible, Hardware Independent Library" J. Chem. Theory Comput. 9, 461-469 (2013)
 - PDBFixer Documentation: https://github.com/openmm/pdbfixer
-
-Structure Preparation
-~~~~~~~~~~~~~~~~~~~~~
-
-- Madhavi Sastry, G. et al. "Protein and ligand preparation: parameters, protocols, and influence on virtual screening enrichments" J. Comput. Aided Mol. Des. 27, 221-234 (2013)
-- Shelley, J.C. et al. "A versatile approach for assigning partial charges and valence electron densities in proteins" J. Comput. Chem. 28, 1145-1152 (2007)
+- PDBFixer Wheel: https://pypi.org/project/pdbfixer-wheel/
 
 ----
 

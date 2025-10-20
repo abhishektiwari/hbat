@@ -2,7 +2,7 @@
 
 # Hydrogen Bond Analysis Tool (HBAT) v2 
 
-A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions like halogen bonds and non-canonical interactions in macromolecular structures, available in Brookhaven Protein Database (PDB) file format. HBAT uses a geometric approach to identify potential hydrogen bonds by analyzing distance and angular criteria between donor-hydrogen-acceptor triplets.
+A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions like halogen bonds and non-canonical interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT uses a geometric approach to identify potential hydrogen bonds by analyzing distance and angular criteria between donor-hydrogen-acceptor triplets.
 
 ![GitHub Release](https://img.shields.io/github/v/release/abhishektiwari/hbat)
 ![GitHub Actions Test Workflow Status](https://img.shields.io/github/actions/workflow/status/abhishektiwari/hbat/test.yml?label=tests)
@@ -29,16 +29,17 @@ HBAT v2  is a modern Python re-implementation of the original Perl-based tool de
 
 ## Features
 
-- **Comprehensive Analysis**: Detect and analyze potential hydrogen bonds, halogen bonds, and X-H...π interactions
-- **Dual Interface**: Both graphical (tkinter) and command-line interfaces
-- **Advanced Visualization**: Choice between NetworkX/matplotlib and GraphViz renderers for cooperativity chain visualization
-- **High-Quality Graphics**: Export visualizations to PNG, SVG, PDF with configurable resolution
-- **Interactive GUI**: Scrollable visualizations with dynamic layout switching and engine selection
-- **Parameter Presets**: Built-in presets for different structure types (high-resolution, NMR, membrane proteins, etc.)
-- **Flexible Parameters**: Customizable distance cutoffs, angle thresholds, and analysis modes.
-- **Multiple Output Formats**: Text, CSV, and JSON export options
-- **Fast Processing**: Optimized algorithms for efficient analysis of large structures
-- **Cross-Platform**: Works on Windows, macOS, and Linux.
+- Detect and analyze potential hydrogen bonds, halogen bonds, and X-H...π interactions
+- Automated PDB fixing with OpenBabel and PDBFixer integration
+- Supports graphical (tkinter), command-line, and programming interfaces
+- Use graphical interfaces for interactive analysis, CLI/API for batch processing and automation
+- Cooperativity chain visualization using NetworkX/matplotlib and GraphViz
+- Export cooperativity chain visualizations to PNG, SVG, PDF formats
+- Built-in presets for different structure types (high-resolution, NMR, membrane proteins, etc.)
+- Customizable distance cutoffs, angle thresholds, and analysis modes.
+- Multiple Output Formats: Text, CSV, and JSON export options
+- Optimized algorithms for efficient analysis of large structures
+- Cross-Platform: Works on Windows, macOS, and Linux.
 
 Please review [HBAT documentation](https://hbat.abhishek-tiwari.com/) for more details.
 
@@ -46,9 +47,9 @@ Please review [HBAT documentation](https://hbat.abhishek-tiwari.com/) for more d
 
 ### Supported Interactions
 
-1. **Hydrogen Bonds**: O-H...O, N-H...O, N-H...N, and other X-H...Y interactions
-2. **Halogen Bonds**: C-X...Y interactions (X = F, Cl, Br, I; Y = N, O, S)
-3. **X-H...π Interactions**: Hydrogen bonds to aromatic ring systems
+1. Hydrogen Bonds: O-H...O, N-H...O, N-H...N, and other X-H...Y interactions
+2. Halogen Bonds: C-X...Y interactions (X = F, Cl, Br, I; Y = N, O, S)
+3. X-H...π Interactions: Hydrogen bonds to aromatic ring systems
 
 Please review [HBAT documentation](https://hbat.abhishek-tiwari.com/) for more details.
 
@@ -87,34 +88,34 @@ conda install -c hbat hbat
 ### Requirements
 
 #### System Requirements
-- **Python**: 3.9 or higher
-- **tkinter**: tkinter is included with Python standard library on most systems. However, on Mac install Python and tkinter using `brew`. 
+- Python: 3.9 or higher
+- tkinter: tkinter is included with Python standard library on most systems. However, on Mac install Python and tkinter using `brew`. 
 
 ```
 brew install python python3-tk
 ```
 
-- **GraphViz** (Optional): Required for advanced cooperativity chain visualization with high-quality graph rendering. HBAT will automatically fall back to NetworkX/matplotlib visualization if GraphViz is not available.
+- GraphViz (Optional): Required for advanced cooperativity chain visualization with high-quality graph rendering. HBAT will automatically fall back to NetworkX/matplotlib visualization if GraphViz is not available.
 
-**Install GraphViz:**
+Install GraphViz:
 
-On **Ubuntu/Debian**:
+On Ubuntu/Debian:
 ```bash
 sudo apt-get update
 sudo apt-get install graphviz
 ```
 
-On **macOS** (using Homebrew):
+On macOS (using Homebrew):
 ```bash
 brew install graphviz
 ```
 
-On **Windows**:
+On Windows:
 - Download and install from [GraphViz official website](https://graphviz.org/download/)
 - Or using Chocolatey: `choco install graphviz`
 - Or using conda: `conda install -c conda-forge graphviz`
 
-**Note**: After installing GraphViz, restart your terminal/command prompt before running HBAT to ensure the GraphViz executables are available in your PATH.
+Note: After installing GraphViz, restart your terminal/command prompt before running HBAT to ensure the GraphViz executables are available in your PATH.
 
 ## Usage
 
