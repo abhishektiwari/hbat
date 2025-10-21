@@ -104,13 +104,14 @@ class TestSingleFileExports:
                 self.halogen_residue = "A125TYR"
                 self.donor_residue = "A125TYR"  # For compatibility
                 self.halogen = mock_atom("CL", 7.0, 8.0, 9.0)
+                self.donor_atom = mock_atom("C", 6.5, 7.5, 8.5)  # Carbon bonded to halogen
                 self.acceptor_residue = "A126ASP"
                 self.acceptor = mock_atom("OD1", 10.0, 11.0, 12.0)
                 self.distance = 3.5
                 self.angle = 2.62  # radians (~150 degrees)
                 self.bond_type = "C-Cl...O"
                 self.donor_acceptor_properties = "PSN-PSN"
-            
+
             def get_backbone_sidechain_interaction(self):
                 return "S-S"
         
@@ -299,13 +300,14 @@ class TestMultipleFileExports:
                 self.halogen_residue = "A125TYR"
                 self.donor_residue = "A125TYR"  # For compatibility
                 self.halogen = mock_atom("CL", 7.0, 8.0, 9.0)
+                self.donor_atom = mock_atom("C", 6.5, 7.5, 8.5)  # Carbon bonded to halogen
                 self.acceptor_residue = "A126ASP"
                 self.acceptor = mock_atom("OD1", 10.0, 11.0, 12.0)
                 self.distance = 3.5
                 self.angle = 2.62  # radians
                 self.bond_type = "C-Cl...O"
                 self.donor_acceptor_properties = "PSN-PSN"
-            
+
             def get_backbone_sidechain_interaction(self):
                 return "S-S"
         

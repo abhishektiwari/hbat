@@ -287,19 +287,26 @@ class TestHalogenBondCreation:
             res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="CL", charge="", record_type="ATOM"
         )
-        
+
         acceptor = Atom(
             serial=2, name="O", alt_loc="", res_name="GLY", chain_id="A",
             res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="O", charge="", record_type="ATOM"
         )
-        
-        return halogen, acceptor
+
+        # Donor carbon atom bonded to halogen
+        donor = Atom(
+            serial=3, name="C", alt_loc="", res_name="CLU", chain_id="A",
+            res_seq=1, i_code="", coords=NPVec3D(-1.5, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="C", charge="", record_type="ATOM"
+        )
+
+        return halogen, acceptor, donor
     
     def test_halogen_bond_creation(self, sample_halogen_atoms):
         """Test halogen bond creation with valid atoms."""
-        halogen, acceptor = sample_halogen_atoms
-        
+        halogen, acceptor, donor = sample_halogen_atoms
+
         xb = HalogenBond(
             halogen=halogen,
             _acceptor=acceptor,
@@ -307,9 +314,10 @@ class TestHalogenBondCreation:
             angle=math.radians(170.0),
             bond_type="C-CL...O",
             _halogen_residue="A1CLU",
-            _acceptor_residue="A2GLY"
+            _acceptor_residue="A2GLY",
+            _donor=donor
         )
-        
+
         assert xb.halogen == halogen
         assert xb.acceptor == acceptor
         assert xb.distance == 3.2
@@ -320,35 +328,38 @@ class TestHalogenBondCreation:
     
     def test_halogen_bond_inheritance(self, sample_halogen_atoms):
         """Test that HalogenBond inherits from MolecularInteraction."""
-        halogen, acceptor = sample_halogen_atoms
-        
+        halogen, acceptor, donor = sample_halogen_atoms
+
         xb = HalogenBond(
             halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
-            bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY"
+            bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY",
+            _donor=donor
         )
-        
+
         assert isinstance(xb, MolecularInteraction)
     
     def test_halogen_bond_interaction_type(self, sample_halogen_atoms):
         """Test halogen bond interaction type."""
-        halogen, acceptor = sample_halogen_atoms
-        
+        halogen, acceptor, donor = sample_halogen_atoms
+
         xb = HalogenBond(
             halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
-            bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY"
+            bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY",
+            _donor=donor
         )
-        
+
         assert xb.interaction_type == "X-Bond"
     
     def test_halogen_bond_interface_methods(self, sample_halogen_atoms):
         """Test halogen bond interface methods."""
-        halogen, acceptor = sample_halogen_atoms
-        
+        halogen, acceptor, donor = sample_halogen_atoms
+
         xb = HalogenBond(
             halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
-            bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY"
+            bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY",
+            _donor=donor
         )
-        
+
         assert xb.get_donor_atom() == halogen  # Halogen acts as donor in interface
         assert xb.get_acceptor_atom() == acceptor
         assert xb.get_donor_residue() == "A1CLU"
@@ -358,18 +369,43 @@ class TestHalogenBondCreation:
 @pytest.mark.unit
 class TestHalogenBondString:
     """Test halogen bond string representation."""
-    
+
+    @pytest.fixture
+    def sample_halogen_atoms(self):
+        """Create sample atoms for halogen bond testing."""
+        halogen = Atom(
+            serial=1, name="CL", alt_loc="", res_name="CLU", chain_id="A",
+            res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="CL", charge="", record_type="ATOM"
+        )
+
+        acceptor = Atom(
+            serial=2, name="O", alt_loc="", res_name="GLY", chain_id="A",
+            res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="O", charge="", record_type="ATOM"
+        )
+
+        # Donor carbon atom bonded to halogen
+        donor = Atom(
+            serial=3, name="C", alt_loc="", res_name="CLU", chain_id="A",
+            res_seq=1, i_code="", coords=NPVec3D(-1.5, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="C", charge="", record_type="ATOM"
+        )
+
+        return halogen, acceptor, donor
+
     def test_halogen_bond_string_representation(self, sample_halogen_atoms):
         """Test halogen bond string representation."""
-        halogen, acceptor = sample_halogen_atoms
-        
+        halogen, acceptor, donor = sample_halogen_atoms
+
         xb = HalogenBond(
             halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
-            bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY"
+            bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY",
+            _donor=donor
         )
-        
+
         str_repr = str(xb)
-        
+
         assert "X-Bond" in str_repr
         assert "A1CLU" in str_repr
         assert "A2GLY" in str_repr
@@ -681,19 +717,27 @@ class TestCooperativityChainCreation:
             res_seq=3, i_code="", coords=NPVec3D(5, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="CL", charge="", record_type="ATOM"
         )
-        
+
+        # Donor carbon atom bonded to halogen
+        halogen_donor = Atom(
+            serial=5, name="C", alt_loc="", res_name="CLU", chain_id="A",
+            res_seq=3, i_code="", coords=NPVec3D(3.5, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="C", charge="", record_type="ATOM"
+        )
+
         # Create interactions
         hb = HydrogenBond(
             _donor=donor, hydrogen=hydrogen, _acceptor=acceptor,
             distance=2.5, angle=math.radians(160.0), _donor_acceptor_distance=3.2,
             bond_type="N-H...O", _donor_residue="A1ALA", _acceptor_residue="A2GLY"
         )
-        
+
         xb = HalogenBond(
             halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
-            bond_type="C-CL...O", _halogen_residue="A3CLU", _acceptor_residue="A2GLY"
+            bond_type="C-CL...O", _halogen_residue="A3CLU", _acceptor_residue="A2GLY",
+            _donor=halogen_donor
         )
-        
+
         return [hb, xb]
     
     def test_cooperativity_chain_creation(self, sample_interactions):
@@ -836,25 +880,33 @@ class TestInteractionValidation:
             res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="CL", charge="", record_type="ATOM"
         )
-        
+
         acceptor = Atom(
             serial=2, name="O", alt_loc="", res_name="GLY", chain_id="A",
             res_seq=2, i_code="", coords=NPVec3D(3, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="O", charge="", record_type="ATOM"
         )
-        
+
+        # Donor carbon atom bonded to halogen
+        donor = Atom(
+            serial=3, name="C", alt_loc="", res_name="CLU", chain_id="A",
+            res_seq=1, i_code="", coords=NPVec3D(-1.5, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="C", charge="", record_type="ATOM"
+        )
+
         xb = HalogenBond(
             halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
-            bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY"
+            bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY",
+            _donor=donor
         )
-        
+
         # Test required attributes
-        required_attrs = ['halogen', 'acceptor', 'distance', 'angle', 
+        required_attrs = ['halogen', 'acceptor', 'distance', 'angle',
                          'bond_type', 'donor_residue', 'acceptor_residue']
-        
+
         for attr in required_attrs:
             assert hasattr(xb, attr), f"Missing attribute: {attr}"
-        
+
         # Test reasonable values
         assert xb.distance > 0
         assert 0 <= xb.angle <= math.pi

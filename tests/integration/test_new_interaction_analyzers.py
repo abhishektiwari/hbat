@@ -362,10 +362,11 @@ class TestNewInteractionsIntegration:
                 # Residue identifiers should be non-empty strings
                 assert isinstance(donor_res, str) and len(donor_res) > 0
                 assert isinstance(acceptor_res, str) and len(acceptor_res) > 0
-                
-                # Should have proper format (e.g., "A123ALA")
-                assert len(donor_res) >= 4  # Minimum: "A1X"
-                assert len(acceptor_res) >= 4
+
+                # Should have proper format (e.g., "A123ALA" or "DG2" for nucleotides)
+                # Minimum 3 characters to allow for single-digit residue numbers
+                assert len(donor_res) >= 3  # Minimum: "A1X" or "DG2"
+                assert len(acceptor_res) >= 3
             
             print(f"✓ All {len(all_interactions)} new interactions have valid residue identifiers")
 
