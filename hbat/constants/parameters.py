@@ -252,7 +252,7 @@ class AnalysisParameters:
         fix_pdb_remove_heterogens: bool = ParametersDefault.FIX_PDB_REMOVE_HETEROGENS,
         fix_pdb_keep_water: bool = ParametersDefault.FIX_PDB_KEEP_WATER,
         **kwargs,
-    ):
+    ) -> None:
         """Initialize analysis parameters.
 
         :param hb_distance_cutoff: Maximum H...A distance for hydrogen bonds (Å)
@@ -430,7 +430,7 @@ class AnalysisParameters:
 
         return f"AnalysisParameters({', '.join(params)})"
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Compare two AnalysisParameters objects for equality.
 
         :param other: Other AnalysisParameters object to compare

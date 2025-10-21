@@ -1054,46 +1054,14 @@ def export_to_json(
             data["pi_pi_stacking"].append(
                 {
                     "ring1_residue": pi_pi.ring1_residue,
-                    "ring1_center": (
-                        pi_pi.ring1_center.tolist()
-                        if hasattr(pi_pi.ring1_center, "tolist")
-                        else [
-                            pi_pi.ring1_center[0],
-                            pi_pi.ring1_center[1],
-                            pi_pi.ring1_center[2],
-                        ]
-                    ),
-                    "ring1_normal": (
-                        pi_pi.ring1_normal.tolist()
-                        if hasattr(pi_pi.ring1_normal, "tolist")
-                        else [
-                            pi_pi.ring1_normal[0],
-                            pi_pi.ring1_normal[1],
-                            pi_pi.ring1_normal[2],
-                        ]
-                    ),
+                    "ring1_center": pi_pi.ring1_center.to_list(),
+                    "ring1_type": pi_pi.ring1_type,
                     "ring2_residue": pi_pi.ring2_residue,
-                    "ring2_center": (
-                        pi_pi.ring2_center.tolist()
-                        if hasattr(pi_pi.ring2_center, "tolist")
-                        else [
-                            pi_pi.ring2_center[0],
-                            pi_pi.ring2_center[1],
-                            pi_pi.ring2_center[2],
-                        ]
-                    ),
-                    "ring2_normal": (
-                        pi_pi.ring2_normal.tolist()
-                        if hasattr(pi_pi.ring2_normal, "tolist")
-                        else [
-                            pi_pi.ring2_normal[0],
-                            pi_pi.ring2_normal[1],
-                            pi_pi.ring2_normal[2],
-                        ]
-                    ),
+                    "ring2_center": pi_pi.ring2_center.to_list(),
+                    "ring2_type": pi_pi.ring2_type,
                     "distance": round(pi_pi.distance, 3),
                     "angle": round(math.degrees(pi_pi.angle), 1),
-                    "interaction_type": pi_pi.interaction_classification,
+                    "interaction_type": pi_pi.stacking_type,
                     "offset": (
                         round(pi_pi.offset, 3) if hasattr(pi_pi, "offset") else None
                     ),
@@ -1106,11 +1074,11 @@ def export_to_json(
             data["carbonyl_interactions"].append(
                 {
                     "donor_residue": carbonyl.donor_residue,
-                    "donor_atom": carbonyl.donor_carbonyl.name,
-                    "donor_coords": carbonyl.donor_carbonyl.coords.to_list(),
+                    "donor_atom": carbonyl.donor_oxygen.name,
+                    "donor_coords": carbonyl.donor_oxygen.coords.to_list(),
                     "acceptor_residue": carbonyl.acceptor_residue,
-                    "acceptor_atom": carbonyl.acceptor_carbonyl.name,
-                    "acceptor_coords": carbonyl.acceptor_carbonyl.coords.to_list(),
+                    "acceptor_atom": carbonyl.acceptor_carbon.name,
+                    "acceptor_coords": carbonyl.acceptor_carbon.coords.to_list(),
                     "distance": round(carbonyl.distance, 3),
                     "angle": round(math.degrees(carbonyl.angle), 1),
                     "interaction_type": carbonyl.interaction_classification,
@@ -1128,19 +1096,11 @@ def export_to_json(
             data["n_pi_interactions"].append(
                 {
                     "donor_residue": n_pi.donor_residue,
-                    "donor_atom": n_pi.donor_atom.name,
-                    "donor_coords": n_pi.donor_atom.coords.to_list(),
+                    "donor_atom": n_pi.lone_pair_atom.name,
+                    "donor_coords": n_pi.lone_pair_atom.coords.to_list(),
                     "acceptor_residue": n_pi.acceptor_residue,
-                    "pi_center": (
-                        n_pi.pi_center.tolist()
-                        if hasattr(n_pi.pi_center, "tolist")
-                        else [n_pi.pi_center[0], n_pi.pi_center[1], n_pi.pi_center[2]]
-                    ),
-                    "pi_normal": (
-                        n_pi.pi_normal.tolist()
-                        if hasattr(n_pi.pi_normal, "tolist")
-                        else [n_pi.pi_normal[0], n_pi.pi_normal[1], n_pi.pi_normal[2]]
-                    ),
+                    "pi_center": n_pi.pi_center.to_list(),
+                    "pi_system_type": n_pi.pi_system_type,
                     "distance": round(n_pi.distance, 3),
                     "angle": round(math.degrees(n_pi.angle), 1),
                     "interaction_type": n_pi.interaction_classification,
@@ -1509,7 +1469,7 @@ def export_to_json_files(
     # Export hydrogen bonds
     if analyzer.hydrogen_bonds:
         hb_file = directory / f"{base_name}_h_bonds.json"
-        data = {
+        data: Dict[str, Any] = {
             "metadata": {
                 "input_file": input_file,
                 "analysis_engine": "HBAT",
@@ -1542,7 +1502,7 @@ def export_to_json_files(
     # Export halogen bonds
     if analyzer.halogen_bonds:
         xb_file = directory / f"{base_name}_x_bonds.json"
-        data = {
+        data: Dict[str, Any] = {
             "metadata": {
                 "input_file": input_file,
                 "analysis_engine": "HBAT",
@@ -1572,7 +1532,7 @@ def export_to_json_files(
     # Export π interactions
     if analyzer.pi_interactions:
         pi_file = directory / f"{base_name}_pi_interactions.json"
-        data = {
+        data: Dict[str, Any] = {
             "metadata": {
                 "input_file": input_file,
                 "analysis_engine": "HBAT",
@@ -1600,7 +1560,7 @@ def export_to_json_files(
     # Export π-π stacking interactions
     if hasattr(analyzer, "pi_pi_interactions") and analyzer.pi_pi_interactions:
         pi_pi_file = directory / f"{base_name}_pi_pi_stacking.json"
-        data = {
+        data: Dict[str, Any] = {
             "metadata": {
                 "input_file": input_file,
                 "analysis_engine": "HBAT",
@@ -1641,7 +1601,7 @@ def export_to_json_files(
     # Export carbonyl-carbonyl interactions
     if hasattr(analyzer, "carbonyl_interactions") and analyzer.carbonyl_interactions:
         carbonyl_file = directory / f"{base_name}_carbonyl_interactions.json"
-        data = {
+        data: Dict[str, Any] = {
             "metadata": {
                 "input_file": input_file,
                 "analysis_engine": "HBAT",
@@ -1672,7 +1632,7 @@ def export_to_json_files(
     # Export n→π* interactions
     if hasattr(analyzer, "n_pi_interactions") and analyzer.n_pi_interactions:
         n_pi_file = directory / f"{base_name}_n_pi_interactions.json"
-        data = {
+        data: Dict[str, Any] = {
             "metadata": {
                 "input_file": input_file,
                 "analysis_engine": "HBAT",
@@ -1929,9 +1889,9 @@ def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) ->
                 writer.writerow(
                     [
                         carbonyl.donor_residue,
-                        carbonyl.donor_carbonyl.name,
+                        carbonyl.donor_oxygen.name,
                         carbonyl.acceptor_residue,
-                        carbonyl.acceptor_carbonyl.name,
+                        carbonyl.acceptor_carbon.name,
                         f"{carbonyl.distance:.3f}",
                         f"{math.degrees(carbonyl.angle):.1f}",
                         carbonyl.interaction_classification,
@@ -1961,7 +1921,7 @@ def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) ->
                 writer.writerow(
                     [
                         n_pi.donor_residue,
-                        n_pi.donor_atom.name,
+                        n_pi.lone_pair_atom.name,
                         n_pi.acceptor_residue,
                         f"{n_pi.distance:.3f}",
                         f"{math.degrees(n_pi.angle):.1f}",

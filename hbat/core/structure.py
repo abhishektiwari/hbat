@@ -379,7 +379,7 @@ class Atom:
                 self.chain_id,
                 self.res_seq,
                 self.i_code,
-                tuple(self.coords),  # Convert numpy array to tuple for hashing
+                self.coords.to_tuple(),  # Convert NPVec3D to tuple for hashing
                 self.occupancy,
                 self.temp_factor,
                 self.element,

@@ -926,11 +926,17 @@ class PiPiInteraction(MolecularInteraction):
         self.ring1_residue = ring1_residue
         self.ring2_residue = ring2_residue
 
+        # Ensure ring centers are NPVec3D objects (for compatibility with tests passing numpy arrays)
+        if not isinstance(ring1_center, NPVec3D):
+            ring1_center = NPVec3D(ring1_center[0], ring1_center[1], ring1_center[2])
+        if not isinstance(ring2_center, NPVec3D):
+            ring2_center = NPVec3D(ring2_center[0], ring2_center[1], ring2_center[2])
+
         # Calculate midpoint for interaction representation
         self.midpoint = NPVec3D(
-            (ring1_center[0] + ring2_center[0]) / 2,
-            (ring1_center[1] + ring2_center[1]) / 2,
-            (ring1_center[2] + ring2_center[2]) / 2,
+            (ring1_center.x + ring2_center.x) / 2,
+            (ring1_center.y + ring2_center.y) / 2,
+            (ring1_center.z + ring2_center.z) / 2,
         )
 
         # Determine if interaction is between different residues
@@ -946,6 +952,15 @@ class PiPiInteraction(MolecularInteraction):
     def angle(self) -> float:
         """Angle between ring planes in radians (for consistency with other interactions)."""
         return math.radians(self.plane_angle)
+
+    @property
+    def interaction_classification(self) -> str:
+        """Get the stacking classification (for consistency with other interaction types).
+
+        :returns: The stacking type ("parallel", "T-shaped", or "offset")
+        :rtype: str
+        """
+        return self.stacking_type
 
     # MolecularInteraction interface implementation
     def get_donor(self) -> Union[Atom, NPVec3D]:
@@ -1401,6 +1416,15 @@ class NPiInteraction(MolecularInteraction):
     def angle(self) -> float:
         """Angle to π plane in radians (for consistency with other interactions)."""
         return math.radians(self.angle_to_plane)
+
+    @property
+    def interaction_classification(self) -> str:
+        """Get the interaction subtype classification (for consistency with other interaction types).
+
+        :returns: The subtype classification
+        :rtype: str
+        """
+        return self.subtype
 
     # MolecularInteraction interface implementation
     def get_donor(self) -> Union[Atom, NPVec3D]:
