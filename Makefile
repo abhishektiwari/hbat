@@ -197,7 +197,7 @@ conda-build:
 	@echo "Setting version from git tag..."
 	@export GIT_DESCRIBE_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0") && \
 	echo "Building version: $$GIT_DESCRIBE_TAG" && \
-	conda build conda --output-folder conda-build-output
+	conda build conda --output-folder conda-build-output -c conda-forge
 
 conda-build-test:
 	@echo "Building and testing conda package locally..."
@@ -209,9 +209,9 @@ conda-build-test:
 	fi
 	@export GIT_DESCRIBE_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0") && \
 	echo "Building version: $$GIT_DESCRIBE_TAG" && \
-	conda build conda --output-folder conda-build-output && \
+	conda build conda --output-folder conda-build-output -c conda-forge && \
 	echo "Testing built package..." && \
-	conda build --test conda-build-output/noarch/hbat-*.tar.bz2
+	conda build --test conda-build-output/noarch/hbat-*.tar.bz2 -c conda-forge
 
 # Standalone executables
 build-standalone:

@@ -53,6 +53,7 @@ test:
   requires:
     - pip
     - pytest
+    - openmm >=8.2
 
 about:
   home: https://github.com/abhishektiwari/hbat

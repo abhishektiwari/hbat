@@ -267,8 +267,8 @@ jobs:
       run: |
         export GIT_DESCRIBE_TAG=${{ needs.generate-version.outputs.version_tag }}
         echo "Building conda package with version: ${GIT_DESCRIBE_TAG}"
-        conda build conda --output-folder conda-build-output
-        
+        conda build conda --output-folder conda-build-output -c conda-forge
+
         echo "Built conda packages:"
         ls -la conda-build-output/noarch/
     
