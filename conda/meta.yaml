@@ -35,7 +35,7 @@ test:
   source_files:
     - example_pdb_files/6rsa.pdb
   commands:
-    - pip install pdbreader>=0.1.0 mmcif>=0.92.0 mmcif-pdbx>=2.0.1 openbabel-wheel>=3.1.1.22 pybel>=0.15.5 "pdbfixer @ git+https://github.com/openmm/pdbfixer.git"
+    - pip install pdbreader>=0.1.0 mmcif>=0.92.0 mmcif-pdbx>=2.0.1 openbabel-wheel>=3.1.1.22 pybel>=0.15.5 pdbfixer-wheel>=1.11.0
     - python -c "import hbat; print(hbat.__version__)"
     - python -c "import pdbreader; print('pdbreader:', pdbreader)"
     - python -c "import pdbfixer; print('pdbfixer:', pdbfixer)"

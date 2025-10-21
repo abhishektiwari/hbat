@@ -186,7 +186,9 @@ example_pdb_files/*.pdb
 !example_pdb_files/4ub7.pdb
 !example_pdb_files/4x21.pdb
 !example_pdb_files/6rsa.pdb
-
+!example_pdb_files/7nwd.pdb
+!example_pdb_files/1luc.pdb
+!example_pdb_files/2cdg.pdb
 
 # Temporary files
 *.tmp
