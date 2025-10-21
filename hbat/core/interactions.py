@@ -610,7 +610,7 @@ class PiInteraction(MolecularInteraction):
     """Represents a D-X...π interaction.
 
     This class stores information about a detected D-X...π interaction,
-    where a donor atom with an interaction atom (H, F, Cl, Br, I) interacts 
+    where a donor atom with an interaction atom (H, F, Cl, Br, I) interacts
     with an aromatic π system. Supports multiple subtypes:
     - C-H...π, N-H...π, O-H...π, S-H...π (hydrogen-π interactions)
     - C-Cl...π, C-Br...π, C-I...π (halogen-π interactions)
@@ -805,15 +805,15 @@ class PiInteraction(MolecularInteraction):
 
     def get_interaction_type_display(self) -> str:
         """Get the interaction type for display purposes.
-        
+
         Generates display strings for different π interaction subtypes:
-        
+
         **Hydrogen-π interactions:**
         - "C-H...π" for carbon-hydrogen to π system
-        - "N-H...π" for nitrogen-hydrogen to π system  
+        - "N-H...π" for nitrogen-hydrogen to π system
         - "O-H...π" for oxygen-hydrogen to π system
         - "S-H...π" for sulfur-hydrogen to π system
-        
+
         **Halogen-π interactions:**
         - "C-Cl...π" for carbon-chlorine to π system
         - "C-Br...π" for carbon-bromine to π system
@@ -823,7 +823,9 @@ class PiInteraction(MolecularInteraction):
         :rtype: str
         """
         donor_element = self._donor.element
-        interaction_element = self.hydrogen.element  # Still named hydrogen for backward compatibility
+        interaction_element = (
+            self.hydrogen.element
+        )  # Still named hydrogen for backward compatibility
         return f"{donor_element}-{interaction_element}...π"
 
     def __str__(self) -> str:
@@ -837,12 +839,12 @@ class PiInteraction(MolecularInteraction):
 
 class PiPiInteraction(MolecularInteraction):
     """Represents a π-π stacking interaction between aromatic rings.
-    
+
     This class stores information about detected π-π interactions, which are
     important for protein stability, molecular recognition, and drug binding.
     Interactions are classified as parallel, T-shaped, or offset based on
     the angle between ring planes and the lateral displacement.
-    
+
     :param ring1_atoms: Atoms in the first aromatic ring
     :type ring1_atoms: List[Atom]
     :param ring2_atoms: Atoms in the second aromatic ring
@@ -868,7 +870,7 @@ class PiPiInteraction(MolecularInteraction):
     :param ring2_residue: Identifier for second ring's residue
     :type ring2_residue: str
     """
-    
+
     def __init__(
         self,
         ring1_atoms: List[Atom],
@@ -885,7 +887,7 @@ class PiPiInteraction(MolecularInteraction):
         ring2_residue: str,
     ):
         """Initialize a PiPiInteraction object.
-        
+
         :param ring1_atoms: Atoms in the first aromatic ring
         :type ring1_atoms: List[Atom]
         :param ring2_atoms: Atoms in the second aromatic ring
@@ -923,126 +925,126 @@ class PiPiInteraction(MolecularInteraction):
         self.ring2_type = ring2_type
         self.ring1_residue = ring1_residue
         self.ring2_residue = ring2_residue
-        
+
         # Calculate midpoint for interaction representation
         self.midpoint = NPVec3D(
             (ring1_center[0] + ring2_center[0]) / 2,
             (ring1_center[1] + ring2_center[1]) / 2,
-            (ring1_center[2] + ring2_center[2]) / 2
+            (ring1_center[2] + ring2_center[2]) / 2,
         )
-        
+
         # Determine if interaction is between different residues
-        self.is_between_residues = (ring1_residue != ring2_residue)
-    
+        self.is_between_residues = ring1_residue != ring2_residue
+
     # Backward compatibility properties
     @property
     def distance(self) -> float:
         """Centroid-to-centroid distance."""
         return self._distance
-    
+
     @property
     def angle(self) -> float:
         """Angle between ring planes in radians (for consistency with other interactions)."""
         return math.radians(self.plane_angle)
-    
+
     # MolecularInteraction interface implementation
     def get_donor(self) -> Union[Atom, NPVec3D]:
         """Get the first ring centroid (arbitrarily designated as donor).
-        
+
         :returns: Centroid of the first aromatic ring
         :rtype: NPVec3D
         """
         return self.ring1_center
-    
+
     def get_acceptor(self) -> Union[Atom, NPVec3D]:
         """Get the second ring centroid (arbitrarily designated as acceptor).
-        
+
         :returns: Centroid of the second aromatic ring
         :rtype: NPVec3D
         """
         return self.ring2_center
-    
+
     def get_interaction(self) -> Union[Atom, NPVec3D]:
         """Get the interaction point (midpoint between centroids).
-        
+
         :returns: Midpoint between the two ring centroids
         :rtype: NPVec3D
         """
         return self.midpoint
-    
+
     def get_donor_residue(self) -> str:
         """Get the first ring's residue identifier.
-        
+
         :returns: Residue identifier for the first ring
         :rtype: str
         """
         return self.ring1_residue
-    
+
     def get_acceptor_residue(self) -> str:
         """Get the second ring's residue identifier.
-        
+
         :returns: Residue identifier for the second ring
         :rtype: str
         """
         return self.ring2_residue
-    
+
     def get_interaction_type(self) -> str:
         """Get the interaction type identifier.
-        
+
         :returns: "Pi-Pi" as the interaction type
         :rtype: str
         """
         return "Pi-Pi"
-    
+
     def get_stacking_type(self) -> str:
         """Get the specific stacking geometry classification.
-        
+
         :returns: "parallel", "T-shaped", or "offset"
         :rtype: str
         """
         return self.stacking_type
-    
+
     def get_donor_interaction_distance(self) -> float:
         """Distance from first ring centroid to midpoint.
-        
+
         :returns: Half of the centroid-to-centroid distance
         :rtype: float
         """
         return self._distance / 2
-    
+
     def get_donor_acceptor_distance(self) -> float:
         """Distance between ring centroids.
-        
+
         :returns: Centroid-to-centroid distance
         :rtype: float
         """
         return self._distance
-    
+
     def get_donor_interaction_acceptor_angle(self) -> float:
         """Angle between ring planes in radians.
-        
+
         For π-π interactions, this represents the dihedral angle between
         the two aromatic ring planes.
-        
+
         :returns: Angle between planes in radians
         :rtype: float
         """
         return math.radians(self.plane_angle)
-    
+
     def is_donor_interaction_bonded(self) -> bool:
         """Check if bonding requirement is satisfied.
-        
+
         π-π interactions are non-covalent and don't require bonding
         between the interacting rings.
-        
+
         :returns: False (no bonding requirement for π-π stacking)
         :rtype: bool
         """
         return False
-    
+
     def get_ring_atoms(self, ring_num: int) -> List[Atom]:
         """Get atoms of a specific ring.
-        
+
         :param ring_num: Ring number (1 or 2)
         :type ring_num: int
         :returns: List of atoms in the specified ring
@@ -1054,10 +1056,10 @@ class PiPiInteraction(MolecularInteraction):
             return self.ring2_atoms
         else:
             raise ValueError("Ring number must be 1 or 2")
-    
+
     def __str__(self) -> str:
         """String representation of the π-π interaction.
-        
+
         :returns: Human-readable description of the interaction
         :rtype: str
         """
@@ -1070,12 +1072,12 @@ class PiPiInteraction(MolecularInteraction):
 
 class CarbonylInteraction(MolecularInteraction):
     """Represents a carbonyl-carbonyl n→π* interaction between C=O groups.
-    
+
     This class stores information about detected n→π* interactions between
     carbonyl groups, which are important for protein stability and secondary
     structure formation. The interaction follows the Bürgi-Dunitz trajectory
     where the donor oxygen approaches the acceptor carbon.
-    
+
     :param donor_carbon: C atom of the donor C=O group
     :type donor_carbon: Atom
     :param donor_oxygen: O atom of the donor C=O group
@@ -1095,7 +1097,7 @@ class CarbonylInteraction(MolecularInteraction):
     :param acceptor_residue: Identifier for acceptor residue
     :type acceptor_residue: str
     """
-    
+
     def __init__(
         self,
         donor_carbon: Atom,
@@ -1109,7 +1111,7 @@ class CarbonylInteraction(MolecularInteraction):
         acceptor_residue: str,
     ):
         """Initialize a CarbonylInteraction object.
-        
+
         :param donor_carbon: C atom of the donor C=O group
         :type donor_carbon: Atom
         :param donor_oxygen: O atom of the donor C=O group
@@ -1138,134 +1140,134 @@ class CarbonylInteraction(MolecularInteraction):
         self.is_backbone = is_backbone
         self._donor_residue = donor_residue
         self._acceptor_residue = acceptor_residue
-        
+
         # Generate interaction classification
         self.interaction_classification = self._generate_interaction_classification()
-        
+
         # Determine if interaction is between different residues
-        self.is_between_residues = (donor_residue != acceptor_residue)
-    
+        self.is_between_residues = donor_residue != acceptor_residue
+
     # Backward compatibility properties
     @property
     def distance(self) -> float:
         """O···C distance in Angstroms."""
         return self._distance
-    
+
     @property
     def angle(self) -> float:
         """Bürgi-Dunitz angle in radians (for consistency with other interactions)."""
         return math.radians(self.burgi_dunitz_angle)
-    
+
     @property
     def carbonyl_type(self) -> str:
         """Get the carbonyl interaction type (for GUI compatibility)."""
         return self.interaction_classification
-    
+
     # MolecularInteraction interface implementation
     def get_donor(self) -> Union[Atom, NPVec3D]:
         """Get the donor oxygen atom.
-        
+
         The donor oxygen contributes its lone pair electrons to the interaction.
-        
+
         :returns: Donor oxygen atom
         :rtype: Atom
         """
         return self.donor_oxygen
-    
+
     def get_acceptor(self) -> Union[Atom, NPVec3D]:
         """Get the acceptor carbon atom.
-        
+
         The acceptor carbon receives electron density in the n→π* interaction.
-        
+
         :returns: Acceptor carbon atom
         :rtype: Atom
         """
         return self.acceptor_carbon
-    
+
     def get_interaction(self) -> Union[Atom, NPVec3D]:
         """Get the interaction point (donor oxygen).
-        
+
         For carbonyl interactions, the donor oxygen is both the electron donor
         and the interaction point.
-        
+
         :returns: Donor oxygen atom
         :rtype: Atom
         """
         return self.donor_oxygen
-    
+
     def get_donor_residue(self) -> str:
         """Get the donor residue identifier.
-        
+
         :returns: Residue identifier containing the donor carbonyl
         :rtype: str
         """
         return self._donor_residue
-    
+
     def get_acceptor_residue(self) -> str:
         """Get the acceptor residue identifier.
-        
+
         :returns: Residue identifier containing the acceptor carbonyl
         :rtype: str
         """
         return self._acceptor_residue
-    
+
     def get_interaction_type(self) -> str:
         """Get the interaction type identifier.
-        
+
         :returns: "Carbonyl-Carbonyl" as the interaction type
         :rtype: str
         """
         return "Carbonyl-Carbonyl"
-    
+
     def is_backbone_interaction(self) -> bool:
         """Check if this is a backbone-backbone interaction.
-        
+
         :returns: True if both carbonyls are from backbone amides
         :rtype: bool
         """
         return self.is_backbone
-    
+
     def get_donor_interaction_distance(self) -> float:
         """Distance from donor carbon to donor oxygen.
-        
+
         :returns: C=O bond length (approximately 1.2-1.3 Å)
         :rtype: float
         """
         return float(self.donor_carbon.coords.distance_to(self.donor_oxygen.coords))
-    
+
     def get_donor_acceptor_distance(self) -> float:
         """Distance from donor oxygen to acceptor carbon.
-        
+
         :returns: O···C distance in Angstroms
         :rtype: float
         """
         return self._distance
-    
+
     def get_donor_interaction_acceptor_angle(self) -> float:
         """Bürgi-Dunitz angle in radians.
-        
+
         This is the O···C=O angle that defines the trajectory of approach
         for the n→π* interaction.
-        
+
         :returns: Bürgi-Dunitz angle in radians
         :rtype: float
         """
         return math.radians(self.burgi_dunitz_angle)
-    
+
     def is_donor_interaction_bonded(self) -> bool:
         """Check if the donor oxygen is bonded to the donor carbon.
-        
+
         For carbonyl interactions, the donor oxygen must be covalently
         bonded to the donor carbon in a C=O group.
-        
+
         :returns: True (oxygen is bonded to carbon in C=O)
         :rtype: bool
         """
         return True
-    
+
     def get_carbonyl_atoms(self, carbonyl_type: str) -> tuple:
         """Get atoms of a specific carbonyl group.
-        
+
         :param carbonyl_type: "donor" or "acceptor"
         :type carbonyl_type: str
         :returns: Tuple of (carbon, oxygen) atoms
@@ -1277,26 +1279,24 @@ class CarbonylInteraction(MolecularInteraction):
             return (self.acceptor_carbon, self.acceptor_oxygen)
         else:
             raise ValueError("Carbonyl type must be 'donor' or 'acceptor'")
-    
+
     def _generate_interaction_classification(self) -> str:
         """Generate interaction classification based on backbone/sidechain location.
-        
+
         :returns: Classification string (e.g., "backbone-backbone", "sidechain-backbone")
         :rtype: str
         """
         if self.is_backbone:
             return "backbone-backbone"
-        
+
         # Check if donor or acceptor are backbone by atom names
         donor_is_backbone = (
-            hasattr(self.donor_carbon, 'name') and 
-            self.donor_carbon.name == 'C'
+            hasattr(self.donor_carbon, "name") and self.donor_carbon.name == "C"
         )
         acceptor_is_backbone = (
-            hasattr(self.acceptor_carbon, 'name') and 
-            self.acceptor_carbon.name == 'C'
+            hasattr(self.acceptor_carbon, "name") and self.acceptor_carbon.name == "C"
         )
-        
+
         if donor_is_backbone and acceptor_is_backbone:
             return "backbone-backbone"
         elif donor_is_backbone and not acceptor_is_backbone:
@@ -1305,10 +1305,10 @@ class CarbonylInteraction(MolecularInteraction):
             return "sidechain-backbone"
         else:
             return "sidechain-sidechain"
-    
+
     def __str__(self) -> str:
         """String representation of the carbonyl interaction.
-        
+
         :returns: Human-readable description of the interaction
         :rtype: str
         """
@@ -1321,12 +1321,12 @@ class CarbonylInteraction(MolecularInteraction):
 
 class NPiInteraction(MolecularInteraction):
     """Represents a general n→π* interaction between lone pairs and π systems.
-    
+
     This class stores information about detected n→π* interactions where
     lone pair electrons from atoms (O, N, S) interact with aromatic π systems.
     These interactions are important in molecular recognition, enzyme active sites,
     and protein-ligand binding.
-    
+
     :param lone_pair_atom: Donor atom with lone pair electrons (O, N, S)
     :type lone_pair_atom: Atom
     :param pi_center: Center of the π system
@@ -1344,7 +1344,7 @@ class NPiInteraction(MolecularInteraction):
     :param acceptor_residue: Identifier for residue containing π system
     :type acceptor_residue: str
     """
-    
+
     def __init__(
         self,
         lone_pair_atom: Atom,
@@ -1357,7 +1357,7 @@ class NPiInteraction(MolecularInteraction):
         acceptor_residue: str,
     ):
         """Initialize an NPiInteraction object.
-        
+
         :param lone_pair_atom: Donor atom with lone pair electrons (O, N, S)
         :type lone_pair_atom: Atom
         :param pi_center: Center of the π system
@@ -1383,229 +1383,231 @@ class NPiInteraction(MolecularInteraction):
         self.subtype = subtype
         self._donor_residue = donor_residue
         self._acceptor_residue = acceptor_residue
-        
+
         # Generate interaction properties
         self.donor_element = lone_pair_atom.element.upper()
         self.pi_system_type = self._classify_pi_system()
-        
+
         # Determine if interaction is between different residues
-        self.is_between_residues = (donor_residue != acceptor_residue)
-    
+        self.is_between_residues = donor_residue != acceptor_residue
+
     # Backward compatibility properties
     @property
     def distance(self) -> float:
         """Lone pair to π center distance in Angstroms."""
         return self._distance
-    
+
     @property
     def angle(self) -> float:
         """Angle to π plane in radians (for consistency with other interactions)."""
         return math.radians(self.angle_to_plane)
-    
+
     # MolecularInteraction interface implementation
     def get_donor(self) -> Union[Atom, NPVec3D]:
         """Get the lone pair donor atom.
-        
+
         The lone pair atom contributes electron density to the π system.
-        
+
         :returns: Lone pair donor atom
         :rtype: Atom
         """
         return self.lone_pair_atom
-    
+
     def get_acceptor(self) -> Union[Atom, NPVec3D]:
         """Get the π system center.
-        
+
         The π system center represents the electron-deficient acceptor.
-        
+
         :returns: π system centroid
         :rtype: NPVec3D
         """
         return self.pi_center
-    
+
     def get_interaction(self) -> Union[Atom, NPVec3D]:
         """Get the interaction point (lone pair atom).
-        
+
         For n→π* interactions, the lone pair atom is the interaction point
         that donates electron density to the π system.
-        
+
         :returns: Lone pair donor atom
         :rtype: Atom
         """
         return self.lone_pair_atom
-    
+
     def get_donor_residue(self) -> str:
         """Get the donor residue identifier.
-        
+
         :returns: Residue identifier containing the lone pair donor
         :rtype: str
         """
         return self._donor_residue
-    
+
     def get_acceptor_residue(self) -> str:
         """Get the acceptor residue identifier.
-        
+
         :returns: Residue identifier containing the π system
         :rtype: str
         """
         return self._acceptor_residue
-    
+
     def get_interaction_type(self) -> str:
         """Get the interaction type identifier.
-        
+
         :returns: "n-Pi" as the interaction type
         :rtype: str
         """
         return "n-Pi"
-    
+
     def get_subtype(self) -> str:
         """Get the specific n→π* interaction subtype.
-        
+
         :returns: Subtype classification (e.g., "carbonyl-aromatic", "amine-aromatic")
         :rtype: str
         """
         return self.subtype
-    
+
     def get_donor_element(self) -> str:
         """Get the donor atom element.
-        
+
         :returns: Element symbol of the lone pair donor (O, N, or S)
         :rtype: str
         """
         return self.donor_element
-    
+
     def get_donor_interaction_distance(self) -> float:
         """Distance from lone pair atom to π center (same as total distance).
-        
+
         For n→π* interactions, there's no intermediate atom, so this
         is the same as the donor-acceptor distance.
-        
+
         :returns: Lone pair to π center distance
         :rtype: float
         """
         return self._distance
-    
+
     def get_donor_acceptor_distance(self) -> float:
         """Distance from lone pair donor to π system center.
-        
+
         :returns: Lone pair to π center distance in Angstroms
         :rtype: float
         """
         return self._distance
-    
+
     def get_donor_interaction_acceptor_angle(self) -> float:
         """Angle to π plane normal in radians.
-        
+
         This represents the angle between the lone pair vector and
         the normal to the π system plane.
-        
+
         :returns: Angle to π plane normal in radians
         :rtype: float
         """
         return math.radians(self.angle_to_plane)
-    
+
     def is_donor_interaction_bonded(self) -> bool:
         """Check if bonding requirement is satisfied.
-        
+
         n→π* interactions are direct interactions between the lone pair
         and π system, so no intermediate bonding is required.
-        
+
         :returns: False (no bonding requirement for n→π* interactions)
         :rtype: bool
         """
         return False
-    
+
     def get_pi_atoms(self) -> List[Atom]:
         """Get atoms constituting the π system.
-        
+
         :returns: List of atoms in the π system
         :rtype: List[Atom]
         """
         return self.pi_atoms
-    
+
     def is_carbonyl_donor(self) -> bool:
         """Check if the donor is a carbonyl oxygen.
-        
+
         :returns: True if donor is carbonyl oxygen
         :rtype: bool
         """
         return "carbonyl" in self.subtype.lower()
-    
+
     def is_amine_donor(self) -> bool:
         """Check if the donor is an amine nitrogen.
-        
+
         :returns: True if donor is amine nitrogen
         :rtype: bool
         """
         return "amine" in self.subtype.lower() or "amino" in self.subtype.lower()
-    
+
     def is_sulfur_donor(self) -> bool:
         """Check if the donor is a sulfur atom.
-        
+
         :returns: True if donor is sulfur atom
         :rtype: bool
         """
         return self.donor_element == "S" or "sulfur" in self.subtype.lower()
-    
+
     def _classify_pi_system(self) -> str:
         """Classify the π system type based on constituent atoms.
-        
+
         :returns: π system type (e.g., "aromatic", "nucleobase", "indole")
         :rtype: str
         """
         if not self.pi_atoms:
             return "unknown"
-        
+
         # Get residue type from first π atom
         first_atom = self.pi_atoms[0]
-        if hasattr(first_atom, 'residue_name'):
+        if hasattr(first_atom, "residue_name"):
             res_name = first_atom.residue_name.upper()
-            
+
             # Classify based on residue
-            if res_name in ['PHE']:
+            if res_name in ["PHE"]:
                 return "phenyl"
-            elif res_name in ['TYR']:
+            elif res_name in ["TYR"]:
                 return "phenol"
-            elif res_name in ['TRP']:
+            elif res_name in ["TRP"]:
                 return "indole"
-            elif res_name in ['HIS']:
+            elif res_name in ["HIS"]:
                 return "imidazole"
-            elif res_name in ['A', 'G', 'C', 'T', 'U']:
+            elif res_name in ["A", "G", "C", "T", "U"]:
                 return "nucleobase"
             else:
                 return "aromatic"
-        
+
         return "aromatic"
-    
+
     def _classify_donor_subtype(self) -> str:
         """Classify the donor atom subtype.
-        
+
         :returns: Donor subtype (e.g., "carbonyl-O", "amine-N", "thiol-S")
         :rtype: str
         """
         element = self.donor_element
-        
+
         if element == "O":
             # Check if carbonyl oxygen by looking at bonded carbon
-            if hasattr(self.lone_pair_atom, 'bonds'):
+            if hasattr(self.lone_pair_atom, "bonds"):
                 for bonded_atom in self.lone_pair_atom.bonds:
                     if bonded_atom.element.upper() == "C":
                         # Simple heuristic: if O-C distance is short, likely carbonyl
-                        distance = self.lone_pair_atom.coords.distance_to(bonded_atom.coords)
+                        distance = self.lone_pair_atom.coords.distance_to(
+                            bonded_atom.coords
+                        )
                         if distance < 1.35:  # Typical C=O bond length
                             return "carbonyl-O"
             return "hydroxyl-O"
-            
+
         elif element == "N":
             return "amine-N"
         elif element == "S":
             return "thiol-S"
         else:
             return f"{element.lower()}-lone_pair"
-    
+
     def __str__(self) -> str:
         """String representation of the n→π* interaction.
-        
+
         :returns: Human-readable description of the interaction
         :rtype: str
         """

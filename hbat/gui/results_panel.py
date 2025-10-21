@@ -45,18 +45,18 @@ class ResultsPanel:
         self.parent = parent
         self.analyzer: Optional[MolecularInteractionAnalyzer] = None
         self._create_widgets()
-    
+
     def _parse_residue_string(self, residue_str: str) -> str:
         """Parse a residue string like 'A123ALA' into 'A:ALA123'.
-        
+
         :param residue_str: Residue string in format ChainResSeqResName
         :type residue_str: str
-        :returns: Formatted string like 'Chain:ResNameResSeq'  
+        :returns: Formatted string like 'Chain:ResNameResSeq'
         :rtype: str
         """
         if not residue_str:
             return "Unknown"
-        
+
         # Handle the format: ChainIdResSeqResName (e.g., "A123ALA")
         # Chain ID is typically 1 character, residue name is typically 3 characters at the end
         if len(residue_str) >= 4:
@@ -90,9 +90,9 @@ class ResultsPanel:
 
         # New interaction types tabs
         self._create_pi_pi_stacking_tab()
-        
+
         self._create_carbonyl_interactions_tab()
-        
+
         self._create_n_pi_interactions_tab()
 
         # Cooperativity chains tab
@@ -505,7 +505,7 @@ class ResultsPanel:
 
         columns = (
             "ring1_res",
-            "ring1_atoms", 
+            "ring1_atoms",
             "ring2_res",
             "ring2_atoms",
             "distance",
@@ -644,7 +644,8 @@ class ResultsPanel:
             tree_frame, orient=tk.HORIZONTAL, command=self.carbonyl_tree.xview
         )
         self.carbonyl_tree.configure(
-            yscrollcommand=carbonyl_v_scrollbar.set, xscrollcommand=carbonyl_h_scrollbar.set
+            yscrollcommand=carbonyl_v_scrollbar.set,
+            xscrollcommand=carbonyl_h_scrollbar.set,
         )
 
         self.carbonyl_tree.grid(row=0, column=0, sticky="nsew")
@@ -684,7 +685,9 @@ class ResultsPanel:
         ttk.Button(
             search_frame,
             text="Clear",
-            command=lambda: self._clear_filter(self.carbonyl_tree, self.carbonyl_search_var),
+            command=lambda: self._clear_filter(
+                self.carbonyl_tree, self.carbonyl_search_var
+            ),
         ).pack(side=tk.LEFT, padx=5)
 
     def _create_n_pi_interactions_tab(self):
@@ -871,21 +874,23 @@ class ResultsPanel:
         self.summary_text.insert(
             tk.END, f"  π Interactions: {summary['pi_interactions']['count']}\n"
         )
-        
+
         # Add new interaction types if they exist in summary
-        if 'pi_pi_stacking' in summary:
+        if "pi_pi_stacking" in summary:
             self.summary_text.insert(
                 tk.END, f"  π-π Stacking: {summary['pi_pi_stacking']['count']}\n"
             )
-        if 'carbonyl_interactions' in summary:
+        if "carbonyl_interactions" in summary:
             self.summary_text.insert(
-                tk.END, f"  Carbonyl Interactions: {summary['carbonyl_interactions']['count']}\n"
+                tk.END,
+                f"  Carbonyl Interactions: {summary['carbonyl_interactions']['count']}\n",
             )
-        if 'n_pi_interactions' in summary:
+        if "n_pi_interactions" in summary:
             self.summary_text.insert(
-                tk.END, f"  n→π* Interactions: {summary['n_pi_interactions']['count']}\n"
+                tk.END,
+                f"  n→π* Interactions: {summary['n_pi_interactions']['count']}\n",
             )
-            
+
         self.summary_text.insert(
             tk.END,
             f"  Cooperativity Chains: {summary['cooperativity_chains']['count']}\n",
@@ -1292,13 +1297,19 @@ class ResultsPanel:
             self.pi_pi_tree.delete(item)
 
         # Add π-π stacking interactions if they exist
-        if hasattr(self.analyzer, 'pi_pi_interactions'):
+        if hasattr(self.analyzer, "pi_pi_interactions"):
             for interaction in self.analyzer.pi_pi_interactions:
                 ring1_res = self._parse_residue_string(interaction.ring1_residue)
-                ring1_atoms = ",".join([atom.name for atom in interaction.ring1_atoms[:3]]) + "..."
+                ring1_atoms = (
+                    ",".join([atom.name for atom in interaction.ring1_atoms[:3]])
+                    + "..."
+                )
                 ring2_res = self._parse_residue_string(interaction.ring2_residue)
-                ring2_atoms = ",".join([atom.name for atom in interaction.ring2_atoms[:3]]) + "..."
-                
+                ring2_atoms = (
+                    ",".join([atom.name for atom in interaction.ring2_atoms[:3]])
+                    + "..."
+                )
+
                 bs_int = "B" if interaction.is_between_residues else "S"
 
                 self.pi_pi_tree.insert(
@@ -1307,7 +1318,7 @@ class ResultsPanel:
                     values=(
                         ring1_res,
                         ring1_atoms,
-                        ring2_res, 
+                        ring2_res,
                         ring2_atoms,
                         f"{interaction.distance:.2f}",
                         f"{interaction.plane_angle:.1f}",
@@ -1327,13 +1338,15 @@ class ResultsPanel:
             self.carbonyl_tree.delete(item)
 
         # Add carbonyl interactions if they exist
-        if hasattr(self.analyzer, 'carbonyl_interactions'):
+        if hasattr(self.analyzer, "carbonyl_interactions"):
             for interaction in self.analyzer.carbonyl_interactions:
                 acceptor_res = self._parse_residue_string(interaction.acceptor_residue)
                 acceptor_atom = interaction.acceptor_carbon.name
                 carbonyl_res = self._parse_residue_string(interaction.donor_residue)
-                carbonyl_atoms = f"{interaction.donor_carbon.name}={interaction.donor_oxygen.name}"
-                
+                carbonyl_atoms = (
+                    f"{interaction.donor_carbon.name}={interaction.donor_oxygen.name}"
+                )
+
                 bs_int = "B" if interaction.is_between_residues else "S"
 
                 self.carbonyl_tree.insert(
@@ -1361,13 +1374,15 @@ class ResultsPanel:
             self.n_pi_tree.delete(item)
 
         # Add n→π* interactions if they exist
-        if hasattr(self.analyzer, 'n_pi_interactions'):
+        if hasattr(self.analyzer, "n_pi_interactions"):
             for interaction in self.analyzer.n_pi_interactions:
                 donor_res = self._parse_residue_string(interaction.donor_residue)
                 donor_atom = interaction.lone_pair_atom.name
                 pi_res = self._parse_residue_string(interaction.acceptor_residue)
-                pi_atoms = ",".join([atom.name for atom in interaction.pi_atoms[:3]]) + "..."
-                
+                pi_atoms = (
+                    ",".join([atom.name for atom in interaction.pi_atoms[:3]]) + "..."
+                )
+
                 bs_int = "B" if interaction.is_between_residues else "S"
 
                 self.n_pi_tree.insert(

@@ -24,8 +24,8 @@ from ..core.analysis import (
     NPMolecularInteractionAnalyzer,
 )
 from .geometry_cutoffs_dialog import GeometryCutoffsDialog
-from .results_panel import ResultsPanel
 from .pdb_fixing_dialog import PDBFixingDialog
+from .results_panel import ResultsPanel
 
 
 class MainWindow:
@@ -65,7 +65,6 @@ class MainWindow:
         self.analyzer: Optional[NPMolecularInteractionAnalyzer] = None
         self.current_file: Optional[str] = None
         self.analysis_running = False
-
 
         # Create UI components
         self._create_menu()
@@ -464,18 +463,29 @@ class MainWindow:
             # Use default parameters if none have been set
             params = AnalysisParameters()
             self.session_parameters = params
-            
+
         # Apply PDB fixing parameters if available
         # Note: Default AnalysisParameters() should have PDB fixing enabled by default
-        if hasattr(self, 'session_pdb_fixing_params') and self.session_pdb_fixing_params:
+        if (
+            hasattr(self, "session_pdb_fixing_params")
+            and self.session_pdb_fixing_params
+        ):
             # Update the params object with session PDB fixing settings
-            params.fix_pdb_enabled = self.session_pdb_fixing_params['enabled']
-            params.fix_pdb_method = self.session_pdb_fixing_params['method']
-            params.fix_pdb_add_hydrogens = self.session_pdb_fixing_params['add_hydrogens']
-            params.fix_pdb_add_heavy_atoms = self.session_pdb_fixing_params['add_heavy_atoms']
-            params.fix_pdb_replace_nonstandard = self.session_pdb_fixing_params['replace_nonstandard']
-            params.fix_pdb_remove_heterogens = self.session_pdb_fixing_params['remove_heterogens']
-            params.fix_pdb_keep_water = self.session_pdb_fixing_params['keep_water']
+            params.fix_pdb_enabled = self.session_pdb_fixing_params["enabled"]
+            params.fix_pdb_method = self.session_pdb_fixing_params["method"]
+            params.fix_pdb_add_hydrogens = self.session_pdb_fixing_params[
+                "add_hydrogens"
+            ]
+            params.fix_pdb_add_heavy_atoms = self.session_pdb_fixing_params[
+                "add_heavy_atoms"
+            ]
+            params.fix_pdb_replace_nonstandard = self.session_pdb_fixing_params[
+                "replace_nonstandard"
+            ]
+            params.fix_pdb_remove_heterogens = self.session_pdb_fixing_params[
+                "remove_heterogens"
+            ]
+            params.fix_pdb_keep_water = self.session_pdb_fixing_params["keep_water"]
 
         # Start async analysis without popup window
         tae.async_execute(
@@ -1142,45 +1152,49 @@ Author: Abhishek Tiwari
         """
         # Get current session parameters or defaults
         current_params = self.session_parameters or AnalysisParameters()
-        
+
         # Create dialog
         dialog = GeometryCutoffsDialog(self.root, current_params)
-        
+
         # Get results
         result = dialog.get_result()
-        
+
         if result:
             # Store the updated parameters in session
             self.session_parameters = result
             self.status_var.set("Geometry cutoffs updated")
 
-        
     def _open_pdb_fixing_window(self) -> None:
         """Open PDB fixing settings dialog.
-        
+
         Creates a modal dialog for configuring PDB fixing parameters.
-        
+
         :returns: None
         :rtype: None
         """
         # Create dialog
         dialog = PDBFixingDialog(self.root)
-        
+
         # Set current parameters if available
-        if hasattr(self, 'session_pdb_fixing_params') and self.session_pdb_fixing_params:
+        if (
+            hasattr(self, "session_pdb_fixing_params")
+            and self.session_pdb_fixing_params
+        ):
             dialog.set_parameters(self.session_pdb_fixing_params)
-        
+
         # Get results
         result = dialog.get_parameters()
-        
+
         if result:
             # Store the PDB fixing parameters
             self.session_pdb_fixing_params = result
-            
+
             # Update the status bar if appropriate
-            if hasattr(self, 'status_bar'):
+            if hasattr(self, "status_bar"):
                 fixing_status = "enabled" if result["enabled"] else "disabled"
-                self.status_bar.config(text=f"PDB fixing {fixing_status} ({result['method']})")
+                self.status_bar.config(
+                    text=f"PDB fixing {fixing_status} ({result['method']})"
+                )
                 # Clear status after 3 seconds
                 self.root.after(3000, lambda: self.status_bar.config(text="Ready"))
 
@@ -1426,7 +1440,6 @@ Author: Abhishek Tiwari
         finally:
             self.fixed_pdb_context_menu.grab_release()
 
-
     def _save_fixed_pdb(self) -> None:
         """Save the Fixed PDB content to a file.
 
@@ -1490,22 +1503,22 @@ Author: Abhishek Tiwari
 
     def _open_preset_manager(self) -> None:
         """Open the preset manager dialog.
-        
+
         Creates a standalone preset manager that can load/save presets
         and apply them to the current session parameters.
-        
+
         :returns: None
         :rtype: None
         """
         from .preset_manager_dialog import PresetManagerDialog
-        
+
         # Get current session parameters or defaults
         current_params = self.session_parameters or AnalysisParameters()
-        
+
         # Open preset manager
         dialog = PresetManagerDialog(self.root, current_params)
         result = dialog.get_result()
-        
+
         if result:
             # Apply the loaded preset to session parameters
             self._apply_preset_to_session(result)
@@ -1513,54 +1526,83 @@ Author: Abhishek Tiwari
 
     def _apply_preset_to_session(self, preset_data: Dict[str, Any]) -> None:
         """Apply preset data to session parameters.
-        
+
         :param preset_data: Preset data to apply
         :type preset_data: Dict[str, Any]
         :returns: None
         :rtype: None
         """
         if "parameters" not in preset_data:
-            messagebox.showerror("Error", "Invalid preset format: missing 'parameters' section")
+            messagebox.showerror(
+                "Error", "Invalid preset format: missing 'parameters' section"
+            )
             return
-            
+
         params_data = preset_data["parameters"]
-        
+
         # Create new AnalysisParameters with preset values
         kwargs = {}
-        
+
         # Apply hydrogen bond parameters
         if "hydrogen_bonds" in params_data:
             hb = params_data["hydrogen_bonds"]
-            kwargs.update({
-                "hb_distance_cutoff": hb.get("h_a_distance_cutoff", ParametersDefault.HB_DISTANCE_CUTOFF),
-                "hb_angle_cutoff": hb.get("dha_angle_cutoff", ParametersDefault.HB_ANGLE_CUTOFF),
-                "hb_donor_acceptor_cutoff": hb.get("d_a_distance_cutoff", ParametersDefault.HB_DA_DISTANCE)
-            })
-            
+            kwargs.update(
+                {
+                    "hb_distance_cutoff": hb.get(
+                        "h_a_distance_cutoff", ParametersDefault.HB_DISTANCE_CUTOFF
+                    ),
+                    "hb_angle_cutoff": hb.get(
+                        "dha_angle_cutoff", ParametersDefault.HB_ANGLE_CUTOFF
+                    ),
+                    "hb_donor_acceptor_cutoff": hb.get(
+                        "d_a_distance_cutoff", ParametersDefault.HB_DA_DISTANCE
+                    ),
+                }
+            )
+
         # Apply halogen bond parameters
         if "halogen_bonds" in params_data:
             xb = params_data["halogen_bonds"]
-            kwargs.update({
-                "xb_distance_cutoff": xb.get("x_a_distance_cutoff", ParametersDefault.XB_DISTANCE_CUTOFF),
-                "xb_angle_cutoff": xb.get("dxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF)
-            })
-            
+            kwargs.update(
+                {
+                    "xb_distance_cutoff": xb.get(
+                        "x_a_distance_cutoff", ParametersDefault.XB_DISTANCE_CUTOFF
+                    ),
+                    "xb_angle_cutoff": xb.get(
+                        "dxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF
+                    ),
+                }
+            )
+
         # Apply π interaction parameters
         if "pi_interactions" in params_data:
             pi = params_data["pi_interactions"]
-            kwargs.update({
-                "pi_distance_cutoff": pi.get("h_pi_distance_cutoff", ParametersDefault.PI_DISTANCE_CUTOFF),
-                "pi_angle_cutoff": pi.get("dh_pi_angle_cutoff", ParametersDefault.PI_ANGLE_CUTOFF)
-            })
-            
+            kwargs.update(
+                {
+                    "pi_distance_cutoff": pi.get(
+                        "h_pi_distance_cutoff", ParametersDefault.PI_DISTANCE_CUTOFF
+                    ),
+                    "pi_angle_cutoff": pi.get(
+                        "dh_pi_angle_cutoff", ParametersDefault.PI_ANGLE_CUTOFF
+                    ),
+                }
+            )
+
         # Apply general parameters
         if "general" in params_data:
             gen = params_data["general"]
-            kwargs.update({
-                "covalent_cutoff_factor": gen.get("covalent_cutoff_factor", ParametersDefault.COVALENT_CUTOFF_FACTOR),
-                "analysis_mode": gen.get("analysis_mode", ParametersDefault.ANALYSIS_MODE)
-            })
-        
+            kwargs.update(
+                {
+                    "covalent_cutoff_factor": gen.get(
+                        "covalent_cutoff_factor",
+                        ParametersDefault.COVALENT_CUTOFF_FACTOR,
+                    ),
+                    "analysis_mode": gen.get(
+                        "analysis_mode", ParametersDefault.ANALYSIS_MODE
+                    ),
+                }
+            )
+
         # Create new parameters object and store in session
         self.session_parameters = AnalysisParameters(**kwargs)
 

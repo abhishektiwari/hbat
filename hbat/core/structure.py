@@ -145,13 +145,15 @@ class Bond:
 
     def __hash__(self) -> int:
         """Hash function for Bond objects to make them hashable."""
-        return hash((
-            self.atom1_serial,
-            self.atom2_serial,
-            self.bond_type,
-            self.distance,
-            self.detection_method
-        ))
+        return hash(
+            (
+                self.atom1_serial,
+                self.atom2_serial,
+                self.bond_type,
+                self.distance,
+                self.detection_method,
+            )
+        )
 
 
 class Atom:
@@ -368,24 +370,26 @@ class Atom:
 
     def __hash__(self) -> int:
         """Hash function for Atom objects to make them hashable."""
-        return hash((
-            self.serial,
-            self.name,
-            self.alt_loc,
-            self.res_name,
-            self.chain_id,
-            self.res_seq,
-            self.i_code,
-            tuple(self.coords),  # Convert numpy array to tuple for hashing
-            self.occupancy,
-            self.temp_factor,
-            self.element,
-            self.charge,
-            self.record_type,
-            self.residue_type,
-            self.backbone_sidechain,
-            self.aromatic
-        ))
+        return hash(
+            (
+                self.serial,
+                self.name,
+                self.alt_loc,
+                self.res_name,
+                self.chain_id,
+                self.res_seq,
+                self.i_code,
+                tuple(self.coords),  # Convert numpy array to tuple for hashing
+                self.occupancy,
+                self.temp_factor,
+                self.element,
+                self.charge,
+                self.record_type,
+                self.residue_type,
+                self.backbone_sidechain,
+                self.aromatic,
+            )
+        )
 
 
 class Residue:
@@ -559,10 +563,12 @@ class Residue:
 
     def __hash__(self) -> int:
         """Hash function for Residue objects to make them hashable."""
-        return hash((
-            self.name,
-            self.chain_id,
-            self.seq_num,
-            self.i_code,
-            tuple(self.atoms)  # Convert list of atoms to tuple for hashing
-        ))
+        return hash(
+            (
+                self.name,
+                self.chain_id,
+                self.seq_num,
+                self.i_code,
+                tuple(self.atoms),  # Convert list of atoms to tuple for hashing
+            )
+        )

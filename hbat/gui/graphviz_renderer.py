@@ -538,7 +538,7 @@ class GraphVizRenderer(BaseVisualizationRenderer):
             self.h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
             self.v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
             self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            
+
             # Pack the canvas frame into the parent widget
             self.canvas_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -554,26 +554,28 @@ class GraphVizRenderer(BaseVisualizationRenderer):
         try:
             # Clear canvas first to remove any old images
             self.canvas.delete("all")
-            
+
             # Get image dimensions
             img_width = image.width
             img_height = image.height
 
             # Configure scroll region to match image size first
             self.canvas.configure(scrollregion=(0, 0, img_width, img_height))
-            
+
             # Convert to PhotoImage with explicit master to prevent garbage collection
             # Pass the canvas master (root window) to ensure proper ownership
             root_widget = self.canvas.winfo_toplevel()
             self.current_image = ImageTk.PhotoImage(image, master=root_widget)
-            
+
             # Ensure canvas_frame is visible
-            if hasattr(self, 'canvas_frame') and self.canvas_frame:
+            if hasattr(self, "canvas_frame") and self.canvas_frame:
                 self.canvas_frame.update_idletasks()
 
             # Create image at top-left corner (0, 0) for proper scrolling
-            image_id = self.canvas.create_image(0, 0, image=self.current_image, anchor=tk.NW)
-            
+            image_id = self.canvas.create_image(
+                0, 0, image=self.current_image, anchor=tk.NW
+            )
+
             # Store multiple references to prevent garbage collection
             self.canvas.image_ref = self.current_image
             # Also store on the renderer itself

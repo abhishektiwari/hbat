@@ -873,10 +873,32 @@ Used for identifying atoms involved in π-interactions and aromatic stacking.
 
 # Carbonyl interaction constants
 RESIDUES_WITH_BACKBONE_CARBONYLS: List[str] = [
-    "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE",
-    "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL",
+    "ALA",
+    "ARG",
+    "ASN",
+    "ASP",
+    "CYS",
+    "GLN",
+    "GLU",
+    "GLY",
+    "HIS",
+    "ILE",
+    "LEU",
+    "LYS",
+    "MET",
+    "PHE",
+    "PRO",
+    "SER",
+    "THR",
+    "TRP",
+    "TYR",
+    "VAL",
     # Common variants
-    "HID", "HIE", "HIP", "CYX", "MSE"
+    "HID",
+    "HIE",
+    "HIP",
+    "CYX",
+    "MSE",
 ]
 """List[str]: Residues that have backbone carbonyl groups (C=O).
 
@@ -929,8 +951,8 @@ Used for:
 """
 
 CARBONYL_BOND_LENGTH_RANGE: Dict[str, tuple] = {
-    "amide": (1.15, 1.35),      # C=O in peptide bonds and amide sidechains
-    "carboxylate": (1.15, 1.40) # C-O in carboxylate groups (longer due to resonance)
+    "amide": (1.15, 1.35),  # C=O in peptide bonds and amide sidechains
+    "carboxylate": (1.15, 1.40),  # C-O in carboxylate groups (longer due to resonance)
 }
 """Dict[str, tuple]: Acceptable C-O bond length ranges for different carbonyl types.
 
