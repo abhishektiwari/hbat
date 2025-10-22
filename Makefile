@@ -138,6 +138,7 @@ clean:
 	find . -name "*.pyo" -delete
 	rm -rf conda-build-output/
 	rm -rf example_pdb_files/*_fixed.pdb
+	rm -rf "~"
 
 # Documentation
 docs:
