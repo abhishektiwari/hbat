@@ -52,8 +52,8 @@ HBAT Documentation
    :alt: Codecov Coverage
    :target: https://codecov.io/gh/abhishektiwari/hbat
 
-.. image:: https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3Au-x6o8ySG0sC&search=Cited%20by%20(%5Cd%2B)&replace=%241&style=plastic&logo=googlescholar&label=Cited%20By&cacheSeconds=86400
-   :alt: Cited by Google Scholar
+.. image:: https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337&query=%24.message&style=flat&logo=googlescholar&label=Citations&cacheSeconds=43200
+   :alt: Scholar Citations
    :target: https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC
 
 .. image:: https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl

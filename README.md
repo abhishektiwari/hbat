@@ -17,7 +17,7 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 ![SourceForge Downloads](https://img.shields.io/sourceforge/dt/hbat?label=SourceForge%20Downloads)
 ![PyPI Downloads](https://img.shields.io/pepy/dt/hbat?label=PyPI%20Downloads)
 [![codecov](https://codecov.io/gh/abhishektiwari/hbat/graph/badge.svg?token=QSKYLB3M1V)](https://codecov.io/gh/abhishektiwari/hbat)
-[![Cited By](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3Au-x6o8ySG0sC&search=Cited%20by%20(%5Cd%2B)&replace=%241&style=plastic&logo=googlescholar&label=Cited%20By&cacheSeconds=86400)](https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC)
+![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337&query=%24.message&style=flat&logo=googlescholar&label=Citations&cacheSeconds=43200&link=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3Au-x6o8ySG0sC)
 [![Socket](https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl)](https://socket.dev/pypi/package/hbat/overview/2.2.11/py3-none-any-whl)
 [![CodeFactor](https://www.codefactor.io/repository/github/abhishektiwari/hbat/badge/main)](https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main)
 
