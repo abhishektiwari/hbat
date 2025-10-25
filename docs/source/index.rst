@@ -52,7 +52,7 @@ HBAT Documentation
    :alt: Codecov Coverage
    :target: https://codecov.io/gh/abhishektiwari/hbat
 
-.. image:: https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337&query=%24.message&style=flat&logo=googlescholar&label=Citations&cacheSeconds=43200
+.. image:: https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337
    :alt: Scholar Citations
    :target: https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC
 
