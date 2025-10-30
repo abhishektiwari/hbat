@@ -147,15 +147,15 @@ Cite HBAT
 
 .. code-block:: bash
 
-   @article{tiwari2023hbat,
-       title={HBAT: A Python Package for Automated Hydrogen Bond Analysis in Macromolecular Structures},
-       author={Tiwari, Abhishek and others},
-       journal={Journal of Open Research Software},
-       volume={11},
-       number={1},
-       pages={1-8},
-       year={2023},
-       publisher={Ubiquity Press}
+   @article{tiwari2007hbat,
+      author = {Tiwari, Abhishek and Panigrahi, Sunil Kumar},
+      doi = {10.3233/ISI-2007-00337},
+      journal = {In Silico Biology},
+      month = dec,
+      number = {6},
+      title = {{HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures}},
+      volume = {7},
+      year = {2007}
    }
 
 .. code-block:: bash
