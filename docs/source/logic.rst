@@ -109,8 +109,20 @@ The ``NPVec3D`` class (``hbat/core/np_vector.py``) provides NumPy-based vector o
 - **Angle calculation**: ``arccos(dot_product / (mag1 × mag2))`` using NumPy for efficiency
 
 
-11. π Interactions
-----------------------
+Interaction Types
+-----------------
+
+HBAT detects six types of molecular interactions:
+
+1. **Hydrogen Bonds**: Classical and weak hydrogen bonds (N-H···O, O-H···O, C-H···O)
+2. **Halogen Bonds**: Interactions involving halogen atoms (C-X···A where X = Cl, Br, I)
+3. **π Interactions**: X-H···π interactions with aromatic rings
+4. **π-π Stacking**: Aromatic ring-ring interactions
+5. **Carbonyl Interactions**: n→π* interactions between C=O groups
+6. **n-π Interactions**: Lone pair interactions with aromatic π systems
+
+X-H...π Interactions
+---------------------
 
 ``X-H...π`` interactions are detected using the aromatic ring center as a pseudo-acceptor:
 
@@ -172,6 +184,183 @@ Geometric Interpretation
 - The aromatic ring center acts as a "virtual acceptor" representing the π-electron cloud
 - Distance measures how close the hydrogen approaches the aromatic system
 - Angle ensures the hydrogen is positioned to interact with the π-electron density above/below the ring plane
+
+π-π Stacking Interactions
+---------------------------
+
+π-π stacking interactions occur between aromatic ring systems and are classified based on geometry:
+
+Stacking Types
+^^^^^^^^^^^^^^
+
+HBAT classifies π-π interactions into three categories based on the angle between ring planes and lateral offset:
+
+1. **Parallel Stacking** (``plane_angle ≤ 30°``):
+
+   - Ring planes are nearly parallel
+   - Offset geometry preferred over face-to-face due to electrostatic repulsion
+   - Typical offset: 1.5-3.5 Å for optimal interaction
+   - Distance: typically 3.3-4.0 Å between centroids
+
+2. **T-shaped Stacking** (``plane_angle ≥ 60°``):
+
+   - Ring planes are approximately perpendicular (edge-to-face)
+   - One ring's edge approaches the face of the other
+   - Minimizes electrostatic repulsion while maximizing C-H···π interactions
+   - Distance: typically 4.5-5.5 Å between centroids
+
+3. **Offset Stacking** (``30° < plane_angle < 60°``):
+
+   - Intermediate geometry between parallel and T-shaped
+   - Provides balance between π-π overlap and electrostatic favorability
+   - Common in protein-ligand interactions
+
+Geometric Criteria
+^^^^^^^^^^^^^^^^^^
+
+π-π stacking detection uses the following criteria:
+
+- **Centroid distance**: ≤ 6.0 Å (maximum separation between ring centers)
+- **Plane angle**: Angle between ring normal vectors (0° = parallel, 90° = perpendicular)
+- **Offset distance**: Lateral displacement from direct stacking
+- **Ring types**: PHE, TYR, TRP, HIS aromatic residues
+
+Calculation Process
+^^^^^^^^^^^^^^^^^^^
+
+1. **Ring Center Calculation**:
+
+   - Compute geometric centroid of ring atoms (same as X-H···π interactions)
+   - For each aromatic residue type (PHE, TYR, TRP, HIS)
+
+2. **Plane Normal Calculation**:
+
+   - Use cross product of two ring vectors to determine plane normal
+   - Normalize vector for angle calculations
+
+3. **Geometry Classification**:
+
+   - Calculate angle between plane normals
+   - Compute lateral offset for parallel configurations
+   - Classify as parallel, T-shaped, or offset based on criteria
+
+4. **Validation**:
+
+   - Check centroid-to-centroid distance
+   - Verify interaction is between different residues
+   - Apply distance and angle cutoffs
+
+Carbonyl Interactions (n→π*)
+-----------------------------
+
+Carbonyl-carbonyl interactions are n→π* orbital interactions between C=O groups, following the Bürgi-Dunitz trajectory:
+
+Interaction Geometry
+^^^^^^^^^^^^^^^^^^^^
+
+- **Donor**: Oxygen atom with lone pair electrons (n orbital)
+- **Acceptor**: Carbon atom of carbonyl group (π* orbital)
+- **Trajectory**: Donor oxygen approaches acceptor carbon at characteristic angle
+- **Bürgi-Dunitz angle**: O···C=O angle, typically 95-125°
+- **Distance**: O···C distance, typically 2.8-3.5 Å
+
+Geometric Criteria
+^^^^^^^^^^^^^^^^^^
+
+Carbonyl interaction detection criteria:
+
+- **O···C distance**: ≤ 3.5 Å (from ``ParametersDefault.CARBONYL_DISTANCE_CUTOFF``)
+- **Bürgi-Dunitz angle**: 95-125° (optimal for orbital overlap)
+- **C=O bond angle**: Validates proper carbonyl geometry
+- **Residue separation**: Usually requires |i-j| ≥ 2 for backbone interactions
+
+Classification
+^^^^^^^^^^^^^^
+
+Carbonyl interactions are classified by context:
+
+- **Backbone-backbone**: Both carbonyls from peptide backbone (most common)
+- **Backbone-sidechain**: One backbone, one sidechain carbonyl
+- **Sidechain-sidechain**: Both from residue sidechains
+- **Cross-strand**: Common in β-sheets for stabilization
+- **Same-helix**: Contributes to α-helix stability
+
+Calculation Process
+^^^^^^^^^^^^^^^^^^^
+
+1. **Carbonyl Identification**:
+
+   - Detect C=O groups from backbone (C, O atoms)
+   - Identify sidechain carbonyls (ASP, GLU, ASN, GLN)
+
+2. **Geometry Validation**:
+
+   - Calculate O···C distance between donor and acceptor
+   - Compute Bürgi-Dunitz angle (O···C=O)
+   - Verify angle falls within optimal range
+
+3. **Classification**:
+
+   - Determine if backbone or sidechain carbonyls
+   - Calculate residue sequence separation
+   - Classify interaction type
+
+n-π Interactions
+-----------------
+
+n-π interactions occur when lone pair electrons from heteroatoms (O, N, S) interact with aromatic π systems:
+
+Interaction Geometry
+^^^^^^^^^^^^^^^^^^^^
+
+- **Donor**: Atom with lone pair electrons (typically O, N, or S)
+- **Acceptor**: Aromatic π system (PHE, TYR, TRP, HIS)
+- **Geometry**: Lone pair approaches π system approximately perpendicular to ring plane
+- **Distance**: Typically 3.0-4.0 Å from lone pair atom to ring center
+- **Angle**: Measured relative to plane normal
+
+Geometric Criteria
+^^^^^^^^^^^^^^^^^^
+
+n-π interaction detection criteria:
+
+- **Distance**: ≤ 4.5 Å from lone pair atom to π center
+- **Angle to plane**: Typically 60-120° from plane normal (near-perpendicular approach)
+- **Lone pair atoms**: O, N, S from backbone or sidechains
+- **π systems**: Same aromatic residues as other π interactions
+
+Subtypes
+^^^^^^^^
+
+n-π interactions are classified by donor atom type:
+
+- **O-π**: Oxygen lone pairs (backbone carbonyl O, serine/threonine OH, water)
+- **N-π**: Nitrogen lone pairs (backbone amide N, lysine, arginine, histidine)
+- **S-π**: Sulfur lone pairs (cysteine, methionine)
+
+Calculation Process
+^^^^^^^^^^^^^^^^^^^
+
+1. **Lone Pair Identification**:
+
+   - Identify potential donor atoms (O, N, S)
+   - Filter by chemical environment (must have lone pairs)
+
+2. **π System Location**:
+
+   - Use aromatic ring centers from π interaction detection
+   - Calculate ring plane normals
+
+3. **Geometry Validation**:
+
+   - Calculate distance from donor to π center
+   - Compute angle relative to ring plane normal
+   - Verify perpendicular approach geometry
+
+4. **Subtype Classification**:
+
+   - Classify by donor element type (O, N, S)
+   - Determine if backbone or sidechain interaction
 
 Cooperativity Chains
 ~~~~~~~~~~~~~~~~~~~~~

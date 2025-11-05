@@ -71,7 +71,16 @@ Welcome to HBAT (Hydrogen Bond Analysis Tool) documentation!
 
    <span class="__dimensions_badge_embed__" data-doi="10.3233/isi-2007-00337" data-legend="always" data-style="small_circle"></span><script async src="https://badge.dimensions.ai/badge.js" charset="utf-8"></script>
 
-A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions like halogen bonds and non-canonical interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT uses a geometric approach to identify potential hydrogen bonds by analyzing distance and angular criteria between donor-hydrogen-acceptor triplets.
+A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT uses a geometric approach to identify molecular interactions by analyzing distance and angular criteria.
+
+**Supported Interaction Types:**
+
+- **Hydrogen Bonds**: Classical N-H···O, O-H···O, and weak C-H···O interactions
+- **Halogen Bonds**: C-X···A interactions (X = Cl, Br, I)
+- **π Interactions**: X-H···π interactions with aromatic rings (Phe, Tyr, Trp, His)
+- **π-π Stacking**: Aromatic ring-ring interactions (parallel, T-shaped, offset)
+- **Carbonyl Interactions**: n→π* interactions between carbonyl groups
+- **n-π Interactions**: Lone pair interactions with aromatic π systems
 
 .. image:: https://static.abhishek-tiwari.com/hbat/hbat-window-v1.png
    :alt: HBAT GUI
@@ -126,17 +135,16 @@ See full CLI options :doc:`cli`.
 Features
 --------
 
-- Detect and analyze potential hydrogen bonds, halogen bonds, and X-H...π interactions
-- Automated PDB fixing with OpenBabel and PDBFixer integration
-- Supports graphical (tkinter), command-line, and programming interfaces
-- Use graphical interfaces for interactive analysis, CLI/API for batch processing and automation
-- Cooperativity chain visualization using NetworkX/matplotlib and GraphViz
-- Export cooperativity chain visualizations to PNG, SVG, PDF formats
-- Built-in presets for different structure types (high-resolution, NMR, membrane proteins, etc.)
-- Customizable distance cutoffs, angle thresholds, and analysis modes.
-- Multiple Output Formats: Text, CSV, and JSON export options
-- Optimized algorithms for efficient analysis of large structures
-- Cross-Platform: Works on Windows, macOS, and Linux.
+- **Comprehensive Interaction Detection**: Hydrogen bonds, halogen bonds, π interactions, π-π stacking, carbonyl interactions, and n-π interactions
+- **Automated PDB Fixing**: Integration with OpenBabel and PDBFixer for structure preparation
+- **Multiple Interfaces**: Graphical (tkinter), command-line, and programming interfaces
+- **Batch Processing**: CLI/API for automation and large-scale analysis
+- **Cooperativity Analysis**: Chain visualization using NetworkX/matplotlib and GraphViz
+- **Flexible Export**: PNG, SVG, PDF visualizations; CSV, JSON, text data formats
+- **Built-in Presets**: Optimized parameters for high-resolution, NMR, membrane proteins, etc.
+- **Customizable Parameters**: Adjustable distance cutoffs, angle thresholds, and analysis modes
+- **High Performance**: NumPy-vectorized algorithms for efficient large structure analysis
+- **Cross-Platform**: Works on Windows, macOS, and Linux
 
 .. image:: https://static.abhishek-tiwari.com/hbat/6rsa-pdb-chain-6.png
    :alt: Cooperativity chain visualization
