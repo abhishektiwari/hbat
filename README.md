@@ -2,7 +2,16 @@
 
 # Hydrogen Bond Analysis Tool (HBAT) v2 
 
-A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions like halogen bonds and non-canonical interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT uses a geometric approach to identify potential hydrogen bonds by analyzing distance and angular criteria between donor-hydrogen-acceptor triplets.
+A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT uses a geometric approach to identify molecular interactions by analyzing distance and angular criteria.
+
+**Supported Interaction Types:**
+
+- **Hydrogen Bonds**: Classical N-H···O, O-H···O, and weak C-H···O interactions
+- **Halogen Bonds**: C-X···A interactions (X = Cl, Br, I)
+- **π Interactions**: X-H···π interactions with aromatic rings (Phe, Tyr, Trp, His)
+- **π-π Stacking**: Aromatic ring-ring interactions (parallel, T-shaped, offset)
+- **Carbonyl Interactions**: n→π* interactions between carbonyl groups
+- **n-π Interactions**: Lone pair interactions with aromatic π systems
 
 ![GitHub Release](https://img.shields.io/github/v/release/abhishektiwari/hbat)
 ![GitHub Actions Test Workflow Status](https://img.shields.io/github/actions/workflow/status/abhishektiwari/hbat/test.yml?label=tests)
@@ -21,17 +30,18 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 [![Socket](https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl)](https://socket.dev/pypi/package/hbat/overview/2.2.11/py3-none-any-whl)
 [![CodeFactor](https://www.codefactor.io/repository/github/abhishektiwari/hbat/badge/main)](https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main)
 
+
+![HBAT GUI](https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png)
+
 ## Background
+HBAT v2  is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from [Sourceforge](https://sourceforge.net/projects/hbat/files/HBAT/) however Perl version is not maintained anymore. 
 
-HBAT v2  is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi.
 
-![HBAT GUI](https://static.abhishek-tiwari.com/hbat/hbat-window-v1.png)
+## Highlights of HBAT v2
 
-## Features
-
-- Detect and analyze potential hydrogen bonds, halogen bonds, and X-H...π interactions
+- Detect and analyze potential hydrogen bonds, halogen bonds, π interactions, π-π stacking, carbonyl interactions, and n-π interactions
 - Automated PDB fixing with OpenBabel and PDBFixer integration
-- Supports graphical (tkinter), command-line, and programming interfaces
+- Support graphical (tkinter), command-line, and programming API interfaces
 - Use graphical interfaces for interactive analysis, CLI/API for batch processing and automation
 - Cooperativity chain visualization using NetworkX/matplotlib and GraphViz
 - Export cooperativity chain visualizations to PNG, SVG, PDF formats
@@ -41,15 +51,7 @@ HBAT v2  is a modern Python re-implementation of the original Perl-based tool de
 - Optimized algorithms for efficient analysis of large structures
 - Cross-Platform: Works on Windows, macOS, and Linux.
 
-Please review [HBAT documentation](https://hbat.abhishek-tiwari.com/) for more details.
-
 ![Cooperativity chain visualization](https://static.abhishek-tiwari.com/hbat/6rsa-pdb-chain-6.png)
-
-### Supported Interactions
-
-1. Hydrogen Bonds: O-H...O, N-H...O, N-H...N, and other X-H...Y interactions
-2. Halogen Bonds: C-X...Y interactions (X = F, Cl, Br, I; Y = N, O, S)
-3. X-H...π Interactions: Hydrogen bonds to aromatic ring systems
 
 Please review [HBAT documentation](https://hbat.abhishek-tiwari.com/) for more details.
 
@@ -115,7 +117,7 @@ On Windows:
 - Or using Chocolatey: `choco install graphviz`
 - Or using conda: `conda install -c conda-forge graphviz`
 
-Note: After installing GraphViz, restart your terminal/command prompt before running HBAT to ensure the GraphViz executables are available in your PATH.
+> Note: After installing GraphViz, restart your terminal/command prompt before running HBAT to ensure the GraphViz executables are available in your PATH.
 
 ## Usage
 
@@ -233,16 +235,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Citation
 
 If you use HBAT in your research, please cite:
-
-```
-@software{tiwari2025hbat,
-    author = {Tiwari, Abhishek},
-    title = {HBAT: Hydrogen Bond Analysis Tool},
-    version = {v2},
-    year = {2025},
-    url = {https://github.com/abhishektiwari/hbat}
-}
-```
 
 ```
 @article{tiwari2007hbat,

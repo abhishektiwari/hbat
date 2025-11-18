@@ -1,5 +1,16 @@
-HBAT Documentation
-==================
+HBAT (Hydrogen Bond Analysis Tool) v2
+=====================
+
+A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT uses a geometric approach to identify molecular interactions by analyzing distance and angular criteria.
+
+**Supported Interaction Types:**
+
+- **Hydrogen Bonds**: Classical N-H···O, O-H···O, and weak C-H···O interactions
+- **Halogen Bonds**: C-X···A interactions (X = Cl, Br, I)
+- **π Interactions**: X-H···π interactions with aromatic rings (Phe, Tyr, Trp, His)
+- **π-π Stacking**: Aromatic ring-ring interactions (parallel, T-shaped, offset)
+- **Carbonyl Interactions**: n→π* interactions between carbonyl groups
+- **n-π Interactions**: Lone pair interactions with aromatic π systems
 
 .. image:: https://img.shields.io/github/v/release/abhishektiwari/hbat
    :alt: GitHub Release
@@ -64,87 +75,29 @@ HBAT Documentation
    :target: https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main
    :alt: CodeFactor
 
-Welcome to HBAT (Hydrogen Bond Analysis Tool) documentation!
-
-
-.. raw:: html
-
-   <span class="__dimensions_badge_embed__" data-doi="10.3233/isi-2007-00337" data-legend="always" data-style="small_circle"></span><script async src="https://badge.dimensions.ai/badge.js" charset="utf-8"></script>
-
-A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT uses a geometric approach to identify molecular interactions by analyzing distance and angular criteria.
-
-**Supported Interaction Types:**
-
-- **Hydrogen Bonds**: Classical N-H···O, O-H···O, and weak C-H···O interactions
-- **Halogen Bonds**: C-X···A interactions (X = Cl, Br, I)
-- **π Interactions**: X-H···π interactions with aromatic rings (Phe, Tyr, Trp, His)
-- **π-π Stacking**: Aromatic ring-ring interactions (parallel, T-shaped, offset)
-- **Carbonyl Interactions**: n→π* interactions between carbonyl groups
-- **n-π Interactions**: Lone pair interactions with aromatic π systems
-
-.. image:: https://static.abhishek-tiwari.com/hbat/hbat-window-v1.png
+.. image:: https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png
    :alt: HBAT GUI
    :align: center
 
-.. toctree::
-   :maxdepth: 1
-   :caption: User Guide
+Background
+----------
 
-   installation
-   quickstart
-   cli
-   parameters
-   presets
-   pdbfixing
-   license
+HBAT v2  is a modern Python re-implementation of the original Perl-based tool developed by `Abhishek Tiwari <https://www.abhishek-tiwari.com>`_ and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from `Sourceforge <https://sourceforge.net/projects/hbat/files/HBAT/>`_ however Perl version is not maintained anymore. 
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Developer Guide
+Highlights of HBAT v2
+---------------------
 
-   api/index
-   development
-   logic
-
-Quick Start
------------
-
-Install HBAT
-~~~~~~~~~~~~
-
-.. code-block:: bash
-
-   pip install hbat
-
-Run HBAT Command-Line Interface (CLI) using :code:`hbat` or launch HBAT GUI using :code:`hbat-gui`.
-
-See complete installation instructions in :doc:`installation`.
-
-Basic usage
-~~~~~~~~~~~
-
-.. code-block:: bash
-
-   hbat input.pdb                                                   # Show results in terminal
-   hbat input.pdb -o results.csv                                    # Save results to CSV file (default)
-   hbat input.pdb -o results.json  --fix-pdb                        # Apply PDB fixing and Save results to JSON file
-   hbat input.pdb -o results.json  --fix-pdb  --fix-method=pdbfixer # Apply PDB fixing using PdbFixer and Save results to JSON file
-
-See full CLI options :doc:`cli`.
-
-Features
---------
-
-- **Comprehensive Interaction Detection**: Hydrogen bonds, halogen bonds, π interactions, π-π stacking, carbonyl interactions, and n-π interactions
-- **Automated PDB Fixing**: Integration with OpenBabel and PDBFixer for structure preparation
-- **Multiple Interfaces**: Graphical (tkinter), command-line, and programming interfaces
-- **Batch Processing**: CLI/API for automation and large-scale analysis
-- **Cooperativity Analysis**: Chain visualization using NetworkX/matplotlib and GraphViz
-- **Flexible Export**: PNG, SVG, PDF visualizations; CSV, JSON, text data formats
-- **Built-in Presets**: Optimized parameters for high-resolution, NMR, membrane proteins, etc.
-- **Customizable Parameters**: Adjustable distance cutoffs, angle thresholds, and analysis modes
-- **High Performance**: NumPy-vectorized algorithms for efficient large structure analysis
-- **Cross-Platform**: Works on Windows, macOS, and Linux
+- Detect and analyze potential hydrogen bonds, halogen bonds, π interactions, π-π stacking, carbonyl interactions, and n-π interactions
+- Automated PDB fixing with OpenBabel and PDBFixer integration
+- Support graphical (tkinter), command-line, and programming API interfaces
+- Use graphical interfaces for interactive analysis, CLI/API for batch processing and automation
+- Cooperativity chain visualization using NetworkX/matplotlib and GraphViz
+- Export cooperativity chain visualizations to PNG, SVG, PDF formats
+- Built-in presets for different structure types (high-resolution, NMR, membrane proteins, etc.)
+- Customizable distance cutoffs, angle thresholds, and analysis modes.
+- Multiple Output Formats: Text, CSV, and JSON export options
+- Optimized algorithms for efficient analysis of large structures
+- Cross-Platform: Works on Windows, macOS, and Linux.
 
 .. image:: https://static.abhishek-tiwari.com/hbat/6rsa-pdb-chain-6.png
    :alt: Cooperativity chain visualization
@@ -169,6 +122,30 @@ Cite HBAT
 .. code-block:: bash
 
    Tiwari, A., & Panigrahi, S. K. (2007). HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures. In Silico Biology, 7(6). https://doi.org/10.3233/ISI-2007-00337
+
+.. raw:: html
+
+   <span class="__dimensions_badge_embed__" data-doi="10.3233/isi-2007-00337" data-legend="always" data-style="small_circle"></span><script async src="https://badge.dimensions.ai/badge.js" charset="utf-8"></script>
+
+.. toctree::
+   :maxdepth: 1
+   :caption: User Guide
+
+   installation
+   quickstart
+   cli
+   parameters
+   pdbfixing
+   presets
+   license
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Developer Guide
+
+   api/index
+   development
+   logic
 
 Indices and tables
 ==================
