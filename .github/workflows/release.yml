@@ -34,20 +34,18 @@ jobs:
         # Get base version from latest tag or default to 0.0.0
         BASE_VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "0.0.0")
         
-        # Generate PEP 440 compatible pre-release version
+        # Generate PEP 440 compatible pre-release version with timestamp
         SHORT_SHA=$(git rev-parse --short HEAD)
         PR_NUMBER=${{ github.event.number }}
-        
-        # Convert short SHA to integer for PEP 440 compatibility
-        SHA_INT=$(printf "%d" "0x${SHORT_SHA}")
-        
-        # Use PEP 440 compatible format
-        PRERELEASE_VERSION="${BASE_VERSION}.rc${PR_NUMBER}${SHA_INT}"
+        TIMESTAMP=$(date +%s)
+
+        # Use PEP 440 compatible format with PR number and timestamp
+        PRERELEASE_VERSION="${BASE_VERSION}rc${PR_NUMBER}${TIMESTAMP}"
         PRERELEASE_TAG="v${PRERELEASE_VERSION}"
-        
-        # GitHub tag for releases (without +sha)
-        GITHUB_TAG="v${BASE_VERSION}-pr${PR_NUMBER}.${SHORT_SHA}"
-        
+
+        # GitHub tag for releases (with PR number and timestamp)
+        GITHUB_TAG="v${PRERELEASE_VERSION}"
+
         echo "version=$PRERELEASE_VERSION" >> $GITHUB_OUTPUT
         echo "version_tag=$PRERELEASE_TAG" >> $GITHUB_OUTPUT
         echo "github_tag=$GITHUB_TAG" >> $GITHUB_OUTPUT
