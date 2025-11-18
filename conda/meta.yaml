@@ -18,14 +18,14 @@ build:
 
 requirements:
   host:
-    - python >=3.9
+    - python >=3.9,<3.14
     - pip
     - setuptools >=45,<77
     - setuptools-scm >=6.2
     - wheel
     - packaging >=20.0
   run:
-    - python >=3.9
+    - python >=3.9,<3.14
     - pip
     - networkx >=2.5.0
     - matplotlib-base >=3.3.0
@@ -37,7 +37,7 @@ test:
   source_files:
     - example_pdb_files/6rsa.pdb
   commands:
-    - pip install "OpenMM>=8.4.0" pdbreader>=0.1.0 mmcif>=0.92.0 mmcif-pdbx>=2.0.1 openbabel-wheel>=3.1.1.22 pybel>=0.15.5 pdbfixer-wheel>=1.11.0 tkinter-async-execute>=1.4.0 graphviz>=0.20.0
+    - pip install pdbreader>=0.1.0 mmcif>=0.92.0 mmcif-pdbx>=2.0.1 openbabel-wheel>=3.1.1.22 pybel>=0.15.5 pdbfixer-wheel>=1.11.0 tkinter-async-execute>=1.4.0 graphviz>=0.20.0
     - python -c "import hbat; print(hbat.__version__)"
     - python -c "import pdbreader; print('pdbreader:', pdbreader)"
     - python -c "import pdbfixer; print('pdbfixer:', pdbfixer)"
