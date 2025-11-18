@@ -379,7 +379,7 @@ def batch_dihedral_angle(
     n2 = bc.cross(cd)
 
     # Calculate angle between normal vectors
-    angle = n1.angle_to(n2)
+    angle = n1.angle_tO(n2)
 
     # Determine sign of angle
     cross_dot = n1.cross(n2).dot(bc)

@@ -36,6 +36,24 @@
       "sh_pi_distance_cutoff": 3.8,
       "sh_pi_angle_cutoff": 135.0
     },
+    "pi_pi_stacking": {
+      "pi_pi_distance_cutoff": 3.5,
+      "pi_pi_parallel_angle_cutoff": 20.0,
+      "pi_pi_tshaped_angle_min": 70.0,
+      "pi_pi_tshaped_angle_max": 90.0,
+      "pi_pi_offset_cutoff": 1.5
+    },
+    "carbonyl_interactions": {
+      "carbonyl_distance_cutoff": 2.9,
+      "carbonyl_angle_min": 100.0,
+      "carbonyl_angle_max": 120.0
+    },
+    "n_pi_interactions": {
+      "n_pi_distance_cutoff": 3.2,
+      "n_pi_sulfur_distance_cutoff": 3.6,
+      "n_pi_angle_min": 0.0,
+      "n_pi_angle_max": 35.0
+    },
     "general": {
       "covalent_cutoff_factor": 0.85,
       "analysis_mode": "complete"

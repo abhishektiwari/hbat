@@ -137,6 +137,12 @@ clean:
 	find . -name "*.pyc" -delete
 	find . -name "*.pyo" -delete
 	rm -rf conda-build-output/
+	rm -rf example_pdb_files/*_fixed.pdb
+	rm -rf example_pdb_files/*.csv
+	rm -rf example_pdb_files/*.json
+	rm -rf example_pdb_files/*.txt
+	rm -rf "~"
+	rm coverage.xml junit.xml
 
 # Documentation
 docs:
@@ -154,7 +160,7 @@ docs-serve:
 
 docs-watch:
 	@echo "Building and watching documentation with auto-reload (requires sphinx-autobuild)..."
-	sphinx-autobuild docs/source/ docs/build/html/ --open-browser
+	sphinx-autobuild docs/source/ docs/build/html/ --open-browser --watch hbat
 
 # Development runners
 run-gui:
@@ -196,7 +202,7 @@ conda-build:
 	@echo "Setting version from git tag..."
 	@export GIT_DESCRIBE_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0") && \
 	echo "Building version: $$GIT_DESCRIBE_TAG" && \
-	conda build conda --output-folder conda-build-output
+	conda build conda --output-folder conda-build-output -c conda-forge
 
 conda-build-test:
 	@echo "Building and testing conda package locally..."
@@ -208,9 +214,9 @@ conda-build-test:
 	fi
 	@export GIT_DESCRIBE_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0") && \
 	echo "Building version: $$GIT_DESCRIBE_TAG" && \
-	conda build conda --output-folder conda-build-output && \
+	conda build conda --output-folder conda-build-output -c conda-forge && \
 	echo "Testing built package..." && \
-	conda build --test conda-build-output/noarch/hbat-*.tar.bz2
+	conda build --test conda-build-output/noarch/hbat-*.tar.bz2 -c conda-forge
 
 # Standalone executables
 build-standalone:

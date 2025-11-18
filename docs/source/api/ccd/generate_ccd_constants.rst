@@ -1,12 +1,14 @@
 Generate CCD Constants
 ======================
 
-.. currentmodule:: hbat.ccd.generate_ccd_constants
-
-Command-line script to regenerate residue bond constants from CCD data. This script downloads the latest Chemical Component Dictionary data and generates Python constants for standard residues.
+.. automodule:: hbat.ccd.generate_ccd_constants
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Script Usage
 ------------
+Command-line script to regenerate residue bond constants from CCD data. This script downloads the latest Chemical Component Dictionary data and generates Python constants for standard residues.
 
 .. code-block:: bash
 

@@ -282,19 +282,27 @@ def sample_interactions():
         res_seq=3, i_code="", coords=NPVec3D(5, 0, 0), occupancy=1.0,
         temp_factor=20.0, element="CL", charge="", record_type="ATOM"
     )
-    
+
+    # Donor carbon atom bonded to halogen
+    halogen_donor = Atom(
+        serial=5, name="C", alt_loc="", res_name="CLU", chain_id="A",
+        res_seq=3, i_code="", coords=NPVec3D(3.5, 0, 0), occupancy=1.0,
+        temp_factor=20.0, element="C", charge="", record_type="ATOM"
+    )
+
     # Create interactions
     hb = HydrogenBond(
         _donor=donor, hydrogen=hydrogen, _acceptor=acceptor,
         distance=2.5, angle=math.radians(160.0), _donor_acceptor_distance=3.2,
         bond_type="N-H...O", _donor_residue="A1ALA", _acceptor_residue="A2GLY"
     )
-    
+
     xb = HalogenBond(
         halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
-        bond_type="C-CL...O", _halogen_residue="A3CLU", _acceptor_residue="A2GLY"
+        bond_type="C-CL...O", _halogen_residue="A3CLU", _acceptor_residue="A2GLY",
+        _donor=halogen_donor
     )
-    
+
     return [hb, xb]
 
 # Constants for expected results with 6RSA.pdb

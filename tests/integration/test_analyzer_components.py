@@ -415,9 +415,17 @@ class TestAnalyzerStatisticsIntegration:
             'hydrogen_bonds': len(analyzer.hydrogen_bonds),
             'halogen_bonds': len(analyzer.halogen_bonds),
             'pi_interactions': len(analyzer.pi_interactions),
-            'total_interactions': len(analyzer.hydrogen_bonds) + len(analyzer.halogen_bonds) + len(analyzer.pi_interactions)
+            'pi_pi_interactions': len(analyzer.pi_pi_interactions),
+            'carbonyl_interactions': len(analyzer.carbonyl_interactions),
+            'n_pi_interactions': len(analyzer.n_pi_interactions),
+            'total_interactions': (len(analyzer.hydrogen_bonds) +
+                                 len(analyzer.halogen_bonds) +
+                                 len(analyzer.pi_interactions) +
+                                 len(analyzer.pi_pi_interactions) +
+                                 len(analyzer.carbonyl_interactions) +
+                                 len(analyzer.n_pi_interactions))
         }
-        
+
         # Verify consistency
         assert summary['hydrogen_bonds']['count'] == statistics['hydrogen_bonds'], \
             "H-bond counts should match between summary and statistics"
@@ -425,6 +433,12 @@ class TestAnalyzerStatisticsIntegration:
             "Halogen bond counts should match"
         assert summary['pi_interactions']['count'] == statistics['pi_interactions'], \
             "π interaction counts should match"
+        assert summary['pi_pi_interactions']['count'] == statistics['pi_pi_interactions'], \
+            "π-π interaction counts should match"
+        assert summary['carbonyl_interactions']['count'] == statistics['carbonyl_interactions'], \
+            "Carbonyl interaction counts should match"
+        assert summary['n_pi_interactions']['count'] == statistics['n_pi_interactions'], \
+            "n-π interaction counts should match"
         assert summary['total_interactions'] == statistics['total_interactions'], \
             "Total interaction counts should match"
     

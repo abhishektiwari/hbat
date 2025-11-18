@@ -42,10 +42,11 @@ Input/Output Options
 .. option:: -o OUTPUT, --output OUTPUT
 
    Output file for saving analysis results. The format is automatically detected from the file extension:
-   
-   - ``.txt`` - Text format (human-readable summary)
-   - ``.csv`` - CSV format (single file with all interactions)
+
+   - ``.txt`` - Text format (human-readable summary with all interactions)
    - ``.json`` - JSON format (single file with structured data)
+
+   Note: For CSV output, use the ``--csv`` flag which creates separate files for each interaction type.
 
 .. option:: --json JSON_BASE
 
@@ -216,8 +217,8 @@ Save results to different formats (auto-detected from extension):
 
 .. code-block:: bash
 
-   hbat input.pdb                                    # Show results in terminal
-   hbat input.pdb -o results.csv                     # Save results to CSV file
+   hbat input.pdb                                    # Display results to console
+   hbat input.pdb -o results.txt                     # Save results to text file
    hbat input.pdb -o results.json                    # Save results to JSON file
 
 Multiple File Outputs
@@ -258,7 +259,7 @@ For structures missing hydrogen atoms:
 
 .. code-block:: bash
 
-   hbat no_hydrogens.pdb --fix-pdb -o results.csv              # Fix and analyze
+   hbat no_hydrogens.pdb --fix-pdb -o results.txt              # Fix and analyze
    hbat crystal.pdb --fix-pdb --fix-method=pdbfixer --verbose  # Detailed fixing process
 
 Custom Analysis Parameters
@@ -274,7 +275,7 @@ Export results in multiple formats:
 
 .. code-block:: bash
 
-   hbat protein.pdb -o results.csv --json results.json
+   hbat protein.pdb -o results.txt --json results_json
 
 Use a high-resolution preset:
 
@@ -346,33 +347,22 @@ When using ``--json results``, HBAT creates separate JSON files for each interac
 
 Each file includes metadata and structured arrays with all geometric parameters and atom coordinates.
 
-Single File CSV Output
-~~~~~~~~~~~~~~~~~~~~~~~
-
-When using ``-o results.csv``, HBAT creates a single CSV file with all interactions organized in sections:
-
-- Hydrogen bonds with D-A Properties and B/S classification
-- Halogen bonds with enhanced property columns
-- π interactions with structural information
-- Cooperativity chains with interaction networks
-
-Multiple File CSV Output
-~~~~~~~~~~~~~~~~~~~~~~~~~
+CSV Output (Multiple Files)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When using ``--csv results``, HBAT creates separate CSV files for each interaction type:
 
 - ``results_h_bonds.csv`` - Hydrogen bonds with complete donor-acceptor properties
 - ``results_x_bonds.csv`` - Halogen bonds with geometric and structural data
-- ``results_pi_interactions.csv`` - π interactions with distance and angle information  
+- ``results_pi_interactions.csv`` - π interactions with distance and angle information
+- ``results_pi_pi_interactions.csv`` - π-π stacking interactions
+- ``results_carbonyl_interactions.csv`` - Carbonyl n→π* interactions
+- ``results_n_pi_interactions.csv`` - n→π* interactions
 - ``results_cooperativity_chains.csv`` - Cooperativity chains showing interaction networks
 
-When using ``--csv results.csv``, HBAT creates:
-- ``results_h_bonds.csv``
-- ``results_halogen_bonds.csv``
-- ``results_pi_interactions.csv``
-- ``results_cooperativity_chains.csv``
-
 Each file includes comprehensive data with appropriate column headers for easy import into spreadsheet applications.
+
+Note: Single CSV file output is not supported. Use ``--csv`` for CSV exports.
 
 Exit Codes
 ----------

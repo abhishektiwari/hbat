@@ -36,7 +36,12 @@ extensions = [
     'sphinx_toolbox.shields',
     'sphinx_sitemap',
     'sphinx_copybutton',
+    'sphinxcontrib.bibtex',
 ]
+
+bibtex_bibfiles = ['hbat.bib']
+bibtex_encoding = 'utf-8'
+bibtex_default_style = 'unsrt'
 
 # Mock imports for modules that might not be available in CI
 autodoc_mock_imports = ['tkinter', 'matplotlib']

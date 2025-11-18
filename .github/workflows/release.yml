@@ -34,17 +34,18 @@ jobs:
         # Get base version from latest tag or default to 0.0.0
         BASE_VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "0.0.0")
         
-        # Generate PEP 440 compatible pre-release version
+        # Generate PEP 440 compatible pre-release version with timestamp
         SHORT_SHA=$(git rev-parse --short HEAD)
         PR_NUMBER=${{ github.event.number }}
-        
-        # Use PEP 440 compatible format
-        PRERELEASE_VERSION="${BASE_VERSION}.dev${PR_NUMBER}+${SHORT_SHA}"
+        TIMESTAMP=$(date +%s)
+
+        # Use PEP 440 compatible format with PR number and timestamp
+        PRERELEASE_VERSION="${BASE_VERSION}rc${PR_NUMBER}${TIMESTAMP}"
         PRERELEASE_TAG="v${PRERELEASE_VERSION}"
-        
-        # GitHub tag for releases (without +sha)
-        GITHUB_TAG="v${BASE_VERSION}-pr${PR_NUMBER}.${SHORT_SHA}"
-        
+
+        # GitHub tag for releases (with PR number and timestamp)
+        GITHUB_TAG="v${PRERELEASE_VERSION}"
+
         echo "version=$PRERELEASE_VERSION" >> $GITHUB_OUTPUT
         echo "version_tag=$PRERELEASE_TAG" >> $GITHUB_OUTPUT
         echo "github_tag=$GITHUB_TAG" >> $GITHUB_OUTPUT
@@ -264,8 +265,8 @@ jobs:
       run: |
         export GIT_DESCRIBE_TAG=${{ needs.generate-version.outputs.version_tag }}
         echo "Building conda package with version: ${GIT_DESCRIBE_TAG}"
-        conda build conda --output-folder conda-build-output
-        
+        conda build conda --output-folder conda-build-output -c conda-forge
+
         echo "Built conda packages:"
         ls -la conda-build-output/noarch/
     

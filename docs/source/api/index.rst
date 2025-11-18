@@ -1,8 +1,6 @@
 API Reference
 =============
 
-This section contains the complete API documentation for HBAT.
-
 Core Package
 ------------
 
@@ -23,7 +21,7 @@ Command Line Interface
 ----------------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    
    cli/index
 
@@ -31,7 +29,7 @@ Graphical User Interface
 ------------------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    
    gui/index
 
@@ -50,11 +48,3 @@ Utilities
    :maxdepth: 2
    
    utilities/index
-
-API Usage Examples
-------------------
-
-.. toctree::
-   :maxdepth: 2
-   
-   examples/index

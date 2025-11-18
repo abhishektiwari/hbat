@@ -23,6 +23,8 @@ from .interactions import (
     MolecularInteraction,
     PiInteraction,
 )
+
+# Import the original analyzer
 from .np_analyzer import NPMolecularInteractionAnalyzer
 
 # Backward compatibility alias

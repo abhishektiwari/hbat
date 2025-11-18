@@ -217,24 +217,36 @@ class TestResultsExportWorkflows:
             'hydrogen_bonds': len(analyzer.hydrogen_bonds),
             'halogen_bonds': len(analyzer.halogen_bonds),
             'pi_interactions': len(analyzer.pi_interactions),
-            'total_interactions': len(analyzer.hydrogen_bonds) + len(analyzer.halogen_bonds) + len(analyzer.pi_interactions)
+            'pi_pi_interactions': len(analyzer.pi_pi_interactions),
+            'carbonyl_interactions': len(analyzer.carbonyl_interactions),
+            'n_pi_interactions': len(analyzer.n_pi_interactions),
+            'total_interactions': (len(analyzer.hydrogen_bonds) +
+                                 len(analyzer.halogen_bonds) +
+                                 len(analyzer.pi_interactions) +
+                                 len(analyzer.pi_pi_interactions) +
+                                 len(analyzer.carbonyl_interactions) +
+                                 len(analyzer.n_pi_interactions))
         }
-        
+
         # Verify statistics completeness
         required_keys = [
-            'hydrogen_bonds', 'halogen_bonds', 'pi_interactions', 
+            'hydrogen_bonds', 'halogen_bonds', 'pi_interactions',
+            'pi_pi_interactions', 'carbonyl_interactions', 'n_pi_interactions',
             'total_interactions'
         ]
-        
+
         for key in required_keys:
             assert key in stats, f"Missing statistic: {key}"
             assert isinstance(stats[key], (int, float)), f"Invalid type for {key}"
             assert stats[key] >= 0, f"Negative value for {key}"
-        
+
         # Test consistency between summary and statistics
         assert summary['hydrogen_bonds']['count'] == stats['hydrogen_bonds']
         assert summary['pi_interactions']['count'] == stats['pi_interactions']
         assert summary['halogen_bonds']['count'] == stats['halogen_bonds']
+        assert summary['pi_pi_interactions']['count'] == stats['pi_pi_interactions']
+        assert summary['carbonyl_interactions']['count'] == stats['carbonyl_interactions']
+        assert summary['n_pi_interactions']['count'] == stats['n_pi_interactions']
         assert summary['total_interactions'] == stats['total_interactions']
 
 

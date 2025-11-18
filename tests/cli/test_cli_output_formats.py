@@ -12,12 +12,13 @@ import csv
 from pathlib import Path
 from hbat.cli.main import (
     detect_output_format,
-    export_to_csv,
-    export_to_json,
-    export_to_csv_files,
-    export_to_json_files,
     create_parser,
     run_analysis
+)
+from hbat.export.results import (
+    export_to_csv_files,
+    export_to_json_files,
+    export_to_json_single_file,
 )
 from hbat.core.analysis import NPMolecularInteractionAnalyzer, AnalysisParameters
 from unittest.mock import Mock, patch, MagicMock
@@ -33,11 +34,14 @@ class TestOutputFormatDetection:
         assert detect_output_format("Results.TXT") == "text"
         assert detect_output_format("/path/to/file.txt") == "text"
     
-    def test_detect_csv_format(self):
-        """Test detection of CSV format."""
-        assert detect_output_format("results.csv") == "csv"
-        assert detect_output_format("Results.CSV") == "csv"
-        assert detect_output_format("/path/to/file.csv") == "csv"
+    def test_detect_csv_format_raises_error(self):
+        """Test that CSV format raises error (not supported for single file)."""
+        with pytest.raises(ValueError, match="Single CSV file output is not supported"):
+            detect_output_format("results.csv")
+        with pytest.raises(ValueError, match="Single CSV file output is not supported"):
+            detect_output_format("Results.CSV")
+        with pytest.raises(ValueError, match="Single CSV file output is not supported"):
+            detect_output_format("/path/to/file.csv")
     
     def test_detect_json_format(self):
         """Test detection of JSON format."""
@@ -104,13 +108,14 @@ class TestSingleFileExports:
                 self.halogen_residue = "A125TYR"
                 self.donor_residue = "A125TYR"  # For compatibility
                 self.halogen = mock_atom("CL", 7.0, 8.0, 9.0)
+                self.donor = mock_atom("C", 6.5, 7.5, 8.5)  # Carbon bonded to halogen
                 self.acceptor_residue = "A126ASP"
                 self.acceptor = mock_atom("OD1", 10.0, 11.0, 12.0)
                 self.distance = 3.5
                 self.angle = 2.62  # radians (~150 degrees)
                 self.bond_type = "C-Cl...O"
                 self.donor_acceptor_properties = "PSN-PSN"
-            
+
             def get_backbone_sidechain_interaction(self):
                 return "S-S"
         
@@ -174,49 +179,18 @@ class TestSingleFileExports:
         analyzer.hydrogen_bonds = [hb1]
         analyzer.halogen_bonds = [xb1]
         analyzer.pi_interactions = [pi1]
+        analyzer.pi_pi_stacking = []
+        analyzer.carbonyl_interactions = []
+        analyzer.n_pi_interactions = []
         analyzer.cooperativity_chains = [chain1]
-        
+
         return analyzer
-    
-    def test_export_to_csv_single_file(self, mock_analyzer):
-        """Test exporting to single CSV file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
-            output_path = f.name
-        
-        try:
-            export_to_csv(mock_analyzer, output_path)
-            
-            # Verify file exists
-            assert os.path.exists(output_path)
-            
-            # Read and verify content
-            with open(output_path, 'r') as f:
-                content = f.read()
-            
-            # Check sections
-            assert "# Hydrogen Bonds" in content
-            assert "# Halogen Bonds" in content
-            assert "# Pi Interactions" in content
-            assert "# Cooperativity Chains" in content
-            
-            # Check headers
-            assert "D-A_Properties" in content
-            assert "B/S" in content
-            
-            # Check data
-            assert "A123GLY" in content
-            assert "A125TYR" in content
-            assert "A127LYS" in content
-            
-        finally:
-            if os.path.exists(output_path):
-                os.unlink(output_path)
     
     def test_export_to_json_single_file(self, mock_analyzer):
         """Test exporting to single JSON file."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
             output_path = f.name
-        
+
         try:
             # Mock get_summary method
             mock_analyzer.get_summary = Mock(return_value={
@@ -226,27 +200,27 @@ class TestSingleFileExports:
                 'cooperativity_chains': {'count': 1},
                 'total_interactions': 3
             })
-            
-            export_to_json(mock_analyzer, "test.pdb", output_path)
-            
+
+            export_to_json_single_file(mock_analyzer, output_path, "test.pdb")
+
             # Verify file exists
             assert os.path.exists(output_path)
-            
+
             # Read and verify JSON structure
             with open(output_path, 'r') as f:
                 data = json.load(f)
-            
+
             assert 'metadata' in data
             assert 'summary' in data
             assert 'hydrogen_bonds' in data
             assert 'halogen_bonds' in data
             assert 'pi_interactions' in data
             assert 'cooperativity_chains' in data
-            
+
             # Check data content
             assert len(data['hydrogen_bonds']) == 1
             assert data['hydrogen_bonds'][0]['donor_residue'] == "A123GLY"
-            
+
         finally:
             if os.path.exists(output_path):
                 os.unlink(output_path)
@@ -299,13 +273,14 @@ class TestMultipleFileExports:
                 self.halogen_residue = "A125TYR"
                 self.donor_residue = "A125TYR"  # For compatibility
                 self.halogen = mock_atom("CL", 7.0, 8.0, 9.0)
+                self.donor = mock_atom("C", 6.5, 7.5, 8.5)  # Carbon bonded to halogen
                 self.acceptor_residue = "A126ASP"
                 self.acceptor = mock_atom("OD1", 10.0, 11.0, 12.0)
                 self.distance = 3.5
                 self.angle = 2.62  # radians
                 self.bond_type = "C-Cl...O"
                 self.donor_acceptor_properties = "PSN-PSN"
-            
+
             def get_backbone_sidechain_interaction(self):
                 return "S-S"
         
@@ -349,8 +324,11 @@ class TestMultipleFileExports:
         analyzer.hydrogen_bonds = [hb1]
         analyzer.halogen_bonds = [xb1]
         analyzer.pi_interactions = []
+        analyzer.pi_pi_stacking = []
+        analyzer.carbonyl_interactions = []
+        analyzer.n_pi_interactions = []
         analyzer.cooperativity_chains = [chain1]
-        
+
         return analyzer
     
     def test_export_to_csv_files(self, mock_analyzer):

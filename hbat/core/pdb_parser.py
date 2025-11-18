@@ -397,10 +397,68 @@ class PDBParser:
             self._atom_serial_map[atom.serial] = i
 
     def _parse_conect_records(self, conect_data: Any) -> None:
-        """Parse CONECT records to extract explicit bond information.
+        """Parse CONECT records to extract explicit bond information from PDB files.
 
-        :param conect_data: CONECT records from pdbreader
+        CONECT records provide explicit bond connectivity information in PDB files. This
+        method is called **first** during parsing, before the three-step bond detection,
+        giving CONECT records effective priority in bond assignment.
+
+        **Format:**
+
+        CONECT records specify which atoms are bonded to each other using atom serial numbers.
+        The pdbreader library provides this data as a DataFrame with:
+
+        - ``parent``: The serial number of the central atom
+        - ``bonds``: List of serial numbers of atoms bonded to the parent
+
+        **Algorithm:**
+
+        1. Iterate through each CONECT record row
+        2. Extract parent atom serial number from ``parent`` field
+        3. Extract list of bonded atom serial numbers from ``bonds`` field
+        4. For each bonded atom in the list:
+
+           a. Verify both parent and bonded atom exist in ``_atom_serial_map``
+           b. Retrieve ``Atom`` objects for both atoms
+           c. Calculate geometric distance between atoms
+           d. Create ``Bond`` object with:
+
+              - ``bond_type="explicit"`` (marks as explicitly defined in PDB)
+              - ``detection_method=BondDetectionMethods.CONECT_RECORDS``
+              - Calculated distance value
+
+           e. Check ``_bond_exists()`` to avoid duplicates
+           f. Append bond to ``self.bonds`` list
+
+        5. Handle any parsing errors gracefully with error messages
+
+        **Priority and Relationship:**
+
+        - CONECT records are processed **before** ``_detect_bonds_three_step()``
+        - The three-step method respects existing CONECT bonds via ``_bond_exists()`` check
+        - This prevents duplicate bond creation
+        - Three-step method fills in **missing** bonds not in CONECT records
+
+        **Common Usage:**
+
+        Most PDB files do **not** include complete CONECT records. CONECT is typically used for:
+
+        - Heteroatoms (ligands, cofactors, metals)
+        - Non-standard residues
+        - Disulfide bonds (``CYS-CYS`` bridges)
+        - Modified nucleotides/amino acids
+
+        Standard protein backbone and sidechain bonds are usually **not** in CONECT,
+        requiring the three-step detection method.
+
+        :param conect_data: CONECT records DataFrame from pdbreader with 'parent' and 'bonds' columns
         :type conect_data: Any
+        :returns: None (bonds stored in ``self.bonds`` list)
+        :rtype: None
+
+        .. note::
+           Bonds created from CONECT records are tagged with ``bond_type="explicit"``
+           to distinguish them from algorithmically detected bonds.
         """
         try:
             for _, conect_row in conect_data.iterrows():
@@ -440,7 +498,49 @@ class PDBParser:
             print(f"Error parsing CONECT records: {e}")
 
     def _detect_bonds_three_step(self) -> None:
-        """Detect bonds using three-step approach: residue lookup, then distance-based."""
+        """Detect covalent bonds using three-step hierarchical approach.
+
+        This method provides a robust and efficient bond detection strategy that combines
+        high-accuracy residue-based lookup with fallback distance-based methods. The three
+        steps are progressively invoked based on the success of previous steps.
+
+        **Method Overview:**
+
+        The bond detection follows a hierarchical strategy optimized for both accuracy and
+        performance:
+
+        1. **Residue Lookup (CCD-based)**: Uses Chemical Component Dictionary (CCD) data
+           to identify bonds based on known residue topology
+        2. **Intra-residue Distance**: Distance-based detection limited to atoms within
+           the same residue for improved performance
+        3. **Spatial Grid**: Full distance-based detection using spatial grid partitioning
+           for ``O(n)`` complexity instead of ``O(n²)``
+
+        **Algorithm:**
+
+        1. Skip if structure has fewer than 2 atoms
+        2. **Step 1**: Call :meth:`_detect_bonds_from_residue_lookup`
+
+        3. **Step 2**: If residue bonds < 25% of atom count, call :meth:`_detect_bonds_within_residues`
+
+        4. **Step 3**: If total bonds < 25% of atom count, call :meth:`_detect_bonds_with_spatial_grid`
+
+        5. Build bond adjacency map for fast lookups via :meth:`_build_bond_adjacency_map`
+
+
+        :returns: None (bonds stored in ``self.bonds`` list)
+        :rtype: None
+
+        .. seealso::
+           - :meth:`_detect_bonds_from_residue_lookup` - Step 1: CCD-based detection
+           - :meth:`_detect_bonds_within_residues` - Step 2: Intra-residue distance detection
+           - :meth:`_detect_bonds_with_spatial_grid` - Step 3: Full spatial grid detection
+           - :meth:`_build_bond_adjacency_map` - Builds adjacency map for fast lookups
+
+        .. note::
+           All three steps avoid creating duplicate bonds by checking ``_bond_exists()``
+           before appending to the bonds list.
+        """
         if len(self.atoms) < 2:
             return
 
@@ -462,9 +562,40 @@ class PDBParser:
         self._build_bond_adjacency_map()
 
     def _detect_bonds_from_residue_lookup(self) -> int:
-        """Detect bonds using residue bond information from CCD data.
+        """Detect bonds using residue bond information from Chemical Component Dictionary (CCD).
 
-        Returns the number of bonds found using this method.
+        This is **Step 1** of the three-step bond detection hierarchy. Uses known residue
+        topology from the CCD database to identify bonds based on atom names, providing the
+        highest accuracy for standard residues.
+
+        **Algorithm:**
+
+        1. Iterate through all residues in the structure
+        2. Query CCD database via ``get_residue_bonds(residue.name)`` for bond topology
+        3. Skip residue if no CCD data is available (modified/non-standard residues)
+        4. Create atom name → ``Atom`` object mapping for the residue
+        5. For each bond in CCD data:
+
+           a. Extract atom names (``atom1``, ``atom2``) from bond info
+           b. Check if both atoms exist in the current residue instance
+           c. Calculate geometric distance between atoms
+           d. Create ``Bond`` with ``detection_method=BondDetectionMethods.RESIDUE_LOOKUP``
+           e. Check ``_bond_exists()`` to avoid duplicates
+           f. Append to ``self.bonds`` and increment counter
+
+        6. Return total count of bonds found
+
+        **Limitations:**
+
+        - Only works for residues with CCD data
+        - Modified residues may not have CCD entries
+        - Non-standard ligands require fallback to distance-based methods
+
+        :returns: Number of bonds successfully detected using CCD lookup
+        :rtype: int
+
+        .. seealso::
+           :func:`hbat.constants.get_residue_bonds` - Retrieves bond data from CCD
         """
         bonds_found = 0
 
@@ -509,7 +640,51 @@ class PDBParser:
         return bonds_found
 
     def _detect_bonds_within_residues(self) -> None:
-        """Detect bonds within individual residues using distance-based approach."""
+        """Detect bonds within individual residues using distance-based approach.
+
+        This is **Step 2** of the three-step bond detection hierarchy. Performs distance-based
+        bond detection limited to atoms within the same residue, providing a performance-optimized
+        fallback when CCD data is insufficient.
+
+        **When Used:**
+
+        Invoked only if Step 1 (CCD lookup) finds fewer than 25% of expected bonds
+        (heuristic: ``residue_bonds_found < len(atoms) / 4``).
+
+        **Algorithm:**
+
+        1. Iterate through all residues in the structure
+        2. Skip residues with fewer than 2 atoms
+        3. For each residue, check all atom pairs within that residue (O(m²) where m = residue size):
+
+           a. Calculate distance between atoms ``i`` and ``j`` (where ``j > i``)
+           b. Skip if distance > ``ParametersDefault.MAX_BOND_DISTANCE`` (fast rejection)
+           c. Call :meth:`_are_atoms_bonded_with_distance` to check bonding criteria
+           d. If bonded, create ``Bond`` with ``detection_method=BondDetectionMethods.DISTANCE_BASED``
+           e. Check ``_bond_exists()`` to avoid duplicates
+           f. Append to ``self.bonds``
+
+        **Bonding Criteria:**
+
+        Uses Van der Waals radii with covalent cutoff factor:
+
+        - Bond exists if: ``ParametersDefault.MIN_BOND_DISTANCE ≤ distance ≤ vdw_cutoff``
+        - Where: ``vdw_cutoff = (vdw₁ + vdw₂) × ParametersDefault.COVALENT_CUTOFF_FACTOR``
+        - ``vdw₁``, ``vdw₂``: Van der Waals radii from ``AtomicData.VDW_RADII``
+        - Minimum distance: ``ParametersDefault.MIN_BOND_DISTANCE``
+        - Maximum distance: ``ParametersDefault.MAX_BOND_DISTANCE``
+
+        **Limitations:**
+
+        - **Does not detect inter-residue bonds** (e.g., peptide bonds, disulfides)
+        - Requires Step 3 (spatial grid) to find cross-residue connectivity
+
+        :returns: None (bonds appended to ``self.bonds`` list)
+        :rtype: None
+
+        .. seealso::
+           :meth:`_are_atoms_bonded_with_distance` - Bonding criteria implementation
+        """
         for residue in self.get_residue_list():
             atoms = residue.atoms
             if len(atoms) < 2:
@@ -552,7 +727,65 @@ class PDBParser:
         self._build_bond_adjacency_map()
 
     def _detect_bonds_with_spatial_grid(self) -> None:
-        """Optimized bond detection using spatial grid partitioning."""
+        """Optimized bond detection using spatial grid partitioning for full structure.
+
+        This is **Step 3** of the three-step bond detection hierarchy. Performs comprehensive
+        distance-based bond detection across the entire structure using spatial grid optimization
+        to achieve ``O(n)`` complexity instead of ``O(n²)``.
+
+        **When Used:**
+
+        Invoked only if Steps 1 and 2 combined find fewer than 25% of expected bonds
+        (heuristic: ``total_bonds < len(atoms) / 4``). Catches all remaining bonds including
+        critical inter-residue bonds (peptide bonds, disulfides).
+
+        **Algorithm:**
+
+        1. Create spatial grid with cell size = ``ParametersDefault.MAX_BOND_DISTANCE``
+        2. Assign each atom to a grid cell based on coordinates:
+
+           - ``grid_x = int(atom.x / grid_size)``
+           - ``grid_y = int(atom.y / grid_size)``
+           - ``grid_z = int(atom.z / grid_size)``
+
+        3. For each grid cell and its 26 neighbors (3x3x3 cube):
+
+           a. Iterate through atom pairs between current cell and neighbor cell
+           b. Skip already-processed pairs using ``processed_pairs`` set
+           c. Call :meth:`_check_bond_between_atoms` to evaluate bonding
+
+        4. The ``_check_bond_between_atoms`` method:
+
+           a. Calculates distance between atoms
+           b. Fast-rejects if distance > ``ParametersDefault.MAX_BOND_DISTANCE``
+           c. Calls :meth:`_are_atoms_bonded_with_distance` for bonding criteria
+           d. Creates ``Bond`` with ``detection_method=BondDetectionMethods.DISTANCE_BASED``
+           e. Appends to ``self.bonds`` (no duplicate check needed due to ``processed_pairs``)
+
+        **Performance:**
+
+        - **Complexity**: ``O(n)`` average case (depends on atom density)
+        - **Grid optimization**: Only checks atoms in neighboring cells
+        - **Worst case**: ``O(n²)`` if all atoms in same grid cell (highly unlikely)
+        - **Memory**: ``O(n)`` for grid structure and processed pairs set
+
+        **Bonding Criteria:**
+
+        Same as Step 2, uses Van der Waals radii with covalent cutoff factor:
+
+        - Bond exists if: ``ParametersDefault.MIN_BOND_DISTANCE ≤ distance ≤ vdw_cutoff``
+        - Where: ``vdw_cutoff = (vdw₁ + vdw₂) × ParametersDefault.COVALENT_CUTOFF_FACTOR``
+        - ``vdw₁``, ``vdw₂``: Van der Waals radii from ``AtomicData.VDW_RADII``
+        - Minimum distance: ``ParametersDefault.MIN_BOND_DISTANCE``
+        - Maximum distance: ``ParametersDefault.MAX_BOND_DISTANCE``
+
+        :returns: None (bonds appended to ``self.bonds`` list)
+        :rtype: None
+
+        .. seealso::
+           - :meth:`_check_bond_between_atoms` - Individual bond evaluation
+           - :meth:`_are_atoms_bonded_with_distance` - Bonding criteria
+        """
         # Grid cell size based on maximum bond distance
         grid_size = ParametersDefault.MAX_BOND_DISTANCE
 
@@ -608,7 +841,49 @@ class PDBParser:
             self.bonds.append(bond)
 
     def _build_bond_adjacency_map(self) -> None:
-        """Build fast bond lookup adjacency map."""
+        """Build fast bond lookup adjacency map for efficient neighbor queries.
+
+        This is the **final step** in bond detection, called after all bonds have been identified.
+        Creates a bidirectional adjacency list mapping each atom to its bonded neighbors, enabling
+        ``O(1)`` lookup of bonded atoms.
+
+        The adjacency map is used throughout HBAT for:
+
+        - Finding which hydrogen is bonded to which donor
+        - Traversing connected atoms in rings
+        - Following peptide chain connectivity
+        - Quickly checking if atoms share bonds
+
+        **Algorithm:**
+
+        1. Clear existing ``self._bond_adjacency`` dictionary
+        2. For each bond in ``self.bonds``:
+
+           a. Initialize empty lists for both atoms if not present
+           b. Add ``atom2_serial`` to ``atom1_serial``'s neighbor list
+           c. Add ``atom1_serial`` to ``atom2_serial``'s neighbor list (bidirectional)
+
+        3. Result: ``_bond_adjacency[atom_serial]`` returns list of bonded atom serials
+
+        **Data Structure:**
+
+        .. code-block:: python
+
+           _bond_adjacency: Dict[int, List[int]] = {
+               atom_serial_1: [bonded_atom_1, bonded_atom_2, ...],
+               atom_serial_2: [bonded_atom_3, bonded_atom_4, ...],
+               ...
+           }
+
+        **Performance:**
+
+        - **Build time**: ``O(b)`` where ``b`` = number of bonds
+        - **Lookup time**: ``O(1)`` per atom
+        - **Memory**: ``O(b)`` storage
+
+        :returns: None (builds ``self._bond_adjacency`` dictionary)
+        :rtype: None
+        """
         self._bond_adjacency.clear()
 
         for bond in self.bonds:

@@ -2,7 +2,16 @@
 
 # Hydrogen Bond Analysis Tool (HBAT) v2 
 
-A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions like halogen bonds and non-canonical interactions in macromolecular structures, available in Brookhaven Protein Database (PDB) file format. HBAT uses a geometric approach to identify potential hydrogen bonds by analyzing distance and angular criteria between donor-hydrogen-acceptor triplets.
+A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT uses a geometric approach to identify molecular interactions by analyzing distance and angular criteria.
+
+**Supported Interaction Types:**
+
+- **Hydrogen Bonds**: Classical` N-H···O`, `O-H···O`, and weak `C-H···O` interactions
+- **Halogen Bonds**: `C-X···A` interactions (`X = Cl, Br, I`)
+- **π Interactions**: X-H···π and `C-X···π` interactions with aromatic rings (`Phe`, `Tyr`, `Trp`, `His`, etc.)
+- **π-π Stacking**: Aromatic ring-ring interactions (parallel, T-shaped, offset)
+- **Carbonyl Interactions**: `n→π*` interactions between carbonyl groups
+- **n-π Interactions**: Lone pair interactions with aromatic `π` systems
 
 ![GitHub Release](https://img.shields.io/github/v/release/abhishektiwari/hbat)
 ![GitHub Actions Test Workflow Status](https://img.shields.io/github/actions/workflow/status/abhishektiwari/hbat/test.yml?label=tests)
@@ -17,38 +26,32 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 ![SourceForge Downloads](https://img.shields.io/sourceforge/dt/hbat?label=SourceForge%20Downloads)
 ![PyPI Downloads](https://img.shields.io/pepy/dt/hbat?label=PyPI%20Downloads)
 [![codecov](https://codecov.io/gh/abhishektiwari/hbat/graph/badge.svg?token=QSKYLB3M1V)](https://codecov.io/gh/abhishektiwari/hbat)
-[![Cited By](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3Au-x6o8ySG0sC&search=Cited%20by%20(%5Cd%2B)&replace=%241&style=plastic&logo=googlescholar&label=Cited%20By&cacheSeconds=86400)](https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC)
+![Google Scholar Citation](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337&link=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3Au-x6o8ySG0sC)
 [![Socket](https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl)](https://socket.dev/pypi/package/hbat/overview/2.2.11/py3-none-any-whl)
 [![CodeFactor](https://www.codefactor.io/repository/github/abhishektiwari/hbat/badge/main)](https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main)
 
+
+![HBAT GUI](https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png)
+
 ## Background
+HBAT v2  is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from [SourceForge](https://sourceforge.net/projects/hbat/files/HBAT/) however Perl version is not maintained anymore. 
 
-HBAT v2  is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi.
 
-![HBAT GUI](https://static.abhishek-tiwari.com/hbat/hbat-window-v1.png)
+## Highlights of HBAT v2
 
-## Features
-
-- **Comprehensive Analysis**: Detect and analyze potential hydrogen bonds, halogen bonds, and X-H...π interactions
-- **Dual Interface**: Both graphical (tkinter) and command-line interfaces
-- **Advanced Visualization**: Choice between NetworkX/matplotlib and GraphViz renderers for cooperativity chain visualization
-- **High-Quality Graphics**: Export visualizations to PNG, SVG, PDF with configurable resolution
-- **Interactive GUI**: Scrollable visualizations with dynamic layout switching and engine selection
-- **Parameter Presets**: Built-in presets for different structure types (high-resolution, NMR, membrane proteins, etc.)
-- **Flexible Parameters**: Customizable distance cutoffs, angle thresholds, and analysis modes.
-- **Multiple Output Formats**: Text, CSV, and JSON export options
-- **Fast Processing**: Optimized algorithms for efficient analysis of large structures
-- **Cross-Platform**: Works on Windows, macOS, and Linux.
-
-Please review [HBAT documentation](https://hbat.abhishek-tiwari.com/) for more details.
+- Detect and analyze potential hydrogen bonds, halogen bonds, π interactions, π-π stacking, carbonyl interactions, and n-π interactions
+- Automated PDB fixing with OpenBabel and PDBFixer integration
+- Support graphical (tkinter), command-line, and programming API interfaces
+- Use graphical interfaces for interactive analysis, CLI/API for batch processing and automation
+- Cooperativity chain visualization using NetworkX/matplotlib and GraphViz
+- Export cooperativity chain visualizations to PNG, SVG, PDF formats
+- Built-in presets for different structure types (high-resolution, NMR, membrane proteins, etc.)
+- Customizable distance cutoffs, angle thresholds, and analysis modes.
+- Multiple Output Formats: Text, CSV, and JSON export options
+- Optimized algorithms for efficient analysis of large structures
+- Cross-Platform: Works on Windows, macOS, and Linux.
 
 ![Cooperativity chain visualization](https://static.abhishek-tiwari.com/hbat/6rsa-pdb-chain-6.png)
-
-### Supported Interactions
-
-1. **Hydrogen Bonds**: O-H...O, N-H...O, N-H...N, and other X-H...Y interactions
-2. **Halogen Bonds**: C-X...Y interactions (X = F, Cl, Br, I; Y = N, O, S)
-3. **X-H...π Interactions**: Hydrogen bonds to aromatic ring systems
 
 Please review [HBAT documentation](https://hbat.abhishek-tiwari.com/) for more details.
 
@@ -87,34 +90,34 @@ conda install -c hbat hbat
 ### Requirements
 
 #### System Requirements
-- **Python**: 3.9 or higher
-- **tkinter**: tkinter is included with Python standard library on most systems. However, on Mac install Python and tkinter using `brew`. 
+- Python: 3.9 or higher
+- tkinter: tkinter is included with Python standard library on most systems. However, on Mac install Python and tkinter using `brew`. 
 
 ```
 brew install python python3-tk
 ```
 
-- **GraphViz** (Optional): Required for advanced cooperativity chain visualization with high-quality graph rendering. HBAT will automatically fall back to NetworkX/matplotlib visualization if GraphViz is not available.
+- GraphViz (Optional): Required for advanced cooperativity chain visualization with high-quality graph rendering. HBAT will automatically fall back to NetworkX/matplotlib visualization if GraphViz is not available.
 
-**Install GraphViz:**
+Install GraphViz:
 
-On **Ubuntu/Debian**:
+On Ubuntu/Debian:
 ```bash
 sudo apt-get update
 sudo apt-get install graphviz
 ```
 
-On **macOS** (using Homebrew):
+On macOS (using Homebrew):
 ```bash
 brew install graphviz
 ```
 
-On **Windows**:
+On Windows:
 - Download and install from [GraphViz official website](https://graphviz.org/download/)
 - Or using Chocolatey: `choco install graphviz`
 - Or using conda: `conda install -c conda-forge graphviz`
 
-**Note**: After installing GraphViz, restart your terminal/command prompt before running HBAT to ensure the GraphViz executables are available in your PATH.
+> Note: After installing GraphViz, restart your terminal/command prompt before running HBAT to ensure the GraphViz executables are available in your PATH.
 
 ## Usage
 
@@ -142,13 +145,15 @@ hbat input.pdb
 
 #### Output Format Options
 
-HBAT supports multiple output formats with automatic detection based on file extension:
+HBAT supports multiple output formats:
 
 ```bash
+# No output flag - displays results to console
+hbat input.pdb                    # Display results to console
+
 # Single file outputs (format auto-detected from extension)
-hbat input.pdb -o results.txt     # Text format
-hbat input.pdb -o results.csv     # CSV format (single file with all data)
-hbat input.pdb -o results.json    # JSON format (single file with all data)
+hbat input.pdb -o results.txt     # Text format (human-readable summary + details)
+hbat input.pdb -o results.json    # JSON format (single file with all interactions)
 
 # Multiple file outputs (separate files per interaction type)
 hbat input.pdb --csv results      # Creates results_h_bonds.csv, results_x_bonds.csv, etc.
@@ -158,7 +163,7 @@ hbat input.pdb --json results     # Creates results_h_bonds.json, results_x_bond
 With custom parameters:
 
 ```bash
-hbat input.pdb -o results.csv --hb-distance 3.0 --mode local
+hbat input.pdb -o results.txt --hb-distance 3.0 --mode local
 ```
 
 #### List Available Presets
@@ -189,7 +194,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -o OUTPUT, --output OUTPUT
-                        Output file (format auto-detected from extension: .txt, .csv, .json)
+                        Output file (format auto-detected from extension: .txt, .json)
   --json JSON           Export to multiple JSON files (base name for files)
   --csv CSV             Export to multiple CSV files (base name for files)
 
@@ -232,16 +237,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Citation
 
 If you use HBAT in your research, please cite:
-
-```
-@software{tiwari2025hbat,
-    author = {Tiwari, Abhishek},
-    title = {HBAT: Hydrogen Bond Analysis Tool},
-    version = {v2},
-    year = {2025},
-    url = {https://github.com/abhishektiwari/hbat}
-}
-```
 
 ```
 @article{tiwari2007hbat,

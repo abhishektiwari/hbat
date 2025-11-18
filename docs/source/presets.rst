@@ -178,6 +178,24 @@ HBAT presets are saved as JSON files with the following structure:
          "sh_pi_distance_cutoff": 3.8,
          "sh_pi_angle_cutoff": 105.0
        },
+       "pi_pi_stacking": {
+         "pi_pi_distance_cutoff": 3.8,
+         "pi_pi_parallel_angle_cutoff": 30.0,
+         "pi_pi_tshaped_angle_min": 60.0,
+         "pi_pi_tshaped_angle_max": 90.0,
+         "pi_pi_offset_cutoff": 2.0
+       },
+       "carbonyl_interactions": {
+         "carbonyl_distance_cutoff": 3.2,
+         "carbonyl_angle_min": 95.0,
+         "carbonyl_angle_max": 125.0
+       },
+       "n_pi_interactions": {
+         "n_pi_distance_cutoff": 3.6,
+         "n_pi_sulfur_distance_cutoff": 4.0,
+         "n_pi_angle_min": 0.0,
+         "n_pi_angle_max": 45.0
+       },
        "general": {
          "covalent_cutoff_factor": 0.85,
          "analysis_mode": "complete"
