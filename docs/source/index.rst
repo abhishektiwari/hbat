@@ -138,6 +138,7 @@ Cite HBAT
    pdbfixing
    presets
    license
+   references
 
 .. toctree::
    :maxdepth: 1

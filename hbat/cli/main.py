@@ -16,6 +16,12 @@ from .. import __version__
 from ..constants.parameters import ParametersDefault
 from ..core.analysis import AnalysisParameters, NPMolecularInteractionAnalyzer
 from ..core.pdb_parser import PDBParser
+from ..export.results import (
+    export_to_csv_files,
+    export_to_json_files,
+    export_to_json_single_file,
+    export_to_txt_single_file,
+)
 
 
 class ProgressBar:
@@ -73,15 +79,14 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s input.pdb                          # Basic analysis
+  %(prog)s input.pdb                         # Display results to console
   %(prog)s input.pdb -o results.txt          # Save results to text file
-  %(prog)s input.pdb -o results.csv          # Save results to CSV file (single file)
   %(prog)s input.pdb -o results.json         # Save results to JSON file (single file)
   %(prog)s input.pdb --csv results           # Export to multiple CSV files (one per interaction type)
   %(prog)s input.pdb --json results          # Export to multiple JSON files (one per interaction type)
   %(prog)s input.pdb --hb-distance 3.0       # Custom H-bond distance cutoff
-  %(prog)s input.pdb --mode local             # Local interactions only
-  %(prog)s --list-presets                     # List available presets
+  %(prog)s input.pdb --mode local            # Local interactions only
+  %(prog)s --list-presets                    # List available presets
   %(prog)s input.pdb --preset high_resolution # Use preset with custom overrides
         """,
     )
@@ -98,7 +103,7 @@ Examples:
     parser.add_argument(
         "-o",
         "--output",
-        help="Output file (format auto-detected from extension: .txt, .csv, .json)",
+        help="Output file (format auto-detected from extension: .txt, .json)",
     )
     parser.add_argument(
         "--json", help="Export to multiple JSON files (base name for files)"
@@ -267,6 +272,84 @@ Examples:
         help=f"S-H...π interaction angle cutoff in degrees (default: {ParametersDefault.PI_SH_ANGLE_CUTOFF})",
     )
 
+    # π-π stacking interaction parameters
+    param_group.add_argument(
+        "--pi-pi-distance",
+        type=float,
+        default=ParametersDefault.PI_PI_DISTANCE_CUTOFF,
+        help=f"π-π stacking centroid distance cutoff in Å (default: {ParametersDefault.PI_PI_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-pi-parallel-angle",
+        type=float,
+        default=ParametersDefault.PI_PI_PARALLEL_ANGLE_CUTOFF,
+        help=f"π-π parallel stacking max angle cutoff in degrees (default: {ParametersDefault.PI_PI_PARALLEL_ANGLE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--pi-pi-tshaped-angle-min",
+        type=float,
+        default=ParametersDefault.PI_PI_TSHAPED_ANGLE_MIN,
+        help=f"π-π T-shaped stacking min angle in degrees (default: {ParametersDefault.PI_PI_TSHAPED_ANGLE_MIN})",
+    )
+    param_group.add_argument(
+        "--pi-pi-tshaped-angle-max",
+        type=float,
+        default=ParametersDefault.PI_PI_TSHAPED_ANGLE_MAX,
+        help=f"π-π T-shaped stacking max angle in degrees (default: {ParametersDefault.PI_PI_TSHAPED_ANGLE_MAX})",
+    )
+    param_group.add_argument(
+        "--pi-pi-offset",
+        type=float,
+        default=ParametersDefault.PI_PI_OFFSET_CUTOFF,
+        help=f"π-π parallel stacking max offset in Å (default: {ParametersDefault.PI_PI_OFFSET_CUTOFF})",
+    )
+
+    # Carbonyl interaction parameters
+    param_group.add_argument(
+        "--carbonyl-distance",
+        type=float,
+        default=ParametersDefault.CARBONYL_DISTANCE_CUTOFF,
+        help=f"Carbonyl n→π* O···C distance cutoff in Å (default: {ParametersDefault.CARBONYL_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--carbonyl-angle-min",
+        type=float,
+        default=ParametersDefault.CARBONYL_ANGLE_MIN,
+        help=f"Carbonyl n→π* min O···C=O angle in degrees (default: {ParametersDefault.CARBONYL_ANGLE_MIN})",
+    )
+    param_group.add_argument(
+        "--carbonyl-angle-max",
+        type=float,
+        default=ParametersDefault.CARBONYL_ANGLE_MAX,
+        help=f"Carbonyl n→π* max O···C=O angle in degrees (default: {ParametersDefault.CARBONYL_ANGLE_MAX})",
+    )
+
+    # n→π* interaction parameters
+    param_group.add_argument(
+        "--n-pi-distance",
+        type=float,
+        default=ParametersDefault.N_PI_DISTANCE_CUTOFF,
+        help=f"n→π* interaction distance cutoff in Å (default: {ParametersDefault.N_PI_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--n-pi-sulfur-distance",
+        type=float,
+        default=ParametersDefault.N_PI_SULFUR_DISTANCE_CUTOFF,
+        help=f"n→π* sulfur-specific distance cutoff in Å (default: {ParametersDefault.N_PI_SULFUR_DISTANCE_CUTOFF})",
+    )
+    param_group.add_argument(
+        "--n-pi-angle-min",
+        type=float,
+        default=ParametersDefault.N_PI_ANGLE_MIN,
+        help=f"n→π* min angle to π plane in degrees (default: {ParametersDefault.N_PI_ANGLE_MIN})",
+    )
+    param_group.add_argument(
+        "--n-pi-angle-max",
+        type=float,
+        default=ParametersDefault.N_PI_ANGLE_MAX,
+        help=f"n→π* max angle to π plane in degrees (default: {ParametersDefault.N_PI_ANGLE_MAX})",
+    )
+
     param_group.add_argument(
         "--covalent-factor",
         type=float,
@@ -348,6 +431,19 @@ Examples:
     )
     filter_group.add_argument(
         "--no-pi-interactions", action="store_true", help="Skip π interaction analysis"
+    )
+    filter_group.add_argument(
+        "--no-pi-pi-stacking", action="store_true", help="Skip π-π stacking analysis"
+    )
+    filter_group.add_argument(
+        "--no-carbonyl-interactions",
+        action="store_true",
+        help="Skip carbonyl n→π* interaction analysis",
+    )
+    filter_group.add_argument(
+        "--no-n-pi-interactions",
+        action="store_true",
+        help="Skip n→π* interaction analysis",
     )
 
     return parser
@@ -724,6 +820,36 @@ def load_parameters_from_args(args: argparse.Namespace) -> AnalysisParameters:
         if args.pi_sh_angle != defaults.get("pi_sh_angle"):
             params.pi_sh_angle_cutoff = args.pi_sh_angle
 
+        # π-π stacking parameter overrides
+        if args.pi_pi_distance != defaults.get("pi_pi_distance"):
+            params.pi_pi_distance_cutoff = args.pi_pi_distance
+        if args.pi_pi_parallel_angle != defaults.get("pi_pi_parallel_angle"):
+            params.pi_pi_parallel_angle_cutoff = args.pi_pi_parallel_angle
+        if args.pi_pi_tshaped_angle_min != defaults.get("pi_pi_tshaped_angle_min"):
+            params.pi_pi_tshaped_angle_min = args.pi_pi_tshaped_angle_min
+        if args.pi_pi_tshaped_angle_max != defaults.get("pi_pi_tshaped_angle_max"):
+            params.pi_pi_tshaped_angle_max = args.pi_pi_tshaped_angle_max
+        if args.pi_pi_offset != defaults.get("pi_pi_offset"):
+            params.pi_pi_offset_cutoff = args.pi_pi_offset
+
+        # Carbonyl interaction parameter overrides
+        if args.carbonyl_distance != defaults.get("carbonyl_distance"):
+            params.carbonyl_distance_cutoff = args.carbonyl_distance
+        if args.carbonyl_angle_min != defaults.get("carbonyl_angle_min"):
+            params.carbonyl_angle_min = args.carbonyl_angle_min
+        if args.carbonyl_angle_max != defaults.get("carbonyl_angle_max"):
+            params.carbonyl_angle_max = args.carbonyl_angle_max
+
+        # n→π* interaction parameter overrides
+        if args.n_pi_distance != defaults.get("n_pi_distance"):
+            params.n_pi_distance_cutoff = args.n_pi_distance
+        if args.n_pi_sulfur_distance != defaults.get("n_pi_sulfur_distance"):
+            params.n_pi_sulfur_distance_cutoff = args.n_pi_sulfur_distance
+        if args.n_pi_angle_min != defaults.get("n_pi_angle_min"):
+            params.n_pi_angle_min = args.n_pi_angle_min
+        if args.n_pi_angle_max != defaults.get("n_pi_angle_max"):
+            params.n_pi_angle_max = args.n_pi_angle_max
+
         if args.covalent_factor != defaults.get("covalent_factor"):
             params.covalent_cutoff_factor = args.covalent_factor
         if args.mode != defaults.get("mode"):
@@ -758,6 +884,21 @@ def load_parameters_from_args(args: argparse.Namespace) -> AnalysisParameters:
             pi_oh_angle_cutoff=args.pi_oh_angle,
             pi_sh_distance_cutoff=args.pi_sh_distance,
             pi_sh_angle_cutoff=args.pi_sh_angle,
+            # π-π stacking parameters
+            pi_pi_distance_cutoff=args.pi_pi_distance,
+            pi_pi_parallel_angle_cutoff=args.pi_pi_parallel_angle,
+            pi_pi_tshaped_angle_min=args.pi_pi_tshaped_angle_min,
+            pi_pi_tshaped_angle_max=args.pi_pi_tshaped_angle_max,
+            pi_pi_offset_cutoff=args.pi_pi_offset,
+            # Carbonyl interaction parameters
+            carbonyl_distance_cutoff=args.carbonyl_distance,
+            carbonyl_angle_min=args.carbonyl_angle_min,
+            carbonyl_angle_max=args.carbonyl_angle_max,
+            # n→π* interaction parameters
+            n_pi_distance_cutoff=args.n_pi_distance,
+            n_pi_sulfur_distance_cutoff=args.n_pi_sulfur_distance,
+            n_pi_angle_min=args.n_pi_angle_min,
+            n_pi_angle_max=args.n_pi_angle_max,
             covalent_cutoff_factor=args.covalent_factor,
             analysis_mode=args.mode,
             # PDB fixing parameters
@@ -960,196 +1101,12 @@ def format_results_text(
     return "\n".join(lines)
 
 
-def export_to_json(
-    analyzer: NPMolecularInteractionAnalyzer, input_file: str, output_file: str
-) -> None:
-    """Export results to JSON format.
-
-    Exports complete analysis results to a structured JSON file
-    with metadata, statistics, and detailed interaction data.
-
-    :param analyzer: Analysis results to export
-    :type analyzer: MolecularInteractionAnalyzer
-    :param input_file: Path to the input file analyzed
-    :type input_file: str
-    :param output_file: Path to the JSON output file
-    :type output_file: str
-    :returns: None
-    :rtype: None
-    """
-    import math
-
-    data: Dict[str, Any] = {
-        "metadata": {
-            "input_file": input_file,
-            "analysis_time": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "hbat_version": __version__,
-        },
-        "summary": analyzer.get_summary(),
-        "hydrogen_bonds": [],
-        "halogen_bonds": [],
-        "pi_interactions": [],
-        "pi_pi_stacking": [],
-        "carbonyl_interactions": [],
-        "n_pi_interactions": [],
-        "cooperativity_chains": [],
-    }
-
-    # Convert hydrogen bonds
-    for hb in analyzer.hydrogen_bonds:
-        data["hydrogen_bonds"].append(
-            {
-                "donor_residue": hb.donor_residue,
-                "donor_atom": hb.donor.name,
-                "donor_coords": hb.donor.coords.to_list(),
-                "hydrogen_atom": hb.hydrogen.name,
-                "hydrogen_coords": hb.hydrogen.coords.to_list(),
-                "acceptor_residue": hb.acceptor_residue,
-                "acceptor_atom": hb.acceptor.name,
-                "acceptor_coords": hb.acceptor.coords.to_list(),
-                "distance": round(hb.distance, 3),
-                "angle": round(math.degrees(hb.angle), 1),
-                "donor_acceptor_distance": round(hb.donor_acceptor_distance, 3),
-                "bond_type": hb.bond_type,
-            }
-        )
-
-    # Convert halogen bonds
-    for xb in analyzer.halogen_bonds:
-        data["halogen_bonds"].append(
-            {
-                "halogen_residue": xb.halogen_residue,
-                "donor_atom": xb.donor_atom.name,
-                "donor_coords": xb.donor_atom.coords.to_list(),
-                "halogen_atom": xb.halogen.name,
-                "halogen_coords": xb.halogen.coords.to_list(),
-                "acceptor_residue": xb.acceptor_residue,
-                "acceptor_atom": xb.acceptor.name,
-                "acceptor_coords": xb.acceptor.coords.to_list(),
-                "distance": round(xb.distance, 3),
-                "angle": round(math.degrees(xb.angle), 1),
-                "bond_type": xb.bond_type,
-            }
-        )
-
-    # Convert π interactions
-    for pi in analyzer.pi_interactions:
-        data["pi_interactions"].append(
-            {
-                "donor_residue": pi.donor_residue,
-                "donor_atom": pi.donor.name,
-                "donor_coords": pi.donor.coords.to_list(),
-                "hydrogen_atom": pi.hydrogen.name,
-                "hydrogen_coords": pi.hydrogen.coords.to_list(),
-                "pi_residue": pi.pi_residue,
-                "pi_center": pi.pi_center.to_list(),
-                "distance": round(pi.distance, 3),
-                "angle": round(math.degrees(pi.angle), 1),
-            }
-        )
-
-    # Convert π-π stacking interactions
-    if hasattr(analyzer, "pi_pi_interactions") and analyzer.pi_pi_interactions:
-        for pi_pi in analyzer.pi_pi_interactions:
-            data["pi_pi_stacking"].append(
-                {
-                    "ring1_residue": pi_pi.ring1_residue,
-                    "ring1_center": pi_pi.ring1_center.to_list(),
-                    "ring1_type": pi_pi.ring1_type,
-                    "ring2_residue": pi_pi.ring2_residue,
-                    "ring2_center": pi_pi.ring2_center.to_list(),
-                    "ring2_type": pi_pi.ring2_type,
-                    "distance": round(pi_pi.distance, 3),
-                    "angle": round(math.degrees(pi_pi.angle), 1),
-                    "interaction_type": pi_pi.stacking_type,
-                    "offset": (
-                        round(pi_pi.offset, 3) if hasattr(pi_pi, "offset") else None
-                    ),
-                }
-            )
-
-    # Convert carbonyl-carbonyl interactions
-    if hasattr(analyzer, "carbonyl_interactions") and analyzer.carbonyl_interactions:
-        for carbonyl in analyzer.carbonyl_interactions:
-            data["carbonyl_interactions"].append(
-                {
-                    "donor_residue": carbonyl.donor_residue,
-                    "donor_atom": carbonyl.donor_oxygen.name,
-                    "donor_coords": carbonyl.donor_oxygen.coords.to_list(),
-                    "acceptor_residue": carbonyl.acceptor_residue,
-                    "acceptor_atom": carbonyl.acceptor_carbon.name,
-                    "acceptor_coords": carbonyl.acceptor_carbon.coords.to_list(),
-                    "distance": round(carbonyl.distance, 3),
-                    "angle": round(math.degrees(carbonyl.angle), 1),
-                    "interaction_type": carbonyl.interaction_classification,
-                    "trajectory_angle": (
-                        round(math.degrees(carbonyl.trajectory_angle), 1)
-                        if hasattr(carbonyl, "trajectory_angle")
-                        else None
-                    ),
-                }
-            )
-
-    # Convert n→π* interactions
-    if hasattr(analyzer, "n_pi_interactions") and analyzer.n_pi_interactions:
-        for n_pi in analyzer.n_pi_interactions:
-            data["n_pi_interactions"].append(
-                {
-                    "donor_residue": n_pi.donor_residue,
-                    "donor_atom": n_pi.lone_pair_atom.name,
-                    "donor_coords": n_pi.lone_pair_atom.coords.to_list(),
-                    "acceptor_residue": n_pi.acceptor_residue,
-                    "pi_center": n_pi.pi_center.to_list(),
-                    "pi_system_type": n_pi.pi_system_type,
-                    "distance": round(n_pi.distance, 3),
-                    "angle": round(math.degrees(n_pi.angle), 1),
-                    "interaction_type": n_pi.interaction_classification,
-                }
-            )
-
-    # Convert cooperativity chains
-    for chain in analyzer.cooperativity_chains:
-        chain_data: Dict[str, Any] = {
-            "chain_length": chain.chain_length,
-            "chain_type": chain.chain_type,
-            "interactions": [],
-        }
-
-        for interaction in chain.interactions:
-            interaction_data: Dict[str, Any] = {
-                "interaction_type": interaction.interaction_type,
-                "donor_residue": interaction.get_donor_residue(),
-                "acceptor_residue": interaction.get_acceptor_residue(),
-                "distance": round(interaction.distance, 3),
-                "angle": round(math.degrees(interaction.angle), 1),
-            }
-
-            # Add type-specific fields
-            if hasattr(interaction, "bond_type"):
-                interaction_data["bond_type"] = interaction.bond_type
-
-            donor_atom = interaction.get_donor_atom()
-            if donor_atom:
-                interaction_data["donor_atom"] = donor_atom.name
-
-            acceptor_atom = interaction.get_acceptor_atom()
-            if acceptor_atom:
-                interaction_data["acceptor_atom"] = acceptor_atom.name
-
-            chain_data["interactions"].append(interaction_data)
-
-        data["cooperativity_chains"].append(chain_data)
-
-    with open(output_file, "w") as f:
-        json.dump(data, f, indent=2)
-
-
 def detect_output_format(filename: str) -> str:
     """Detect output format from file extension.
 
     :param filename: Output filename
     :type filename: str
-    :returns: Format type ('text', 'csv', 'json')
+    :returns: Format type ('text', 'json')
     :rtype: str
     :raises ValueError: If file extension is not supported
     """
@@ -1161,791 +1118,17 @@ def detect_output_format(filename: str) -> str:
     if ext_lower == ".txt":
         return "text"
     elif ext_lower == ".csv":
-        return "csv"
+        raise ValueError(
+            "Single CSV file output is not supported. "
+            "Use --csv flag to export multiple CSV files (one per interaction type).\n"
+            "Example: hbat input.pdb --csv output"
+        )
     elif ext_lower == ".json":
         return "json"
     else:
-        raise ValueError(f"Unsupported output format '{ext}'. Use .txt, .csv, or .json")
-
-
-def export_to_csv_files(
-    analyzer: NPMolecularInteractionAnalyzer, base_filename: str
-) -> None:
-    """Export results to multiple CSV files.
-
-    Creates separate CSV files for each interaction type.
-
-    :param analyzer: Analysis results to export
-    :type analyzer: NPMolecularInteractionAnalyzer
-    :param base_filename: Base filename (extension will be removed)
-    :type base_filename: str
-    :returns: None
-    :rtype: None
-    """
-    import csv
-    import math
-    import os
-    from pathlib import Path
-
-    base_path = Path(base_filename)
-    base_name = base_path.stem
-    directory = base_path.parent
-
-    # Export hydrogen bonds
-    if analyzer.hydrogen_bonds:
-        hb_file = directory / f"{base_name}_h_bonds.csv"
-        with open(hb_file, "w", newline="", encoding="utf-8") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(
-                [
-                    "Donor_Residue",
-                    "Donor_Atom",
-                    "Hydrogen_Atom",
-                    "Acceptor_Residue",
-                    "Acceptor_Atom",
-                    "Distance_Angstrom",
-                    "Angle_Degrees",
-                    "Donor_Acceptor_Distance_Angstrom",
-                    "Bond_Type",
-                    "B/S_Interaction",
-                    "D-A_Properties",
-                ]
-            )
-            for hb in analyzer.hydrogen_bonds:
-                writer.writerow(
-                    [
-                        hb.donor_residue,
-                        hb.donor.name,
-                        hb.hydrogen.name,
-                        hb.acceptor_residue,
-                        hb.acceptor.name,
-                        f"{hb.distance:.3f}",
-                        f"{math.degrees(hb.angle):.1f}",
-                        f"{hb.donor_acceptor_distance:.3f}",
-                        hb.bond_type,
-                        hb.get_backbone_sidechain_interaction(),
-                        hb.donor_acceptor_properties,
-                    ]
-                )
-
-    # Export halogen bonds
-    if analyzer.halogen_bonds:
-        xb_file = directory / f"{base_name}_x_bonds.csv"
-        with open(xb_file, "w", newline="", encoding="utf-8") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(
-                [
-                    "Halogen_Residue",
-                    "Donor_Atom",
-                    "Halogen_Atom",
-                    "Acceptor_Residue",
-                    "Acceptor_Atom",
-                    "Distance_Angstrom",
-                    "Angle_Degrees",
-                    "Bond_Type",
-                    "B/S_Interaction",
-                    "D-A_Properties",
-                ]
-            )
-            for xb in analyzer.halogen_bonds:
-                writer.writerow(
-                    [
-                        xb.halogen_residue,
-                        xb.donor_atom.name,
-                        xb.halogen.name,
-                        xb.acceptor_residue,
-                        xb.acceptor.name,
-                        f"{xb.distance:.3f}",
-                        f"{math.degrees(xb.angle):.1f}",
-                        xb.bond_type,
-                        xb.get_backbone_sidechain_interaction(),
-                        xb.donor_acceptor_properties,
-                    ]
-                )
-
-    # Export π interactions
-    if analyzer.pi_interactions:
-        pi_file = directory / f"{base_name}_pi_interactions.csv"
-        with open(pi_file, "w", newline="", encoding="utf-8") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(
-                [
-                    "Donor_Residue",
-                    "Donor_Atom",
-                    "Hydrogen_Atom",
-                    "Pi_Residue",
-                    "Distance_Angstrom",
-                    "Angle_Degrees",
-                    "B/S_Interaction",
-                    "D-A_Properties",
-                ]
-            )
-            for pi in analyzer.pi_interactions:
-                writer.writerow(
-                    [
-                        pi.donor_residue,
-                        pi.donor.name,
-                        pi.hydrogen.name,
-                        pi.pi_residue,
-                        f"{pi.distance:.3f}",
-                        f"{math.degrees(pi.angle):.1f}",
-                        pi.get_backbone_sidechain_interaction(),
-                        pi.donor_acceptor_properties,
-                    ]
-                )
-
-    # Export π-π stacking interactions
-    if hasattr(analyzer, "pi_pi_interactions") and analyzer.pi_pi_interactions:
-        pi_pi_file = directory / f"{base_name}_pi_pi_stacking.csv"
-        with open(pi_pi_file, "w", newline="", encoding="utf-8") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(
-                [
-                    "Ring1_Residue",
-                    "Ring1_Type",
-                    "Ring1_Atoms",
-                    "Ring2_Residue",
-                    "Ring2_Type",
-                    "Ring2_Atoms",
-                    "Distance_Angstrom",
-                    "Plane_Angle_Degrees",
-                    "Offset_Angstrom",
-                    "Stacking_Type",
-                    "Is_Between_Residues",
-                    "Ring1_Center_X",
-                    "Ring1_Center_Y",
-                    "Ring1_Center_Z",
-                    "Ring2_Center_X",
-                    "Ring2_Center_Y",
-                    "Ring2_Center_Z",
-                ]
-            )
-            for pi_pi in analyzer.pi_pi_interactions:
-                ring1_atoms = "|".join([atom.name for atom in pi_pi.ring1_atoms])
-                ring2_atoms = "|".join([atom.name for atom in pi_pi.ring2_atoms])
-                writer.writerow(
-                    [
-                        pi_pi.ring1_residue,
-                        pi_pi.ring1_type,
-                        ring1_atoms,
-                        pi_pi.ring2_residue,
-                        pi_pi.ring2_type,
-                        ring2_atoms,
-                        f"{pi_pi.distance:.3f}",
-                        f"{pi_pi.plane_angle:.1f}",
-                        f"{pi_pi.offset:.3f}",
-                        pi_pi.stacking_type,
-                        str(pi_pi.is_between_residues),
-                        f"{pi_pi.ring1_center[0]:.3f}",
-                        f"{pi_pi.ring1_center[1]:.3f}",
-                        f"{pi_pi.ring1_center[2]:.3f}",
-                        f"{pi_pi.ring2_center[0]:.3f}",
-                        f"{pi_pi.ring2_center[1]:.3f}",
-                        f"{pi_pi.ring2_center[2]:.3f}",
-                    ]
-                )
-
-    # Export carbonyl-carbonyl interactions
-    if hasattr(analyzer, "carbonyl_interactions") and analyzer.carbonyl_interactions:
-        carbonyl_file = directory / f"{base_name}_carbonyl_interactions.csv"
-        with open(carbonyl_file, "w", newline="", encoding="utf-8") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(
-                [
-                    "Donor_Residue",
-                    "Donor_Carbon",
-                    "Donor_Oxygen",
-                    "Acceptor_Residue",
-                    "Acceptor_Carbon",
-                    "Acceptor_Oxygen",
-                    "Distance_Angstrom",
-                    "Burgi_Dunitz_Angle_Degrees",
-                    "Carbonyl_Type",
-                    "Is_Backbone",
-                    "Is_Between_Residues",
-                ]
-            )
-            for carbonyl in analyzer.carbonyl_interactions:
-                writer.writerow(
-                    [
-                        carbonyl.donor_residue,
-                        carbonyl.donor_carbon.name,
-                        carbonyl.donor_oxygen.name,
-                        carbonyl.acceptor_residue,
-                        carbonyl.acceptor_carbon.name,
-                        carbonyl.acceptor_oxygen.name,
-                        f"{carbonyl.distance:.3f}",
-                        f"{carbonyl.burgi_dunitz_angle:.1f}",
-                        carbonyl.carbonyl_type,
-                        str(carbonyl.is_backbone),
-                        str(carbonyl.is_between_residues),
-                    ]
-                )
-
-    # Export n→π* interactions
-    if hasattr(analyzer, "n_pi_interactions") and analyzer.n_pi_interactions:
-        n_pi_file = directory / f"{base_name}_n_pi_interactions.csv"
-        with open(n_pi_file, "w", newline="", encoding="utf-8") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(
-                [
-                    "Donor_Residue",
-                    "Donor_Atom",
-                    "Donor_Element",
-                    "Acceptor_Residue",
-                    "Pi_Atoms",
-                    "Pi_System_Type",
-                    "Distance_Angstrom",
-                    "Angle_To_Plane_Degrees",
-                    "Subtype",
-                    "Is_Between_Residues",
-                    "Pi_Center_X",
-                    "Pi_Center_Y",
-                    "Pi_Center_Z",
-                ]
-            )
-            for n_pi in analyzer.n_pi_interactions:
-                pi_atoms = "|".join([atom.name for atom in n_pi.pi_atoms])
-                writer.writerow(
-                    [
-                        n_pi.donor_residue,
-                        n_pi.lone_pair_atom.name,
-                        n_pi.donor_element,
-                        n_pi.acceptor_residue,
-                        pi_atoms,
-                        n_pi.pi_system_type,
-                        f"{n_pi.distance:.3f}",
-                        f"{n_pi.angle_to_plane:.1f}",
-                        n_pi.subtype,
-                        str(n_pi.is_between_residues),
-                        f"{n_pi.pi_center[0]:.3f}",
-                        f"{n_pi.pi_center[1]:.3f}",
-                        f"{n_pi.pi_center[2]:.3f}",
-                    ]
-                )
-
-    # Export cooperativity chains
-    if analyzer.cooperativity_chains:
-        chains_file = directory / f"{base_name}_cooperativity_chains.csv"
-        with open(chains_file, "w", newline="", encoding="utf-8") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(["Chain_ID", "Chain_Length", "Chain_Type", "Interactions"])
-            for i, chain in enumerate(analyzer.cooperativity_chains):
-                interactions_str = " -> ".join(
-                    [
-                        f"{interaction.get_donor_residue()}({interaction.get_donor_atom().name if interaction.get_donor_atom() else '?'})"
-                        for interaction in chain.interactions
-                    ]
-                )
-                writer.writerow(
-                    [i + 1, chain.chain_length, chain.chain_type, interactions_str]
-                )
-
-
-def export_to_json_files(
-    analyzer: NPMolecularInteractionAnalyzer, base_filename: str, input_file: str
-) -> None:
-    """Export results to multiple JSON files.
-
-    Creates separate JSON files for each interaction type.
-
-    :param analyzer: Analysis results to export
-    :type analyzer: NPMolecularInteractionAnalyzer
-    :param base_filename: Base filename (extension will be removed)
-    :type base_filename: str
-    :param input_file: Path to the input file analyzed
-    :type input_file: str
-    :returns: None
-    :rtype: None
-    """
-    import json
-    import math
-    from pathlib import Path
-
-    base_path = Path(base_filename)
-    base_name = base_path.stem
-    directory = base_path.parent
-
-    # Export hydrogen bonds
-    if analyzer.hydrogen_bonds:
-        hb_file = directory / f"{base_name}_h_bonds.json"
-        data: Dict[str, Any] = {
-            "metadata": {
-                "input_file": input_file,
-                "analysis_engine": "HBAT",
-                "version": __version__,
-                "interaction_type": "Hydrogen Bonds",
-            },
-            "interactions": [],
-        }
-        for hb in analyzer.hydrogen_bonds:
-            data["interactions"].append(
-                {
-                    "donor_residue": hb.donor_residue,
-                    "donor_atom": hb.donor.name,
-                    "hydrogen_atom": hb.hydrogen.name,
-                    "acceptor_residue": hb.acceptor_residue,
-                    "acceptor_atom": hb.acceptor.name,
-                    "distance_angstrom": round(hb.distance, 3),
-                    "angle_degrees": round(math.degrees(hb.angle), 1),
-                    "donor_acceptor_distance_angstrom": round(
-                        hb.donor_acceptor_distance, 3
-                    ),
-                    "bond_type": hb.bond_type,
-                    "backbone_sidechain_interaction": hb.get_backbone_sidechain_interaction(),
-                    "donor_acceptor_properties": hb.donor_acceptor_properties,
-                }
-            )
-        with open(hb_file, "w", encoding="utf-8") as jsonfile:
-            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
-
-    # Export halogen bonds
-    if analyzer.halogen_bonds:
-        xb_file = directory / f"{base_name}_x_bonds.json"
-        data: Dict[str, Any] = {
-            "metadata": {
-                "input_file": input_file,
-                "analysis_engine": "HBAT",
-                "version": __version__,
-                "interaction_type": "Halogen Bonds",
-            },
-            "interactions": [],
-        }
-        for xb in analyzer.halogen_bonds:
-            data["interactions"].append(
-                {
-                    "halogen_residue": xb.halogen_residue,
-                    "donor_atom": xb.donor_atom.name,
-                    "halogen_atom": xb.halogen.name,
-                    "acceptor_residue": xb.acceptor_residue,
-                    "acceptor_atom": xb.acceptor.name,
-                    "distance_angstrom": round(xb.distance, 3),
-                    "angle_degrees": round(math.degrees(xb.angle), 1),
-                    "bond_type": xb.bond_type,
-                    "backbone_sidechain_interaction": xb.get_backbone_sidechain_interaction(),
-                    "donor_acceptor_properties": xb.donor_acceptor_properties,
-                }
-            )
-        with open(xb_file, "w", encoding="utf-8") as jsonfile:
-            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
-
-    # Export π interactions
-    if analyzer.pi_interactions:
-        pi_file = directory / f"{base_name}_pi_interactions.json"
-        data: Dict[str, Any] = {
-            "metadata": {
-                "input_file": input_file,
-                "analysis_engine": "HBAT",
-                "version": __version__,
-                "interaction_type": "Pi Interactions",
-            },
-            "interactions": [],
-        }
-        for pi in analyzer.pi_interactions:
-            data["interactions"].append(
-                {
-                    "donor_residue": pi.donor_residue,
-                    "donor_atom": pi.donor.name,
-                    "hydrogen_atom": pi.hydrogen.name,
-                    "pi_residue": pi.pi_residue,
-                    "distance_angstrom": round(pi.distance, 3),
-                    "angle_degrees": round(math.degrees(pi.angle), 1),
-                    "backbone_sidechain_interaction": pi.get_backbone_sidechain_interaction(),
-                    "donor_acceptor_properties": pi.donor_acceptor_properties,
-                }
-            )
-        with open(pi_file, "w", encoding="utf-8") as jsonfile:
-            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
-
-    # Export π-π stacking interactions
-    if hasattr(analyzer, "pi_pi_interactions") and analyzer.pi_pi_interactions:
-        pi_pi_file = directory / f"{base_name}_pi_pi_stacking.json"
-        data: Dict[str, Any] = {
-            "metadata": {
-                "input_file": input_file,
-                "analysis_engine": "HBAT",
-                "version": __version__,
-                "interaction_type": "Pi-Pi Stacking Interactions",
-            },
-            "interactions": [],
-        }
-        for pi_pi in analyzer.pi_pi_interactions:
-            data["interactions"].append(
-                {
-                    "ring1_residue": pi_pi.ring1_residue,
-                    "ring1_type": pi_pi.ring1_type,
-                    "ring1_atoms": [atom.name for atom in pi_pi.ring1_atoms],
-                    "ring2_residue": pi_pi.ring2_residue,
-                    "ring2_type": pi_pi.ring2_type,
-                    "ring2_atoms": [atom.name for atom in pi_pi.ring2_atoms],
-                    "distance_angstrom": round(pi_pi.distance, 3),
-                    "plane_angle_degrees": round(pi_pi.plane_angle, 1),
-                    "offset_angstrom": round(pi_pi.offset, 3),
-                    "stacking_type": pi_pi.stacking_type,
-                    "is_between_residues": pi_pi.is_between_residues,
-                    "ring1_center": [
-                        round(pi_pi.ring1_center[0], 3),
-                        round(pi_pi.ring1_center[1], 3),
-                        round(pi_pi.ring1_center[2], 3),
-                    ],
-                    "ring2_center": [
-                        round(pi_pi.ring2_center[0], 3),
-                        round(pi_pi.ring2_center[1], 3),
-                        round(pi_pi.ring2_center[2], 3),
-                    ],
-                }
-            )
-        with open(pi_pi_file, "w", encoding="utf-8") as jsonfile:
-            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
-
-    # Export carbonyl-carbonyl interactions
-    if hasattr(analyzer, "carbonyl_interactions") and analyzer.carbonyl_interactions:
-        carbonyl_file = directory / f"{base_name}_carbonyl_interactions.json"
-        data: Dict[str, Any] = {
-            "metadata": {
-                "input_file": input_file,
-                "analysis_engine": "HBAT",
-                "version": __version__,
-                "interaction_type": "Carbonyl n→π* Interactions",
-            },
-            "interactions": [],
-        }
-        for carbonyl in analyzer.carbonyl_interactions:
-            data["interactions"].append(
-                {
-                    "donor_residue": carbonyl.donor_residue,
-                    "donor_carbon": carbonyl.donor_carbon.name,
-                    "donor_oxygen": carbonyl.donor_oxygen.name,
-                    "acceptor_residue": carbonyl.acceptor_residue,
-                    "acceptor_carbon": carbonyl.acceptor_carbon.name,
-                    "acceptor_oxygen": carbonyl.acceptor_oxygen.name,
-                    "distance_angstrom": round(carbonyl.distance, 3),
-                    "burgi_dunitz_angle_degrees": round(carbonyl.burgi_dunitz_angle, 1),
-                    "carbonyl_type": carbonyl.carbonyl_type,
-                    "is_backbone": carbonyl.is_backbone,
-                    "is_between_residues": carbonyl.is_between_residues,
-                }
-            )
-        with open(carbonyl_file, "w", encoding="utf-8") as jsonfile:
-            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
-
-    # Export n→π* interactions
-    if hasattr(analyzer, "n_pi_interactions") and analyzer.n_pi_interactions:
-        n_pi_file = directory / f"{base_name}_n_pi_interactions.json"
-        data: Dict[str, Any] = {
-            "metadata": {
-                "input_file": input_file,
-                "analysis_engine": "HBAT",
-                "version": __version__,
-                "interaction_type": "n→π* Interactions",
-            },
-            "interactions": [],
-        }
-        for n_pi in analyzer.n_pi_interactions:
-            data["interactions"].append(
-                {
-                    "donor_residue": n_pi.donor_residue,
-                    "donor_atom": n_pi.lone_pair_atom.name,
-                    "donor_element": n_pi.donor_element,
-                    "acceptor_residue": n_pi.acceptor_residue,
-                    "pi_atoms": [atom.name for atom in n_pi.pi_atoms],
-                    "pi_system_type": n_pi.pi_system_type,
-                    "distance_angstrom": round(n_pi.distance, 3),
-                    "angle_to_plane_degrees": round(n_pi.angle_to_plane, 1),
-                    "subtype": n_pi.subtype,
-                    "is_between_residues": n_pi.is_between_residues,
-                    "pi_center": [
-                        round(n_pi.pi_center[0], 3),
-                        round(n_pi.pi_center[1], 3),
-                        round(n_pi.pi_center[2], 3),
-                    ],
-                }
-            )
-        with open(n_pi_file, "w", encoding="utf-8") as jsonfile:
-            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
-
-    # Export cooperativity chains
-    if analyzer.cooperativity_chains:
-        chains_file = directory / f"{base_name}_cooperativity_chains.json"
-        data = {
-            "metadata": {
-                "input_file": input_file,
-                "analysis_engine": "HBAT",
-                "version": __version__,
-                "interaction_type": "Cooperativity Chains",
-            },
-            "chains": [],
-        }
-        for i, chain in enumerate(analyzer.cooperativity_chains):
-            chain_data = {
-                "chain_id": i + 1,
-                "chain_length": chain.chain_length,
-                "chain_type": chain.chain_type,
-                "interactions": [],
-            }
-            for interaction in chain.interactions:
-                interaction_data = {
-                    "donor_residue": interaction.get_donor_residue(),
-                    "acceptor_residue": interaction.get_acceptor_residue(),
-                    "interaction_type": interaction.get_interaction_type(),
-                }
-                donor_atom = interaction.get_donor_atom()
-                if donor_atom:
-                    interaction_data["donor_atom"] = donor_atom.name
-                acceptor_atom = interaction.get_acceptor_atom()
-                if acceptor_atom:
-                    interaction_data["acceptor_atom"] = acceptor_atom.name
-                chain_data["interactions"].append(interaction_data)
-            data["chains"].append(chain_data)
-        with open(chains_file, "w", encoding="utf-8") as jsonfile:
-            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
-
-
-def export_to_csv(analyzer: NPMolecularInteractionAnalyzer, output_file: str) -> None:
-    """Export results to CSV format.
-
-    Exports analysis results to a CSV file with separate sections
-    for different interaction types.
-
-    :param analyzer: Analysis results to export
-    :type analyzer: MolecularInteractionAnalyzer
-    :param output_file: Path to the CSV output file
-    :type output_file: str
-    :returns: None
-    :rtype: None
-    """
-    import csv
-    import math
-
-    with open(output_file, "w", newline="") as f:
-        writer = csv.writer(f)
-
-        # Hydrogen bonds section
-        if analyzer.hydrogen_bonds:
-            writer.writerow(["# Hydrogen Bonds"])
-            writer.writerow(
-                [
-                    "Donor_Residue",
-                    "Donor_Atom",
-                    "Hydrogen_Atom",
-                    "Acceptor_Residue",
-                    "Acceptor_Atom",
-                    "Distance_A",
-                    "Angle_deg",
-                    "DA_Distance_A",
-                    "Bond_Type",
-                    "D-A_Properties",
-                    "B/S",
-                ]
-            )
-
-            for hb in analyzer.hydrogen_bonds:
-                writer.writerow(
-                    [
-                        hb.donor_residue,
-                        hb.donor.name,
-                        hb.hydrogen.name,
-                        hb.acceptor_residue,
-                        hb.acceptor.name,
-                        f"{hb.distance:.3f}",
-                        f"{math.degrees(hb.angle):.1f}",
-                        f"{hb.donor_acceptor_distance:.3f}",
-                        hb.bond_type,
-                        hb.donor_acceptor_properties,
-                        hb.get_backbone_sidechain_interaction(),
-                    ]
-                )
-            writer.writerow([])  # Empty row
-
-        # Halogen bonds section
-        if analyzer.halogen_bonds:
-            writer.writerow(["# Halogen Bonds"])
-            writer.writerow(
-                [
-                    "Halogen_Residue",
-                    "Donor_Atom",
-                    "Halogen_Atom",
-                    "Acceptor_Residue",
-                    "Acceptor_Atom",
-                    "Distance_A",
-                    "Angle_deg",
-                    "Bond_Type",
-                    "D-A_Properties",
-                    "B/S",
-                ]
-            )
-
-            for xb in analyzer.halogen_bonds:
-                writer.writerow(
-                    [
-                        xb.halogen_residue,
-                        xb.donor_atom.name,
-                        xb.halogen.name,
-                        xb.acceptor_residue,
-                        xb.acceptor.name,
-                        f"{xb.distance:.3f}",
-                        f"{math.degrees(xb.angle):.1f}",
-                        xb.bond_type,
-                        xb.donor_acceptor_properties,
-                        xb.get_backbone_sidechain_interaction(),
-                    ]
-                )
-            writer.writerow([])  # Empty row
-
-        # π interactions section
-        if analyzer.pi_interactions:
-            writer.writerow(["# Pi Interactions"])
-            writer.writerow(
-                [
-                    "Donor_Residue",
-                    "Donor_Atom",
-                    "Hydrogen_Atom",
-                    "Pi_Residue",
-                    "Distance_A",
-                    "Angle_deg",
-                    "Type",
-                    "D-A_Properties",
-                    "B/S",
-                ]
-            )
-
-            for pi in analyzer.pi_interactions:
-                writer.writerow(
-                    [
-                        pi.donor_residue,
-                        pi.donor.name,
-                        pi.hydrogen.name,
-                        pi.pi_residue,
-                        f"{pi.distance:.3f}",
-                        f"{math.degrees(pi.angle):.1f}",
-                        pi.get_interaction_type_display(),
-                        pi.donor_acceptor_properties,
-                        pi.get_backbone_sidechain_interaction(),
-                    ]
-                )
-            writer.writerow([])  # Empty row
-
-        # π-π stacking interactions section
-        if hasattr(analyzer, "pi_pi_interactions") and analyzer.pi_pi_interactions:
-            writer.writerow(["# Pi-Pi Stacking Interactions"])
-            writer.writerow(
-                [
-                    "Ring1_Residue",
-                    "Ring2_Residue",
-                    "Distance_A",
-                    "Angle_deg",
-                    "Interaction_Type",
-                    "Offset_A",
-                    "Ring1_Center",
-                    "Ring2_Center",
-                ]
-            )
-
-            for pi_pi in analyzer.pi_pi_interactions:
-                ring1_center = f"({pi_pi.ring1_center[0]:.3f},{pi_pi.ring1_center[1]:.3f},{pi_pi.ring1_center[2]:.3f})"
-                ring2_center = f"({pi_pi.ring2_center[0]:.3f},{pi_pi.ring2_center[1]:.3f},{pi_pi.ring2_center[2]:.3f})"
-                offset = f"{pi_pi.offset:.3f}" if hasattr(pi_pi, "offset") else "N/A"
-
-                writer.writerow(
-                    [
-                        pi_pi.ring1_residue,
-                        pi_pi.ring2_residue,
-                        f"{pi_pi.distance:.3f}",
-                        f"{math.degrees(pi_pi.angle):.1f}",
-                        pi_pi.interaction_classification,
-                        offset,
-                        ring1_center,
-                        ring2_center,
-                    ]
-                )
-            writer.writerow([])  # Empty row
-
-        # Carbonyl-carbonyl interactions section
-        if (
-            hasattr(analyzer, "carbonyl_interactions")
-            and analyzer.carbonyl_interactions
-        ):
-            writer.writerow(["# Carbonyl-Carbonyl Interactions"])
-            writer.writerow(
-                [
-                    "Donor_Residue",
-                    "Donor_Carbonyl",
-                    "Acceptor_Residue",
-                    "Acceptor_Carbonyl",
-                    "Distance_A",
-                    "Angle_deg",
-                    "Interaction_Type",
-                    "Trajectory_Angle_deg",
-                ]
-            )
-
-            for carbonyl in analyzer.carbonyl_interactions:
-                trajectory_angle = (
-                    f"{math.degrees(carbonyl.trajectory_angle):.1f}"
-                    if hasattr(carbonyl, "trajectory_angle")
-                    else "N/A"
-                )
-
-                writer.writerow(
-                    [
-                        carbonyl.donor_residue,
-                        carbonyl.donor_oxygen.name,
-                        carbonyl.acceptor_residue,
-                        carbonyl.acceptor_carbon.name,
-                        f"{carbonyl.distance:.3f}",
-                        f"{math.degrees(carbonyl.angle):.1f}",
-                        carbonyl.interaction_classification,
-                        trajectory_angle,
-                    ]
-                )
-            writer.writerow([])  # Empty row
-
-        # n→π* interactions section
-        if hasattr(analyzer, "n_pi_interactions") and analyzer.n_pi_interactions:
-            writer.writerow(["# n→π* Interactions"])
-            writer.writerow(
-                [
-                    "Donor_Residue",
-                    "Donor_Atom",
-                    "Acceptor_Residue",
-                    "Distance_A",
-                    "Angle_deg",
-                    "Interaction_Type",
-                    "Pi_Center",
-                ]
-            )
-
-            for n_pi in analyzer.n_pi_interactions:
-                pi_center = f"({n_pi.pi_center[0]:.3f},{n_pi.pi_center[1]:.3f},{n_pi.pi_center[2]:.3f})"
-
-                writer.writerow(
-                    [
-                        n_pi.donor_residue,
-                        n_pi.lone_pair_atom.name,
-                        n_pi.acceptor_residue,
-                        f"{n_pi.distance:.3f}",
-                        f"{math.degrees(n_pi.angle):.1f}",
-                        n_pi.interaction_classification,
-                        pi_center,
-                    ]
-                )
-            writer.writerow([])  # Empty row
-
-        # Cooperativity chains section
-        if analyzer.cooperativity_chains:
-            writer.writerow(["# Cooperativity Chains"])
-            writer.writerow(["Chain_ID", "Chain_Length", "Chain_Type", "Interactions"])
-
-            for i, chain in enumerate(analyzer.cooperativity_chains):
-                interactions_str = " -> ".join(
-                    [
-                        f"{interaction.get_donor_residue()}({interaction.get_donor_atom().name if interaction.get_donor_atom() else '?'})"
-                        for interaction in chain.interactions
-                    ]
-                )
-                writer.writerow(
-                    [i + 1, chain.chain_length, chain.chain_type, interactions_str]
-                )
+        raise ValueError(
+            f"Unsupported output format '{ext}'. Use .txt or .json for single file output"
+        )
 
 
 def run_analysis(args: argparse.Namespace) -> int:
@@ -2030,6 +1213,20 @@ def run_analysis(args: argparse.Namespace) -> int:
                 f"Analysis completed in {analysis_time:.2f} seconds", verbose
             )
 
+        # Apply analysis filters (clear results for disabled interaction types)
+        if hasattr(args, "no_hydrogen_bonds") and args.no_hydrogen_bonds:
+            analyzer.hydrogen_bonds = []
+        if hasattr(args, "no_halogen_bonds") and args.no_halogen_bonds:
+            analyzer.halogen_bonds = []
+        if hasattr(args, "no_pi_interactions") and args.no_pi_interactions:
+            analyzer.pi_interactions = []
+        if hasattr(args, "no_pi_pi_stacking") and args.no_pi_pi_stacking:
+            analyzer.pi_pi_interactions = []
+        if hasattr(args, "no_carbonyl_interactions") and args.no_carbonyl_interactions:
+            analyzer.carbonyl_interactions = []
+        if hasattr(args, "no_n_pi_interactions") and args.no_n_pi_interactions:
+            analyzer.n_pi_interactions = []
+
         # Get results
         summary = analyzer.get_summary()
 
@@ -2059,16 +1256,10 @@ def run_analysis(args: argparse.Namespace) -> int:
                 output_format = detect_output_format(args.output)
                 if output_format == "text":
                     print_progress(f"Writing results to {args.output}", verbose)
-                    with open(args.output, "w") as f:
-                        f.write(
-                            format_results_text(analyzer, args.input, args.summary_only)
-                        )
-                elif output_format == "csv":
-                    print_progress(f"Exporting to CSV: {args.output}", verbose)
-                    export_to_csv(analyzer, args.output)
+                    export_to_txt_single_file(analyzer, args.output)
                 elif output_format == "json":
                     print_progress(f"Exporting to JSON: {args.output}", verbose)
-                    export_to_json(analyzer, args.input, args.output)
+                    export_to_json_single_file(analyzer, args.output, args.input)
             except ValueError as e:
                 print_error(str(e))
                 return 1

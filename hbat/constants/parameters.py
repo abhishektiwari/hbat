@@ -109,22 +109,44 @@ class AnalysisParameters:
     types with subtype-specific parameters.
 
     **Hydrogen Bonds (Classical):**
+
     - Strong N-H···O, O-H···O, N-H···N interactions
     - Default: 2.5Å H···A distance, 120° D-H···A angle
 
     **Weak Hydrogen Bonds (C-H···O):**
+
     - Carbon-hydrogen donor interactions with oxygen acceptors
     - Default: 3.6Å H···A distance, 150° D-H···A angle
     - Important in protein-ligand binding and aromatic interactions
 
     **Halogen Bonds:**
+    
     - C-X···A interactions where X is Cl, Br, I
     - Default: 3.9Å X···A distance, 150° C-X···A angle (updated default)
 
     **π Interactions (Multiple Subtypes):**
+
     - Hydrogen-π: C-H···π, N-H···π, O-H···π, S-H···π
     - Halogen-π: C-Cl···π, C-Br···π, C-I···π
     - Each subtype has optimized distance/angle cutoffs
+
+    **π-π Stacking Interactions:**
+
+    - Aromatic ring-ring interactions (parallel, T-shaped, offset)
+    - Default: 3.8Å centroid distance, 30° parallel angle cutoff
+    - Important for protein folding and stability
+
+    **Carbonyl Interactions (n→π*):**
+
+    - Carbonyl-carbonyl n→π* interactions (Bürgi-Dunitz trajectory)
+    - Default: 3.2Å O···C distance, 95°-125° O···C=O angle
+    - Found in polyproline II helices and protein backbones
+
+    **n→π* Interactions:**
+
+    - Lone pair to π system interactions
+    - Default: 3.6Å distance, 0°-45° angle to π plane
+    - Includes O, N, S lone pairs interacting with aromatic systems
 
     :param hb_distance_cutoff: Maximum H...A distance for hydrogen bonds (Å)
     :type hb_distance_cutoff: float
@@ -174,6 +196,30 @@ class AnalysisParameters:
     :type pi_sh_distance_cutoff: float
     :param pi_sh_angle_cutoff: Minimum S-H...π angle for hydrogen-π interactions (degrees)
     :type pi_sh_angle_cutoff: float
+    :param pi_pi_distance_cutoff: Maximum centroid-to-centroid distance for π-π stacking (Å)
+    :type pi_pi_distance_cutoff: float
+    :param pi_pi_parallel_angle_cutoff: Maximum angle for parallel π-π stacking (degrees)
+    :type pi_pi_parallel_angle_cutoff: float
+    :param pi_pi_tshaped_angle_min: Minimum angle for T-shaped π-π stacking (degrees)
+    :type pi_pi_tshaped_angle_min: float
+    :param pi_pi_tshaped_angle_max: Maximum angle for T-shaped π-π stacking (degrees)
+    :type pi_pi_tshaped_angle_max: float
+    :param pi_pi_offset_cutoff: Maximum lateral offset for parallel π-π stacking (Å)
+    :type pi_pi_offset_cutoff: float
+    :param carbonyl_distance_cutoff: Maximum O···C distance for carbonyl n→π* interactions (Å)
+    :type carbonyl_distance_cutoff: float
+    :param carbonyl_angle_min: Minimum O···C=O angle for carbonyl interactions (degrees, Bürgi-Dunitz)
+    :type carbonyl_angle_min: float
+    :param carbonyl_angle_max: Maximum O···C=O angle for carbonyl interactions (degrees, Bürgi-Dunitz)
+    :type carbonyl_angle_max: float
+    :param n_pi_distance_cutoff: Maximum lone pair to π center distance for n→π* interactions (Å)
+    :type n_pi_distance_cutoff: float
+    :param n_pi_sulfur_distance_cutoff: Maximum sulfur lone pair to π center distance for n→π* interactions (Å)
+    :type n_pi_sulfur_distance_cutoff: float
+    :param n_pi_angle_min: Minimum angle to π plane for n→π* interactions (degrees)
+    :type n_pi_angle_min: float
+    :param n_pi_angle_max: Maximum angle to π plane for n→π* interactions (degrees)
+    :type n_pi_angle_max: float
     :param covalent_cutoff_factor: Factor for covalent bond detection
     :type covalent_cutoff_factor: float
     :param analysis_mode: Analysis mode ('local' or 'global')
