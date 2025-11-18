@@ -156,7 +156,7 @@ docs-serve:
 
 docs-watch:
 	@echo "Building and watching documentation with auto-reload (requires sphinx-autobuild)..."
-	sphinx-autobuild docs/source/ docs/build/html/ --open-browser
+	sphinx-autobuild docs/source/ docs/build/html/ --open-browser --watch hbat
 
 # Development runners
 run-gui:

@@ -57,6 +57,9 @@ class NPMolecularInteractionAnalyzer:
       - Hydrogen-π: C-H···π, N-H···π, O-H···π, S-H···π
       - Halogen-π: C-Cl···π, C-Br···π, C-I···π
 
+    - **π-π stacking:** Aromatic ring-ring interactions (parallel, T-shaped, offset)
+    - **Carbonyl interactions:** n→π* orbital interactions between C=O groups (Bürgi-Dunitz trajectory)
+    - **n-π interactions:** Lone pair (O, N, S) interactions with aromatic π systems
     - **Cooperativity chains:** Networks of linked interactions
 
     :param parameters: Analysis parameters with subtype-specific cutoffs
@@ -109,8 +112,9 @@ class NPMolecularInteractionAnalyzer:
 
         Performs comprehensive analysis of hydrogen bonds, weak hydrogen bonds (C-H···O),
         halogen bonds, π interactions (including subtypes: C-H···π, N-H···π, O-H···π,
-        S-H···π, C-Cl···π, C-Br···π, C-I···π), and cooperativity chains in the provided
-        PDB structure. Optionally applies PDB fixing to add missing atoms if enabled in parameters.
+        S-H···π, C-Cl···π, C-Br···π, C-I···π), π-π stacking, carbonyl interactions (n→π*),
+        n-π interactions, and cooperativity chains in the provided PDB structure.
+        Optionally applies PDB fixing to add missing atoms if enabled in parameters.
 
         :param pdb_file: Path to PDB file to analyze
         :type pdb_file: str
@@ -208,29 +212,29 @@ class NPMolecularInteractionAnalyzer:
         self.cooperativity_chains = []
 
         # Analyze interactions with progress updates
-        update_progress("🔗 Finding hydrogen bonds...")
+        update_progress("Finding hydrogen bonds...")
         self._find_hydrogen_bonds_vectorized()
 
-        update_progress("🌟 Finding halogen bonds...")
+        update_progress("Finding halogen bonds...")
         self._find_halogen_bonds_vectorized()
 
-        update_progress("🔄 Finding π interactions...")
+        update_progress("Finding π interactions...")
         self._find_pi_interactions_vectorized()
 
-        update_progress("🔀 Finding π-π stacking...")
+        update_progress("Finding π-π stacking...")
         self._find_pi_pi_interactions_vectorized()
 
-        update_progress("⚛️ Finding carbonyl interactions...")
+        update_progress("Finding carbonyl interactions...")
         self._find_carbonyl_interactions_vectorized()
 
-        update_progress("🎯 Finding n→π* interactions...")
+        update_progress("Finding n→π* interactions...")
         self._find_n_pi_interactions_vectorized()
 
-        update_progress("🕸️ Analyzing cooperativity...")
+        update_progress("Analyzing cooperativity...")
         # Find cooperativity chains (still uses graph-based approach)
         self._find_cooperativity_chains()
 
-        update_progress("✅ Analysis complete")
+        update_progress("Analysis complete")
         self._analysis_end_time = time.time()
         return True
 
@@ -315,7 +319,40 @@ class NPMolecularInteractionAnalyzer:
         )
 
     def _find_hydrogen_bonds_vectorized(self) -> None:
-        """Find hydrogen bonds using vectorized NumPy operations."""
+        """Find hydrogen bonds using vectorized NumPy operations.
+
+        Detects both classical (strong) and weak hydrogen bonds based on donor atom type.
+        Uses vectorized distance calculations for efficient analysis of large structures.
+
+        **Classical Hydrogen Bonds:**
+
+        Donors: ``N``, ``O``, ``S`` (highly electronegative atoms)
+
+        Geometric criteria:
+            - H···A distance: ≤ ``ParametersDefault.HB_DISTANCE_CUTOFF`` (``2.5 Å``)
+            - D-H···A angle: ≥ ``ParametersDefault.HB_ANGLE_CUTOFF`` (``120.0°``)
+            - D···A distance: ≤ ``ParametersDefault.HB_DA_DISTANCE`` (``3.5 Å``)
+
+        **Weak Hydrogen Bonds (C-H donors):**
+
+        Donors: ``C`` (carbon atoms with C-H bonds)
+
+        Geometric criteria:
+            - H···A distance: ≤ ``ParametersDefault.WHB_DISTANCE_CUTOFF`` (``3.6 Å``)
+            - D-H···A angle: ≥ ``ParametersDefault.WHB_ANGLE_CUTOFF`` (``150.0°``)
+            - D···A distance: ≤ ``ParametersDefault.WHB_DA_DISTANCE`` (``3.5 Å``)
+
+        **Algorithm:**
+
+        1. Identify donor-hydrogen pairs (D-H) where hydrogen is covalently bonded to donor
+        2. Get all acceptor atoms (N, O, S, F, Cl with lone pairs)
+        3. Compute vectorized distance matrix between all H atoms and acceptors
+        4. Apply donor-specific distance cutoffs (2.5 Å for classical, 3.6 Å for weak)
+        5. For pairs within distance cutoff, calculate D-H···A angle
+        6. Verify angle meets minimum threshold (120° for classical, 150° for weak)
+        7. Check D···A distance constraint (3.5 Å)
+        8. Create HydrogenBond objects for valid interactions
+        """
         if not self._atom_indices["acceptor"]:
             return
 
@@ -371,7 +408,7 @@ class NPMolecularInteractionAnalyzer:
             # Progress update for large datasets
             if total_pairs > chunk_size and self.progress_callback:
                 progress = int((chunk_start / total_pairs) * 100)
-                self.progress_callback(f"🔗 Finding hydrogen bonds... {progress}%")
+                self.progress_callback(f"Finding hydrogen bonds... {progress}%")
                 # Small delay to allow GUI updates
                 time.sleep(0.01)
 
@@ -485,7 +522,38 @@ class NPMolecularInteractionAnalyzer:
         return donors
 
     def _find_halogen_bonds_vectorized(self) -> None:
-        """Find halogen bonds using vectorized NumPy operations."""
+        """Find halogen bonds using vectorized NumPy operations.
+
+        Detects halogen bonds (C-X···A) where halogen atoms (Cl, Br, I) form directional
+        interactions with acceptor atoms through the σ-hole electrostatic potential.
+
+        **Interaction Chemistry:**
+
+        The halogen bond arises from anisotropic charge distribution on halogen atoms,
+        creating a positive "σ-hole" along the C-X bond axis. The interaction strength
+        increases with halogen size: Cl < Br < I (larger, more polarizable σ-hole).
+
+        **Geometric Criteria:**
+
+        - X···A distance: ≤ ``ParametersDefault.XB_DISTANCE_CUTOFF`` (``3.9 Å``)
+        - C-X···A angle: ≥ ``ParametersDefault.XB_ANGLE_CUTOFF`` (``150.0°``)
+
+        Acceptors: ``N``, ``O``, ``S``, ``P``, ``SE`` (atoms with lone pairs)
+
+        The stringent angle cutoff (150°) ensures near-linear geometry required for
+        optimal σ-hole interaction.
+
+        **Algorithm:**
+
+        1. Get halogen atom coordinates and acceptor atom coordinates
+        2. Compute vectorized distance matrix between halogens and acceptors
+        3. Filter pairs within distance cutoff (uses vdW sum or 3.9 Å cutoff)
+        4. For each candidate pair, find carbon atom bonded to halogen
+        5. Calculate C-X···A angle
+        6. Verify angle ≥ 150° for linear σ-hole geometry
+        7. Skip same-residue interactions (local mode only)
+        8. Create HalogenBond objects for valid interactions
+        """
         if (
             not self._atom_indices["halogen"]
             or not self._atom_indices["halogen_acceptor"]
@@ -519,7 +587,7 @@ class NPMolecularInteractionAnalyzer:
             # Progress update for large datasets
             if total_pairs > chunk_size and self.progress_callback:
                 progress = int((chunk_start / total_pairs) * 100)
-                self.progress_callback(f"🌟 Finding halogen bonds... {progress}%")
+                self.progress_callback(f"Finding halogen bonds... {progress}%")
                 # Small delay to allow GUI updates
                 time.sleep(0.01)
 
@@ -598,22 +666,39 @@ class NPMolecularInteractionAnalyzer:
     def _find_pi_interactions_vectorized(self) -> None:
         """Find π interactions using vectorized operations.
 
-        Detects multiple types of π interactions with aromatic rings:
+        Detects multiple types of π interactions with aromatic rings where atoms interact
+        with the π-electron cloud above/below aromatic ring planes. The aromatic ring center
+        acts as a "virtual acceptor" representing the delocalized π system.
 
-        **Hydrogen-π interactions:**
-        - C-H···π: Carbon-hydrogen to π system (weak but important)
-        - N-H···π: Nitrogen-hydrogen to π system (moderate strength)
-        - O-H···π: Oxygen-hydrogen to π system (strongest H-π interaction)
-        - S-H···π: Sulfur-hydrogen to π system (rare but significant)
+        **Hydrogen-π Interactions:**
 
-        **Halogen-π interactions:**
-        - C-Cl···π: Chlorine to π system interactions
-        - C-Br···π: Bromine to π system interactions (stronger than Cl)
-        - C-I···π: Iodine to π system interactions (strongest halogen-π)
+        - C-H···π: ``ParametersDefault.PI_CH_DISTANCE_CUTOFF`` (``3.5 Å``), angle ≥ ``110.0°``
+        - N-H···π: ``ParametersDefault.PI_NH_DISTANCE_CUTOFF`` (``3.2 Å``), angle ≥ ``115.0°``
+        - O-H···π: ``ParametersDefault.PI_OH_DISTANCE_CUTOFF`` (``3.0 Å``), angle ≥ ``115.0°``
+        - S-H···π: ``ParametersDefault.PI_SH_DISTANCE_CUTOFF`` (``3.8 Å``), angle ≥ ``105.0°``
 
-        Each subtype uses specific distance and angle cutoffs optimized for
-        the particular interaction type. Aromatic rings are detected in
-        PHE, TYR, TRP, and HIS residues.
+        **Halogen-π Interactions:**
+
+        - C-Cl···π: ``ParametersDefault.PI_CCL_DISTANCE_CUTOFF`` (``3.5 Å``), angle ≥ ``145°``
+        - C-Br···π: ``ParametersDefault.PI_CBR_DISTANCE_CUTOFF`` (``3.5 Å``), angle ≥ ``155°``
+        - C-I···π: ``ParametersDefault.PI_CI_DISTANCE_CUTOFF`` (``3.6 Å``), angle ≥ ``165.0°``
+
+        **Aromatic Rings:**
+
+        Detected in ``PHE``, ``TYR``, ``TRP``, ``HIS`` residues. Ring center calculated as
+        geometric centroid of ring atoms (e.g., CG, CD1, CD2, CE1, CE2, CZ for PHE/TYR).
+
+        **Algorithm:**
+
+        1. Calculate aromatic ring centers for PHE, TYR, TRP, HIS residues
+        2. Identify donor-interaction pairs (e.g., C-H, N-H, C-Cl) with covalent bonds
+        3. Determine interaction subtype and get appropriate distance/angle cutoffs
+        4. Compute vectorized distances from interaction atoms to all ring centers
+        5. Filter pairs within subtype-specific distance cutoff
+        6. Calculate D-H···π or D-X···π angle for each candidate
+        7. Verify angle meets minimum threshold for interaction subtype
+        8. Skip same-residue interactions (local mode only)
+        9. Create PiInteraction objects for valid interactions
         """
         aromatic_centers = self._get_aromatic_centers()
         if not aromatic_centers:
@@ -928,13 +1013,43 @@ class NPMolecularInteractionAnalyzer:
     def _find_pi_pi_interactions_vectorized(self) -> None:
         """Find π-π stacking interactions between aromatic rings.
 
-        Detects π-π interactions using geometric criteria:
-        - Distance: 3.3-3.8 Å between ring centroids (default cutoff)
-        - Parallel stacking: angle < 30°, offset < 2.0 Å
-        - T-shaped stacking: angle 60-90°
-        - Offset stacking: intermediate angles
+        Detects π-π stacking between aromatic ring systems, classified by geometry into
+        parallel, T-shaped, and offset configurations based on ring plane orientations.
 
-        Classifications follow McGaughey et al. (1998) criteria for π-π interactions.
+        **Geometric Criteria:**
+
+        - **Centroid distance**: ≤ ``ParametersDefault.PI_PI_DISTANCE_CUTOFF`` (``3.8 Å``)
+        - **Plane angle**: Calculated between ring normal vectors
+
+        **Stacking Types:**
+
+        1. **Parallel Stacking** (``plane_angle ≤ 30.0°``):
+           - Nearly parallel ring planes
+           - Offset geometry preferred over face-to-face (reduces electrostatic repulsion)
+           - Maximum offset: ``ParametersDefault.PI_PI_OFFSET_CUTOFF`` (``2.0 Å``)
+           - Typical distance: 3.3-4.0 Å between centroids
+
+        2. **T-shaped Stacking** (``60.0° ≤ plane_angle ≤ 90.0°``):
+           - Approximately perpendicular ring planes (edge-to-face)
+           - Minimizes electrostatic repulsion while maximizing C-H···π interactions
+           - Typical distance: 4.5-5.5 Å between centroids
+
+        3. **Offset Stacking** (``30.0° < plane_angle < 60.0°``):
+           - Intermediate geometry between parallel and T-shaped
+           - Balance between π-π overlap and electrostatic favorability
+           - Common in protein-ligand interactions
+
+        **Algorithm:**
+
+        1. Identify all aromatic rings in PHE, TYR, TRP, HIS residues
+        2. Calculate ring centroids as geometric center of ring atoms
+        3. For each ring pair, compute centroid-to-centroid distance
+        4. Filter pairs within 3.8 Å distance cutoff
+        5. Calculate ring plane normals using cross product of ring vectors
+        6. Compute angle between plane normals (0° = parallel, 90° = perpendicular)
+        7. Calculate lateral offset for parallel configurations
+        8. Classify stacking type based on angle and offset criteria
+        9. Create PiPiInteraction objects with stacking type annotation
         """
         if self.parameters.pi_pi_distance_cutoff <= 0:
             return  # Skip if disabled
@@ -1120,13 +1235,40 @@ class NPMolecularInteractionAnalyzer:
     def _find_carbonyl_interactions_vectorized(self) -> None:
         """Find carbonyl-carbonyl n→π* interactions.
 
-        Detects n→π* interactions between carbonyl groups following the
-        Bürgi-Dunitz trajectory. Uses geometric criteria:
-        - Distance: 2.8-3.2 Å between O and C atoms
-        - Angle: 95-125° for the O···C=O angle (Bürgi-Dunitz angle)
+        Detects n→π* orbital interactions between C=O groups following the Bürgi-Dunitz
+        trajectory, where the lone pair electrons on a donor oxygen approach the π*
+        antibonding orbital of an acceptor carbonyl carbon.
 
-        Filters out same-residue interactions to focus on stabilizing
-        inter-residue contacts.
+        **Interaction Chemistry:**
+
+        The n→π* interaction involves donation of electron density from the oxygen lone
+        pair (n orbital) into the empty π* antibonding orbital of the C=O group. This
+        interaction is directional and follows the Bürgi-Dunitz trajectory angle.
+
+        **Geometric Criteria:**
+
+        - **O···C distance**: ≤ ``ParametersDefault.CARBONYL_DISTANCE_CUTOFF`` (``3.2 Å``)
+        - **Bürgi-Dunitz angle**: ``ParametersDefault.CARBONYL_ANGLE_MIN``-``ParametersDefault.CARBONYL_ANGLE_MAX`` (``95.0°``-``125.0°``)
+
+        The Bürgi-Dunitz angle (O···C=O) characterizes the optimal approach trajectory
+        for nucleophilic attack, typically ~107° (tetrahedral angle).
+
+        **Carbonyl Types:**
+
+        - **Backbone carbonyls**: Peptide C=O groups (most common)
+        - **Sidechain carbonyls**: ASP, GLU, ASN, GLN residues
+
+        **Algorithm:**
+
+        1. Identify all C=O groups from backbone and sidechains
+        2. For each carbonyl pair from different residues:
+           a. Calculate O···C distance between donor oxygen and acceptor carbon
+           b. Filter pairs within 3.2 Å distance cutoff
+           c. Calculate Bürgi-Dunitz angle (O···C=O)
+           d. Verify angle falls within 95-125° range
+           e. Classify interaction (stores boolean for backbone-backbone)
+        3. Check reverse interaction (acceptor as donor, bidirectional analysis)
+        4. Create CarbonylInteraction objects for valid interactions
         """
         if self.parameters.carbonyl_distance_cutoff <= 0:
             return  # Skip if disabled
@@ -1415,12 +1557,47 @@ class NPMolecularInteractionAnalyzer:
     def _find_n_pi_interactions_vectorized(self) -> None:
         """Find n→π* interactions between lone pairs and π systems.
 
-        Detects n→π* interactions where lone pair electrons from O, N, S atoms
-        interact with aromatic π systems. Uses geometric criteria:
-        - Distance: 3.0-3.5 Å (3.8 Å for sulfur)
-        - Angle: 90-120° to π plane normal
+        Detects n→π* interactions where lone pair electrons from heteroatoms (O, N, S)
+        interact with the delocalized π electron system of aromatic rings. The lone pair
+        approaches the π system at a shallow angle relative to the ring plane.
 
-        Classifies interactions by donor type and π system type.
+        **Interaction Chemistry:**
+
+        Lone pair electrons on electronegative atoms (O, N, S) interact with the π
+        electron cloud of aromatic systems. Unlike π interactions where atoms approach
+        perpendicular to the ring, n-π interactions involve a shallow approach angle.
+
+        **Geometric Criteria:**
+
+        - **Distance**: ≤ ``ParametersDefault.N_PI_DISTANCE_CUTOFF`` (``3.6 Å``) for O, N
+        - **Distance (sulfur)**: ≤ ``ParametersDefault.N_PI_SULFUR_DISTANCE_CUTOFF`` (``4.0 Å``)
+        - **Minimum distance**: ≥ ``ParametersDefault.N_PI_DISTANCE_MIN`` (``2.5 Å``)
+        - **Angle to plane**: ``ParametersDefault.N_PI_ANGLE_MIN``-``ParametersDefault.N_PI_ANGLE_MAX`` (``0.0°``-``45.0°``)
+
+        Angle calculation: ``angle_to_plane = 90° - angle_to_normal``, where
+        ``angle_to_normal`` is the angle between the donor-to-π vector and the ring
+        plane normal. An angle_to_plane of 0-45° means the donor approaches at a
+        shallow angle, not perpendicular.
+
+        **Donor Types:**
+
+        - **O-π**: Oxygen lone pairs (backbone carbonyl O, SER/THR OH, water)
+        - **N-π**: Nitrogen lone pairs (backbone amide N, LYS, ARG, HIS)
+        - **S-π**: Sulfur lone pairs (CYS, MET)
+
+        **Algorithm:**
+
+        1. Identify lone pair donor atoms (O, N, S) with available lone pairs
+        2. Get aromatic ring centers and plane normals for PHE, TYR, TRP, HIS
+        3. For each donor-ring pair:
+           a. Calculate distance from donor to π center
+           b. Apply element-specific distance cutoffs (3.6 Å for O/N, 4.0 Å for S)
+           c. Enforce minimum distance (2.5 Å) to avoid unrealistic close contacts
+           d. Calculate angle_to_normal (donor→π vector vs. plane normal)
+           e. Convert to angle_to_plane (90° - angle_to_normal)
+           f. Verify angle_to_plane is 0-45° (shallow approach)
+        4. Skip same-residue interactions
+        5. Create NPiInteraction objects with subtype classification
         """
         if self.parameters.n_pi_distance_cutoff <= 0:
             return  # Skip if disabled
@@ -1550,7 +1727,54 @@ class NPMolecularInteractionAnalyzer:
                 self.n_pi_interactions.append(n_pi_interaction)
 
     def _find_cooperativity_chains(self) -> None:
-        """Find cooperativity chains in interactions."""
+        """Find cooperativity chains in interactions.
+
+        Detects networks of linked molecular interactions where an atom serves as both
+        an acceptor in one interaction and a donor in another, creating cooperative
+        chains that enhance structural stability.
+
+        **Cooperativity Concept:**
+
+        Cooperativity occurs when interactions are linked through shared atoms. For example,
+        in a chain ``A→B→C``, atom B acts as an acceptor from A and a donor to C. These
+        chains often stabilize protein secondary structures (α-helices, β-sheets) and are
+        energetically more favorable than isolated interactions.
+
+        **Supported Interactions:**
+
+        - **Hydrogen bonds** (classical and weak)
+        - **Halogen bonds**
+        - **π interactions** (note: π centers cannot extend chains as they lack dual roles)
+
+        **Chain Building Logic:**
+
+        Uses graph-based connected component analysis to identify networks of
+        interacting atoms where interactions can reinforce each other through
+        shared atoms.
+
+        **Algorithm:**
+
+        1. Build bidirectional interaction graph:
+
+           - Add hydrogen bonds: connect donor and acceptor atoms with edges
+           - Add halogen bonds: connect donor and acceptor atoms with edges
+           - Add π interactions: add donor atoms to graph (π centers excluded)
+           - Store interaction objects with edges for later retrieval
+
+        2. Find connected components using depth-first search (DFS):
+
+           - For each unvisited atom in the graph:
+           - Initialize empty chain and DFS stack with current atom
+           - Traverse all connected atoms via interactions
+           - Collect all interaction objects encountered during traversal
+           - Mark visited atoms to avoid duplicate chains
+
+        3. Filter and store chains:
+
+           - Keep only connected components with ≥ 2 interactions
+           - Calculate chain type (hydrogen bond network, mixed, etc.)
+           - Create CooperativityChain objects with collected interactions
+        """
         # Build interaction graph using atom serials as keys (hashable)
         interaction_graph: Dict[
             int, List[Tuple[int, Union[HydrogenBond, HalogenBond, PiInteraction]]]

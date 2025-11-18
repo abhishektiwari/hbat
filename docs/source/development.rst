@@ -88,9 +88,6 @@ Building and Distribution
    # Install in development mode
    pip install -e .
 
-   # Install with optional dependencies
-   pip install -e .[dev,visualization,export]
-
 
 Contributing Workflow
 ---------------------

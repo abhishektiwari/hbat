@@ -19,21 +19,29 @@ class MolecularInteraction(ABC):
     """Base class for all molecular interactions.
 
     This abstract base class defines the unified interface for all types of molecular
-    interactions analyzed by HBAT, including hydrogen bonds, halogen bonds,
-    and π interactions.
+    interactions analyzed by HBAT, including:
+
+    - **Hydrogen bonds:** Classical (N-H···O, O-H···O) and weak (C-H···O) interactions
+    - **Halogen bonds:** C-X···A interactions (X = Cl, Br, I)
+    - **π interactions:** H-π and X-π interactions with aromatic rings
+    - **π-π stacking:** Aromatic ring-ring interactions (parallel, T-shaped, offset)
+    - **Carbonyl interactions:** n→π* orbital interactions between C=O groups
+    - **n-π interactions:** Lone pair (O, N, S) interactions with aromatic π systems
 
     All interactions have the following core components:
-    - Donor: The electron/proton donor (atom or virtual atom)
-    - Acceptor: The electron/proton acceptor (atom or virtual atom)
-    - Interaction: The mediating atom/point (e.g., hydrogen, π center)
-    - Geometry: Distances and angles defining the interaction
-    - Bonding: The interaction atom must be bonded to the donor atom
+     - Donor: The electron/proton donor (atom or virtual atom)
+     - Acceptor: The electron/proton acceptor (atom or virtual atom)
+     - Interaction: The mediating atom/point (e.g., hydrogen, π center)
+     - Geometry: Distances and angles defining the interaction
+     - Bonding: The interaction atom must be bonded to the donor atom (where applicable)
 
-    **Bonding Requirements:**
-    - For H-bonds: Hydrogen must be covalently bonded to the donor
-    - For X-bonds: Halogen is covalently bonded to donor carbon
-    - For X-H...π interactions: Hydrogen must be covalently bonded to the donor
-    - For π-π stacking (future): No bonding requirement - uses centroid distances
+    Bonding Requirements:
+     - For H-bonds: Hydrogen must be covalently bonded to the donor
+     - For X-bonds: Halogen is covalently bonded to donor carbon
+     - For X-H...π interactions: Hydrogen must be covalently bonded to the donor
+     - For π-π stacking: No bonding requirement - uses centroid distances
+     - For carbonyl interactions: No bonding requirement - uses O···C geometry
+     - For n-π interactions: No bonding requirement - uses lone pair to π center geometry
     """
 
     @abstractmethod

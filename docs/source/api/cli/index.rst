@@ -1,5 +1,5 @@
 Main CLI Module
----------------
+===============
 
 .. automodule:: hbat.cli.main
    :members:

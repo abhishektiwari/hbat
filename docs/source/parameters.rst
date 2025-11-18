@@ -623,7 +623,7 @@ Covalent Bond Detection Factor (Default: 0.85)
 
 .. code-block:: text
 
-   Bond cutoff = (VdW radius₁ + VdW radius₂) × factor
+   Bond cutoff = (VdW radius₁ + VdW radius₂) x factor
 
 **Valid range**: 0.0 - 1.0
 

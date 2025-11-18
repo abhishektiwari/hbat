@@ -164,19 +164,19 @@ class TestNPVec3DCrossProduct:
         j = NPVec3D(0, 1, 0)
         k = NPVec3D(0, 0, 1)
         
-        # i × j = k
+        # i x j = k
         cross_ij = i.cross(j)
         assert abs(cross_ij.x - 0) < 1e-10
         assert abs(cross_ij.y - 0) < 1e-10
         assert abs(cross_ij.z - 1) < 1e-10
         
-        # j × k = i
+        # j x k = i
         cross_jk = j.cross(k)
         assert abs(cross_jk.x - 1) < 1e-10
         assert abs(cross_jk.y - 0) < 1e-10
         assert abs(cross_jk.z - 0) < 1e-10
         
-        # k × i = j
+        # k x i = j
         cross_ki = k.cross(i)
         assert abs(cross_ki.x - 0) < 1e-10
         assert abs(cross_ki.y - 1) < 1e-10
@@ -190,7 +190,7 @@ class TestNPVec3DCrossProduct:
         cross_12 = v1.cross(v2)
         cross_21 = v2.cross(v1)
         
-        # v1 × v2 = -(v2 × v1)
+        # v1 x v2 = -(v2 x v1)
         assert abs(cross_12.x + cross_21.x) < 1e-10
         assert abs(cross_12.y + cross_21.y) < 1e-10
         assert abs(cross_12.z + cross_21.z) < 1e-10

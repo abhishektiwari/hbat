@@ -5,12 +5,12 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 
 **Supported Interaction Types:**
 
-- **Hydrogen Bonds**: Classical N-H···O, O-H···O, and weak C-H···O interactions
-- **Halogen Bonds**: C-X···A interactions (X = Cl, Br, I)
-- **π Interactions**: X-H···π interactions with aromatic rings (Phe, Tyr, Trp, His)
+- **Hydrogen Bonds**: Classical ``N-H···O``, ``O-H···O``, and weak ``C-H···O`` interactions
+- **Halogen Bonds**: ``C-X···A`` interactions (``X = Cl, Br, I``)
+- **π Interactions**: ``X-H...π`` and  ``C-X···π`` interactions with aromatic rings (``Phe``, ``Tyr``, ``Trp``, ``His``, etc.)
 - **π-π Stacking**: Aromatic ring-ring interactions (parallel, T-shaped, offset)
-- **Carbonyl Interactions**: n→π* interactions between carbonyl groups
-- **n-π Interactions**: Lone pair interactions with aromatic π systems
+- **Carbonyl Interactions**: ``n→π*`` interactions between carbonyl groups
+- **n-π Interactions**: Lone pair interactions with aromatic ``π`` systems
 
 .. image:: https://img.shields.io/github/v/release/abhishektiwari/hbat
    :alt: GitHub Release
@@ -82,7 +82,7 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 Background
 ----------
 
-HBAT v2  is a modern Python re-implementation of the original Perl-based tool developed by `Abhishek Tiwari <https://www.abhishek-tiwari.com>`_ and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from `Sourceforge <https://sourceforge.net/projects/hbat/files/HBAT/>`_ however Perl version is not maintained anymore. 
+HBAT v2  is a modern Python re-implementation of the original Perl-based tool developed by `Abhishek Tiwari <https://www.abhishek-tiwari.com>`_ and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from `SourceForge <https://sourceforge.net/projects/hbat/files/HBAT/>`_ however Perl version is not maintained anymore. 
 
 Highlights of HBAT v2
 ---------------------

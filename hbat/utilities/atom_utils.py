@@ -16,6 +16,7 @@ def get_element_from_pdb_atom(atom_name: str) -> str:
 
     This function uses regular expressions to identify the element type
     from PDB atom naming conventions, handling complex cases like:
+    
     - Greek letter remoteness indicators (CA, CB, CG, CD, CE, CZ, CH)
     - Numbered variants (C1', H2'', OP1, etc.)
     - Ion charges (CA2+, MG2+, etc.)
