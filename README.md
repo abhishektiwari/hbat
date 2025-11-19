@@ -1,8 +1,8 @@
 ![HBAT](https://github.com/abhishektiwari/hbat/raw/main/hbat.svg)
 
-# Hydrogen Bond Analysis Tool (HBAT) v2 
+# HBAT2 (Hydrogen Bond Analysis Tool 2) 
 
-A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT uses a geometric approach to identify molecular interactions by analyzing distance and angular criteria.
+A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT2 uses a geometric approach to identify molecular interactions by analyzing distance and angular criteria.
 
 **Supported Interaction Types:**
 
@@ -34,10 +34,10 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 ![HBAT GUI](https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png)
 
 ## Background
-HBAT v2  is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from [SourceForge](https://sourceforge.net/projects/hbat/files/HBAT/) however Perl version is not maintained anymore. 
+HBAT2 is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from [SourceForge](https://sourceforge.net/projects/hbat/files/HBAT/) however Perl version is not maintained anymore. 
 
 
-## Highlights of HBAT v2
+## Highlights of HBAT2
 
 - Detect and analyze potential hydrogen bonds, halogen bonds, π interactions, π-π stacking, carbonyl interactions, and n-π interactions
 - Automated PDB fixing with OpenBabel and PDBFixer integration

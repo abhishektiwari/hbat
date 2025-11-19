@@ -6,7 +6,7 @@ authors:
   orcid: "https://orcid.org/0000-0003-2222-2395"
 - family-names: "Panigrahi"
   given-names: "Sunil Kumar"
-title: "HBAT: Hydrogen Bond Analysis Tool (v2)"
+title: "HBAT2"
 version: 2.0.4
 doi: 10.3233/ISI-2007-003
 date-released: 2017-12-18
