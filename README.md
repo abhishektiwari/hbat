@@ -251,6 +251,18 @@ year = {2007}
 }
 ```
 
+```
+@misc{tiwari_2025_17645321,
+  author       = {Tiwari, Abhishek},
+  title        = {HBAT2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
+  month        = nov,
+  year         = 2025,
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.17645321},
+  url          = {https://doi.org/10.5281/zenodo.17645321},
+}
+```
+
 ## Contributing 
 
 See our [contributing guide](CONTRIBUTING.md) and [development guide](https://hbat.abhishek-tiwari.com/development). At a high-level,
