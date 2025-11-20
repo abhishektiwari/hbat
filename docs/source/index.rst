@@ -1,4 +1,4 @@
-HBAT (Hydrogen Bond Analysis Tool) v2
+HBAT2 (Hydrogen Bond Analysis Tool 2)
 =====================
 
 A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT uses a geometric approach to identify molecular interactions by analyzing distance and angular criteria.
@@ -82,9 +82,9 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 Background
 ----------
 
-HBAT v2  is a modern Python re-implementation of the original Perl-based tool developed by `Abhishek Tiwari <https://www.abhishek-tiwari.com>`_ and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from `SourceForge <https://sourceforge.net/projects/hbat/files/HBAT/>`_ however Perl version is not maintained anymore. 
+HBAT2  is a modern Python re-implementation of the original Perl-based tool developed by `Abhishek Tiwari <https://www.abhishek-tiwari.com>`_ and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from `SourceForge <https://sourceforge.net/projects/hbat/files/HBAT/>`_ however Perl version is not maintained anymore. 
 
-Highlights of HBAT v2
+Highlights of HBAT2
 ---------------------
 
 - Detect and analyze potential hydrogen bonds, halogen bonds, π interactions, π-π stacking, carbonyl interactions, and n-π interactions
@@ -103,25 +103,41 @@ Highlights of HBAT v2
    :alt: Cooperativity chain visualization
    :align: center
 
-Cite HBAT
----------
+Cite HBAT & HBAT2
+-----------------
 
 .. code-block:: bash
 
    @article{tiwari2007hbat,
-      author = {Tiwari, Abhishek and Panigrahi, Sunil Kumar},
-      doi = {10.3233/ISI-2007-00337},
+      author  = {Tiwari, Abhishek and Panigrahi, Sunil Kumar},
+      doi     = {10.3233/ISI-2007-00337},
       journal = {In Silico Biology},
-      month = dec,
-      number = {6},
-      title = {{HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures}},
-      volume = {7},
-      year = {2007}
+      month   = dec,
+      number  = {6},
+      title   = {{HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures}},
+      volume  = {7},
+      year    = {2007}
+   }
+
+.. code-block:: bash
+
+   @misc{tiwari_2025_17645321,
+      author    = {Tiwari, Abhishek},
+      title     = {HBAT2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
+      month     = nov,
+      year      = 2025,
+      publisher = {Zenodo},
+      doi       = {10.5281/zenodo.17645321},
+      url       = {https://doi.org/10.5281/zenodo.17645321},
    }
 
 .. code-block:: bash
 
    Tiwari, A., & Panigrahi, S. K. (2007). HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures. In Silico Biology, 7(6). https://doi.org/10.3233/ISI-2007-00337
+
+.. code-block:: bash
+
+   Tiwari, A. (2025). HBAT2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. Zenodo. https://doi.org/10.5281/zenodo.17645377
 
 .. raw:: html
 

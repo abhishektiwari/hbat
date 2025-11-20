@@ -1,8 +1,8 @@
 ![HBAT](https://github.com/abhishektiwari/hbat/raw/main/hbat.svg)
 
-# Hydrogen Bond Analysis Tool (HBAT) v2 
+# HBAT2 (Hydrogen Bond Analysis Tool 2) 
 
-A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT uses a geometric approach to identify molecular interactions by analyzing distance and angular criteria.
+A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT2 uses a geometric approach to identify molecular interactions by analyzing distance and angular criteria.
 
 **Supported Interaction Types:**
 
@@ -34,10 +34,10 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 ![HBAT GUI](https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png)
 
 ## Background
-HBAT v2  is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from [SourceForge](https://sourceforge.net/projects/hbat/files/HBAT/) however Perl version is not maintained anymore. 
+HBAT2 is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from [SourceForge](https://sourceforge.net/projects/hbat/files/HBAT/) however Perl version is not maintained anymore. 
 
 
-## Highlights of HBAT v2
+## Highlights of HBAT2
 
 - Detect and analyze potential hydrogen bonds, halogen bonds, π interactions, π-π stacking, carbonyl interactions, and n-π interactions
 - Automated PDB fixing with OpenBabel and PDBFixer integration
@@ -203,19 +203,56 @@ Preset Options:
   --list-presets        List available example presets and exit
 
 Analysis Parameters:
+  Hydrogen Bond Parameters:
   --hb-distance HB_DISTANCE
-                        Hydrogen bond H...A distance cutoff in Å (default: 3.5)
+                        Hydrogen bond H...A distance cutoff in Å (default: 2.5)
   --hb-angle HB_ANGLE   Hydrogen bond D-H...A angle cutoff in degrees (default: 120)
   --da-distance DA_DISTANCE
-                        Donor-acceptor distance cutoff in Å (default: 4.0)
+                        Donor-acceptor distance cutoff in Å (default: 3.5)
+
+  Halogen Bond Parameters:
   --xb-distance XB_DISTANCE
-                        Halogen bond X...A distance cutoff in Å (default: 4.0)
-  --xb-angle XB_ANGLE   Halogen bond C-X...A angle cutoff in degrees (default: 120)
+                        Halogen bond X...A distance cutoff in Å (default: 3.9)
+  --xb-angle XB_ANGLE   Halogen bond C-X...A angle cutoff in degrees (default: 150)
+
+  π Interaction Parameters:
   --pi-distance PI_DISTANCE
-                        π interaction H...π distance cutoff in Å (default: 4.5)
-  --pi-angle PI_ANGLE   π interaction D-H...π angle cutoff in degrees (default: 90)
+                        π interaction H...π distance cutoff in Å (default: 3.5)
+  --pi-angle PI_ANGLE   π interaction D-H...π angle cutoff in degrees (default: 110)
+
+  π-π Stacking Parameters:
+  --pi-pi-distance PI_PI_DISTANCE
+                        π-π centroid-to-centroid distance cutoff in Å (default: 3.8)
+  --pi-pi-parallel-angle PI_PI_PARALLEL_ANGLE
+                        Maximum angle for parallel π-π stacking in degrees (default: 30.0)
+  --pi-pi-tshaped-angle-min PI_PI_TSHAPED_ANGLE_MIN
+                        Minimum angle for T-shaped π-π stacking in degrees (default: 60.0)
+  --pi-pi-tshaped-angle-max PI_PI_TSHAPED_ANGLE_MAX
+                        Maximum angle for T-shaped π-π stacking in degrees (default: 90.0)
+  --pi-pi-offset PI_PI_OFFSET
+                        Maximum lateral offset for parallel π-π stacking in Å (default: 2.0)
+
+  Carbonyl Interaction Parameters (n→π*):
+  --carbonyl-distance CARBONYL_DISTANCE
+                        Carbonyl O···C distance cutoff in Å (default: 3.2)
+  --carbonyl-angle-min CARBONYL_ANGLE_MIN
+                        Minimum O···C=O angle for carbonyl interactions in degrees (default: 95.0)
+  --carbonyl-angle-max CARBONYL_ANGLE_MAX
+                        Maximum O···C=O angle for carbonyl interactions in degrees (default: 125.0)
+
+  n→π* Interaction Parameters:
+  --n-pi-distance N_PI_DISTANCE
+                        Lone pair to π center distance cutoff in Å (default: 3.6)
+  --n-pi-sulfur-distance N_PI_SULFUR_DISTANCE
+                        Sulfur-specific distance cutoff in Å (default: 4.0)
+  --n-pi-angle-min N_PI_ANGLE_MIN
+                        Minimum angle to π plane in degrees (default: 0.0)
+  --n-pi-angle-max N_PI_ANGLE_MAX
+                        Maximum angle to π plane in degrees (default: 45.0)
+
+  General Parameters:
   --covalent-factor COVALENT_FACTOR
-                        Covalent bond detection factor (default: 1.2)
+                        Covalent bond detection factor (default: 0.85)
   --mode {complete,local}
                         Analysis mode: complete (all interactions) or local (intra-residue only)
 
@@ -228,15 +265,20 @@ Analysis Filters:
   --no-hydrogen-bonds   Skip hydrogen bond analysis
   --no-halogen-bonds    Skip halogen bond analysis
   --no-pi-interactions  Skip π interaction analysis
+  --no-pi-pi-stacking   Skip π-π stacking analysis
+  --no-carbonyl-interactions
+                        Skip carbonyl n→π* interaction analysis
+  --no-n-pi-interactions
+                        Skip n→π* interaction analysis
 ```
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Citation
+## Cite HBAT and HBAT2
 
-If you use HBAT in your research, please cite:
+If you use HBAT or HBAT2 in your research, please cite:
 
 ```
 @article{tiwari2007hbat,
@@ -248,6 +290,18 @@ number = {6},
 title = {{HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures}},
 volume = {7},
 year = {2007}
+}
+```
+
+```
+@misc{tiwari_2025_17645321,
+  author       = {Tiwari, Abhishek},
+  title        = {HBAT2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
+  month        = nov,
+  year         = 2025,
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.17645321},
+  url          = {https://doi.org/10.5281/zenodo.17645321},
 }
 ```
 
