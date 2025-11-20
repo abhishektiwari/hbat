@@ -71,6 +71,9 @@ Analysis Parameters
 
 These options allow fine-tuning of the interaction detection criteria:
 
+Hydrogen Bond Parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. option:: --hb-distance DISTANCE
 
    Hydrogen bond H...A distance cutoff in Angstroms (default: 2.5 Å).
@@ -83,31 +86,97 @@ These options allow fine-tuning of the interaction detection criteria:
 
    Donor-acceptor distance cutoff in Angstroms (default: 3.5 Å).
 
+Halogen Bond Parameters
+^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. option:: --xb-distance DISTANCE
 
-   Halogen bond X...A distance cutoff in Angstroms (default: 3.5 Å).
+   Halogen bond X...A distance cutoff in Angstroms (default: 3.9 Å).
 
 .. option:: --xb-angle ANGLE
 
-   Halogen bond C-X...A angle cutoff in degrees (default: 120°).
+   Halogen bond C-X...A angle cutoff in degrees (default: 150°).
+
+π Interaction Parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. option:: --pi-distance DISTANCE
 
-   π interaction H...π distance cutoff in Angstroms (default: 4.0 Å).
+   π interaction H...π distance cutoff in Angstroms (default: 3.5 Å).
 
 .. option:: --pi-angle ANGLE
 
-   π interaction D-H...π angle cutoff in degrees (default: 120°).
+   π interaction D-H...π angle cutoff in degrees (default: 110°).
+
+π-π Stacking Parameters
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. option:: --pi-pi-distance DISTANCE
+
+   π-π centroid-to-centroid distance cutoff in Angstroms (default: 3.8 Å).
+
+.. option:: --pi-pi-parallel-angle ANGLE
+
+   Maximum angle for parallel π-π stacking in degrees (default: 30.0°).
+
+.. option:: --pi-pi-tshaped-angle-min ANGLE
+
+   Minimum angle for T-shaped π-π stacking in degrees (default: 60.0°).
+
+.. option:: --pi-pi-tshaped-angle-max ANGLE
+
+   Maximum angle for T-shaped π-π stacking in degrees (default: 90.0°).
+
+.. option:: --pi-pi-offset DISTANCE
+
+   Maximum lateral offset for parallel π-π stacking in Angstroms (default: 2.0 Å).
+
+Carbonyl Interaction Parameters (n→π*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. option:: --carbonyl-distance DISTANCE
+
+   Carbonyl O···C distance cutoff in Angstroms (default: 3.2 Å).
+
+.. option:: --carbonyl-angle-min ANGLE
+
+   Minimum O···C=O angle for carbonyl interactions in degrees (default: 95.0°).
+
+.. option:: --carbonyl-angle-max ANGLE
+
+   Maximum O···C=O angle for carbonyl interactions in degrees (default: 125.0°).
+
+n→π* Interaction Parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. option:: --n-pi-distance DISTANCE
+
+   Lone pair to π center distance cutoff in Angstroms (default: 3.6 Å).
+
+.. option:: --n-pi-sulfur-distance DISTANCE
+
+   Sulfur-specific distance cutoff in Angstroms (default: 4.0 Å).
+
+.. option:: --n-pi-angle-min ANGLE
+
+   Minimum angle to π plane in degrees (default: 0.0°).
+
+.. option:: --n-pi-angle-max ANGLE
+
+   Maximum angle to π plane in degrees (default: 45.0°).
+
+General Parameters
+^^^^^^^^^^^^^^^^^^
 
 .. option:: --covalent-factor FACTOR
 
-   Covalent bond detection factor (default: 1.1). This factor is multiplied 
+   Covalent bond detection factor (default: 0.85). This factor is multiplied
    with the sum of covalent radii to determine if atoms are covalently bonded.
 
 .. option:: --mode {complete,local}
 
    Analysis mode:
-   
+
    - ``complete``: Analyze all interactions (default)
    - ``local``: Analyze only intra-residue interactions
 
@@ -200,6 +269,18 @@ These options allow selective analysis of specific interaction types:
 .. option:: --no-pi-interactions
 
    Skip π interaction analysis.
+
+.. option:: --no-pi-pi-stacking
+
+   Skip π-π stacking analysis.
+
+.. option:: --no-carbonyl-interactions
+
+   Skip carbonyl n→π* interaction analysis.
+
+.. option:: --no-n-pi-interactions
+
+   Skip n→π* interaction analysis.
 
 Examples
 --------
