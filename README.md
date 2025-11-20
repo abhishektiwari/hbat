@@ -234,9 +234,9 @@ Analysis Filters:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Citation
+## Cite HBAT and HBAT2
 
-If you use HBAT in your research, please cite:
+If you use HBAT or HBAT2 in your research, please cite:
 
 ```
 @article{tiwari2007hbat,

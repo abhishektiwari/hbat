@@ -103,8 +103,8 @@ Highlights of HBAT2
    :alt: Cooperativity chain visualization
    :align: center
 
-Cite HBAT
----------
+Cite HBAT & HBAT2
+-----------------
 
 .. code-block:: bash
 
