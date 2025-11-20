@@ -142,7 +142,13 @@ clean:
 	rm -rf example_pdb_files/*.json
 	rm -rf example_pdb_files/*.txt
 	rm -rf "~"
-	rm coverage.xml junit.xml
+	rm coverage.xml
+	rm junit.xml
+	rm notebooks/*.ipynb_checkpoints -rf
+	rm notebooks/*.csv -rf
+	rm notebooks/*.json -rf
+	rm notebooks/__pycache__ -rf
+	rm notebooks/*.png -rf
 
 # Documentation
 docs:

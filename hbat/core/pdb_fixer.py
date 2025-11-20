@@ -676,7 +676,7 @@ class PDBFixer:
     ) -> bool:
         """Fix PDB file using OpenBabel and save to output file."""
         try:
-            import openbabel as ob
+            from openbabel import openbabel as ob
         except ImportError:
             raise PDBFixerError(
                 "OpenBabel not available. Install with: conda install openbabel"
