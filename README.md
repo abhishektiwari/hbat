@@ -274,13 +274,15 @@ Analysis Filters:
 
 ## Example Notebooks
 
-Interactive Jupyter notebooks demonstrating HBAT usage with 3D visualizations:
+Interactive Jupyter notebooks demonstrating HBAT usage with 3D visualizations using Py3DMol.
 
 | Notebook | Description | Colab |
 |----------|-------------|-------|
 | [01_analyze_6rsa_with_visualization.ipynb](notebooks/01_analyze_6rsa_with_visualization.ipynb) | Hydrogen bond analysis of 6RSA (Ribonuclease A) with py3Dmol visualization | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/abhishektiwari/hbat/blob/main/notebooks/01_analyze_6rsa_with_visualization.ipynb) |
 | [02_halogen_bonds_4x21.ipynb](notebooks/02_halogen_bonds_4x21.ipynb) | Halogen bond detection and visualization in 4X21 structure | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/abhishektiwari/hbat/blob/main/notebooks/02_halogen_bonds_4x21.ipynb) |
 | [03_pdbfixer_vs_openbabel_comparison.ipynb](notebooks/03_pdbfixer_vs_openbabel_comparison.ipynb) | Comparing PDBFixer vs OpenBabel for hydrogen addition | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/abhishektiwari/hbat/blob/main/notebooks/03_pdbfixer_vs_openbabel_comparison.ipynb) |
+
+![Halogen Bonds in PDB Entry 4x21](https://static.abhishek-tiwari.com/hbat/py3dmol-4x21-v1.png)
 
 See the [notebooks directory](notebooks/) for more details.
 

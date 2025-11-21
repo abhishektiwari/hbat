@@ -1,7 +1,7 @@
 API Usage Examples
 ------------------
 
-HBAT provides interactive Jupyter notebooks demonstrating various features and use cases with 3D molecular visualizations.
+HBAT 2 provides interactive Jupyter notebooks demonstrating various features and use cases with 3D molecular visualizations.
 
 Example Notebooks
 ~~~~~~~~~~~~~~~~~
@@ -36,6 +36,12 @@ The following notebooks are available in the `notebooks/ <https://github.com/abh
 .. |colab-03| image:: https://colab.research.google.com/assets/colab-badge.svg
    :target: https://colab.research.google.com/github/abhishektiwari/hbat/blob/main/notebooks/03_pdbfixer_vs_openbabel_comparison.ipynb
    :alt: Open In Colab
+
+.. figure:: https://static.abhishek-tiwari.com/hbat/py3dmol-4x21-v1.png
+   :alt: Hydrogen Bonds in PDB Entry 4x21
+   :align: center
+
+   **Hydrogen Bonds in PDB Entry 4x21**
 
 Prerequisites
 ~~~~~~~~~~~~~
