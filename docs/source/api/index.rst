@@ -48,3 +48,11 @@ Utilities
    :maxdepth: 2
    
    utilities/index
+
+Examples
+--------
+
+.. toctree::
+   :maxdepth: 2
+   
+   examples/index

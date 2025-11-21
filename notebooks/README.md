@@ -2,6 +2,14 @@
 
 This directory contains Jupyter notebooks demonstrating various features and use cases of HBAT (Hydrogen Bond Analysis Tool).
 
+## Available Notebooks
+
+| Notebook | Description | Open in Colab |
+|----------|-------------|---------------|
+| [01_analyze_6rsa_with_visualization.ipynb](01_analyze_6rsa_with_visualization.ipynb) | Comprehensive analysis of 6RSA (Ribonuclease A) structure including hydrogen bonds, cooperativity chains, and 3D visualization with py3Dmol | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/abhishektiwari/hbat/blob/main/notebooks/01_analyze_6rsa_with_visualization.ipynb) |
+| [02_halogen_bonds_4x21.ipynb](02_halogen_bonds_4x21.ipynb) | Halogen bond detection and visualization in 4X21 crystal structure, demonstrating C-X···A interactions with interactive 3D views | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/abhishektiwari/hbat/blob/main/notebooks/02_halogen_bonds_4x21.ipynb) |
+| [03_pdbfixer_vs_openbabel_comparison.ipynb](03_pdbfixer_vs_openbabel_comparison.ipynb) | Comparing PDBFixer vs OpenBabel for hydrogen addition, analyzing determinism and hydrogen bond count variations | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/abhishektiwari/hbat/blob/main/notebooks/03_pdbfixer_vs_openbabel_comparison.ipynb) |
+
 ## Prerequisites
 
 Install the required dependencies:
