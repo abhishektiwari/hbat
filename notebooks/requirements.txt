@@ -1,0 +1,4 @@
+pymol3d
+pandas
+jupyter
+hbat

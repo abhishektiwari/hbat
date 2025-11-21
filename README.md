@@ -1,8 +1,8 @@
 ![HBAT](https://github.com/abhishektiwari/hbat/raw/main/hbat.svg)
 
-# HBAT2 (Hydrogen Bond Analysis Tool 2) 
+# HBAT 2 (Hydrogen Bond Analysis Tool 2) 
 
-A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT2 uses a geometric approach to identify molecular interactions by analyzing distance and angular criteria.
+A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT 2 uses a geometric approach to identify molecular interactions by analyzing distance and angular criteria.
 
 **Supported Interaction Types:**
 
@@ -34,10 +34,10 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 ![HBAT GUI](https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png)
 
 ## Background
-HBAT2 is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from [SourceForge](https://sourceforge.net/projects/hbat/files/HBAT/) however Perl version is not maintained anymore. 
+HBAT 2 is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from [SourceForge](https://sourceforge.net/projects/hbat/files/HBAT/) however Perl version is not maintained anymore. 
 
 
-## Highlights of HBAT2
+## Highlights of HBAT 2
 
 - Detect and analyze potential hydrogen bonds, halogen bonds, π interactions, π-π stacking, carbonyl interactions, and n-π interactions
 - Automated PDB fixing with OpenBabel and PDBFixer integration
@@ -272,13 +272,27 @@ Analysis Filters:
                         Skip n→π* interaction analysis
 ```
 
+## Example Notebooks
+
+Interactive Jupyter notebooks demonstrating HBAT usage with 3D visualizations using Py3DMol.
+
+| Notebook | Description | Colab |
+|----------|-------------|-------|
+| [01_analyze_6rsa_with_visualization.ipynb](notebooks/01_analyze_6rsa_with_visualization.ipynb) | Hydrogen bond analysis of 6RSA (Ribonuclease A) with py3Dmol visualization | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/abhishektiwari/hbat/blob/main/notebooks/01_analyze_6rsa_with_visualization.ipynb) |
+| [02_halogen_bonds_4x21.ipynb](notebooks/02_halogen_bonds_4x21.ipynb) | Halogen bond detection and visualization in 4X21 structure | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/abhishektiwari/hbat/blob/main/notebooks/02_halogen_bonds_4x21.ipynb) |
+| [03_pdbfixer_vs_openbabel_comparison.ipynb](notebooks/03_pdbfixer_vs_openbabel_comparison.ipynb) | Comparing PDBFixer vs OpenBabel for hydrogen addition | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/abhishektiwari/hbat/blob/main/notebooks/03_pdbfixer_vs_openbabel_comparison.ipynb) |
+
+![Halogen Bonds in PDB Entry 4x21](https://static.abhishek-tiwari.com/hbat/py3dmol-4x21-v1.png)
+
+See the [notebooks directory](notebooks/) for more details.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Cite HBAT and HBAT2
+## Cite HBAT and HBAT 2
 
-If you use HBAT or HBAT2 in your research, please cite:
+If you use HBAT or HBAT 2 in your research, please cite:
 
 ```
 @article{tiwari2007hbat,
@@ -296,7 +310,7 @@ year = {2007}
 ```
 @misc{tiwari_2025_17645321,
   author       = {Tiwari, Abhishek},
-  title        = {HBAT2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
+  title        = {HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
   month        = nov,
   year         = 2025,
   publisher    = {Zenodo},

@@ -1,4 +1,4 @@
-HBAT2 (Hydrogen Bond Analysis Tool 2)
+HBAT 2 (Hydrogen Bond Analysis Tool 2)
 =====================
 
 A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT uses a geometric approach to identify molecular interactions by analyzing distance and angular criteria.
@@ -82,9 +82,9 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 Background
 ----------
 
-HBAT2  is a modern Python re-implementation of the original Perl-based tool developed by `Abhishek Tiwari <https://www.abhishek-tiwari.com>`_ and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from `SourceForge <https://sourceforge.net/projects/hbat/files/HBAT/>`_ however Perl version is not maintained anymore. 
+HBAT 2  is a modern Python re-implementation of the original Perl-based tool developed by `Abhishek Tiwari <https://www.abhishek-tiwari.com>`_ and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from `SourceForge <https://sourceforge.net/projects/hbat/files/HBAT/>`_ however Perl version is not maintained anymore. 
 
-Highlights of HBAT2
+Highlights of HBAT 2
 ---------------------
 
 - Detect and analyze potential hydrogen bonds, halogen bonds, π interactions, π-π stacking, carbonyl interactions, and n-π interactions
@@ -103,7 +103,7 @@ Highlights of HBAT2
    :alt: Cooperativity chain visualization
    :align: center
 
-Cite HBAT & HBAT2
+Cite HBAT & HBAT 2
 -----------------
 
 .. code-block:: bash
@@ -123,7 +123,7 @@ Cite HBAT & HBAT2
 
    @misc{tiwari_2025_17645321,
       author    = {Tiwari, Abhishek},
-      title     = {HBAT2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
+      title     = {HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
       month     = nov,
       year      = 2025,
       publisher = {Zenodo},
@@ -137,7 +137,7 @@ Cite HBAT & HBAT2
 
 .. code-block:: bash
 
-   Tiwari, A. (2025). HBAT2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. Zenodo. https://doi.org/10.5281/zenodo.17645377
+   Tiwari, A. (2025). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. Zenodo. https://doi.org/10.5281/zenodo.17645377
 
 .. raw:: html
 
@@ -161,6 +161,7 @@ Cite HBAT & HBAT2
    :caption: Developer Guide
 
    api/index
+   api/examples/index
    development
    logic
 

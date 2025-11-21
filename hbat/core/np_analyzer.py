@@ -116,6 +116,11 @@ class NPMolecularInteractionAnalyzer:
         n-π interactions, and cooperativity chains in the provided PDB structure.
         Optionally applies PDB fixing to add missing atoms if enabled in parameters.
 
+        .. note::
+           When PDBFixer is enabled (default), slight variations in results
+           (±5%) may occur between runs due to non-determinism in the external PDBFixer
+           library's hydrogen placement algorithm. See :meth:`_apply_pdb_fixing` for details.
+
         :param pdb_file: Path to PDB file to analyze
         :type pdb_file: str
         :returns: True if analysis completed successfully, False if parsing failed
@@ -1986,6 +1991,11 @@ class NPMolecularInteractionAnalyzer:
 
     def _apply_pdb_fixing(self, pdb_file_path: str) -> str:
         """Apply PDB fixing by processing the original file and saving to a new file.
+
+        .. warning::
+           PDBFixer (external library) has inherent non-determinism in hydrogen atom placement. Running analysis multiple times
+           on the same file with PDBFixer enabled may produce slightly different results
+           (e.g., hydrogen bond counts may vary by ±5%). This is expected behavior.
 
         :param pdb_file_path: Path to the original PDB file
         :type pdb_file_path: str

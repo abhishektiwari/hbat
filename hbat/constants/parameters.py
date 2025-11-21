@@ -120,7 +120,7 @@ class AnalysisParameters:
     - Important in protein-ligand binding and aromatic interactions
 
     **Halogen Bonds:**
-    
+
     - C-X···A interactions where X is Cl, Br, I
     - Default: 3.9Å X···A distance, 150° C-X···A angle (updated default)
 
