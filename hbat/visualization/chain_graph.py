@@ -12,6 +12,7 @@ import networkx as nx
 
 try:
     import graphviz
+
     GRAPHVIZ_AVAILABLE = True
 except ImportError:
     GRAPHVIZ_AVAILABLE = False
@@ -67,12 +68,12 @@ def create_chain_graph(chain) -> nx.MultiDiGraph:
 
 def render_chain_graphviz(
     chain,
-    engine: str = 'dot',
-    rankdir: str = 'LR',
+    engine: str = "dot",
+    rankdir: str = "LR",
     filename: Optional[str] = None,
-    format: str = 'png',
-    view: bool = False
-) -> Optional['graphviz.Digraph']:
+    format: str = "png",
+    view: bool = False,
+) -> Optional["graphviz.Digraph"]:
     """Render cooperativity chain using Graphviz.
 
     This function uses the same rendering logic as the GUI's
@@ -109,65 +110,51 @@ def render_chain_graphviz(
     G = create_chain_graph(chain)
 
     # Create graphviz Digraph (following graphviz_renderer.py pattern)
-    dot = graphviz.Digraph(
-        comment='Cooperativity Chain',
-        engine=engine,
-        format=format
-    )
+    dot = graphviz.Digraph(comment="Cooperativity Chain", engine=engine, format=format)
 
     # Graph attributes (from graphviz_renderer.py)
-    dot.attr(rankdir=rankdir, bgcolor='white')
-    dot.attr('node', shape='ellipse', style='filled', fillcolor='lightblue')
-    dot.attr('edge', arrowhead='vee')
-    dot.attr(overlap='false', splines='true')
+    dot.attr(rankdir=rankdir, bgcolor="white")
+    dot.attr("node", shape="ellipse", style="filled", fillcolor="lightblue")
+    dot.attr("edge", arrowhead="vee")
+    dot.attr(overlap="false", splines="true")
 
     # Add nodes with styling (from graphviz_renderer.py)
     for node in G.nodes():
-        if '(' in node:
+        if "(" in node:
             # Atom node - smaller, dotted (from graphviz_renderer.py line 219-223)
-            dot.node(
-                node, node,
-                width='0.5',
-                height='0.3',
-                style='filled,dotted'
-            )
+            dot.node(node, node, width="0.5", height="0.3", style="filled,dotted")
         else:
             # Residue node - larger, solid (from graphviz_renderer.py line 225-228)
-            dot.node(
-                node, node,
-                width='0.7',
-                height='0.5',
-                style='filled,solid'
-            )
+            dot.node(node, node, width="0.7", height="0.5", style="filled,solid")
 
     # Add edges with styling (from graphviz_renderer.py line 238-285)
     for u, v, key, data in G.edges(keys=True, data=True):
-        interaction = data.get('interaction')
+        interaction = data.get("interaction")
 
         if interaction:
             # Create edge label
-            if hasattr(interaction, 'bond_type'):
+            if hasattr(interaction, "bond_type"):
                 interaction_type = interaction.bond_type
             else:
-                interaction_type = 'interaction'
+                interaction_type = "interaction"
 
-            distance = getattr(interaction, 'distance', 0.0)
+            distance = getattr(interaction, "distance", 0.0)
             label = f"{interaction_type}\\n{distance:.2f}Å"
 
             # Color edges by interaction type (from graphviz_renderer.py line 261-277)
             int_type = interaction.get_interaction_type()
-            if 'hydrogen' in int_type.lower():
-                color = 'blue'
-                style = 'solid'
-            elif 'halogen' in int_type.lower():
-                color = 'red'
-                style = 'dashed'
-            elif 'pi' in int_type.lower():
-                color = 'green'
-                style = 'dotted'
+            if "hydrogen" in int_type.lower():
+                color = "blue"
+                style = "solid"
+            elif "halogen" in int_type.lower():
+                color = "red"
+                style = "dashed"
+            elif "pi" in int_type.lower():
+                color = "green"
+                style = "dotted"
             else:
-                color = 'black'
-                style = 'solid'
+                color = "black"
+                style = "solid"
 
             dot.edge(u, v, label=label, color=color, style=style)
         else:
