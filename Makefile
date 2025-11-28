@@ -141,14 +141,15 @@ clean:
 	rm -rf example_pdb_files/*.csv
 	rm -rf example_pdb_files/*.json
 	rm -rf example_pdb_files/*.txt
+	rm -rf notebooks/*.ipynb_checkpoints
+	rm -rf notebooks/*.csv
+	rm -rf notebooks/*.pdb
+	rm -rf notebooks/*.json
+	rm -rf notebooks/__pycache__
+	rm -rf notebooks/*.png
 	rm -rf "~"
-	rm coverage.xml
-	rm junit.xml
-	rm notebooks/*.ipynb_checkpoints -rf
-	rm notebooks/*.csv -rf
-	rm notebooks/*.json -rf
-	rm notebooks/__pycache__ -rf
-	rm notebooks/*.png -rf
+	rm -f coverage.xml
+	rm -f junit.xml
 
 # Documentation
 docs:
