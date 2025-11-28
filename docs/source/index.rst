@@ -75,9 +75,23 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
    :target: https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main
    :alt: CodeFactor
 
-.. image:: https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png
+.. figure:: https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png
    :alt: HBAT GUI
    :align: center
+
+   HBAT GUI (Using tkinter).
+
+.. figure:: https://static.abhishek-tiwari.com/hbat/py3dmol-4x21-v1.png
+   :alt: Visualizing interactions using Jupyter notebook
+   :align: center
+
+   Visualizing interactions using Jupyter notebook (Halogen Bond in PDB Entry 4x21).
+
+.. figure:: https://static.abhishek-tiwari.com/hbat/6rsa-pdb-chain-6.png
+   :alt: Cooperativity chain detection and visualization
+   :align: center
+
+   Cooperativity chain detection and visualization (PDB Entry 6RSA).
 
 Background
 ----------
@@ -98,10 +112,6 @@ Highlights of HBAT 2
 - Multiple Output Formats: Text, CSV, and JSON export options
 - Optimized algorithms for efficient analysis of large structures
 - Cross-Platform: Works on Windows, macOS, and Linux.
-
-.. image:: https://static.abhishek-tiwari.com/hbat/6rsa-pdb-chain-6.png
-   :alt: Cooperativity chain visualization
-   :align: center
 
 Cite HBAT & HBAT 2
 -----------------
