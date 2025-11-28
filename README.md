@@ -30,8 +30,15 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 [![Socket](https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl)](https://socket.dev/pypi/package/hbat/overview/2.2.11/py3-none-any-whl)
 [![CodeFactor](https://www.codefactor.io/repository/github/abhishektiwari/hbat/badge/main)](https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main)
 
-
+**HBAT GUI (Using tkinter):**
 ![HBAT GUI](https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png)
+
+**Visualizing interactions using Jupyter notebook (Halogen Bond in PDB Entry 4x21):**
+![Halogen Bonds in PDB Entry 4x21](https://static.abhishek-tiwari.com/hbat/py3dmol-4x21-v1.png)
+
+**Cooperativity chain detection and visualization (PDB Entry 6RSA):**
+
+![Cooperativity chain detection and visualization](https://static.abhishek-tiwari.com/hbat/6rsa-pdb-chain-6.png)
 
 ## Background
 HBAT 2 is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from [SourceForge](https://sourceforge.net/projects/hbat/files/HBAT/) however Perl version is not maintained anymore. 
@@ -50,8 +57,6 @@ HBAT 2 is a modern Python re-implementation of the original Perl-based tool deve
 - Multiple Output Formats: Text, CSV, and JSON export options
 - Optimized algorithms for efficient analysis of large structures
 - Cross-Platform: Works on Windows, macOS, and Linux.
-
-![Cooperativity chain visualization](https://static.abhishek-tiwari.com/hbat/6rsa-pdb-chain-6.png)
 
 Please review [HBAT documentation](https://hbat.abhishek-tiwari.com/) for more details.
 
@@ -282,7 +287,6 @@ Interactive Jupyter notebooks demonstrating HBAT usage with 3D visualizations us
 | [02_halogen_bonds_4x21.ipynb](notebooks/02_halogen_bonds_4x21.ipynb) | Halogen bond detection and visualization in 4X21 structure | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/abhishektiwari/hbat/blob/main/notebooks/02_halogen_bonds_4x21.ipynb) |
 | [03_pdbfixer_vs_openbabel_comparison.ipynb](notebooks/03_pdbfixer_vs_openbabel_comparison.ipynb) | Comparing PDBFixer vs OpenBabel for hydrogen addition | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/abhishektiwari/hbat/blob/main/notebooks/03_pdbfixer_vs_openbabel_comparison.ipynb) |
 
-![Halogen Bonds in PDB Entry 4x21](https://static.abhishek-tiwari.com/hbat/py3dmol-4x21-v1.png)
 
 See the [notebooks directory](notebooks/) for more details.
 
