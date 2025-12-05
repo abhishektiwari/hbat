@@ -1,0 +1,135 @@
+"""
+File upload component for HBAT web interface.
+
+This module provides a UI component for uploading PDB files.
+"""
+
+from typing import Callable, Optional
+
+from nicegui import ui
+
+
+class UploadPanel:
+    """File upload panel component."""
+
+    def __init__(self, on_file_upload: Optional[Callable] = None):
+        """Initialize the upload panel.
+
+        :param on_file_upload: Callback function when file is uploaded
+        :type on_file_upload: Optional[Callable]
+        """
+        self.on_file_upload = on_file_upload
+        self.upload_label: Optional[ui.label] = None
+
+    def create_ui(self):
+        """Create the upload UI components."""
+
+        async def handle_upload(e):
+            """Handle file upload event."""
+            try:
+                # Access file info through e.file
+                filename = e.file.name
+                # read() is async, so we need to await it
+                content = await e.file.read()
+
+                if self.upload_label:
+                    self.upload_label.text = f"✓ Uploaded: {filename}"
+                    self.upload_label.classes(replace="text-positive")
+
+                if self.on_file_upload:
+                    self.on_file_upload(filename, content)
+
+                ui.notify(f"Uploaded {filename}", type="positive")
+            except Exception as error:
+                ui.notify(f"Upload failed: {str(error)}", type="negative")
+                print(f"Upload error: {error}")
+                import traceback
+                traceback.print_exc()
+
+        async def download_pdb():
+            """Download PDB file from RCSB using PDB ID."""
+            pdb_id = pdb_id_input.value.strip().lower()
+            if not pdb_id:
+                ui.notify("Please enter a PDB ID", type="warning")
+                return
+
+            if len(pdb_id) != 4:
+                ui.notify("PDB ID must be 4 characters", type="warning")
+                return
+
+            try:
+                import urllib.request
+
+                url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
+                ui.notify(f"Downloading {pdb_id} from RCSB PDB...", type="info")
+
+                with urllib.request.urlopen(url) as response:
+                    content = response.read()
+
+                filename = f"{pdb_id}.pdb"
+
+                if self.upload_label:
+                    self.upload_label.text = f"✓ Downloaded: {filename}"
+                    self.upload_label.classes(replace="text-positive")
+
+                if self.on_file_upload:
+                    self.on_file_upload(filename, content)
+
+                ui.notify(f"Downloaded {filename} from RCSB PDB", type="positive")
+            except Exception as error:
+                ui.notify(f"Download failed: {str(error)}", type="negative")
+                print(f"Download error: {error}")
+
+        # Option 1: Upload file
+        with ui.card().classes("w-full q-pa-md"):
+            ui.label("Option 1: Upload PDB File").classes("text-h6")
+            ui.upload(
+                label="Choose PDB File",
+                on_upload=handle_upload,
+                auto_upload=True,
+            ).props('accept=".pdb"').classes("w-full")
+
+        ui.label("OR").classes("text-center text-h6 q-my-md")
+
+        # Option 2: Download from PDB
+        with ui.card().classes("w-full q-pa-md"):
+            ui.label("Option 2: Download from RCSB PDB").classes("text-h6")
+            with ui.row().classes("w-full items-center gap-2"):
+                pdb_id_input = ui.input(
+                    label="PDB ID",
+                    placeholder="e.g., 1BHL",
+                    validation={"Must be 4 characters": lambda v: len(v.strip()) == 4 if v else True},
+                ).props("maxlength=4").classes("flex-1")
+                ui.button(
+                    "Download",
+                    icon="download",
+                    on_click=download_pdb,
+                ).props("color=primary")
+
+        # Status label
+        self.upload_label = ui.label("No file loaded").classes(
+            "text-caption text-grey q-mt-md"
+        )
+
+        # Info
+        with ui.expansion("Supported Formats & Info", icon="info").classes(
+            "w-full q-mt-md"
+        ):
+            ui.markdown(
+                """
+**Supported Files:**
+- **PDB files** (.pdb) - Protein Data Bank format
+- Files can be downloaded from [RCSB PDB](https://www.rcsb.org/)
+- Maximum file size: 100 MB
+
+**PDB IDs:**
+- Enter a 4-character PDB ID (e.g., 1BHL, 1GAI, 1UBI)
+- Files are downloaded directly from RCSB PDB
+- Common examples: 1BHL (Hemoglobin), 1UBI (Ubiquitin)
+
+**Upload Location:**
+- Files are saved to the `uploads/` directory
+- Files persist after analysis for future reference
+- Uploaded files can be reused without re-uploading
+            """
+            )

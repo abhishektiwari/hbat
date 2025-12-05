@@ -228,6 +228,10 @@ class HydrogenBond(MolecularInteraction):
     including the participating atoms, geometric parameters, and
     classification information.
 
+    The class automatically extracts and stores structured residue information
+    (chain_id, res_seq, res_name) from the donor and acceptor atoms for
+    convenient access without string parsing.
+
     :param _donor: The hydrogen bond donor atom
     :type _donor: Atom
     :param hydrogen: The hydrogen atom in the bond
@@ -242,10 +246,19 @@ class HydrogenBond(MolecularInteraction):
     :type _donor_acceptor_distance: float
     :param bond_type: Classification of the hydrogen bond type
     :type bond_type: str
-    :param _donor_residue: Identifier for donor residue
-    :type _donor_residue: str
-    :param _acceptor_residue: Identifier for acceptor residue
-    :type _acceptor_residue: str
+
+    :ivar donor_chain_id: Chain ID of donor residue (auto-extracted)
+    :vartype donor_chain_id: str
+    :ivar donor_res_seq: Residue sequence number of donor (auto-extracted)
+    :vartype donor_res_seq: int
+    :ivar donor_res_name: Residue name of donor (auto-extracted)
+    :vartype donor_res_name: str
+    :ivar acceptor_chain_id: Chain ID of acceptor residue (auto-extracted)
+    :vartype acceptor_chain_id: str
+    :ivar acceptor_res_seq: Residue sequence number of acceptor (auto-extracted)
+    :vartype acceptor_res_seq: int
+    :ivar acceptor_res_name: Residue name of acceptor (auto-extracted)
+    :vartype acceptor_res_name: str
     """
 
     def __init__(
@@ -257,8 +270,6 @@ class HydrogenBond(MolecularInteraction):
         angle: float,
         _donor_acceptor_distance: float,
         bond_type: str,
-        _donor_residue: str,
-        _acceptor_residue: str,
     ):
         """Initialize a HydrogenBond object.
 
@@ -276,10 +287,6 @@ class HydrogenBond(MolecularInteraction):
         :type _donor_acceptor_distance: float
         :param bond_type: Classification of the hydrogen bond type
         :type bond_type: str
-        :param _donor_residue: Identifier for donor residue
-        :type _donor_residue: str
-        :param _acceptor_residue: Identifier for acceptor residue
-        :type _acceptor_residue: str
         """
         self._donor = _donor
         self.hydrogen = hydrogen
@@ -288,8 +295,14 @@ class HydrogenBond(MolecularInteraction):
         self._angle = angle
         self._donor_acceptor_distance = _donor_acceptor_distance
         self.bond_type = bond_type
-        self._donor_residue = _donor_residue
-        self._acceptor_residue = _acceptor_residue
+
+        # Structured residue information (extracted from atoms)
+        self.donor_chain_id = _donor.chain_id
+        self.donor_res_seq = _donor.res_seq
+        self.donor_res_name = _donor.res_name
+        self.acceptor_chain_id = _acceptor.chain_id
+        self.acceptor_res_seq = _acceptor.res_seq
+        self.acceptor_res_name = _acceptor.res_name
 
         # Generate donor-acceptor property description
         self._donor_acceptor_properties = self._generate_donor_acceptor_description()
@@ -324,10 +337,10 @@ class HydrogenBond(MolecularInteraction):
         return self.hydrogen
 
     def get_donor_residue(self) -> str:
-        return self._donor_residue
+        return f"{self.donor_chain_id}:{self.donor_res_name}:{self.donor_res_seq}"
 
     def get_acceptor_residue(self) -> str:
-        return self._acceptor_residue
+        return f"{self.acceptor_chain_id}:{self.acceptor_res_name}:{self.acceptor_res_seq}"
 
     def get_interaction_type(self) -> str:
         return "H-Bond"
@@ -423,6 +436,10 @@ class HalogenBond(MolecularInteraction):
     acceptors. HBAT uses updated default parameters with a 150° angle cutoff for
     improved detection of biologically relevant halogen bonds.
 
+    The class automatically extracts and stores structured residue information
+    (chain_id, res_seq, res_name) from the donor and acceptor atoms for
+    convenient access without string parsing.
+
     :param halogen: The halogen atom (F, Cl, Br, I)
     :type halogen: Atom
     :param _acceptor: The electron donor/acceptor atom
@@ -433,12 +450,21 @@ class HalogenBond(MolecularInteraction):
     :type angle: float
     :param bond_type: Classification of the halogen bond type
     :type bond_type: str
-    :param _halogen_residue: Identifier for halogen-containing residue
-    :type _halogen_residue: str
-    :param _acceptor_residue: Identifier for acceptor residue
-    :type _acceptor_residue: str
     :param _donor: The donor atom (typically carbon) bonded to the halogen
     :type _donor: Atom
+
+    :ivar donor_chain_id: Chain ID of donor residue (auto-extracted)
+    :vartype donor_chain_id: str
+    :ivar donor_res_seq: Residue sequence number of donor (auto-extracted)
+    :vartype donor_res_seq: int
+    :ivar donor_res_name: Residue name of donor (auto-extracted)
+    :vartype donor_res_name: str
+    :ivar acceptor_chain_id: Chain ID of acceptor residue (auto-extracted)
+    :vartype acceptor_chain_id: str
+    :ivar acceptor_res_seq: Residue sequence number of acceptor (auto-extracted)
+    :vartype acceptor_res_seq: int
+    :ivar acceptor_res_name: Residue name of acceptor (auto-extracted)
+    :vartype acceptor_res_name: str
     """
 
     def __init__(
@@ -448,8 +474,6 @@ class HalogenBond(MolecularInteraction):
         distance: float,
         angle: float,
         bond_type: str,
-        _halogen_residue: str,
-        _acceptor_residue: str,
         _donor: Atom,
     ):
         """Initialize a HalogenBond object.
@@ -464,10 +488,6 @@ class HalogenBond(MolecularInteraction):
         :type angle: float
         :param bond_type: Classification of the halogen bond type
         :type bond_type: str
-        :param _halogen_residue: Identifier for halogen-containing residue
-        :type _halogen_residue: str
-        :param _acceptor_residue: Identifier for acceptor residue
-        :type _acceptor_residue: str
         :param _donor: The donor atom (typically carbon) bonded to the halogen
         :type _donor: Atom
         """
@@ -476,9 +496,16 @@ class HalogenBond(MolecularInteraction):
         self._distance = distance
         self._angle = angle
         self.bond_type = bond_type
-        self._halogen_residue = _halogen_residue
-        self._acceptor_residue = _acceptor_residue
         self._donor = _donor
+
+        # Structured residue information (extracted from atoms)
+        # For halogen bonds, donor is the carbon/atom bonded to halogen
+        self.donor_chain_id = _donor.chain_id
+        self.donor_res_seq = _donor.res_seq
+        self.donor_res_name = _donor.res_name
+        self.acceptor_chain_id = _acceptor.chain_id
+        self.acceptor_res_seq = _acceptor.res_seq
+        self.acceptor_res_name = _acceptor.res_name
 
         # Generate donor-acceptor property description
         self._donor_acceptor_properties = self._generate_donor_acceptor_description()
@@ -495,7 +522,7 @@ class HalogenBond(MolecularInteraction):
     @property
     def halogen_residue(self) -> str:
         """Legacy property for halogen residue."""
-        return self._halogen_residue
+        return self.get_donor_residue()
 
     @property
     def donor(self) -> Atom:
@@ -523,10 +550,10 @@ class HalogenBond(MolecularInteraction):
         return self.halogen  # Halogen is both donor and interaction point
 
     def get_donor_residue(self) -> str:
-        return self._halogen_residue
+        return f"{self.donor_chain_id}:{self.donor_res_name}:{self.donor_res_seq}"
 
     def get_acceptor_residue(self) -> str:
-        return self._acceptor_residue
+        return f"{self.acceptor_chain_id}:{self.acceptor_res_name}:{self.acceptor_res_seq}"
 
     def get_interaction_type(self) -> str:
         return "X-Bond"
@@ -607,8 +634,8 @@ class HalogenBond(MolecularInteraction):
 
     def __str__(self) -> str:
         return (
-            f"X-Bond: {self._halogen_residue}({self._donor.name}-{self.halogen.name}) - "
-            f"{self._acceptor_residue}({self._acceptor.name}) "
+            f"X-Bond: {self.get_donor_residue()}({self._donor.name}-{self.halogen.name}) - "
+            f"{self.get_acceptor_residue()}({self._acceptor.name}) "
             f"[{self.distance:.2f}Å, {math.degrees(self.angle):.1f}°] "
             f"[{self.get_backbone_sidechain_interaction()}] [{self.donor_acceptor_properties}]"
         )
@@ -623,6 +650,10 @@ class PiInteraction(MolecularInteraction):
     - C-H...π, N-H...π, O-H...π, S-H...π (hydrogen-π interactions)
     - C-Cl...π, C-Br...π, C-I...π (halogen-π interactions)
 
+    The class automatically extracts and stores structured residue information
+    (chain_id, res_seq, res_name) from the donor atom and π system atoms for
+    convenient access without string parsing.
+
     :param _donor: The donor atom (C, N, O, S)
     :type _donor: Atom
     :param hydrogen: The interaction atom (H, F, Cl, Br, I) - name kept for backward compatibility
@@ -633,10 +664,21 @@ class PiInteraction(MolecularInteraction):
     :type distance: float
     :param angle: D-X...π angle in radians
     :type angle: float
-    :param _donor_residue: Identifier for donor residue
-    :type _donor_residue: str
-    :param _pi_residue: Identifier for π-containing residue
-    :type _pi_residue: str
+    :param pi_atoms: Atoms constituting the aromatic π system (optional)
+    :type pi_atoms: Optional[List[Atom]]
+
+    :ivar donor_chain_id: Chain ID of donor residue (auto-extracted)
+    :vartype donor_chain_id: str
+    :ivar donor_res_seq: Residue sequence number of donor (auto-extracted)
+    :vartype donor_res_seq: int
+    :ivar donor_res_name: Residue name of donor (auto-extracted)
+    :vartype donor_res_name: str
+    :ivar acceptor_chain_id: Chain ID of π acceptor residue (auto-extracted from pi_atoms)
+    :vartype acceptor_chain_id: Optional[str]
+    :ivar acceptor_res_seq: Residue sequence number of π acceptor (auto-extracted from pi_atoms)
+    :vartype acceptor_res_seq: Optional[int]
+    :ivar acceptor_res_name: Residue name of π acceptor (auto-extracted from pi_atoms)
+    :vartype acceptor_res_name: Optional[str]
     """
 
     def __init__(
@@ -646,8 +688,7 @@ class PiInteraction(MolecularInteraction):
         pi_center: NPVec3D,
         distance: float,
         angle: float,
-        _donor_residue: str,
-        _pi_residue: str,
+        pi_atoms: Optional[List[Atom]] = None,
     ):
         """Initialize a PiInteraction object.
 
@@ -661,18 +702,30 @@ class PiInteraction(MolecularInteraction):
         :type distance: float
         :param angle: D-X...π angle in radians
         :type angle: float
-        :param _donor_residue: Identifier for donor residue
-        :type _donor_residue: str
-        :param _pi_residue: Identifier for π-containing residue
-        :type _pi_residue: str
+        :param pi_atoms: Atoms constituting the aromatic π system
+        :type pi_atoms: Optional[List[Atom]]
         """
         self._donor = _donor
         self.hydrogen = hydrogen
         self.pi_center = pi_center
         self._distance = distance
         self._angle = angle
-        self._donor_residue = _donor_residue
-        self._pi_residue = _pi_residue
+
+        # Structured residue information (extracted from atoms)
+        self.pi_atoms = pi_atoms or []
+        self.donor_chain_id = _donor.chain_id
+        self.donor_res_seq = _donor.res_seq
+        self.donor_res_name = _donor.res_name
+
+        # Extract acceptor info from pi_atoms if available
+        if self.pi_atoms:
+            self.acceptor_chain_id = self.pi_atoms[0].chain_id
+            self.acceptor_res_seq = self.pi_atoms[0].res_seq
+            self.acceptor_res_name = self.pi_atoms[0].res_name
+        else:
+            self.acceptor_chain_id = None
+            self.acceptor_res_seq = None
+            self.acceptor_res_name = None
 
         # Generate donor-acceptor property description
         self._donor_acceptor_properties = self._generate_donor_acceptor_description()
@@ -689,7 +742,7 @@ class PiInteraction(MolecularInteraction):
     @property
     def pi_residue(self) -> str:
         """Legacy property for π residue."""
-        return self._pi_residue
+        return self.get_acceptor_residue()
 
     @property
     def donor(self) -> Atom:
@@ -707,10 +760,12 @@ class PiInteraction(MolecularInteraction):
         return self.hydrogen
 
     def get_donor_residue(self) -> str:
-        return self._donor_residue
+        return f"{self.donor_chain_id}:{self.donor_res_name}:{self.donor_res_seq}"
 
     def get_acceptor_residue(self) -> str:
-        return self._pi_residue
+        if self.acceptor_chain_id is not None:
+            return f"{self.acceptor_chain_id}:{self.acceptor_res_name}:{self.acceptor_res_seq}"
+        return "Unknown"
 
     def get_interaction_type(self) -> str:
         return "π–Inter"
@@ -764,11 +819,7 @@ class PiInteraction(MolecularInteraction):
             RNA_RESIDUES,
         )
 
-        pi_res_name = (
-            self._pi_residue.split("_")[0]
-            if "_" in self._pi_residue
-            else self._pi_residue.split(":")[0]
-        )
+        pi_res_name = self.acceptor_res_name if self.acceptor_res_name else "UNK"
 
         if pi_res_name in PROTEIN_RESIDUES:
             acceptor_residue_type = "P"
@@ -839,8 +890,8 @@ class PiInteraction(MolecularInteraction):
     def __str__(self) -> str:
         interaction_type = self.get_interaction_type_display()
         return (
-            f"π-Int: {self._donor_residue}({self._donor.name}) - {interaction_type} - "
-            f"{self._pi_residue} [{self.distance:.2f}Å, {math.degrees(self.angle):.1f}°] "
+            f"π-Int: {self.get_donor_residue()}({self._donor.name}) - {interaction_type} - "
+            f"{self.get_acceptor_residue()} [{self.distance:.2f}Å, {math.degrees(self.angle):.1f}°] "
             f"[{self.get_backbone_sidechain_interaction()}] [{self.donor_acceptor_properties}]"
         )
 
@@ -1101,6 +1152,10 @@ class CarbonylInteraction(MolecularInteraction):
     structure formation. The interaction follows the Bürgi-Dunitz trajectory
     where the donor oxygen approaches the acceptor carbon.
 
+    The class automatically extracts and stores structured residue information
+    (chain_id, res_seq, res_name) from the donor and acceptor atoms for
+    convenient access without string parsing.
+
     :param donor_carbon: C atom of the donor C=O group
     :type donor_carbon: Atom
     :param donor_oxygen: O atom of the donor C=O group
@@ -1115,10 +1170,19 @@ class CarbonylInteraction(MolecularInteraction):
     :type burgi_dunitz_angle: float
     :param is_backbone: Whether both carbonyls are from backbone amides
     :type is_backbone: bool
-    :param donor_residue: Identifier for donor residue
-    :type donor_residue: str
-    :param acceptor_residue: Identifier for acceptor residue
-    :type acceptor_residue: str
+
+    :ivar donor_chain_id: Chain ID of donor residue (auto-extracted)
+    :vartype donor_chain_id: str
+    :ivar donor_res_seq: Residue sequence number of donor (auto-extracted)
+    :vartype donor_res_seq: int
+    :ivar donor_res_name: Residue name of donor (auto-extracted)
+    :vartype donor_res_name: str
+    :ivar acceptor_chain_id: Chain ID of acceptor residue (auto-extracted)
+    :vartype acceptor_chain_id: str
+    :ivar acceptor_res_seq: Residue sequence number of acceptor (auto-extracted)
+    :vartype acceptor_res_seq: int
+    :ivar acceptor_res_name: Residue name of acceptor (auto-extracted)
+    :vartype acceptor_res_name: str
     """
 
     def __init__(
@@ -1130,8 +1194,6 @@ class CarbonylInteraction(MolecularInteraction):
         distance: float,
         burgi_dunitz_angle: float,
         is_backbone: bool,
-        donor_residue: str,
-        acceptor_residue: str,
     ):
         """Initialize a CarbonylInteraction object.
 
@@ -1149,10 +1211,6 @@ class CarbonylInteraction(MolecularInteraction):
         :type burgi_dunitz_angle: float
         :param is_backbone: Whether both carbonyls are from backbone amides
         :type is_backbone: bool
-        :param donor_residue: Identifier for donor residue
-        :type donor_residue: str
-        :param acceptor_residue: Identifier for acceptor residue
-        :type acceptor_residue: str
         """
         self.donor_carbon = donor_carbon
         self.donor_oxygen = donor_oxygen
@@ -1161,14 +1219,20 @@ class CarbonylInteraction(MolecularInteraction):
         self._distance = distance
         self.burgi_dunitz_angle = burgi_dunitz_angle
         self.is_backbone = is_backbone
-        self._donor_residue = donor_residue
-        self._acceptor_residue = acceptor_residue
+
+        # Structured residue information (extracted from atoms)
+        self.donor_chain_id = donor_oxygen.chain_id
+        self.donor_res_seq = donor_oxygen.res_seq
+        self.donor_res_name = donor_oxygen.res_name
+        self.acceptor_chain_id = acceptor_carbon.chain_id
+        self.acceptor_res_seq = acceptor_carbon.res_seq
+        self.acceptor_res_name = acceptor_carbon.res_name
 
         # Generate interaction classification
         self.interaction_classification = self._generate_interaction_classification()
 
         # Determine if interaction is between different residues
-        self.is_between_residues = donor_residue != acceptor_residue
+        self.is_between_residues = self.get_donor_residue() != self.get_acceptor_residue()
 
     # Backward compatibility properties
     @property
@@ -1224,7 +1288,7 @@ class CarbonylInteraction(MolecularInteraction):
         :returns: Residue identifier containing the donor carbonyl
         :rtype: str
         """
-        return self._donor_residue
+        return f"{self.donor_chain_id}:{self.donor_res_name}:{self.donor_res_seq}"
 
     def get_acceptor_residue(self) -> str:
         """Get the acceptor residue identifier.
@@ -1232,7 +1296,7 @@ class CarbonylInteraction(MolecularInteraction):
         :returns: Residue identifier containing the acceptor carbonyl
         :rtype: str
         """
-        return self._acceptor_residue
+        return f"{self.acceptor_chain_id}:{self.acceptor_res_name}:{self.acceptor_res_seq}"
 
     def get_interaction_type(self) -> str:
         """Get the interaction type identifier.
@@ -1350,6 +1414,10 @@ class NPiInteraction(MolecularInteraction):
     These interactions are important in molecular recognition, enzyme active sites,
     and protein-ligand binding.
 
+    The class automatically extracts and stores structured residue information
+    (chain_id, res_seq, res_name) from the donor atom and π system atoms for
+    convenient access without string parsing.
+
     :param lone_pair_atom: Donor atom with lone pair electrons (O, N, S)
     :type lone_pair_atom: Atom
     :param pi_center: Center of the π system
@@ -1362,10 +1430,19 @@ class NPiInteraction(MolecularInteraction):
     :type angle_to_plane: float
     :param subtype: Interaction subtype classification
     :type subtype: str
-    :param donor_residue: Identifier for residue containing lone pair
-    :type donor_residue: str
-    :param acceptor_residue: Identifier for residue containing π system
-    :type acceptor_residue: str
+
+    :ivar donor_chain_id: Chain ID of donor residue (auto-extracted)
+    :vartype donor_chain_id: str
+    :ivar donor_res_seq: Residue sequence number of donor (auto-extracted)
+    :vartype donor_res_seq: int
+    :ivar donor_res_name: Residue name of donor (auto-extracted)
+    :vartype donor_res_name: str
+    :ivar acceptor_chain_id: Chain ID of π acceptor residue (auto-extracted from pi_atoms)
+    :vartype acceptor_chain_id: Optional[str]
+    :ivar acceptor_res_seq: Residue sequence number of π acceptor (auto-extracted from pi_atoms)
+    :vartype acceptor_res_seq: Optional[int]
+    :ivar acceptor_res_name: Residue name of π acceptor (auto-extracted from pi_atoms)
+    :vartype acceptor_res_name: Optional[str]
     """
 
     def __init__(
@@ -1376,8 +1453,6 @@ class NPiInteraction(MolecularInteraction):
         distance: float,
         angle_to_plane: float,
         subtype: str,
-        donor_residue: str,
-        acceptor_residue: str,
     ):
         """Initialize an NPiInteraction object.
 
@@ -1393,10 +1468,6 @@ class NPiInteraction(MolecularInteraction):
         :type angle_to_plane: float
         :param subtype: Interaction subtype classification
         :type subtype: str
-        :param donor_residue: Identifier for residue containing lone pair
-        :type donor_residue: str
-        :param acceptor_residue: Identifier for residue containing π system
-        :type acceptor_residue: str
         """
         self.lone_pair_atom = lone_pair_atom
         self.pi_center = pi_center
@@ -1404,15 +1475,27 @@ class NPiInteraction(MolecularInteraction):
         self._distance = distance
         self.angle_to_plane = angle_to_plane
         self.subtype = subtype
-        self._donor_residue = donor_residue
-        self._acceptor_residue = acceptor_residue
+
+        # Structured residue information (extracted from atoms)
+        self.donor_chain_id = lone_pair_atom.chain_id
+        self.donor_res_seq = lone_pair_atom.res_seq
+        self.donor_res_name = lone_pair_atom.res_name
+        # Extract acceptor info from pi_atoms if available
+        if pi_atoms and len(pi_atoms) > 0:
+            self.acceptor_chain_id = pi_atoms[0].chain_id
+            self.acceptor_res_seq = pi_atoms[0].res_seq
+            self.acceptor_res_name = pi_atoms[0].res_name
+        else:
+            self.acceptor_chain_id = None
+            self.acceptor_res_seq = None
+            self.acceptor_res_name = None
 
         # Generate interaction properties
         self.donor_element = lone_pair_atom.element.upper()
         self.pi_system_type = self._classify_pi_system()
 
         # Determine if interaction is between different residues
-        self.is_between_residues = donor_residue != acceptor_residue
+        self.is_between_residues = self.get_donor_residue() != self.get_acceptor_residue()
 
     # Backward compatibility properties
     @property
@@ -1472,7 +1555,7 @@ class NPiInteraction(MolecularInteraction):
         :returns: Residue identifier containing the lone pair donor
         :rtype: str
         """
-        return self._donor_residue
+        return f"{self.donor_chain_id}:{self.donor_res_name}:{self.donor_res_seq}"
 
     def get_acceptor_residue(self) -> str:
         """Get the acceptor residue identifier.
@@ -1480,7 +1563,9 @@ class NPiInteraction(MolecularInteraction):
         :returns: Residue identifier containing the π system
         :rtype: str
         """
-        return self._acceptor_residue
+        if self.acceptor_chain_id is not None:
+            return f"{self.acceptor_chain_id}:{self.acceptor_res_name}:{self.acceptor_res_seq}"
+        return "Unknown"
 
     def get_interaction_type(self) -> str:
         """Get the interaction type identifier.

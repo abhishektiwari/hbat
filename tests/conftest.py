@@ -233,22 +233,35 @@ def sample_pi_atoms():
     """Fixture providing sample atoms for π interaction testing."""
     from hbat.core.structure import Atom
     from hbat.core.np_vector import NPVec3D
-    
+
     donor = Atom(
         serial=1, name="N", alt_loc="", res_name="ALA", chain_id="A",
         res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
         temp_factor=20.0, element="N", charge="", record_type="ATOM"
     )
-    
+
     hydrogen = Atom(
         serial=2, name="H", alt_loc="", res_name="ALA", chain_id="A",
         res_seq=1, i_code="", coords=NPVec3D(1, 0, 0), occupancy=1.0,
         temp_factor=20.0, element="H", charge="", record_type="ATOM"
     )
-    
+
+    # Create pi_atoms for PHE residue (ring atoms)
+    pi_atom1 = Atom(
+        serial=3, name="CG", alt_loc="", res_name="PHE", chain_id="A",
+        res_seq=2, i_code="", coords=NPVec3D(2.5, 0, 0), occupancy=1.0,
+        temp_factor=20.0, element="C", charge="", record_type="ATOM"
+    )
+    pi_atom2 = Atom(
+        serial=4, name="CD1", alt_loc="", res_name="PHE", chain_id="A",
+        res_seq=2, i_code="", coords=NPVec3D(3.5, 0, 0), occupancy=1.0,
+        temp_factor=20.0, element="C", charge="", record_type="ATOM"
+    )
+
     pi_center = NPVec3D(3, 0, 0)
-    
-    return donor, hydrogen, pi_center
+    pi_atoms = [pi_atom1, pi_atom2]
+
+    return donor, hydrogen, pi_center, pi_atoms
 
 @pytest.fixture
 def sample_interactions():
@@ -294,12 +307,12 @@ def sample_interactions():
     hb = HydrogenBond(
         _donor=donor, hydrogen=hydrogen, _acceptor=acceptor,
         distance=2.5, angle=math.radians(160.0), _donor_acceptor_distance=3.2,
-        bond_type="N-H...O", _donor_residue="A1ALA", _acceptor_residue="A2GLY"
+        bond_type="N-H...O"
     )
 
     xb = HalogenBond(
         halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
-        bond_type="C-CL...O", _halogen_residue="A3CLU", _acceptor_residue="A2GLY",
+        bond_type="C-CL...O",
         _donor=halogen_donor
     )
 

@@ -58,8 +58,6 @@ class TestCarbonylInteractionCreation:
             distance=3.2,
             burgi_dunitz_angle=107.0,
             is_backbone=True,
-            donor_residue="A1ALA",
-            acceptor_residue="A5GLY"
         )
         
         assert carbonyl.donor_carbon == donor_carbon
@@ -69,8 +67,8 @@ class TestCarbonylInteractionCreation:
         assert carbonyl.distance == 3.2
         assert carbonyl.burgi_dunitz_angle == 107.0
         assert carbonyl.is_backbone is True
-        assert carbonyl.get_donor_residue() == "A1ALA"
-        assert carbonyl.get_acceptor_residue() == "A5GLY"
+        assert carbonyl.get_donor_residue() == "A:ALA:1"
+        assert carbonyl.get_acceptor_residue() == "A:GLY:5"
     
     def test_carbonyl_interaction_inheritance(self, sample_carbonyl_atoms):
         """Test that CarbonylInteraction inherits from MolecularInteraction."""
@@ -80,7 +78,6 @@ class TestCarbonylInteractionCreation:
             donor_carbon=donor_carbon, donor_oxygen=donor_oxygen,
             acceptor_carbon=acceptor_carbon, acceptor_oxygen=acceptor_oxygen,
             distance=3.2, burgi_dunitz_angle=107.0, is_backbone=True,
-            donor_residue="A1ALA", acceptor_residue="A5GLY"
         )
         
         assert isinstance(carbonyl, MolecularInteraction)
@@ -93,7 +90,6 @@ class TestCarbonylInteractionCreation:
             donor_carbon=donor_carbon, donor_oxygen=donor_oxygen,
             acceptor_carbon=acceptor_carbon, acceptor_oxygen=acceptor_oxygen,
             distance=3.2, burgi_dunitz_angle=107.0, is_backbone=True,
-            donor_residue="A1ALA", acceptor_residue="A5GLY"
         )
         
         assert carbonyl.get_interaction_type() == "Carbonyl-Carbonyl"
@@ -106,15 +102,14 @@ class TestCarbonylInteractionCreation:
             donor_carbon=donor_carbon, donor_oxygen=donor_oxygen,
             acceptor_carbon=acceptor_carbon, acceptor_oxygen=acceptor_oxygen,
             distance=3.2, burgi_dunitz_angle=107.0, is_backbone=True,
-            donor_residue="A1ALA", acceptor_residue="A5GLY"
         )
         
         # Test interface methods
         assert carbonyl.get_donor() == donor_oxygen
         assert carbonyl.get_acceptor() == acceptor_carbon
         assert carbonyl.get_interaction() == donor_oxygen
-        assert carbonyl.get_donor_residue() == "A1ALA"
-        assert carbonyl.get_acceptor_residue() == "A5GLY"
+        assert carbonyl.get_donor_residue() == "A:ALA:1"
+        assert carbonyl.get_acceptor_residue() == "A:GLY:5"
 
 
 @pytest.mark.unit
@@ -157,7 +152,6 @@ class TestCarbonylInteractionAngles:
                 donor_carbon=donor_carbon, donor_oxygen=donor_oxygen,
                 acceptor_carbon=acceptor_carbon, acceptor_oxygen=acceptor_oxygen,
                 distance=3.2, burgi_dunitz_angle=angle_deg, is_backbone=True,
-                donor_residue="A1ALA", acceptor_residue="A5GLY"
             )
             
             assert carbonyl.burgi_dunitz_angle == angle_deg
@@ -174,7 +168,6 @@ class TestCarbonylInteractionAngles:
             donor_carbon=donor_carbon, donor_oxygen=donor_oxygen,
             acceptor_carbon=acceptor_carbon, acceptor_oxygen=acceptor_oxygen,
             distance=3.2, burgi_dunitz_angle=angle_degrees, is_backbone=True,
-            donor_residue="A1ALA", acceptor_residue="A5GLY"
         )
         
         assert carbonyl.burgi_dunitz_angle == angle_degrees
@@ -190,7 +183,6 @@ class TestCarbonylInteractionAngles:
             donor_carbon=donor_carbon, donor_oxygen=donor_oxygen,
             acceptor_carbon=acceptor_carbon, acceptor_oxygen=acceptor_oxygen,
             distance=3.2, burgi_dunitz_angle=angle_degrees, is_backbone=True,
-            donor_residue="A1ALA", acceptor_residue="A5GLY"
         )
         
         angle_radians = carbonyl.get_donor_interaction_acceptor_angle()
@@ -238,7 +230,6 @@ class TestCarbonylInteractionTypes:
             donor_carbon=bb_carbon, donor_oxygen=bb_oxygen,
             acceptor_carbon=bb_carbon, acceptor_oxygen=bb_oxygen,
             distance=3.2, burgi_dunitz_angle=107.0, is_backbone=True,
-            donor_residue="A1ALA", acceptor_residue="A5GLY"
         )
         
         assert carbonyl.is_backbone is True
@@ -253,7 +244,6 @@ class TestCarbonylInteractionTypes:
             donor_carbon=sc_carbon, donor_oxygen=sc_oxygen,
             acceptor_carbon=sc_carbon, acceptor_oxygen=sc_oxygen,
             distance=3.5, burgi_dunitz_angle=102.0, is_backbone=False,
-            donor_residue="A3ASN", acceptor_residue="A8GLN"
         )
         
         assert carbonyl.is_backbone is False
@@ -269,7 +259,6 @@ class TestCarbonylInteractionTypes:
             donor_carbon=bb_carbon, donor_oxygen=bb_oxygen,
             acceptor_carbon=sc_carbon, acceptor_oxygen=sc_oxygen,
             distance=3.4, burgi_dunitz_angle=110.0, is_backbone=False,
-            donor_residue="A1ALA", acceptor_residue="A5ASN"
         )
         
         assert carbonyl.is_backbone is False
@@ -310,7 +299,6 @@ class TestCarbonylInteractionDistances:
             donor_carbon=donor_carbon, donor_oxygen=donor_oxygen,
             acceptor_carbon=acceptor_carbon, acceptor_oxygen=acceptor_oxygen,
             distance=distance, burgi_dunitz_angle=107.0, is_backbone=True,
-            donor_residue="A1ALA", acceptor_residue="A5GLY"
         )
         
         assert carbonyl.get_donor_acceptor_distance() == distance
@@ -343,7 +331,6 @@ class TestCarbonylInteractionDistances:
             donor_carbon=donor_carbon, donor_oxygen=donor_oxygen,
             acceptor_carbon=acceptor_carbon, acceptor_oxygen=acceptor_oxygen,
             distance=3.2, burgi_dunitz_angle=107.0, is_backbone=True,
-            donor_residue="A1ALA", acceptor_residue="A5GLY"
         )
         
         bond_distance = carbonyl.get_donor_interaction_distance()
@@ -381,7 +368,6 @@ class TestCarbonylInteractionValidation:
             donor_carbon=donor_carbon, donor_oxygen=donor_oxygen,
             acceptor_carbon=acceptor_carbon, acceptor_oxygen=acceptor_oxygen,
             distance=3.2, burgi_dunitz_angle=107.0, is_backbone=True,
-            donor_residue="A1ALA", acceptor_residue="A5GLY"
         )
         
         # Test required attributes
@@ -427,7 +413,6 @@ class TestCarbonylInteractionValidation:
             donor_carbon=donor_carbon, donor_oxygen=donor_oxygen,
             acceptor_carbon=acceptor_carbon, acceptor_oxygen=acceptor_oxygen,
             distance=3.2, burgi_dunitz_angle=107.0, is_backbone=True,
-            donor_residue="A1ALA", acceptor_residue="A5GLY"
         )
         
         # Carbonyl interactions assume oxygen is bonded to carbon
@@ -460,7 +445,6 @@ class TestCarbonylInteractionValidation:
             donor_carbon=donor_carbon, donor_oxygen=donor_oxygen,
             acceptor_carbon=acceptor_carbon, acceptor_oxygen=acceptor_oxygen,
             distance=3.2, burgi_dunitz_angle=107.0, is_backbone=True,
-            donor_residue="A1ALA", acceptor_residue="A5GLY"
         )
         
         donor_atoms = carbonyl.get_carbonyl_atoms("donor")
@@ -505,7 +489,6 @@ class TestCarbonylInteractionString:
             donor_carbon=donor_carbon, donor_oxygen=donor_oxygen,
             acceptor_carbon=acceptor_carbon, acceptor_oxygen=acceptor_oxygen,
             distance=3.15, burgi_dunitz_angle=108.5, is_backbone=True,
-            donor_residue="A10ALA", acceptor_residue="B25GLY"
         )
         
         str_repr = str(carbonyl)
@@ -513,8 +496,8 @@ class TestCarbonylInteractionString:
         # Check that important information is included
         assert "C=O···C=O" in str_repr
         assert "backbone-backbone" in str_repr
-        assert "A10ALA" in str_repr
-        assert "B25GLY" in str_repr
+        assert "A:ALA:10" in str_repr
+        assert "B:GLY:25" in str_repr
         assert "3.15" in str_repr
         assert "108.5" in str_repr
     
@@ -546,12 +529,11 @@ class TestCarbonylInteractionString:
             donor_carbon=donor_carbon, donor_oxygen=donor_oxygen,
             acceptor_carbon=acceptor_carbon, acceptor_oxygen=acceptor_oxygen,
             distance=3.35, burgi_dunitz_angle=103.2, is_backbone=False,
-            donor_residue="A15ASN", acceptor_residue="A30VAL"
         )
         
         str_repr = str(carbonyl)
-        assert "A15ASN" in str_repr
-        assert "A30VAL" in str_repr
+        assert "A:ASN:15" in str_repr
+        assert "A:VAL:30" in str_repr
         assert "3.35" in str_repr
         assert "103.2" in str_repr
         assert "sidechain-backbone" in str_repr
