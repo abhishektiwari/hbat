@@ -1,0 +1,23 @@
+services:
+  web:
+    # Build an image from the Dockerfile in the current directory
+    build:
+      context: .
+      dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+    container_name: hbat-web
+    image: hbat-web:latest
+    environment:
+      - HBAT_ENV=production
+      - HBAT_HOST=0.0.0.0
+      - HBAT_PORT=8080
+    volumes:
+      - hbat-uploads:/app/uploads
+    restart: unless-stopped
+    x-ports:
+      - web.hbat.abhishek-tiwari.com:8080/https
+
+volumes:
+  hbat-uploads:
+    driver: local
