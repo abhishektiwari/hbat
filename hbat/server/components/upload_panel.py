@@ -91,13 +91,22 @@ class UploadPanel:
                 ui.notify("PDB ID must be 4 characters", type="warning", position="top-left")
                 return
 
+            # Validate PDB ID format (alphanumeric only, security check)
+            if not pdb_id.isalnum():
+                ui.notify("PDB ID must contain only letters and numbers", type="warning", position="top-left")
+                return
+
             try:
                 import urllib.request
+                import urllib.parse
 
-                url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
+                # Safely construct URL with validation
+                safe_pdb_id = urllib.parse.quote(pdb_id, safe='')
+                url = f"https://files.rcsb.org/download/{safe_pdb_id}.pdb"
                 ui.notify(f"Downloading {pdb_id} from RCSB PDB...", type="info", position="top-left")
 
-                with urllib.request.urlopen(url) as response:
+                # Add timeout for security (30 seconds)
+                with urllib.request.urlopen(url, timeout=30) as response:  # nosec B310
                     content = response.read()
 
                 # Check file size (1 MB = 1048576 bytes)

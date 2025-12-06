@@ -69,75 +69,133 @@ class WebResultsPanel:
         self.container.clear()
 
         with self.container:
-            # Create tabs dynamically based on available interactions
+            # Create tabs and panels
             with ui.tabs().classes("w-full") as self.tabs:
-                # Summary tab - always shown
-                ui.tab("summary", label="Summary", icon="summarize")
+                self._create_tabs()
 
-                # Conditionally add interaction type tabs
-                if self.analyzer.hydrogen_bonds:
-                    ui.tab("hydrogen", label=f"Hydrogen Bonds ({len(self.analyzer.hydrogen_bonds)})", icon="link")
-
-                if self.analyzer.halogen_bonds:
-                    ui.tab("halogen", label=f"Halogen Bonds ({len(self.analyzer.halogen_bonds)})", icon="whatshot")
-
-                if self.analyzer.pi_interactions:
-                    ui.tab("pi", label=f"π Interactions ({len(self.analyzer.pi_interactions)})", icon="fiber_manual_record")
-
-                if hasattr(self.analyzer, "pi_pi_interactions") and self.analyzer.pi_pi_interactions:
-                    ui.tab("pi_pi", label=f"π-π Stacking ({len(self.analyzer.pi_pi_interactions)})", icon="layers")
-
-                if hasattr(self.analyzer, "carbonyl_interactions") and self.analyzer.carbonyl_interactions:
-                    ui.tab("carbonyl", label=f"Carbonyl n→π* ({len(self.analyzer.carbonyl_interactions)})", icon="architecture")
-
-                if hasattr(self.analyzer, "n_pi_interactions") and self.analyzer.n_pi_interactions:
-                    ui.tab("n_pi", label=f"n→π* ({len(self.analyzer.n_pi_interactions)})", icon="arrow_forward")
-
-                if hasattr(self.analyzer, "cooperativity_chains") and self.analyzer.cooperativity_chains:
-                    ui.tab("cooperativity", label=f"Cooperativity ({len(self.analyzer.cooperativity_chains)})", icon="account_tree")
-
-            # Create tab panels
             with ui.tab_panels(self.tabs, value="summary").classes("w-full") as self.tab_panels:
-                # Summary panel - always shown
-                with ui.tab_panel("summary"):
-                    self.summary_panel = ui.column().classes("w-full")
-                    self._update_summary_panel()
+                self._create_panels()
 
-                # Conditionally add interaction panels
-                if self.analyzer.hydrogen_bonds:
-                    with ui.tab_panel("hydrogen"):
-                        self.hydrogen_panel = ui.column().classes("w-full")
-                        self._update_hydrogen_bonds_panel()
+    def _get_interaction_configs(self):
+        """Get configuration for all interaction types.
 
-                if self.analyzer.halogen_bonds:
-                    with ui.tab_panel("halogen"):
-                        self.halogen_panel = ui.column().classes("w-full")
-                        self._update_halogen_bonds_panel()
+        :returns: List of interaction configurations
+        :rtype: list[dict]
+        """
+        return [
+            {
+                "id": "summary",
+                "label": "Summary",
+                "icon": "summarize",
+                "attr": None,
+                "always_show": True,
+                "panel_attr": "summary_panel",
+                "update_method": "_update_summary_panel"
+            },
+            {
+                "id": "hydrogen",
+                "label": "Hydrogen Bonds",
+                "icon": "link",
+                "attr": "hydrogen_bonds",
+                "panel_attr": "hydrogen_panel",
+                "update_method": "_update_hydrogen_bonds_panel"
+            },
+            {
+                "id": "halogen",
+                "label": "Halogen Bonds",
+                "icon": "whatshot",
+                "attr": "halogen_bonds",
+                "panel_attr": "halogen_panel",
+                "update_method": "_update_halogen_bonds_panel"
+            },
+            {
+                "id": "pi",
+                "label": "π Interactions",
+                "icon": "fiber_manual_record",
+                "attr": "pi_interactions",
+                "panel_attr": "pi_panel",
+                "update_method": "_update_pi_interactions_panel"
+            },
+            {
+                "id": "pi_pi",
+                "label": "π-π Stacking",
+                "icon": "layers",
+                "attr": "pi_pi_interactions",
+                "panel_attr": "pi_pi_panel",
+                "update_method": "_update_pi_pi_stacking_panel"
+            },
+            {
+                "id": "carbonyl",
+                "label": "Carbonyl n→π*",
+                "icon": "architecture",
+                "attr": "carbonyl_interactions",
+                "panel_attr": "carbonyl_panel",
+                "update_method": "_update_carbonyl_interactions_panel"
+            },
+            {
+                "id": "n_pi",
+                "label": "n→π*",
+                "icon": "arrow_forward",
+                "attr": "n_pi_interactions",
+                "panel_attr": "n_pi_panel",
+                "update_method": "_update_n_pi_interactions_panel"
+            },
+            {
+                "id": "cooperativity",
+                "label": "Cooperativity",
+                "icon": "account_tree",
+                "attr": "cooperativity_chains",
+                "panel_attr": "cooperativity_panel",
+                "update_method": "_update_cooperativity_chains_panel"
+            }
+        ]
 
-                if self.analyzer.pi_interactions:
-                    with ui.tab_panel("pi"):
-                        self.pi_panel = ui.column().classes("w-full")
-                        self._update_pi_interactions_panel()
+    def _should_show_interaction(self, config):
+        """Check if interaction should be shown.
 
-                if hasattr(self.analyzer, "pi_pi_interactions") and self.analyzer.pi_pi_interactions:
-                    with ui.tab_panel("pi_pi"):
-                        self.pi_pi_panel = ui.column().classes("w-full")
-                        self._update_pi_pi_stacking_panel()
+        :param config: Interaction configuration
+        :returns: True if interaction should be shown
+        :rtype: bool
+        """
+        if config.get("always_show"):
+            return True
 
-                if hasattr(self.analyzer, "carbonyl_interactions") and self.analyzer.carbonyl_interactions:
-                    with ui.tab_panel("carbonyl"):
-                        self.carbonyl_panel = ui.column().classes("w-full")
-                        self._update_carbonyl_interactions_panel()
+        attr = config.get("attr")
+        if not attr:
+            return False
 
-                if hasattr(self.analyzer, "n_pi_interactions") and self.analyzer.n_pi_interactions:
-                    with ui.tab_panel("n_pi"):
-                        self.n_pi_panel = ui.column().classes("w-full")
-                        self._update_n_pi_interactions_panel()
+        if not hasattr(self.analyzer, attr):
+            return False
 
-                if hasattr(self.analyzer, "cooperativity_chains") and self.analyzer.cooperativity_chains:
-                    with ui.tab_panel("cooperativity"):
-                        self.cooperativity_panel = ui.column().classes("w-full")
-                        self._update_cooperativity_chains_panel()
+        interactions = getattr(self.analyzer, attr)
+        return interactions and len(interactions) > 0
+
+    def _create_tabs(self):
+        """Create tabs for all available interactions."""
+        for config in self._get_interaction_configs():
+            if self._should_show_interaction(config):
+                attr = config.get("attr")
+                label = config["label"]
+
+                # Add count to label if not summary
+                if attr and hasattr(self.analyzer, attr):
+                    interactions = getattr(self.analyzer, attr)
+                    if interactions:
+                        label = f"{label} ({len(interactions)})"
+
+                ui.tab(config["id"], label=label, icon=config["icon"])
+
+    def _create_panels(self):
+        """Create panels for all available interactions."""
+        for config in self._get_interaction_configs():
+            if self._should_show_interaction(config):
+                with ui.tab_panel(config["id"]):
+                    panel = ui.column().classes("w-full")
+                    setattr(self, config["panel_attr"], panel)
+
+                    # Call the update method
+                    update_method = getattr(self, config["update_method"])
+                    update_method()
 
     def _update_summary_panel(self):
         """Update summary statistics panel."""

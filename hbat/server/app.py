@@ -113,7 +113,7 @@ class HBATWebApp:
                 ui.button("Code", icon="code").props("flat color=white")
 
         # Left drawer
-        with ui.left_drawer(fixed=False).props("bordered") as left_drawer:
+        with ui.left_drawer(fixed=False).props("bordered model-value=false") as left_drawer:
             with ui.scroll_area().classes("w-full h-full"):
                 ui.label("Navigation").classes("text-h6 q-pa-md")
                 ui.separator()
@@ -493,7 +493,8 @@ def create_app():
 
     # Check if running in production/Docker environment
     is_production = os.getenv("HBAT_ENV") == "production"
-    host = os.getenv("HBAT_HOST", "0.0.0.0" if is_production else "127.0.0.1")
+    # Bind to 0.0.0.0 in production/Docker (intentional for containerized deployments)
+    host = os.getenv("HBAT_HOST", "0.0.0.0" if is_production else "127.0.0.1")  # nosec B104
     port = int(os.getenv("HBAT_PORT", "8080"))
 
     ui.run(
