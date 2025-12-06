@@ -15,7 +15,7 @@ graphviz>=0.20.0
 Pillow>=9.0.0
 
 # PDB structure fixing and chemical informatics
-pdbfixer-wheel>=1.12.2
+pdbfixer-wheel>=1.12.3
 openbabel-wheel>=3.1.1.22
 pybel>=0.15.5
 

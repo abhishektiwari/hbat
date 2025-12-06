@@ -51,6 +51,19 @@ class UploadPanel:
                 # read() is async, so we need to await it
                 content = await e.file.read()
 
+                # Check file size (1 MB = 1048576 bytes)
+                MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MB in bytes
+                file_size = len(content)
+
+                if file_size > MAX_FILE_SIZE:
+                    size_mb = file_size / (1024 * 1024)
+                    ui.notify(
+                        f"File too large: {size_mb:.2f} MB. Maximum allowed: 1 MB",
+                        type="negative",
+                        position="top-left"
+                    )
+                    return
+
                 if self.upload_label:
                     self.upload_label.text = f"✓ Uploaded: {filename}"
                     self.upload_label.classes(replace="text-positive")
@@ -86,6 +99,19 @@ class UploadPanel:
 
                 with urllib.request.urlopen(url) as response:
                     content = response.read()
+
+                # Check file size (1 MB = 1048576 bytes)
+                MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MB in bytes
+                file_size = len(content)
+
+                if file_size > MAX_FILE_SIZE:
+                    size_mb = file_size / (1024 * 1024)
+                    ui.notify(
+                        f"Downloaded file too large: {size_mb:.2f} MB. Maximum allowed: 1 MB",
+                        type="negative",
+                        position="top-left"
+                    )
+                    return
 
                 filename = f"{pdb_id}.pdb"
 
