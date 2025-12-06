@@ -478,6 +478,10 @@ def create_app():
 
     :returns: None
     """
+    # Configure static files BEFORE page routes
+    static_dir = Path(__file__).parent / "static"
+    if static_dir.exists():
+        app.add_static_files("/static", str(static_dir))
 
     @ui.page("/")
     def index():
@@ -546,20 +550,18 @@ def create_app():
         hbat_app = HBATWebApp()
         hbat_app.create_ui()
 
-    # Configure static files if directory exists
-    static_dir = Path(__file__).parent / "static"
-    if static_dir.exists():
-        app.add_static_files("/static", str(static_dir))
-
     # Check if running in production/Docker environment
     is_production = os.getenv("HBAT_ENV") == "production"
     # Bind to 0.0.0.0 in production/Docker (intentional for containerized deployments)
     host = os.getenv("HBAT_HOST", "0.0.0.0" if is_production else "127.0.0.1")  # nosec B104
     port = int(os.getenv("HBAT_PORT", "8080"))
 
+    # Set favicon path
+    favicon_path = static_dir / "favicon.ico" if static_dir.exists() else None
+
     ui.run(
         title=f"HBAT 2 - {APP_NAME}",
-        favicon="/static/hbat.ico",
+        favicon=str(favicon_path) if favicon_path else "🧬",
         dark=False,
         reload=False,
         show=not is_production,  # Don't open browser in production/Docker
