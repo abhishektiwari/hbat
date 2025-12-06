@@ -12,6 +12,12 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 - **Carbonyl Interactions**: ``n→π*`` interactions between carbonyl groups
 - **n-π Interactions**: Lone pair interactions with aromatic ``π`` systems
 
+
+.. admonition:: Announcement
+   :class: tip
+
+   HBAT 2 Web Interface is Live! Try it out at `web.hbat.abhishek-tiwari.com <https://web.hbat.abhishek-tiwari.com>`_
+
 .. image:: https://img.shields.io/github/v/release/abhishektiwari/hbat
    :alt: GitHub Release
    :target: https://github.com/abhishektiwari/hbat/releases
@@ -76,16 +82,22 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
    :alt: CodeFactor
 
 .. figure:: https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png
-   :alt: HBAT GUI
+   :alt: HBAT Desktop
    :align: center
 
-   HBAT GUI (Using tkinter).
+   HBAT Desktop (Mac, Windows, Linux).
+
+.. figure:: https://static.abhishek-tiwari.com/hbat/hbat-2-web-v1.png
+   :alt: HBAT Web
+   :align: center
+
+   HBAT Web (https://web.hbat.abhishek-tiwari.com)
 
 .. figure:: https://static.abhishek-tiwari.com/hbat/py3dmol-4x21-v1.png
    :alt: Visualizing interactions using Jupyter notebook
    :align: center
 
-   Visualizing interactions using Jupyter notebook (Halogen Bond in PDB Entry 4x21).
+   Visualizing interactions using HBAT Web (Halogen Bond in PDB Entry 4x21).
 
 .. figure:: https://static.abhishek-tiwari.com/hbat/6rsa-pdb-chain-6.png
    :alt: Cooperativity chain detection and visualization
