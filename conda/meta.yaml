@@ -20,7 +20,7 @@ requirements:
   host:
     - python >=3.10,<3.14
     - pip
-    - setuptools >=45,<77
+    - setuptools >=45,<80
     - setuptools-scm >=6.2
     - wheel
     - packaging >=20.0
