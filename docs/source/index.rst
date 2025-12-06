@@ -16,7 +16,7 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 .. admonition:: Announcement
    :class: tip
 
-   HBAT 2 Web Interface is Live! Try it out at `web.hbat.abhishek-tiwari.com <https://web.hbat.abhishek-tiwari.com>`_
+   HBAT 2 Web Interface is Live! Try it out at `hbat-web.abhishek-tiwari.com <https://hbat-web.abhishek-tiwari.com>`_
 
 .. image:: https://img.shields.io/github/v/release/abhishektiwari/hbat
    :alt: GitHub Release
@@ -91,7 +91,7 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
    :alt: HBAT Web
    :align: center
 
-   HBAT Web (https://web.hbat.abhishek-tiwari.com)
+   HBAT Web (https://hbat-web.abhishek-tiwari.com)
 
 .. figure:: https://static.abhishek-tiwari.com/hbat/py3dmol-4x21-v1.png
    :alt: Visualizing interactions using Jupyter notebook

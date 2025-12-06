@@ -6,7 +6,6 @@ services:
       dockerfile: Dockerfile
       platforms:
         - linux/amd64
-    container_name: hbat-web
     image: hbat-web:latest
     environment:
       - HBAT_ENV=production
@@ -16,6 +15,15 @@ services:
       - hbat-uploads:/app/uploads
     restart: unless-stopped
     deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 30s
       resources:
         limits:
           cpus: '0.5'
@@ -24,7 +32,7 @@ services:
           cpus: '0.5'
           memory: 512M
     x-ports:
-      - web.hbat.abhishek-tiwari.com:8080/https
+      - hbat-web.abhishek-tiwari.com:8080/https
 
 volumes:
   hbat-uploads:
