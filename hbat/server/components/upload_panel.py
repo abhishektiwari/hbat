@@ -20,6 +20,25 @@ class UploadPanel:
         """
         self.on_file_upload = on_file_upload
         self.upload_label: Optional[ui.label] = None
+        self.pdb_id_input: Optional[ui.input] = None
+        self.file_uploaded: bool = False
+        self._download_pdb_func: Optional[Callable] = None
+
+    async def download_if_pdb_id_provided(self) -> bool:
+        """Download PDB file if PDB ID is provided but file not uploaded yet.
+
+        :returns: True if download was attempted and successful, False otherwise
+        :rtype: bool
+        """
+        if self.file_uploaded:
+            return True
+
+        if self.pdb_id_input and self.pdb_id_input.value.strip():
+            if self._download_pdb_func:
+                await self._download_pdb_func()
+                return self.file_uploaded
+
+        return False
 
     def create_ui(self):
         """Create the upload UI components."""
@@ -36,6 +55,8 @@ class UploadPanel:
                     self.upload_label.text = f"✓ Uploaded: {filename}"
                     self.upload_label.classes(replace="text-positive")
 
+                self.file_uploaded = True
+
                 if self.on_file_upload:
                     self.on_file_upload(filename, content)
 
@@ -48,7 +69,7 @@ class UploadPanel:
 
         async def download_pdb():
             """Download PDB file from RCSB using PDB ID."""
-            pdb_id = pdb_id_input.value.strip().lower()
+            pdb_id = self.pdb_id_input.value.strip().lower()
             if not pdb_id:
                 ui.notify("Please enter a PDB ID", type="warning", position="top-left")
                 return
@@ -72,6 +93,8 @@ class UploadPanel:
                     self.upload_label.text = f"✓ Downloaded: {filename}"
                     self.upload_label.classes(replace="text-positive")
 
+                self.file_uploaded = True
+
                 if self.on_file_upload:
                     self.on_file_upload(filename, content)
 
@@ -79,6 +102,9 @@ class UploadPanel:
             except Exception as error:
                 ui.notify(f"Download failed: {str(error)}", type="negative", position="top-left")
                 print(f"Download error: {error}")
+
+        # Store download function for external use
+        self._download_pdb_func = download_pdb
 
         # Option 1: Upload file
         with ui.card().classes("w-full q-pa-md"):
@@ -95,7 +121,7 @@ class UploadPanel:
         with ui.card().classes("w-full q-pa-md"):
             ui.label("Option 2: Download from RCSB PDB").classes("text-h6")
             with ui.row().classes("w-full items-center gap-2"):
-                pdb_id_input = ui.input(
+                self.pdb_id_input = ui.input(
                     label="PDB ID",
                     placeholder="e.g., 1BHL",
                     validation={"Must be 4 characters": lambda v: len(v.strip()) == 4 if v else True},
@@ -132,3 +158,12 @@ class UploadPanel:
 - Common examples: 1BHL (Hemoglobin), 1UBI (Ubiquitin)
             """
             )
+
+    def reset(self):
+        """Reset the upload panel to initial state."""
+        if self.pdb_id_input:
+            self.pdb_id_input.value = ""
+        if self.upload_label:
+            self.upload_label.text = "No file loaded"
+            self.upload_label.classes(replace="text-caption text-grey q-mt-md")
+        self.file_uploaded = False

@@ -151,18 +151,6 @@ class HBATWebApp:
 
                 ui.label("Quick Actions").classes("text-subtitle2 q-pa-md")
                 with ui.list().props("dense"):
-                    with ui.item().props("clickable").on("click", lambda: ui.run_javascript('window.open("https://www.rcsb.org/", "_blank")')):
-                        with ui.item_section().props("avatar"):
-                            ui.icon("public", color="grey")
-                        with ui.item_section():
-                            ui.item_label("RCSB PDB")
-
-                    with ui.item().props("clickable").on("click", lambda: ui.run_javascript('window.open("https://hbat.abhishek-tiwari.com/", "_blank")')):
-                        with ui.item_section().props("avatar"):
-                            ui.icon("help", color="grey")
-                        with ui.item_section():
-                            ui.item_label("Help & Docs")
-
                     with ui.item().props("clickable").on("click", self._show_citation_dialog):
                         with ui.item_section().props("avatar"):
                             ui.icon("format_quote", color="grey")
@@ -190,8 +178,8 @@ class HBATWebApp:
                     self.upload_panel.create_ui()
 
                     with ui.stepper_navigation():
-                        ui.button("Next", on_click=lambda: self.stepper.next()).props(
-                            "flat"
+                        ui.button("Next", icon="arrow_forward", on_click=self._handle_upload_next).props(
+                            "primary"
                         )
 
                 # Step 2: Configure Parameters and Run Analysis
@@ -212,11 +200,11 @@ class HBATWebApp:
                         self.status_label = ui.label("").classes("text-caption q-mt-sm")
 
                     with ui.stepper_navigation():
-                        ui.button("Back", on_click=lambda: self.stepper.previous()).props(
-                            "flat"
+                        ui.button("Back", icon="arrow_back", on_click=lambda: self.stepper.previous()).props(
+                            "primary"
                         )
-                        ui.button("Next", on_click=lambda: self.stepper.next()).props(
-                            "flat"
+                        ui.button("Next", icon="arrow_forward", on_click=lambda: self.stepper.next()).props(
+                            "primary"
                         ).bind_enabled_from(self, "analyzer", lambda x: x is not None)
 
                 # Step 3: View Results
@@ -227,11 +215,11 @@ class HBATWebApp:
                     self.results_panel = WebResultsPanel(results_container)
 
                     with ui.stepper_navigation():
-                        ui.button("Back", on_click=lambda: self.stepper.previous()).props(
-                            "flat"
+                        ui.button("Back", icon="arrow_back", on_click=lambda: self.stepper.previous()).props(
+                            "primary"
                         )
-                        ui.button("Next", on_click=lambda: self.stepper.next()).props(
-                            "flat"
+                        ui.button("Next", icon="arrow_forward", on_click=lambda: self.stepper.next()).props(
+                            "primary"
                         )
 
                 # Step 4: Export Results
@@ -259,12 +247,50 @@ class HBATWebApp:
                             ).props("color=primary")
 
                     with ui.stepper_navigation():
-                        ui.button("Back", on_click=lambda: self.stepper.previous()).props(
-                            "flat"
+                        ui.button("Back", icon="arrow_back", on_click=lambda: self.stepper.previous()).props(
+                            "primary"
                         )
                         ui.button(
-                            "Start Over", on_click=lambda: self.stepper.set_value("upload")
+                            "Start Over", icon="refresh", on_click=self._start_over
                         ).props("flat color=primary")
+
+    def _start_over(self):
+        """Reset the application to initial state."""
+        # Reset app state
+        self.current_file = None
+        self.current_file_path = None
+        self.pdb_content = None
+        self.analyzer = None
+
+        # Reset upload panel
+        if self.upload_panel:
+            self.upload_panel.reset()
+
+        # Go back to upload step
+        self.stepper.set_value("upload")
+
+        ui.notify("Application reset", type="info", position="top-left")
+
+    async def _handle_upload_next(self):
+        """Handle Next button in upload step - download PDB if ID provided."""
+        if self.upload_panel:
+            # Check if file already uploaded
+            if self.upload_panel.file_uploaded:
+                self.stepper.next()
+                return
+
+            # Try to download if PDB ID is provided
+            success = await self.upload_panel.download_if_pdb_id_provided()
+            if success:
+                self.stepper.next()
+            else:
+                ui.notify(
+                    "Please upload a PDB file or enter a PDB ID to download",
+                    type="warning",
+                    position="top-left"
+                )
+        else:
+            self.stepper.next()
 
     def _on_file_upload(self, filename: str, content: bytes):
         """Handle file upload and save to uploads directory."""
@@ -465,12 +491,19 @@ def create_app():
     if static_dir.exists():
         app.add_static_files("/static", str(static_dir))
 
+    # Check if running in production/Docker environment
+    is_production = os.getenv("HBAT_ENV") == "production"
+    host = os.getenv("HBAT_HOST", "0.0.0.0" if is_production else "127.0.0.1")
+    port = int(os.getenv("HBAT_PORT", "8080"))
+
     ui.run(
         title=f"HBAT 2 - {APP_NAME}",
         favicon="/static/hbat.ico",
         dark=False,
         reload=False,
-        show=True,
+        show=not is_production,  # Don't open browser in production/Docker
+        host=host,
+        port=port,
     )
 
 
