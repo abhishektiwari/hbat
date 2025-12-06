@@ -46,30 +46,6 @@ class ResultsPanel:
         self.analyzer: Optional[MolecularInteractionAnalyzer] = None
         self._create_widgets()
 
-    def _parse_residue_string(self, residue_str: str) -> str:
-        """Parse a residue string like 'A123ALA' into 'A:ALA123'.
-
-        :param residue_str: Residue string in format ChainResSeqResName
-        :type residue_str: str
-        :returns: Formatted string like 'Chain:ResNameResSeq'
-        :rtype: str
-        """
-        if not residue_str:
-            return "Unknown"
-
-        # Handle the format: ChainIdResSeqResName (e.g., "A123ALA")
-        # Chain ID is typically 1 character, residue name is typically 3 characters at the end
-        if len(residue_str) >= 4:
-            chain_id = residue_str[0]
-            # The residue name is typically the last 3 characters
-            res_name = residue_str[-3:]
-            # The residue sequence number is everything in between
-            res_seq = residue_str[1:-3]
-            return f"{chain_id}:{res_name}{res_seq}"
-        else:
-            # Fallback for unexpected formats
-            return residue_str
-
     def _create_widgets(self):
         """Create result display widgets."""
         # Create main notebook for different result types
@@ -703,7 +679,6 @@ class ResultsPanel:
             "donor_res",
             "donor_atom",
             "pi_res",
-            "pi_atoms",
             "distance",
             "angle",
             "donor_element",
@@ -718,7 +693,6 @@ class ResultsPanel:
         self.n_pi_tree.heading("donor_res", text="Donor Residue")
         self.n_pi_tree.heading("donor_atom", text="Donor Atom")
         self.n_pi_tree.heading("pi_res", text="π Residue")
-        self.n_pi_tree.heading("pi_atoms", text="π Ring Atoms")
         self.n_pi_tree.heading("distance", text="Distance (Å)")
         self.n_pi_tree.heading("angle", text="Angle (°)")
         self.n_pi_tree.heading("donor_element", text="Donor Element")
@@ -728,7 +702,6 @@ class ResultsPanel:
         self.n_pi_tree.column("donor_res", width=120)
         self.n_pi_tree.column("donor_atom", width=120)
         self.n_pi_tree.column("pi_res", width=120)
-        self.n_pi_tree.column("pi_atoms", width=140)
         self.n_pi_tree.column("distance", width=110)
         self.n_pi_tree.column("angle", width=110)
         self.n_pi_tree.column("donor_element", width=120)
@@ -1299,12 +1272,12 @@ class ResultsPanel:
         # Add π-π stacking interactions if they exist
         if hasattr(self.analyzer, "pi_pi_interactions"):
             for interaction in self.analyzer.pi_pi_interactions:
-                ring1_res = self._parse_residue_string(interaction.ring1_residue)
+                ring1_res = interaction.ring1_residue
                 ring1_atoms = (
                     ",".join([atom.name for atom in interaction.ring1_atoms[:3]])
                     + "..."
                 )
-                ring2_res = self._parse_residue_string(interaction.ring2_residue)
+                ring2_res = interaction.ring2_residue
                 ring2_atoms = (
                     ",".join([atom.name for atom in interaction.ring2_atoms[:3]])
                     + "..."
@@ -1340,9 +1313,9 @@ class ResultsPanel:
         # Add carbonyl interactions if they exist
         if hasattr(self.analyzer, "carbonyl_interactions"):
             for interaction in self.analyzer.carbonyl_interactions:
-                acceptor_res = self._parse_residue_string(interaction.acceptor_residue)
+                acceptor_res = interaction.acceptor_residue
                 acceptor_atom = interaction.acceptor_carbon.name
-                carbonyl_res = self._parse_residue_string(interaction.donor_residue)
+                carbonyl_res = interaction.donor_residue
                 carbonyl_atoms = (
                     f"{interaction.donor_carbon.name}={interaction.donor_oxygen.name}"
                 )
@@ -1376,12 +1349,9 @@ class ResultsPanel:
         # Add n→π* interactions if they exist
         if hasattr(self.analyzer, "n_pi_interactions"):
             for interaction in self.analyzer.n_pi_interactions:
-                donor_res = self._parse_residue_string(interaction.donor_residue)
+                donor_res = interaction.donor_residue
                 donor_atom = interaction.lone_pair_atom.name
-                pi_res = self._parse_residue_string(interaction.acceptor_residue)
-                pi_atoms = (
-                    ",".join([atom.name for atom in interaction.pi_atoms[:3]]) + "..."
-                )
+                pi_res = interaction.acceptor_residue
 
                 bs_int = "B" if interaction.is_between_residues else "S"
 
@@ -1392,7 +1362,6 @@ class ResultsPanel:
                         donor_res,
                         donor_atom,
                         pi_res,
-                        pi_atoms,
                         f"{interaction.distance:.2f}",
                         f"{interaction.angle_to_plane:.1f}",
                         interaction.donor_element,

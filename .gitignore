@@ -172,6 +172,9 @@ example_results.*
 analysis_output/
 results/
 
+# Web server uploads
+uploads/
+
 !example_presets/*.hbat
 
 # Example PDB files

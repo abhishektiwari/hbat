@@ -79,10 +79,8 @@ class TestHydrogenBondCreation:
             angle=math.radians(160.0),
             _donor_acceptor_distance=3.2,
             bond_type="N-H...O",
-            _donor_residue="A1ALA",
-            _acceptor_residue="A2GLY"
         )
-        
+
         assert hb.donor == donor
         assert hb.hydrogen == hydrogen
         assert hb.acceptor == acceptor
@@ -90,8 +88,8 @@ class TestHydrogenBondCreation:
         assert abs(hb.angle - math.radians(160.0)) < 1e-10
         assert hb.donor_acceptor_distance == 3.2
         assert hb.bond_type == "N-H...O"
-        assert hb.donor_residue == "A1ALA"
-        assert hb.acceptor_residue == "A2GLY"
+        assert hb.donor_residue == "A:ALA:1"
+        assert hb.acceptor_residue == "A:GLY:2"
     
     def test_hydrogen_bond_inheritance(self, sample_atoms):
         """Test that HydrogenBond inherits from MolecularInteraction."""
@@ -100,7 +98,7 @@ class TestHydrogenBondCreation:
         hb = HydrogenBond(
             _donor=donor, hydrogen=hydrogen, _acceptor=acceptor,
             distance=2.5, angle=math.radians(160.0), _donor_acceptor_distance=3.2,
-            bond_type="N-H...O", _donor_residue="A1ALA", _acceptor_residue="A2GLY"
+            bond_type="N-H...O", 
         )
         
         assert isinstance(hb, MolecularInteraction)
@@ -112,7 +110,7 @@ class TestHydrogenBondCreation:
         hb = HydrogenBond(
             _donor=donor, hydrogen=hydrogen, _acceptor=acceptor,
             distance=2.5, angle=math.radians(160.0), _donor_acceptor_distance=3.2,
-            bond_type="N-H...O", _donor_residue="A1ALA", _acceptor_residue="A2GLY"
+            bond_type="N-H...O", 
         )
         
         assert hb.interaction_type == "H-Bond"
@@ -124,13 +122,13 @@ class TestHydrogenBondCreation:
         hb = HydrogenBond(
             _donor=donor, hydrogen=hydrogen, _acceptor=acceptor,
             distance=2.5, angle=math.radians(160.0), _donor_acceptor_distance=3.2,
-            bond_type="N-H...O", _donor_residue="A1ALA", _acceptor_residue="A2GLY"
+            bond_type="N-H...O", 
         )
         
         assert hb.get_donor_atom() == donor
         assert hb.get_acceptor_atom() == acceptor
-        assert hb.get_donor_residue() == "A1ALA"
-        assert hb.get_acceptor_residue() == "A2GLY"
+        assert hb.get_donor_residue() == "A:ALA:1"
+        assert hb.get_acceptor_residue() == "A:GLY:2"
     
     def test_hydrogen_bond_bonding_validation(self, sample_atoms):
         """Test hydrogen bond bonding validation."""
@@ -139,7 +137,7 @@ class TestHydrogenBondCreation:
         hb = HydrogenBond(
             _donor=donor, hydrogen=hydrogen, _acceptor=acceptor,
             distance=2.5, angle=math.radians(160.0), _donor_acceptor_distance=3.2,
-            bond_type="N-H...O", _donor_residue="A1ALA", _acceptor_residue="A2GLY"
+            bond_type="N-H...O", 
         )
         
         # Should satisfy bonding requirement (implementation-dependent)
@@ -157,15 +155,15 @@ class TestHydrogenBondString:
         hb = HydrogenBond(
             _donor=donor, hydrogen=hydrogen, _acceptor=acceptor,
             distance=2.5, angle=math.radians(160.0), _donor_acceptor_distance=3.2,
-            bond_type="N-H...O", _donor_residue="A1ALA", _acceptor_residue="A2GLY"
+            bond_type="N-H...O", 
         )
         
         str_repr = str(hb)
         
         # Check that important information is included
         assert "H-Bond" in str_repr
-        assert "A1ALA" in str_repr
-        assert "A2GLY" in str_repr
+        assert "A:ALA:1" in str_repr
+        assert "A:GLY:2" in str_repr
         assert "N" in str_repr
         assert "O" in str_repr
         assert "2.50" in str_repr
@@ -194,12 +192,12 @@ class TestHydrogenBondString:
         hb = HydrogenBond(
             _donor=donor, hydrogen=hydrogen, _acceptor=acceptor,
             distance=2.8, angle=math.radians(145.0), _donor_acceptor_distance=3.5,
-            bond_type="O-H...N", _donor_residue="B10SER", _acceptor_residue="B11VAL"
+            bond_type="O-H...N", 
         )
         
         str_repr = str(hb)
-        assert "B10SER" in str_repr
-        assert "B11VAL" in str_repr
+        assert "B:SER:10" in str_repr
+        assert "B:VAL:11" in str_repr
         assert "2.80" in str_repr
         assert "145.0" in str_repr
 
@@ -244,8 +242,6 @@ class TestWeakHydrogenBondsWithCarbonDonors:
             angle=math.radians(150.0),  # WHB angle cutoff
             _donor_acceptor_distance=3.5,  # WHB D-A distance cutoff
             bond_type="C-H...O",
-            _donor_residue="A1GLY",
-            _acceptor_residue="A2ALA"
         )
         
         assert whb.donor == carbon_donor
@@ -267,7 +263,7 @@ class TestWeakHydrogenBondsWithCarbonDonors:
             distance=3.8,  # Longer than typical HB_DISTANCE_CUTOFF (2.5)
             angle=math.radians(140.0),
             _donor_acceptor_distance=4.0,  # Longer than typical HB_DA_DISTANCE (3.5)
-            bond_type="C-H...O", _donor_residue="A1GLY", _acceptor_residue="A2ALA"
+            bond_type="C-H...O", 
         )
         
         assert whb.distance == 3.8
@@ -313,8 +309,6 @@ class TestHalogenBondCreation:
             distance=3.2,
             angle=math.radians(170.0),
             bond_type="C-CL...O",
-            _halogen_residue="A1CLU",
-            _acceptor_residue="A2GLY",
             _donor=donor
         )
 
@@ -323,8 +317,8 @@ class TestHalogenBondCreation:
         assert xb.distance == 3.2
         assert abs(xb.angle - math.radians(170.0)) < 1e-10
         assert xb.bond_type == "C-CL...O"
-        assert xb.donor_residue == "A1CLU"  # Halogen residue maps to donor_residue
-        assert xb.acceptor_residue == "A2GLY"
+        assert xb.donor_residue == "A:CLU:1"  # Halogen residue maps to donor_residue
+        assert xb.acceptor_residue == "A:GLY:2"
     
     def test_halogen_bond_inheritance(self, sample_halogen_atoms):
         """Test that HalogenBond inherits from MolecularInteraction."""
@@ -332,7 +326,7 @@ class TestHalogenBondCreation:
 
         xb = HalogenBond(
             halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
-            bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY",
+            bond_type="C-CL...O", 
             _donor=donor
         )
 
@@ -344,7 +338,7 @@ class TestHalogenBondCreation:
 
         xb = HalogenBond(
             halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
-            bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY",
+            bond_type="C-CL...O", 
             _donor=donor
         )
 
@@ -356,14 +350,14 @@ class TestHalogenBondCreation:
 
         xb = HalogenBond(
             halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
-            bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY",
+            bond_type="C-CL...O", 
             _donor=donor
         )
 
         assert xb.get_donor_atom() == halogen  # Halogen acts as donor in interface
         assert xb.get_acceptor_atom() == acceptor
-        assert xb.get_donor_residue() == "A1CLU"
-        assert xb.get_acceptor_residue() == "A2GLY"
+        assert xb.get_donor_residue() == "A:CLU:1"
+        assert xb.get_acceptor_residue() == "A:GLY:2"
 
 
 @pytest.mark.unit
@@ -400,15 +394,15 @@ class TestHalogenBondString:
 
         xb = HalogenBond(
             halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
-            bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY",
+            bond_type="C-CL...O", 
             _donor=donor
         )
 
         str_repr = str(xb)
 
         assert "X-Bond" in str_repr
-        assert "A1CLU" in str_repr
-        assert "A2GLY" in str_repr
+        assert "A:CLU:1" in str_repr
+        assert "A:GLY:2" in str_repr
         assert "CL" in str_repr
         assert "O" in str_repr
         assert "3.20" in str_repr
@@ -427,20 +421,33 @@ class TestPiInteractionCreation:
             res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="N", charge="", record_type="ATOM"
         )
-        
+
         hydrogen = Atom(
             serial=2, name="H", alt_loc="", res_name="ALA", chain_id="A",
             res_seq=1, i_code="", coords=NPVec3D(1, 0, 0), occupancy=1.0,
             temp_factor=20.0, element="H", charge="", record_type="ATOM"
         )
-        
+
+        # Create pi_atoms for PHE residue (ring atoms)
+        pi_atom1 = Atom(
+            serial=3, name="CG", alt_loc="", res_name="PHE", chain_id="A",
+            res_seq=2, i_code="", coords=NPVec3D(2.5, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="C", charge="", record_type="ATOM"
+        )
+        pi_atom2 = Atom(
+            serial=4, name="CD1", alt_loc="", res_name="PHE", chain_id="A",
+            res_seq=2, i_code="", coords=NPVec3D(3.5, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="C", charge="", record_type="ATOM"
+        )
+
         pi_center = NPVec3D(3, 0, 0)
-        
-        return donor, hydrogen, pi_center
+        pi_atoms = [pi_atom1, pi_atom2]
+
+        return donor, hydrogen, pi_center, pi_atoms
     
     def test_pi_interaction_creation(self, sample_pi_atoms):
         """Test π interaction creation with valid atoms."""
-        donor, hydrogen, pi_center = sample_pi_atoms
+        donor, hydrogen, pi_center, pi_atoms = sample_pi_atoms
         
         pi = PiInteraction(
             _donor=donor,
@@ -448,8 +455,7 @@ class TestPiInteractionCreation:
             pi_center=pi_center,
             distance=3.5,
             angle=math.radians(150.0),
-            _donor_residue="A1ALA",
-            _pi_residue="A2PHE"
+            pi_atoms=pi_atoms,
         )
         
         assert pi.donor == donor
@@ -457,47 +463,47 @@ class TestPiInteractionCreation:
         assert pi.pi_center == pi_center
         assert pi.distance == 3.5
         assert abs(pi.angle - math.radians(150.0)) < 1e-10
-        assert pi.donor_residue == "A1ALA"
-        assert pi.acceptor_residue == "A2PHE"  # π residue maps to acceptor_residue
+        assert pi.donor_residue == "A:ALA:1"
+        assert pi.acceptor_residue == "A:PHE:2"  # π residue maps to acceptor_residue
     
     def test_pi_interaction_inheritance(self, sample_pi_atoms):
         """Test that PiInteraction inherits from MolecularInteraction."""
-        donor, hydrogen, pi_center = sample_pi_atoms
-        
+        donor, hydrogen, pi_center, pi_atoms = sample_pi_atoms
+
         pi = PiInteraction(
             _donor=donor, hydrogen=hydrogen, pi_center=pi_center,
             distance=3.5, angle=math.radians(150.0),
-            _donor_residue="A1ALA", _pi_residue="A2PHE"
+            pi_atoms=pi_atoms,
         )
         
         assert isinstance(pi, MolecularInteraction)
     
     def test_pi_interaction_type(self, sample_pi_atoms):
         """Test π interaction type."""
-        donor, hydrogen, pi_center = sample_pi_atoms
-        
+        donor, hydrogen, pi_center, pi_atoms = sample_pi_atoms
+
         pi = PiInteraction(
             _donor=donor, hydrogen=hydrogen, pi_center=pi_center,
             distance=3.5, angle=math.radians(150.0),
-            _donor_residue="A1ALA", _pi_residue="A2PHE"
+            pi_atoms=pi_atoms,
         )
         
         assert pi.interaction_type == "π–Inter"
     
     def test_pi_interaction_interface_methods(self, sample_pi_atoms):
         """Test π interaction interface methods."""
-        donor, hydrogen, pi_center = sample_pi_atoms
-        
+        donor, hydrogen, pi_center, pi_atoms = sample_pi_atoms
+
         pi = PiInteraction(
             _donor=donor, hydrogen=hydrogen, pi_center=pi_center,
             distance=3.5, angle=math.radians(150.0),
-            _donor_residue="A1ALA", _pi_residue="A2PHE"
+            pi_atoms=pi_atoms,
         )
         
         assert pi.get_donor_atom() == donor
         assert pi.get_acceptor_atom() is None  # π center is not a single atom
-        assert pi.get_donor_residue() == "A1ALA"
-        assert pi.get_acceptor_residue() == "A2PHE"
+        assert pi.get_donor_residue() == "A:ALA:1"
+        assert pi.get_acceptor_residue() == "A:PHE:2"
 
 
 @pytest.mark.unit
@@ -506,19 +512,19 @@ class TestPiInteractionString:
     
     def test_pi_interaction_string_representation(self, sample_pi_atoms):
         """Test π interaction string representation."""
-        donor, hydrogen, pi_center = sample_pi_atoms
-        
+        donor, hydrogen, pi_center, pi_atoms = sample_pi_atoms
+
         pi = PiInteraction(
             _donor=donor, hydrogen=hydrogen, pi_center=pi_center,
             distance=3.5, angle=math.radians(150.0),
-            _donor_residue="A1ALA", _pi_residue="A2PHE"
+            pi_atoms=pi_atoms,
         )
         
         str_repr = str(pi)
         
         assert "π-Int" in str_repr
-        assert "A1ALA" in str_repr
-        assert "A2PHE" in str_repr
+        assert "A:ALA:1" in str_repr
+        assert "A:PHE:2" in str_repr
         assert "N" in str_repr
         assert "3.50" in str_repr
         assert "150.0" in str_repr
@@ -549,8 +555,6 @@ class TestPiInteractionTypeDisplay:
             pi_center=pi_center,
             distance=4.5,
             angle=math.radians(120),
-            _donor_residue="TST1A",
-            _pi_residue="PHE2A"
         )
         
         assert pi.get_interaction_type_display() == "C-H...π"
@@ -567,8 +571,6 @@ class TestPiInteractionTypeDisplay:
             pi_center=pi_center,
             distance=3.8,
             angle=math.radians(125),
-            _donor_residue="TST1A",
-            _pi_residue="PHE2A"
         )
         
         assert pi.get_interaction_type_display() == "C-CL...π"
@@ -585,8 +587,6 @@ class TestPiInteractionTypeDisplay:
             pi_center=pi_center,
             distance=3.9,
             angle=math.radians(120),
-            _donor_residue="TST1A",
-            _pi_residue="PHE2A"
         )
         
         assert pi.get_interaction_type_display() == "C-BR...π"
@@ -603,8 +603,6 @@ class TestPiInteractionTypeDisplay:
             pi_center=pi_center,
             distance=4.0,
             angle=math.radians(115),
-            _donor_residue="TST1A",
-            _pi_residue="PHE2A"
         )
         
         assert pi.get_interaction_type_display() == "C-I...π"
@@ -621,8 +619,6 @@ class TestPiInteractionTypeDisplay:
             pi_center=pi_center,
             distance=4.2,
             angle=math.radians(135),
-            _donor_residue="ARG1A",
-            _pi_residue="PHE2A"
         )
         
         assert pi.get_interaction_type_display() == "N-H...π"
@@ -639,8 +635,6 @@ class TestPiInteractionTypeDisplay:
             pi_center=pi_center,
             distance=4.0,
             angle=math.radians(140),
-            _donor_residue="SER1A",
-            _pi_residue="PHE2A"
         )
         
         assert pi.get_interaction_type_display() == "O-H...π"
@@ -657,8 +651,6 @@ class TestPiInteractionTypeDisplay:
             pi_center=pi_center,
             distance=4.3,
             angle=math.radians(125),
-            _donor_residue="CYS1A",
-            _pi_residue="PHE2A"
         )
         
         assert pi.get_interaction_type_display() == "S-H...π"
@@ -668,22 +660,34 @@ class TestPiInteractionTypeDisplay:
         carbon = self.create_test_atom("C1", "C")
         chlorine = self.create_test_atom("CL1", "CL", 1.0, 0.0, 0.0)
         pi_center = NPVec3D(3.8, 0.0, 0.0)
-        
+
+        # Create pi_atoms for PHE residue
+        pi_atom1 = Atom(
+            serial=10, name="CG", alt_loc="", res_name="PHE", chain_id="A",
+            res_seq=2, i_code="", coords=NPVec3D(3.5, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="C", charge="", record_type="ATOM"
+        )
+        pi_atom2 = Atom(
+            serial=11, name="CD1", alt_loc="", res_name="PHE", chain_id="A",
+            res_seq=2, i_code="", coords=NPVec3D(4.0, 0, 0), occupancy=1.0,
+            temp_factor=20.0, element="C", charge="", record_type="ATOM"
+        )
+        pi_atoms = [pi_atom1, pi_atom2]
+
         pi = PiInteraction(
             _donor=carbon,
             hydrogen=chlorine,
             pi_center=pi_center,
             distance=3.8,
             angle=math.radians(125),
-            _donor_residue="TST1A",
-            _pi_residue="PHE2A"
+            pi_atoms=pi_atoms,
         )
         
         str_repr = str(pi)
         assert "C-CL...π" in str_repr
         assert "π-Int:" in str_repr
-        assert "TST1A" in str_repr
-        assert "PHE2A" in str_repr
+        assert "A:TST:1" in str_repr
+        assert "A:PHE:2" in str_repr
 
 
 @pytest.mark.unit
@@ -729,12 +733,12 @@ class TestCooperativityChainCreation:
         hb = HydrogenBond(
             _donor=donor, hydrogen=hydrogen, _acceptor=acceptor,
             distance=2.5, angle=math.radians(160.0), _donor_acceptor_distance=3.2,
-            bond_type="N-H...O", _donor_residue="A1ALA", _acceptor_residue="A2GLY"
+            bond_type="N-H...O", 
         )
 
         xb = HalogenBond(
             halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
-            bond_type="C-CL...O", _halogen_residue="A3CLU", _acceptor_residue="A2GLY",
+            bond_type="C-CL...O", 
             _donor=halogen_donor
         )
 
@@ -802,8 +806,8 @@ class TestCooperativityChainString:
         str_repr = str(chain)
         
         assert "Potential Cooperative Chain[2]" in str_repr
-        assert "A1ALA" in str_repr
-        assert "A2GLY" in str_repr
+        assert "A:ALA:1" in str_repr
+        assert "A:GLY:2" in str_repr
     
     def test_empty_chain_string_representation(self):
         """Test string representation of empty chain."""
@@ -856,7 +860,7 @@ class TestInteractionValidation:
         hb = HydrogenBond(
             _donor=donor, hydrogen=hydrogen, _acceptor=acceptor,
             distance=2.5, angle=math.radians(160.0), _donor_acceptor_distance=3.2,
-            bond_type="N-H...O", _donor_residue="A1ALA", _acceptor_residue="A2GLY"
+            bond_type="N-H...O", 
         )
         
         # Test required attributes
@@ -896,7 +900,7 @@ class TestInteractionValidation:
 
         xb = HalogenBond(
             halogen=halogen, _acceptor=acceptor, distance=3.2, angle=math.radians(170.0),
-            bond_type="C-CL...O", _halogen_residue="A1CLU", _acceptor_residue="A2GLY",
+            bond_type="C-CL...O", 
             _donor=donor
         )
 
@@ -933,7 +937,7 @@ class TestInteractionValidation:
         pi = PiInteraction(
             _donor=donor, hydrogen=hydrogen, pi_center=pi_center,
             distance=3.5, angle=math.radians(150.0),
-            _donor_residue="A1ALA", _pi_residue="A2PHE"
+            
         )
         
         # Test required attributes

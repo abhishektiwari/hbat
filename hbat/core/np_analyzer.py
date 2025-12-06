@@ -480,10 +480,6 @@ class NPMolecularInteractionAnalyzer:
                         continue
 
                     bond_type = f"{donor_atom.element}-H...{a_atom.element}"
-                    donor_residue = f"{donor_atom.chain_id}{donor_atom.res_seq}{donor_atom.res_name}"
-                    acceptor_residue = (
-                        f"{a_atom.chain_id}{a_atom.res_seq}{a_atom.res_name}"
-                    )
 
                     hbond = HydrogenBond(
                         _donor=donor_atom,
@@ -493,8 +489,6 @@ class NPMolecularInteractionAnalyzer:
                         angle=float(angle_rad),
                         _donor_acceptor_distance=donor_acceptor_distance,
                         bond_type=bond_type,
-                        _donor_residue=donor_residue,
-                        _acceptor_residue=acceptor_residue,
                     )
                     self.hydrogen_bonds.append(hbond)
 
@@ -649,12 +643,6 @@ class NPMolecularInteractionAnalyzer:
                 if angle_deg >= self.parameters.xb_angle_cutoff:
                     # distance already calculated above
                     bond_type = f"C-{x_atom.element}...{a_atom.element}"
-                    halogen_residue = (
-                        f"{x_atom.chain_id}{x_atom.res_seq}{x_atom.res_name}"
-                    )
-                    acceptor_residue = (
-                        f"{a_atom.chain_id}{a_atom.res_seq}{a_atom.res_name}"
-                    )
 
                     xbond = HalogenBond(
                         halogen=x_atom,
@@ -662,8 +650,6 @@ class NPMolecularInteractionAnalyzer:
                         distance=distance,
                         angle=float(angle_rad),
                         bond_type=bond_type,
-                        _halogen_residue=halogen_residue,
-                        _acceptor_residue=acceptor_residue,
                         _donor=carbon_atom,
                     )
                     self.halogen_bonds.append(xbond)
@@ -779,11 +765,15 @@ class NPMolecularInteractionAnalyzer:
                 angle_deg = math.degrees(float(angle_rad))
 
                 if angle_deg >= angle_cutoff:
-                    donor_residue = f"{donor_atom.chain_id}{donor_atom.res_seq}{donor_atom.res_name}"
-                    pi_residue = f"{center_info['residue'].chain_id}{center_info['residue'].seq_num}{center_info['residue'].name}"
+                    pi_residue_obj = center_info['residue']
 
                     # Use NPVec3D directly
                     pi_center_vec3d = center_info["center"]
+
+                    # Get the aromatic ring atoms
+                    from ..constants import RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS
+                    ring_atom_names = RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS.get(pi_residue_obj.name, [])
+                    pi_atoms = [atom for atom in pi_residue_obj.atoms if atom.name in ring_atom_names]
 
                     pi_int = PiInteraction(
                         _donor=donor_atom,
@@ -791,8 +781,7 @@ class NPMolecularInteractionAnalyzer:
                         pi_center=pi_center_vec3d,
                         distance=float(distances[center_idx]),
                         angle=float(angle_rad),
-                        _donor_residue=donor_residue,
-                        _pi_residue=pi_residue,
+                        pi_atoms=pi_atoms,
                     )
                     self.pi_interactions.append(pi_int)
 
@@ -1391,8 +1380,6 @@ class NPMolecularInteractionAnalyzer:
                     distance=oc_distance,
                     burgi_dunitz_angle=burgi_dunitz_angle,
                     is_backbone=is_backbone_interaction,
-                    donor_residue=donor_carbonyl["residue_id"],
-                    acceptor_residue=acceptor_carbonyl["residue_id"],
                 )
 
                 self.carbonyl_interactions.append(carbonyl_interaction)
@@ -1464,8 +1451,6 @@ class NPMolecularInteractionAnalyzer:
                             distance=reverse_oc_distance,
                             burgi_dunitz_angle=reverse_angle,
                             is_backbone=is_backbone_interaction,
-                            donor_residue=acceptor_carbonyl["residue_id"],
-                            acceptor_residue=donor_carbonyl["residue_id"],
                         )
 
                         self.carbonyl_interactions.append(reverse_interaction)
@@ -1646,22 +1631,16 @@ class NPMolecularInteractionAnalyzer:
             donor_coords = np.array(
                 [donor_atom.coords.x, donor_atom.coords.y, donor_atom.coords.z]
             )
-            donor_residue = (
-                f"{donor_atom.chain_id}{donor_atom.res_seq}{donor_atom.res_name}"
-                if hasattr(donor_atom, "res_name")
-                else "UNK"
-            )
 
             # For each aromatic ring
             for ring_info in aromatic_rings:
                 ring_center = ring_info["center"]
                 ring_atoms = ring_info["atoms"]
-                acceptor_residue = (
-                    f"{ring_info['residue'].name}{ring_info['residue'].seq_num}"
-                )
 
                 # Skip same residue interactions
-                if donor_residue == acceptor_residue:
+                donor_residue_key = (donor_atom.chain_id, donor_atom.res_seq, donor_atom.res_name)
+                acceptor_residue_key = (ring_info['residue'].chain_id, ring_info['residue'].seq_num, ring_info['residue'].name)
+                if donor_residue_key == acceptor_residue_key:
                     continue
 
                 # Calculate distance to π center
@@ -1725,8 +1704,6 @@ class NPMolecularInteractionAnalyzer:
                     distance=distance,
                     angle_to_plane=angle_to_plane,
                     subtype=interaction_subtype,
-                    donor_residue=donor_residue,
-                    acceptor_residue=acceptor_residue,
                 )
 
                 self.n_pi_interactions.append(n_pi_interaction)

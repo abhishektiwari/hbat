@@ -231,8 +231,6 @@ class TestHalogenBondCreationAndProperties:
                 distance=3.2,
                 angle=math.radians(165.0),
                 bond_type=expected_bond_type,
-                _halogen_residue=f"A1{res_name}",
-                _acceptor_residue="B50SER",
                 _donor=donor
             )
 
@@ -276,8 +274,6 @@ class TestHalogenBondCreationAndProperties:
                 distance=3.3,
                 angle=math.radians(170.0),
                 bond_type=expected_bond_type,
-                _halogen_residue="A1CLU",
-                _acceptor_residue=f"B10{res_name}",
                 _donor=donor
             )
 
@@ -305,8 +301,6 @@ class TestHalogenBondCreationAndProperties:
                 distance=distance,
                 angle=math.radians(160.0),
                 bond_type="C-BR...O",
-                _halogen_residue="A100BRU",
-                _acceptor_residue="B50SER",
                 _donor=donor
             )
 
@@ -336,8 +330,6 @@ class TestHalogenBondCreationAndProperties:
                 distance=3.4,
                 angle=angle_rad,
                 bond_type="C-BR...O",
-                _halogen_residue="A100BRU",
-                _acceptor_residue="B50SER",
                 _donor=donor
             )
 
@@ -492,8 +484,6 @@ class TestHalogenBondStringRepresentations:
             distance=3.88,  # Maximum vdW sum
             angle=math.radians(175.0),
             bond_type="C-I...SE",
-            _halogen_residue="C42IOU",
-            _acceptor_residue="D84SEC",
             _donor=donor
         )
 
@@ -504,8 +494,8 @@ class TestHalogenBondStringRepresentations:
         assert "SE" in str_repr
         assert "3.88" in str_repr or "3.9" in str_repr  # Distance might be rounded
         assert "X-Bond" in str_repr  # Interaction type
-        assert "C42IOU" in str_repr  # Halogen residue
-        assert "D84SEC" in str_repr  # Acceptor residue
+        assert "C:IOU:42" in str_repr  # Halogen residue
+        assert "D:SEC:84" in str_repr  # Acceptor residue
         assert "175.0°" in str_repr or "175" in str_repr  # Angle
     
     def test_bond_type_formatting(self):

@@ -62,8 +62,6 @@ class TestNPiInteractionCreation:
             distance=3.5,
             angle_to_plane=15.0,
             subtype="carbonyl-aromatic",
-            donor_residue="A10ASP",
-            acceptor_residue="A25PHE"
         )
         
         assert n_pi.lone_pair_atom == lone_pair_atom
@@ -72,8 +70,8 @@ class TestNPiInteractionCreation:
         assert n_pi.distance == 3.5
         assert n_pi.angle_to_plane == 15.0
         assert n_pi.subtype == "carbonyl-aromatic"
-        assert n_pi.get_donor_residue() == "A10ASP"
-        assert n_pi.get_acceptor_residue() == "A25PHE"
+        assert n_pi.get_donor_residue() == "A:ASP:10"
+        assert n_pi.get_acceptor_residue() == "A:PHE:25"
         assert n_pi.donor_element == "O"
     
     def test_n_pi_interaction_inheritance(self, sample_n_pi_atoms):
@@ -83,7 +81,6 @@ class TestNPiInteractionCreation:
         n_pi = NPiInteraction(
             lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=3.5, angle_to_plane=15.0, subtype="carbonyl-aromatic",
-            donor_residue="A10ASP", acceptor_residue="A25PHE"
         )
         
         assert isinstance(n_pi, MolecularInteraction)
@@ -95,7 +92,6 @@ class TestNPiInteractionCreation:
         n_pi = NPiInteraction(
             lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=3.5, angle_to_plane=15.0, subtype="carbonyl-aromatic",
-            donor_residue="A10ASP", acceptor_residue="A25PHE"
         )
         
         assert n_pi.get_interaction_type() == "n-Pi"
@@ -107,15 +103,14 @@ class TestNPiInteractionCreation:
         n_pi = NPiInteraction(
             lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=3.5, angle_to_plane=15.0, subtype="carbonyl-aromatic",
-            donor_residue="A10ASP", acceptor_residue="A25PHE"
         )
         
         # Test interface methods
         assert n_pi.get_donor() == lone_pair_atom
         assert n_pi.get_acceptor() == pi_center
         assert n_pi.get_interaction() == lone_pair_atom
-        assert n_pi.get_donor_residue() == "A10ASP"
-        assert n_pi.get_acceptor_residue() == "A25PHE"
+        assert n_pi.get_donor_residue() == "A:ASP:10"
+        assert n_pi.get_acceptor_residue() == "A:PHE:25"
         assert n_pi.get_subtype() == "carbonyl-aromatic"
         assert n_pi.get_donor_element() == "O"
 
@@ -155,7 +150,6 @@ class TestNPiInteractionAngles:
             n_pi = NPiInteraction(
                 lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=pi_atoms,
                 distance=3.5, angle_to_plane=angle_deg, subtype="carbonyl-aromatic",
-                donor_residue="A10ASP", acceptor_residue="A25PHE"
             )
             
             assert n_pi.angle_to_plane == angle_deg
@@ -171,7 +165,6 @@ class TestNPiInteractionAngles:
         n_pi = NPiInteraction(
             lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=3.5, angle_to_plane=angle_degrees, subtype="carbonyl-aromatic",
-            donor_residue="A10ASP", acceptor_residue="A25PHE"
         )
         
         assert n_pi.angle_to_plane == angle_degrees
@@ -186,7 +179,6 @@ class TestNPiInteractionAngles:
         n_pi = NPiInteraction(
             lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=3.5, angle_to_plane=angle_degrees, subtype="carbonyl-aromatic",
-            donor_residue="A10ASP", acceptor_residue="A25PHE"
         )
         
         angle_radians = n_pi.get_donor_interaction_acceptor_angle()
@@ -250,7 +242,6 @@ class TestNPiInteractionSubtypes:
         n_pi = NPiInteraction(
             lone_pair_atom=carbonyl_oxygen, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=3.2, angle_to_plane=20.0, subtype="carbonyl-aromatic",
-            donor_residue="A10ASP", acceptor_residue="A30PHE"
         )
         
         assert n_pi.subtype == "carbonyl-aromatic"
@@ -267,7 +258,6 @@ class TestNPiInteractionSubtypes:
         n_pi = NPiInteraction(
             lone_pair_atom=amine_nitrogen, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=3.8, angle_to_plane=25.0, subtype="amine-aromatic",
-            donor_residue="A20LYS", acceptor_residue="A30PHE"
         )
         
         assert n_pi.subtype == "amine-aromatic"
@@ -284,7 +274,6 @@ class TestNPiInteractionSubtypes:
         n_pi = NPiInteraction(
             lone_pair_atom=sulfur_atom, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=4.0, angle_to_plane=35.0, subtype="sulfur-aromatic",
-            donor_residue="A25CYS", acceptor_residue="A30PHE"
         )
         
         assert n_pi.subtype == "sulfur-aromatic"
@@ -301,7 +290,6 @@ class TestNPiInteractionSubtypes:
         n_pi = NPiInteraction(
             lone_pair_atom=hydroxyl_oxygen, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=3.6, angle_to_plane=18.0, subtype="hydroxyl-aromatic",
-            donor_residue="A15TYR", acceptor_residue="A30PHE"
         )
         
         assert n_pi.subtype == "hydroxyl-aromatic"
@@ -339,7 +327,6 @@ class TestNPiInteractionPiSystems:
         n_pi = NPiInteraction(
             lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=phe_atoms,
             distance=3.5, angle_to_plane=20.0, subtype="carbonyl-phenyl",
-            donor_residue="A10ASP", acceptor_residue="A25PHE"
         )
         
         assert n_pi.pi_system_type == "phenyl"
@@ -367,7 +354,6 @@ class TestNPiInteractionPiSystems:
         n_pi = NPiInteraction(
             lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=trp_atoms,
             distance=3.8, angle_to_plane=25.0, subtype="amine-indole",
-            donor_residue="A10LYS", acceptor_residue="A25TRP"
         )
         
         assert n_pi.pi_system_type == "indole"
@@ -395,7 +381,6 @@ class TestNPiInteractionPiSystems:
         n_pi = NPiInteraction(
             lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=his_atoms,
             distance=3.4, angle_to_plane=15.0, subtype="hydroxyl-imidazole",
-            donor_residue="A10SER", acceptor_residue="A25HIS"
         )
         
         assert n_pi.pi_system_type == "imidazole"
@@ -427,7 +412,6 @@ class TestNPiInteractionDistances:
         n_pi = NPiInteraction(
             lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=distance, angle_to_plane=30.0, subtype="carbonyl-aromatic",
-            donor_residue="A10ASP", acceptor_residue="A25PHE"
         )
         
         assert n_pi.get_donor_acceptor_distance() == distance
@@ -459,7 +443,6 @@ class TestNPiInteractionDistances:
             n_pi = NPiInteraction(
                 lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=pi_atoms,
                 distance=distance, angle_to_plane=25.0, subtype="carbonyl-aromatic",
-                donor_residue="A10ASP", acceptor_residue="A25PHE"
             )
             
             assert n_pi.distance == distance
@@ -491,7 +474,6 @@ class TestNPiInteractionValidation:
         n_pi = NPiInteraction(
             lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=3.5, angle_to_plane=25.0, subtype="carbonyl-aromatic",
-            donor_residue="A10ASP", acceptor_residue="A25PHE"
         )
         
         # Test required attributes
@@ -531,7 +513,6 @@ class TestNPiInteractionValidation:
         n_pi = NPiInteraction(
             lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=3.5, angle_to_plane=25.0, subtype="carbonyl-aromatic",
-            donor_residue="A10ASP", acceptor_residue="A25PHE"
         )
         
         # n→π* interactions don't require bonding (direct interaction)
@@ -563,7 +544,6 @@ class TestNPiInteractionValidation:
         n_pi = NPiInteraction(
             lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=3.5, angle_to_plane=25.0, subtype="carbonyl-aromatic",
-            donor_residue="A10ASP", acceptor_residue="A25PHE"
         )
         
         retrieved_pi_atoms = n_pi.get_pi_atoms()
@@ -592,19 +572,24 @@ class TestNPiInteractionValidation:
         n_pi = NPiInteraction(
             lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=3.5, angle_to_plane=25.0, subtype="carbonyl-aromatic",
-            donor_residue="A10ASP", acceptor_residue="A25PHE"
         )
         
         assert hasattr(n_pi, 'is_between_residues')
         assert n_pi.is_between_residues is True  # Different residues
         
         # Test intra-residue interaction (same residue)
+        pi_atoms_intra = [
+            Atom(
+                serial=3, name="CG", alt_loc="", res_name="ASP", chain_id="A",
+                res_seq=10, i_code="", coords=NPVec3D(4.0, 0, 0), occupancy=1.0,
+                temp_factor=20.0, element="C", charge="", record_type="ATOM"
+            )
+        ]
         n_pi_intra = NPiInteraction(
-            lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=pi_atoms,
+            lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=pi_atoms_intra,
             distance=3.5, angle_to_plane=25.0, subtype="carbonyl-aromatic",
-            donor_residue="A10ASP", acceptor_residue="A10ASP"
         )
-        
+
         assert n_pi_intra.is_between_residues is False  # Same residue
 
 
@@ -633,7 +618,6 @@ class TestNPiInteractionString:
         n_pi = NPiInteraction(
             lone_pair_atom=lone_pair_atom, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=3.85, angle_to_plane=22.5, subtype="carbonyl-indole",
-            donor_residue="A15ASP", acceptor_residue="B50TRP"
         )
         
         str_repr = str(n_pi)
@@ -641,8 +625,8 @@ class TestNPiInteractionString:
         # Check that important information is included
         assert "n→π*" in str_repr
         assert "carbonyl-indole" in str_repr
-        assert "A15ASP" in str_repr
-        assert "B50TRP" in str_repr
+        assert "A:ASP:15" in str_repr
+        assert "B:TRP:50" in str_repr
         assert "3.85" in str_repr
         assert "22.5" in str_repr
         assert "(O)" in str_repr
@@ -670,12 +654,11 @@ class TestNPiInteractionString:
         n_pi = NPiInteraction(
             lone_pair_atom=nitrogen_atom, pi_center=pi_center, pi_atoms=pi_atoms,
             distance=4.15, angle_to_plane=18.0, subtype="amine-phenyl",
-            donor_residue="A20LYS", acceptor_residue="A30PHE"
         )
         
         str_repr = str(n_pi)
-        assert "A20LYS" in str_repr
-        assert "A30PHE" in str_repr
+        assert "A:LYS:20" in str_repr
+        assert "A:PHE:30" in str_repr
         assert "4.15" in str_repr
         assert "18.0" in str_repr
         assert "amine-phenyl" in str_repr

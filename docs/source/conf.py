@@ -122,6 +122,7 @@ html_theme_options = {
     "use_fullscreen_button": True,
     "use_sidenotes": True,
     "icon_links_label": "Quick Links",
+    "announcement": "📣 HBAT 2 Web Interface is Live! 🚀 Try it out at <a href='https://hbat-web.abhishek-tiwari.com' style='color: #ffffff !important;' target='_blank'>here</a>",
     "icon_links": [
         {
             "name": "GitHub",

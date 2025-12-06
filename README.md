@@ -12,6 +12,9 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 - **π-π Stacking**: Aromatic ring-ring interactions (parallel, T-shaped, offset)
 - **Carbonyl Interactions**: `n→π*` interactions between carbonyl groups
 - **n-π Interactions**: Lone pair interactions with aromatic `π` systems
+ 
+> **HBAT 2 Web Interface** is Live! Try it out at [hbat-web.abhishek-tiwari.com](https://hbat-web.abhishek-tiwari.com)
+
 
 ![GitHub Release](https://img.shields.io/github/v/release/abhishektiwari/hbat)
 ![GitHub Actions Test Workflow Status](https://img.shields.io/github/actions/workflow/status/abhishektiwari/hbat/test.yml?label=tests)
@@ -30,10 +33,14 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 [![Socket](https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl)](https://socket.dev/pypi/package/hbat/overview/2.2.11/py3-none-any-whl)
 [![CodeFactor](https://www.codefactor.io/repository/github/abhishektiwari/hbat/badge/main)](https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main)
 
-**HBAT GUI (Using tkinter):**
-![HBAT GUI](https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png)
+**HBAT Desktop (Mac, Windows, Linux):**
+![HBAT Desktop](https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png)
 
-**Visualizing interactions using Jupyter notebook (Halogen Bond in PDB Entry 4x21):**
+**HBAT Web:** Try it out at [hbat-web.abhishek-tiwari.com](https://hbat-web.abhishek-tiwari.com)
+
+![HBAT Web](https://static.abhishek-tiwari.com/hbat/hbat-2-web-v1.png)
+
+**Visualizing interactions using HBAT Web (Halogen Bond in PDB Entry 4x21):**
 ![Halogen Bonds in PDB Entry 4x21](https://static.abhishek-tiwari.com/hbat/py3dmol-4x21-v1.png)
 
 **Cooperativity chain detection and visualization (PDB Entry 6RSA):**

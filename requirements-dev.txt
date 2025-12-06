@@ -1,5 +1,6 @@
 # HBAT - Development Requirements
 # Extended requirements for development, testing, and contribution
+# Requires Python 3.10+
 
 # Include core requirements
 -r requirements.txt
