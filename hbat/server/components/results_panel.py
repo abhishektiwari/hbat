@@ -13,6 +13,15 @@ from typing import Optional
 from nicegui import ui
 
 from ...core.analysis import NPMolecularInteractionAnalyzer
+from ...visualization.pymol3d import (
+    generate_png_export_js,
+    generate_hydrogen_bond_viewer_js,
+    generate_halogen_bond_viewer_js,
+    generate_pi_interaction_viewer_js,
+    generate_pi_pi_stacking_viewer_js,
+    generate_carbonyl_interaction_viewer_js,
+    generate_n_pi_interaction_viewer_js,
+)
 from ...visualization.chain_graph import render_chain_graphviz
 
 
@@ -251,18 +260,24 @@ class WebResultsPanel:
 
         :param hb: Hydrogen bond interaction
         """
+        # Create unique viewer ID
+        import random
+        viewer_id = f"hb_viewer_{random.randint(1000, 9999)}"
+
+        def export_png():
+            """Export viewer as PNG."""
+            filename = f"{hb.get_donor_residue()}_to_{hb.get_acceptor_residue()}_hbond.png".replace(":", "_")
+            ui.run_javascript(generate_png_export_js(viewer_id, filename))
+
         with ui.dialog().props("persistent") as dialog, ui.card().style("width: 900px; max-width: 90vw;"):
             with ui.card_actions().classes("justify-end"):
+                ui.button("Export PNG", icon="download", on_click=export_png).props("outline color=secondary")
                 ui.button("Close", on_click=dialog.close).props("color=primary")
 
             with ui.card_section().classes("q-pa-md"):
                 ui.label(
                     f"{hb.get_donor_residue()} → {hb.get_acceptor_residue()}"
                 ).classes("text-subtitle1 q-mb-md")
-
-                # Create unique viewer ID
-                import random
-                viewer_id = f"hb_viewer_{random.randint(1000, 9999)}"
 
                 # Create div for viewer - container must have actual width
                 ui.html(f'<div id="{viewer_id}" style="width: 100%; height: 600px; min-width: 800px; position: relative;"></div>', sanitize=False)
@@ -279,88 +294,7 @@ class WebResultsPanel:
         :param viewer_id: Unique ID for the viewer div
         :param hb: Hydrogen bond interaction
         """
-        donor_chain = hb.donor.chain_id
-        donor_resi = hb.donor.res_seq
-        acceptor_chain = hb.acceptor.chain_id
-        acceptor_resi = hb.acceptor.res_seq
-
-        # Escape PDB content for JavaScript - escape backslashes first, then quotes
-        pdb_escaped = self.pdb_content.replace('\\', '\\\\').replace('`', '\\`').replace('$', '\\$')
-
-        javascript = f"""
-        (function() {{
-            // Wait for both 3Dmol to load and div to be ready
-            function init3Dmol() {{
-                if (typeof $3Dmol === 'undefined') {{
-                    setTimeout(init3Dmol, 100);
-                    return;
-                }}
-
-                let element = document.getElementById("{viewer_id}");
-                if (!element) {{
-                    setTimeout(init3Dmol, 100);
-                    return;
-                }}
-
-                try {{
-                    let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
-                    let pdbData = `{pdb_escaped}`;
-
-                    viewer.addModel(pdbData, "pdb");
-                    viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
-
-                    // Show donor residue
-                    viewer.addStyle({{chain: '{donor_chain}', resi: {donor_resi}}},
-                                   {{stick: {{colorscheme: 'cyanCarbon', radius: 0.25}}}});
-
-                    // Show acceptor residue
-                    viewer.addStyle({{chain: '{acceptor_chain}', resi: {acceptor_resi}}},
-                                   {{stick: {{colorscheme: 'orangeCarbon', radius: 0.25}}}});
-
-                    // Add dashed line for hydrogen bond
-                    viewer.addCylinder({{
-                        start: {{x: {hb.hydrogen.coords.x}, y: {hb.hydrogen.coords.y}, z: {hb.hydrogen.coords.z}}},
-                        end: {{x: {hb.acceptor.coords.x}, y: {hb.acceptor.coords.y}, z: {hb.acceptor.coords.z}}},
-                        radius: 0.15,
-                        color: 'yellow',
-                        dashed: true
-                    }});
-
-                    // Add labels
-                    viewer.addLabel("{hb.get_donor_residue()}",
-                                   {{position: {{x: {hb.donor.coords.x}, y: {hb.donor.coords.y}, z: {hb.donor.coords.z}}},
-                                    backgroundColor: 'cyan', fontColor: 'black', fontSize: 14}});
-
-                    viewer.addLabel("{hb.get_acceptor_residue()}",
-                                   {{position: {{x: {hb.acceptor.coords.x}, y: {hb.acceptor.coords.y}, z: {hb.acceptor.coords.z}}},
-                                    backgroundColor: 'orange', fontColor: 'white', fontSize: 14}});
-
-                    viewer.zoomTo({{chain: ['{donor_chain}', '{acceptor_chain}'], resi: [{donor_resi}, {acceptor_resi}]}});
-                    viewer.render();
-                    viewer.zoom(1.2);
-
-                    // Force multiple resizes to ensure canvas is sized correctly
-                    setTimeout(function() {{
-                        viewer.resize();
-                        viewer.render();
-                    }}, 100);
-                    setTimeout(function() {{
-                        viewer.resize();
-                        viewer.render();
-                    }}, 300);
-                    setTimeout(function() {{
-                        viewer.resize();
-                        viewer.render();
-                    }}, 500);
-                }} catch (error) {{
-                    console.error("Error creating viewer:", error);
-                }}
-            }}
-
-            // Start with a delay to ensure div is in DOM and sized
-            setTimeout(init3Dmol, 400);
-        }})();
-        """
+        javascript = generate_hydrogen_bond_viewer_js(hb, self.pdb_content, viewer_id)
         ui.run_javascript(javascript)
 
     def _update_halogen_bonds_panel(self):
@@ -426,18 +360,24 @@ class WebResultsPanel:
 
     def _show_halogen_bond_visualization(self, xb):
         """Show 3D visualization of a halogen bond in a dialog."""
+        # Create unique viewer ID
+        import random
+        viewer_id = f"xb_viewer_{random.randint(1000, 9999)}"
+
+        def export_png():
+            """Export viewer as PNG."""
+            filename = f"{xb.get_donor_residue()}_to_{xb.get_acceptor_residue()}_xbond.png".replace(":", "_")
+            ui.run_javascript(generate_png_export_js(viewer_id, filename))
+
         with ui.dialog().props("persistent") as dialog, ui.card().style("width: 900px; max-width: 90vw;"):
             with ui.card_actions().classes("justify-end"):
+                ui.button("Export PNG", icon="download", on_click=export_png).props("outline color=secondary")
                 ui.button("Close", on_click=dialog.close).props("color=primary")
 
             with ui.card_section().classes("q-pa-md"):
                 ui.label(
                     f"{xb.get_donor_residue()} → {xb.get_acceptor_residue()}"
                 ).classes("text-subtitle1 q-mb-md")
-
-                # Create unique viewer ID
-                import random
-                viewer_id = f"xb_viewer_{random.randint(1000, 9999)}"
 
                 # Create div for viewer - container must have actual width
                 ui.html(f'<div id="{viewer_id}" style="width: 100%; height: 600px; min-width: 800px; position: relative;"></div>', sanitize=False)
@@ -453,200 +393,39 @@ class WebResultsPanel:
         :param viewer_id: Unique ID for the viewer div
         :param xb: Halogen bond interaction
         """
-        donor_chain = xb.donor_atom.chain_id
-        donor_resi = xb.donor_atom.res_seq
-        acceptor_chain = xb.acceptor.chain_id
-        acceptor_resi = xb.acceptor.res_seq
-
-        # Escape PDB content for JavaScript - escape backslashes first, then quotes
-        pdb_escaped = self.pdb_content.replace('\\', '\\\\').replace('`', '\\`').replace('$', '\\$')
-
-        javascript = f"""
-        (function() {{
-            // Wait for both 3Dmol to load and div to be ready
-            function init3Dmol() {{
-                if (typeof $3Dmol === 'undefined') {{
-                    setTimeout(init3Dmol, 100);
-                    return;
-                }}
-
-                let element = document.getElementById("{viewer_id}");
-                if (!element) {{
-                    setTimeout(init3Dmol, 100);
-                    return;
-                }}
-
-                try {{
-                    let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
-                    let pdbData = `{pdb_escaped}`;
-
-                    viewer.addModel(pdbData, "pdb");
-                    viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
-
-                    viewer.addStyle({{chain: '{donor_chain}', resi: {donor_resi}}},
-                                   {{stick: {{colorscheme: 'purpleCarbon', radius: 0.25}}}});
-
-                    viewer.addStyle({{chain: '{acceptor_chain}', resi: {acceptor_resi}}},
-                                   {{stick: {{colorscheme: 'orangeCarbon', radius: 0.25}}}});
-
-                    viewer.addCylinder({{
-                        start: {{x: {xb.halogen.coords.x}, y: {xb.halogen.coords.y}, z: {xb.halogen.coords.z}}},
-                        end: {{x: {xb.acceptor.coords.x}, y: {xb.acceptor.coords.y}, z: {xb.acceptor.coords.z}}},
-                        radius: 0.15,
-                        color: 'orange',
-                        dashed: true
-                    }});
-
-                    // Add labels
-                    viewer.addLabel("{xb.get_donor_residue()}",
-                                   {{position: {{x: {xb.donor_atom.coords.x}, y: {xb.donor_atom.coords.y}, z: {xb.donor_atom.coords.z}}},
-                                    backgroundColor: 'purple', fontColor: 'white', fontSize: 14}});
-
-                    viewer.addLabel("{xb.get_acceptor_residue()}",
-                                   {{position: {{x: {xb.acceptor.coords.x}, y: {xb.acceptor.coords.y}, z: {xb.acceptor.coords.z}}},
-                                    backgroundColor: 'orange', fontColor: 'white', fontSize: 14}});
-
-                    viewer.zoomTo({{chain: ['{donor_chain}', '{acceptor_chain}'], resi: [{donor_resi}, {acceptor_resi}]}});
-                    viewer.render();
-                    viewer.zoom(1.2);
-
-                    // Force multiple resizes to ensure canvas is sized correctly
-                    setTimeout(function() {{
-                        viewer.resize();
-                        viewer.render();
-                    }}, 100);
-                    setTimeout(function() {{
-                        viewer.resize();
-                        viewer.render();
-                    }}, 300);
-                    setTimeout(function() {{
-                        viewer.resize();
-                        viewer.render();
-                    }}, 500);
-                }} catch (error) {{
-                    console.error("Error creating viewer:", error);
-                }}
-            }}
-
-            // Start with a delay to ensure div is in DOM and sized
-            setTimeout(init3Dmol, 400);
-        }})();
-        """
+        javascript = generate_halogen_bond_viewer_js(xb, self.pdb_content, viewer_id)
         ui.run_javascript(javascript)
 
     def _show_pi_interaction_visualization(self, pi):
         """Show 3D visualization of a π interaction in a dialog."""
         import random
+        viewer_id = f"pi_viewer_{random.randint(1000, 9999)}"
+
+        def export_png():
+            """Export viewer as PNG."""
+            filename = f"{pi.get_donor_residue()}_to_{pi.get_acceptor_residue()}_pi.png".replace(":", "_")
+            ui.run_javascript(generate_png_export_js(viewer_id, filename))
 
         with ui.dialog().props("persistent") as dialog, ui.card().style("width: 900px; max-width: 90vw;"):
             with ui.card_actions().classes("justify-end"):
+                ui.button("Export PNG", icon="download", on_click=export_png).props("outline color=secondary")
                 ui.button("Close", on_click=dialog.close).props("color=primary")
 
             with ui.card_section().classes("q-pa-md"):
                 ui.label(f"{pi.get_donor_residue()} → {pi.get_acceptor_residue()}").classes("text-subtitle1 q-mb-md")
 
-                viewer_id = f"pi_viewer_{random.randint(1000, 9999)}"
                 ui.html(f'<div id="{viewer_id}" style="width: 100%; height: 600px; min-width: 800px; position: relative;"></div>', sanitize=False)
 
         dialog.open()
         ui.timer(0.1, lambda: self._initialize_pi_interaction_viewer(viewer_id, pi), once=True)
 
     def _initialize_pi_interaction_viewer(self, viewer_id: str, pi):
-        """Initialize py3Dmol viewer for π interaction visualization."""
-        javascript = f"""
-        (function() {{
-            function init3Dmol() {{
-                if (typeof $3Dmol === 'undefined') {{
-                    setTimeout(init3Dmol, 100);
-                    return;
-                }}
+        """Initialize py3Dmol viewer for π interaction visualization.
 
-                let element = document.getElementById("{viewer_id}");
-                if (!element) {{
-                    setTimeout(init3Dmol, 100);
-                    return;
-                }}
-
-                try {{
-                    let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
-
-                    // Add the entire structure
-                    let pdb_data = `{self.pdb_content}`;
-                    viewer.addModel(pdb_data, "pdb");
-
-                    // Style: show only relevant residues
-                    viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
-
-                    // Highlight donor residue (C-H donor) in cyan
-                    viewer.addStyle({{resi: {pi.donor_res_seq}, chain: '{pi.donor_chain_id}'}},
-                                   {{stick: {{colorscheme: 'cyanCarbon', radius: 0.25}}}});
-
-                    // Highlight π acceptor residue (aromatic ring) in magenta
-                    viewer.addStyle({{resi: {pi.acceptor_res_seq}, chain: '{pi.acceptor_chain_id}'}},
-                                   {{stick: {{colorscheme: 'magentaCarbon', radius: 0.3}}}});
-
-                    // Add sphere at π center to show the interaction point
-                    viewer.addSphere({{
-                        center: {{x: {pi.pi_center.x}, y: {pi.pi_center.y}, z: {pi.pi_center.z}}},
-                        radius: 0.3,
-                        color: 'magenta',
-                        alpha: 0.7
-                    }});
-
-                    // Highlight the hydrogen/X-atom explicitly as a sphere
-                    viewer.addStyle({{serial: {pi.hydrogen.serial}}},
-                                   {{sphere: {{color: 'yellow', radius: 0.5}}}});
-
-                    // Add residue labels
-                    viewer.addLabel('{pi.get_donor_residue()}',
-                                  {{position: {{x: {pi.donor.coords.x}, y: {pi.donor.coords.y}, z: {pi.donor.coords.z}}},
-                                   backgroundColor: 'cyan', fontColor: 'black', fontSize: 10}});
-                    viewer.addLabel('{pi.get_acceptor_residue()}',
-                                  {{position: {{x: {pi.pi_center.x}, y: {pi.pi_center.y}, z: {pi.pi_center.z}}},
-                                   backgroundColor: 'magenta', fontColor: 'white', fontSize: 10}});
-
-                    // Add distance label
-                    viewer.addLabel('{pi.distance:.2f} Å',
-                                  {{position: {{x: ({pi.hydrogen.coords.x} + {pi.pi_center.x})/2,
-                                              y: ({pi.hydrogen.coords.y} + {pi.pi_center.y})/2,
-                                              z: ({pi.hydrogen.coords.z} + {pi.pi_center.z})/2}},
-                                   backgroundColor: 'black', fontColor: 'white', fontSize: 12}});
-
-                    // Add dashed line from X-atom to π center
-                    viewer.addCylinder({{
-                        start: {{x: {pi.hydrogen.coords.x}, y: {pi.hydrogen.coords.y}, z: {pi.hydrogen.coords.z}}},
-                        end: {{x: {pi.pi_center.x}, y: {pi.pi_center.y}, z: {pi.pi_center.z}}},
-                        radius: 0.1,
-                        color: 'yellow',
-                        dashed: true
-                    }});
-
-                    // Center on interaction
-                    viewer.zoomTo({{chain: ['{pi.donor_chain_id}', '{pi.acceptor_chain_id}'], resi: [{pi.donor_res_seq}, {pi.acceptor_res_seq}]}});
-                    viewer.render();
-
-                    // Multiple resize calls for proper sizing
-                    setTimeout(function() {{
-                        viewer.resize();
-                        viewer.render();
-                    }}, 100);
-                    setTimeout(function() {{
-                        viewer.resize();
-                        viewer.render();
-                    }}, 300);
-                    setTimeout(function() {{
-                        viewer.resize();
-                        viewer.render();
-                    }}, 500);
-                }} catch (error) {{
-                    console.error("Error creating viewer:", error);
-                }}
-            }}
-
-            // Start with a delay to ensure div is in DOM and sized
-            setTimeout(init3Dmol, 400);
-        }})();
+        :param viewer_id: Unique ID for the viewer div
+        :param pi: Pi interaction
         """
+        javascript = generate_pi_interaction_viewer_js(pi, self.pdb_content, viewer_id)
         ui.run_javascript(javascript)
 
     def _update_pi_interactions_panel(self):
@@ -968,279 +747,97 @@ class WebResultsPanel:
     def _show_pi_pi_stacking_visualization(self, pi_pi):
         """Show 3D visualization of π-π stacking in a dialog."""
         import random
+        viewer_id = f"pipi_viewer_{random.randint(1000, 9999)}"
+
+        def export_png():
+            """Export viewer as PNG."""
+            filename = f"{pi_pi.ring1_residue}_to_{pi_pi.ring2_residue}_pipi.png".replace(":", "_")
+            ui.run_javascript(generate_png_export_js(viewer_id, filename))
 
         with ui.dialog().props("persistent") as dialog, ui.card().style("width: 900px; max-width: 90vw;"):
             with ui.card_actions().classes("justify-end"):
+                ui.button("Export PNG", icon="download", on_click=export_png).props("outline color=secondary")
                 ui.button("Close", on_click=dialog.close).props("color=primary")
 
             with ui.card_section().classes("q-pa-md"):
                 ui.label(f"{pi_pi.ring1_residue} ⇄ {pi_pi.ring2_residue}").classes("text-subtitle1 q-mb-md")
 
-                viewer_id = f"pipi_viewer_{random.randint(1000, 9999)}"
                 ui.html(f'<div id="{viewer_id}" style="width: 100%; height: 600px; min-width: 800px; position: relative;"></div>', sanitize=False)
 
         dialog.open()
         ui.timer(0.1, lambda: self._initialize_pi_pi_stacking_viewer(viewer_id, pi_pi), once=True)
 
     def _initialize_pi_pi_stacking_viewer(self, viewer_id: str, pi_pi):
-        """Initialize py3Dmol viewer for π-π stacking visualization."""
-        # Get residue info from ring atoms
-        ring1_res = pi_pi.ring1_atoms[0].res_seq if pi_pi.ring1_atoms else ""
-        ring1_chain = pi_pi.ring1_atoms[0].chain_id if pi_pi.ring1_atoms else ""
-        ring2_res = pi_pi.ring2_atoms[0].res_seq if pi_pi.ring2_atoms else ""
-        ring2_chain = pi_pi.ring2_atoms[0].chain_id if pi_pi.ring2_atoms else ""
+        """Initialize py3Dmol viewer for π-π stacking visualization.
 
-        javascript = f"""
-        (function() {{
-            function init3Dmol() {{
-                if (typeof $3Dmol === 'undefined') {{
-                    setTimeout(init3Dmol, 100);
-                    return;
-                }}
-
-                let element = document.getElementById("{viewer_id}");
-                if (!element) {{
-                    setTimeout(init3Dmol, 100);
-                    return;
-                }}
-
-                try {{
-                    let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
-
-                    let pdb_data = `{self.pdb_content}`;
-                    viewer.addModel(pdb_data, "pdb");
-
-                    viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
-
-                    // Highlight both aromatic rings
-                    viewer.setStyle({{resi: '{ring1_res}', chain: '{ring1_chain}'}}, {{stick: {{colorscheme: 'cyanCarbon'}}}});
-                    viewer.setStyle({{resi: '{ring2_res}', chain: '{ring2_chain}'}}, {{stick: {{colorscheme: 'magentaCarbon'}}}});
-
-                    // Add residue labels
-                    viewer.addLabel('{pi_pi.ring1_residue}',
-                                  {{position: {{x: {pi_pi.ring1_center.x}, y: {pi_pi.ring1_center.y}, z: {pi_pi.ring1_center.z}}},
-                                   backgroundColor: 'cyan', fontColor: 'black', fontSize: 14}});
-
-                    viewer.addLabel('{pi_pi.ring2_residue}',
-                                  {{position: {{x: {pi_pi.ring2_center.x}, y: {pi_pi.ring2_center.y}, z: {pi_pi.ring2_center.z}}},
-                                   backgroundColor: 'magenta', fontColor: 'white', fontSize: 14}});
-
-                    // Add distance label
-                    viewer.addLabel('{pi_pi._distance:.2f} Å ({pi_pi.stacking_type})',
-                                  {{position: {{x: {pi_pi.midpoint.x}, y: {pi_pi.midpoint.y}, z: {pi_pi.midpoint.z}}},
-                                   backgroundColor: 'black', fontColor: 'white', fontSize: 12}});
-
-                    // Add line between ring centers
-                    viewer.addCylinder({{
-                        start: {{x: {pi_pi.ring1_center.x}, y: {pi_pi.ring1_center.y}, z: {pi_pi.ring1_center.z}}},
-                        end: {{x: {pi_pi.ring2_center.x}, y: {pi_pi.ring2_center.y}, z: {pi_pi.ring2_center.z}}},
-                        radius: 0.1,
-                        color: 'purple',
-                        dashed: true
-                    }});
-
-                    viewer.zoomTo({{chain: ['{ring1_chain}', '{ring2_chain}'], resi: ['{ring1_res}', '{ring2_res}']}});
-                    viewer.render();
-
-                    setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 100);
-                    setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 300);
-                    setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 500);
-                }} catch (error) {{
-                    console.error("Error creating viewer:", error);
-                }}
-            }}
-
-            setTimeout(init3Dmol, 400);
-        }})();
+        :param viewer_id: Unique ID for the viewer div
+        :param pi_pi: Pi-pi stacking interaction
         """
+        javascript = generate_pi_pi_stacking_viewer_js(pi_pi, self.pdb_content, viewer_id)
         ui.run_javascript(javascript)
 
     def _show_carbonyl_interaction_visualization(self, carbonyl):
         """Show 3D visualization of carbonyl n→π* interaction in a dialog."""
         import random
+        viewer_id = f"carbonyl_viewer_{random.randint(1000, 9999)}"
+
+        def export_png():
+            """Export viewer as PNG."""
+            filename = f"{carbonyl.get_donor_residue()}_to_{carbonyl.get_acceptor_residue()}_carbonyl.png".replace(":", "_")
+            ui.run_javascript(generate_png_export_js(viewer_id, filename))
 
         with ui.dialog().props("persistent") as dialog, ui.card().style("width: 900px; max-width: 90vw;"):
             with ui.card_actions().classes("justify-end"):
+                ui.button("Export PNG", icon="download", on_click=export_png).props("outline color=secondary")
                 ui.button("Close", on_click=dialog.close).props("color=primary")
 
             with ui.card_section().classes("q-pa-md"):
                 ui.label(f"{carbonyl.get_donor_residue()} → {carbonyl.get_acceptor_residue()}").classes("text-subtitle1 q-mb-md")
 
-                viewer_id = f"carbonyl_viewer_{random.randint(1000, 9999)}"
                 ui.html(f'<div id="{viewer_id}" style="width: 100%; height: 600px; min-width: 800px; position: relative;"></div>', sanitize=False)
 
         dialog.open()
         ui.timer(0.1, lambda: self._initialize_carbonyl_interaction_viewer(viewer_id, carbonyl), once=True)
 
     def _initialize_carbonyl_interaction_viewer(self, viewer_id: str, carbonyl):
-        """Initialize py3Dmol viewer for carbonyl n→π* visualization."""
-        javascript = f"""
-        (function() {{
-            function init3Dmol() {{
-                if (typeof $3Dmol === 'undefined') {{
-                    setTimeout(init3Dmol, 100);
-                    return;
-                }}
+        """Initialize py3Dmol viewer for carbonyl n→π* visualization.
 
-                let element = document.getElementById("{viewer_id}");
-                if (!element) {{
-                    setTimeout(init3Dmol, 100);
-                    return;
-                }}
-
-                try {{
-                    let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
-
-                    let pdb_data = `{self.pdb_content}`;
-                    viewer.addModel(pdb_data, "pdb");
-
-                    viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
-
-                    // Highlight donor and acceptor residues
-                    viewer.setStyle({{resi: '{carbonyl.donor_oxygen.res_seq}', chain: '{carbonyl.donor_oxygen.chain_id}'}},
-                                  {{stick: {{colorscheme: 'redCarbon'}}}});
-                    viewer.setStyle({{resi: '{carbonyl.acceptor_carbon.res_seq}', chain: '{carbonyl.acceptor_carbon.chain_id}'}},
-                                  {{stick: {{colorscheme: 'blueCarbon'}}}});
-
-                    // Add residue labels
-                    viewer.addLabel('{carbonyl.get_donor_residue()}',
-                                  {{position: {{x: {carbonyl.donor_oxygen.coords.x}, y: {carbonyl.donor_oxygen.coords.y}, z: {carbonyl.donor_oxygen.coords.z}}},
-                                   backgroundColor: 'red', fontColor: 'white', fontSize: 14}});
-
-                    viewer.addLabel('{carbonyl.get_acceptor_residue()}',
-                                  {{position: {{x: {carbonyl.acceptor_carbon.coords.x}, y: {carbonyl.acceptor_carbon.coords.y}, z: {carbonyl.acceptor_carbon.coords.z}}},
-                                   backgroundColor: 'blue', fontColor: 'white', fontSize: 14}});
-
-                    // Add distance label (at midpoint)
-                    let carbonyl_midpoint = {{
-                        x: ({carbonyl.donor_oxygen.coords.x} + {carbonyl.acceptor_carbon.coords.x}) / 2,
-                        y: ({carbonyl.donor_oxygen.coords.y} + {carbonyl.acceptor_carbon.coords.y}) / 2,
-                        z: ({carbonyl.donor_oxygen.coords.z} + {carbonyl.acceptor_carbon.coords.z}) / 2
-                    }};
-                    viewer.addLabel('{carbonyl.distance:.2f} Å',
-                                  {{position: carbonyl_midpoint,
-                                   backgroundColor: 'black', fontColor: 'white', fontSize: 12}});
-
-                    // Add line from donor O to acceptor C
-                    viewer.addCylinder({{
-                        start: {{x: {carbonyl.donor_oxygen.coords.x}, y: {carbonyl.donor_oxygen.coords.y}, z: {carbonyl.donor_oxygen.coords.z}}},
-                        end: {{x: {carbonyl.acceptor_carbon.coords.x}, y: {carbonyl.acceptor_carbon.coords.y}, z: {carbonyl.acceptor_carbon.coords.z}}},
-                        radius: 0.1,
-                        color: 'orange',
-                        dashed: true
-                    }});
-
-                    viewer.zoomTo({{chain: ['{carbonyl.donor_oxygen.chain_id}', '{carbonyl.acceptor_carbon.chain_id}'], resi: ['{carbonyl.donor_oxygen.res_seq}', '{carbonyl.acceptor_carbon.res_seq}']}});
-                    viewer.render();
-
-                    setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 100);
-                    setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 300);
-                    setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 500);
-                }} catch (error) {{
-                    console.error("Error creating viewer:", error);
-                }}
-            }}
-
-            setTimeout(init3Dmol, 400);
-        }})();
+        :param viewer_id: Unique ID for the viewer div
+        :param carbonyl: Carbonyl interaction
         """
+        javascript = generate_carbonyl_interaction_viewer_js(carbonyl, self.pdb_content, viewer_id)
         ui.run_javascript(javascript)
 
     def _show_n_pi_interaction_visualization(self, n_pi):
         """Show 3D visualization of n→π* interaction in a dialog."""
         import random
+        viewer_id = f"npi_viewer_{random.randint(1000, 9999)}"
+
+        def export_png():
+            """Export viewer as PNG."""
+            filename = f"{n_pi.get_donor_residue()}_to_{n_pi.get_acceptor_residue()}_npi.png".replace(":", "_")
+            ui.run_javascript(generate_png_export_js(viewer_id, filename))
 
         with ui.dialog().props("persistent") as dialog, ui.card().style("width: 900px; max-width: 90vw;"):
             with ui.card_actions().classes("justify-end"):
+                ui.button("Export PNG", icon="download", on_click=export_png).props("outline color=secondary")
                 ui.button("Close", on_click=dialog.close).props("color=primary")
 
             with ui.card_section().classes("q-pa-md"):
                 ui.label(f"{n_pi.get_donor_residue()} → {n_pi.get_acceptor_residue()}").classes("text-subtitle1 q-mb-md")
 
-                viewer_id = f"npi_viewer_{random.randint(1000, 9999)}"
                 ui.html(f'<div id="{viewer_id}" style="width: 100%; height: 600px; min-width: 800px; position: relative;"></div>', sanitize=False)
 
         dialog.open()
         ui.timer(0.1, lambda: self._initialize_n_pi_interaction_viewer(viewer_id, n_pi), once=True)
 
     def _initialize_n_pi_interaction_viewer(self, viewer_id: str, n_pi):
-        """Initialize py3Dmol viewer for n→π* interaction visualization."""
-        # Get the π system residue sequence number from the first pi atom
-        pi_res_seq = n_pi.pi_atoms[0].res_seq if n_pi.pi_atoms else ""
-        pi_chain_id = n_pi.pi_atoms[0].chain_id if n_pi.pi_atoms else ""
+        """Initialize py3Dmol viewer for n→π* interaction visualization.
 
-        javascript = f"""
-        (function() {{
-            function init3Dmol() {{
-                if (typeof $3Dmol === 'undefined') {{
-                    setTimeout(init3Dmol, 100);
-                    return;
-                }}
-
-                let element = document.getElementById("{viewer_id}");
-                if (!element) {{
-                    setTimeout(init3Dmol, 100);
-                    return;
-                }}
-
-                try {{
-                    let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
-
-                    let pdb_data = `{self.pdb_content}`;
-                    viewer.addModel(pdb_data, "pdb");
-
-                    viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
-
-                    // Highlight lone pair atom residue
-                    viewer.setStyle({{resi: '{n_pi.lone_pair_atom.res_seq}', chain: '{n_pi.lone_pair_atom.chain_id}'}},
-                                  {{stick: {{colorscheme: 'orangeCarbon'}}}});
-
-                    // Highlight π system residue
-                    viewer.setStyle({{resi: '{pi_res_seq}', chain: '{pi_chain_id}'}},
-                                  {{stick: {{colorscheme: 'tealCarbon'}}}});
-
-                    // Add residue labels
-                    viewer.addLabel('{n_pi.get_donor_residue()}',
-                                  {{position: {{x: {n_pi.lone_pair_atom.coords.x}, y: {n_pi.lone_pair_atom.coords.y}, z: {n_pi.lone_pair_atom.coords.z}}},
-                                   backgroundColor: 'orange', fontColor: 'white', fontSize: 14}});
-
-                    viewer.addLabel('{n_pi.get_acceptor_residue()}',
-                                  {{position: {{x: {n_pi.pi_center.x}, y: {n_pi.pi_center.y}, z: {n_pi.pi_center.z}}},
-                                   backgroundColor: 'teal', fontColor: 'white', fontSize: 14}});
-
-                    // Add distance label (at midpoint)
-                    let npi_midpoint = {{
-                        x: ({n_pi.lone_pair_atom.coords.x} + {n_pi.pi_center.x}) / 2,
-                        y: ({n_pi.lone_pair_atom.coords.y} + {n_pi.pi_center.y}) / 2,
-                        z: ({n_pi.lone_pair_atom.coords.z} + {n_pi.pi_center.z}) / 2
-                    }};
-                    viewer.addLabel('{n_pi.distance:.2f} Å',
-                                  {{position: npi_midpoint,
-                                   backgroundColor: 'black', fontColor: 'white', fontSize: 12}});
-
-                    // Add line from lone pair atom to π center
-                    viewer.addCylinder({{
-                        start: {{x: {n_pi.lone_pair_atom.coords.x}, y: {n_pi.lone_pair_atom.coords.y}, z: {n_pi.lone_pair_atom.coords.z}}},
-                        end: {{x: {n_pi.pi_center.x}, y: {n_pi.pi_center.y}, z: {n_pi.pi_center.z}}},
-                        radius: 0.1,
-                        color: 'green',
-                        dashed: true
-                    }});
-
-                    viewer.zoomTo({{chain: ['{n_pi.lone_pair_atom.chain_id}', '{pi_chain_id}'], resi: ['{n_pi.lone_pair_atom.res_seq}', '{pi_res_seq}']}});
-                    viewer.render();
-
-                    setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 100);
-                    setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 300);
-                    setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 500);
-                }} catch (error) {{
-                    console.error("Error creating viewer:", error);
-                }}
-            }}
-
-            setTimeout(init3Dmol, 400);
-        }})();
+        :param viewer_id: Unique ID for the viewer div
+        :param n_pi: N-pi interaction
         """
+        javascript = generate_n_pi_interaction_viewer_js(n_pi, self.pdb_content, viewer_id)
         ui.run_javascript(javascript)
 
     def _show_cooperativity_chain_visualization(self, chain):
