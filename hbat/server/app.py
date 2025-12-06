@@ -8,6 +8,7 @@ with integrated 3D visualization using py3Dmol.
 import asyncio
 import os
 import tempfile
+import zipfile
 from pathlib import Path
 from typing import Optional
 
@@ -48,6 +49,55 @@ class HBATWebApp:
         # Stepper
         self.stepper: Optional[ui.stepper] = None
 
+    def _show_citation_dialog(self):
+        """Show citation dialog."""
+        with ui.dialog().props("persistent") as dialog, ui.card().style("width: 700px; max-width: 90vw;"):
+            with ui.card_actions().classes("justify-end"):
+                ui.button("Close", on_click=dialog.close).props("color=primary")
+
+            with ui.card_section():
+                ui.label("Citation").classes("text-h6 q-mb-md")
+                ui.label("If you use HBAT in your research, please cite:").classes("text-body2 q-mb-md")
+
+                # HBAT 2 citation
+                ui.label("Tiwari, A. (2025). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. Zenodo. https://doi.org/10.5281/zenodo.17645377").classes("text-body2 q-mb-sm")
+
+                with ui.expansion("BibTeX", icon="code").classes("w-full q-mb-md"):
+                    ui.markdown("""
+```bibtex
+@misc{tiwari_2025_17645321,
+   author    = {Tiwari, Abhishek},
+   title     = {HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
+   month     = nov,
+   year      = 2025,
+   publisher = {Zenodo},
+   doi       = {10.5281/zenodo.17645321},
+   url       = {https://doi.org/10.5281/zenodo.17645321},
+}
+```
+                    """)
+
+                # Original HBAT citation
+                ui.label("Tiwari, A., & Panigrahi, S. K. (2007). HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures. In Silico Biology, 7(6). https://doi.org/10.3233/ISI-2007-00337").classes("text-body2 q-mb-sm")
+
+                with ui.expansion("BibTeX", icon="code").classes("w-full"):
+                    ui.markdown("""
+```bibtex
+@article{tiwari2007hbat,
+   author  = {Tiwari, Abhishek and Panigrahi, Sunil Kumar},
+   doi     = {10.3233/ISI-2007-00337},
+   journal = {In Silico Biology},
+   month   = dec,
+   number  = {6},
+   title   = {{HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures}},
+   volume  = {7},
+   year    = {2007}
+}
+```
+                    """)
+
+        dialog.open()
+
     def create_ui(self):
         """Create the main user interface."""
         # Header with menu button
@@ -56,10 +106,11 @@ class HBATWebApp:
             ui.image("/static/hbat.svg").classes("w-10 h-10 q-ml-md")
             ui.label(f"HBAT 2 - {APP_NAME}").classes("text-h5 q-ml-sm")
             ui.space()
+            ui.button("Cite", icon="format_quote", on_click=self._show_citation_dialog).props("flat color=yellow")
             with ui.link(target="http://hbat.abhishek-tiwari.com", new_tab=True).classes("text-white no-underline"):
-                ui.button(icon="description").props("flat round color=white").tooltip("Documentation")
+                ui.button("Docs", icon="description").props("flat color=white")
             with ui.link(target="https://github.com/abhishektiwari/hbat", new_tab=True).classes("text-white no-underline"):
-                ui.button(icon="code").props("flat round color=white").tooltip("GitHub Repository")
+                ui.button("Code", icon="code").props("flat color=white")
 
         # Left drawer
         with ui.left_drawer(fixed=False).props("bordered") as left_drawer:
@@ -100,17 +151,23 @@ class HBATWebApp:
 
                 ui.label("Quick Actions").classes("text-subtitle2 q-pa-md")
                 with ui.list().props("dense"):
-                    with ui.item().props("clickable").on("click", lambda: ui.open("https://www.rcsb.org/", new_tab=True)):
+                    with ui.item().props("clickable").on("click", lambda: ui.run_javascript('window.open("https://www.rcsb.org/", "_blank")')):
                         with ui.item_section().props("avatar"):
                             ui.icon("public", color="grey")
                         with ui.item_section():
                             ui.item_label("RCSB PDB")
 
-                    with ui.item().props("clickable").on("click", lambda: ui.open("https://hbat.abhishek-tiwari.com/", new_tab=True)):
+                    with ui.item().props("clickable").on("click", lambda: ui.run_javascript('window.open("https://hbat.abhishek-tiwari.com/", "_blank")')):
                         with ui.item_section().props("avatar"):
                             ui.icon("help", color="grey")
                         with ui.item_section():
                             ui.item_label("Help & Docs")
+
+                    with ui.item().props("clickable").on("click", self._show_citation_dialog):
+                        with ui.item_section().props("avatar"):
+                            ui.icon("format_quote", color="grey")
+                        with ui.item_section():
+                            ui.item_label("Cite HBAT")
 
         # Footer
         with ui.footer(fixed=False).classes("items-center"):
@@ -288,7 +345,7 @@ class HBATWebApp:
         ui.notify(f"Exported to {output_file.name}", type="positive", position="top-left")
 
     def _export_csv(self):
-        """Export results as CSV."""
+        """Export results as CSV (creates a zip file with all CSV files)."""
         if not self.analyzer:
             ui.notify("No analysis results to export", type="warning", position="top-left")
             return
@@ -298,12 +355,22 @@ class HBATWebApp:
         base_filename = UPLOADS_DIR / base_name
         export_to_csv_files(self.analyzer, str(base_filename))
 
-        # Download all generated CSV files
+        # Get all generated CSV files
         csv_files = list(UPLOADS_DIR.glob(f"{base_name}_*.csv"))
         if csv_files:
-            for csv_file in csv_files:
-                ui.download(str(csv_file))
-            ui.notify(f"Exported {len(csv_files)} CSV file(s)", type="positive", position="top-left")
+            # Create a zip file containing all CSV files
+            zip_path = UPLOADS_DIR / f"{base_name}_csv_export.zip"
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for csv_file in csv_files:
+                    zipf.write(csv_file, csv_file.name)
+
+            # Download the zip file
+            ui.download(str(zip_path))
+            ui.notify(f"Exported {len(csv_files)} CSV file(s) as ZIP", type="positive", position="top-left")
+
+            # Clean up individual CSV files (optional - keep them for now)
+            # for csv_file in csv_files:
+            #     csv_file.unlink()
         else:
             ui.notify("No CSV files were generated", type="warning", position="top-left")
 

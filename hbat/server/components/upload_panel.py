@@ -89,7 +89,7 @@ class UploadPanel:
                 auto_upload=True,
             ).props('accept=".pdb"').classes("w-full")
 
-        ui.label("OR").classes("text-center text-h6 q-my-md")
+        ui.label("OR").classes("text-center text-bold q-my-md")
 
         # Option 2: Download from PDB
         with ui.card().classes("w-full q-pa-md"):
