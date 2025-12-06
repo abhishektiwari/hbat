@@ -597,3 +597,66 @@ class ParameterPanel:
             covalent_cutoff_factor=self.covalent_cutoff_factor,
             analysis_mode=self.analysis_mode,
         )
+
+    def reset(self):
+        """Reset all parameters to default values."""
+        # PDB fixing parameters
+        self.fix_pdb_enabled = ParametersDefault.FIX_PDB_ENABLED
+        self.fix_pdb_method = ParametersDefault.FIX_PDB_METHOD
+        self.fix_pdb_add_hydrogens = ParametersDefault.FIX_PDB_ADD_HYDROGENS
+        self.fix_pdb_add_heavy_atoms = ParametersDefault.FIX_PDB_ADD_HEAVY_ATOMS
+        self.fix_pdb_replace_nonstandard = ParametersDefault.FIX_PDB_REPLACE_NONSTANDARD
+        self.fix_pdb_remove_heterogens = ParametersDefault.FIX_PDB_REMOVE_HETEROGENS
+        self.fix_pdb_keep_water = ParametersDefault.FIX_PDB_KEEP_WATER
+
+        # Hydrogen bond parameters
+        self.hb_distance = ParametersDefault.HB_DISTANCE_CUTOFF
+        self.hb_angle = ParametersDefault.HB_ANGLE_CUTOFF
+        self.hb_da_distance = ParametersDefault.HB_DA_DISTANCE
+
+        # Weak hydrogen bond parameters
+        self.whb_distance = ParametersDefault.WHB_DISTANCE_CUTOFF
+        self.whb_angle = ParametersDefault.WHB_ANGLE_CUTOFF
+        self.whb_da_distance = ParametersDefault.WHB_DA_DISTANCE
+
+        # Halogen bond parameters
+        self.xb_distance = ParametersDefault.XB_DISTANCE_CUTOFF
+        self.xb_angle = ParametersDefault.XB_ANGLE_CUTOFF
+
+        # π interaction subtype parameters
+        self.pi_ccl_distance = ParametersDefault.PI_CCL_DISTANCE_CUTOFF
+        self.pi_ccl_angle = ParametersDefault.PI_CCL_ANGLE_CUTOFF
+        self.pi_cbr_distance = ParametersDefault.PI_CBR_DISTANCE_CUTOFF
+        self.pi_cbr_angle = ParametersDefault.PI_CBR_ANGLE_CUTOFF
+        self.pi_ci_distance = ParametersDefault.PI_CI_DISTANCE_CUTOFF
+        self.pi_ci_angle = ParametersDefault.PI_CI_ANGLE_CUTOFF
+        self.pi_ch_distance = ParametersDefault.PI_CH_DISTANCE_CUTOFF
+        self.pi_ch_angle = ParametersDefault.PI_CH_ANGLE_CUTOFF
+        self.pi_nh_distance = ParametersDefault.PI_NH_DISTANCE_CUTOFF
+        self.pi_nh_angle = ParametersDefault.PI_NH_ANGLE_CUTOFF
+        self.pi_oh_distance = ParametersDefault.PI_OH_DISTANCE_CUTOFF
+        self.pi_oh_angle = ParametersDefault.PI_OH_ANGLE_CUTOFF
+        self.pi_sh_distance = ParametersDefault.PI_SH_DISTANCE_CUTOFF
+        self.pi_sh_angle = ParametersDefault.PI_SH_ANGLE_CUTOFF
+
+        # π-π stacking parameters
+        self.pi_pi_distance = ParametersDefault.PI_PI_DISTANCE_CUTOFF
+        self.pi_pi_parallel_angle = ParametersDefault.PI_PI_PARALLEL_ANGLE_CUTOFF
+        self.pi_pi_tshaped_angle_min = ParametersDefault.PI_PI_TSHAPED_ANGLE_MIN
+        self.pi_pi_tshaped_angle_max = ParametersDefault.PI_PI_TSHAPED_ANGLE_MAX
+        self.pi_pi_offset = ParametersDefault.PI_PI_OFFSET_CUTOFF
+
+        # Carbonyl interaction parameters
+        self.carbonyl_distance = ParametersDefault.CARBONYL_DISTANCE_CUTOFF
+        self.carbonyl_angle_min = ParametersDefault.CARBONYL_ANGLE_MIN
+        self.carbonyl_angle_max = ParametersDefault.CARBONYL_ANGLE_MAX
+
+        # n→π* interaction parameters
+        self.n_pi_distance = ParametersDefault.N_PI_DISTANCE_CUTOFF
+        self.n_pi_sulfur_distance = ParametersDefault.N_PI_SULFUR_DISTANCE_CUTOFF
+        self.n_pi_angle_min = ParametersDefault.N_PI_ANGLE_MIN
+        self.n_pi_angle_max = ParametersDefault.N_PI_ANGLE_MAX
+
+        # General parameters
+        self.covalent_cutoff_factor = ParametersDefault.COVALENT_CUTOFF_FACTOR
+        self.analysis_mode = ParametersDefault.ANALYSIS_MODE

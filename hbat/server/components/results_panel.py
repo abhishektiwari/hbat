@@ -941,3 +941,13 @@ class WebResultsPanel:
             ui.notify("Graphviz is not installed. Install with: pip install graphviz", type="warning", position="top-left")
         except Exception as e:
             ui.notify(f"Error generating chain graph: {str(e)}", type="negative", position="top-left")
+
+    def reset(self):
+        """Reset the results panel and clear all analysis results."""
+        self.analyzer = None
+        self.pdb_content = None
+        self.current_file = None
+        self.container.clear()
+
+        with self.container:
+            ui.label("No analysis results yet").classes("text-h6 text-grey q-pa-lg")

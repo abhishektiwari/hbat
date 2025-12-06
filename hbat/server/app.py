@@ -12,7 +12,7 @@ import zipfile
 from pathlib import Path
 from typing import Optional
 
-from nicegui import app, ui
+from nicegui import app, context, ui
 
 from ..constants import APP_NAME
 from ..core.analysis import AnalysisParameters, NPMolecularInteractionAnalyzer
@@ -48,6 +48,11 @@ class HBATWebApp:
 
         # Stepper
         self.stepper: Optional[ui.stepper] = None
+
+        # Navigation items
+        self.nav_configure: Optional[ui.item] = None
+        self.nav_results: Optional[ui.item] = None
+        self.nav_export: Optional[ui.item] = None
 
     def _show_citation_dialog(self):
         """Show citation dialog."""
@@ -112,13 +117,14 @@ class HBATWebApp:
             with ui.link(target="https://github.com/abhishektiwari/hbat", new_tab=True).classes("text-white no-underline"):
                 ui.button("Code", icon="code").props("flat color=white")
 
-        # Left drawer
-        with ui.left_drawer(fixed=False).props("bordered model-value=false") as left_drawer:
+        # Left drawer (set fixed=True to prevent JavaScript state queries during heavy operations)
+        with ui.left_drawer(fixed=True).props("bordered") as left_drawer:
             with ui.scroll_area().classes("w-full h-full"):
                 ui.label("Navigation").classes("text-h6 q-pa-md")
                 ui.separator()
 
                 with ui.list().props("dense"):
+                    # Step 1: Always enabled
                     with ui.item().props("clickable").on("click", lambda: self.stepper.set_value("upload")):
                         with ui.item_section().props("avatar"):
                             ui.icon("upload_file", color="primary")
@@ -126,31 +132,47 @@ class HBATWebApp:
                             ui.item_label("Step 1: Upload PDB")
                             ui.item_label("Upload or download PDB file").props("caption")
 
-                    with ui.item().props("clickable").on("click", lambda: self.stepper.set_value("configure")):
+                    # Step 2: Enabled when file is uploaded
+                    self.nav_configure = ui.item().props("clickable").on("click", lambda: self._navigate_to_step("configure"))
+                    with self.nav_configure:
                         with ui.item_section().props("avatar"):
                             ui.icon("settings", color="primary")
                         with ui.item_section():
                             ui.item_label("Step 2: Configure")
                             ui.item_label("Set analysis parameters").props("caption")
+                    self.nav_configure.bind_enabled_from(self, "current_file", lambda x: x is not None)
 
-                    with ui.item().props("clickable").on("click", lambda: self.stepper.set_value("results")):
+                    # Step 3: Enabled when analysis is complete
+                    self.nav_results = ui.item().props("clickable").on("click", lambda: self._navigate_to_step("results"))
+                    with self.nav_results:
                         with ui.item_section().props("avatar"):
                             ui.icon("analytics", color="primary")
                         with ui.item_section():
                             ui.item_label("Step 3: Results")
                             ui.item_label("View analysis results").props("caption")
+                    self.nav_results.bind_enabled_from(self, "analyzer", lambda x: x is not None)
 
-                    with ui.item().props("clickable").on("click", lambda: self.stepper.set_value("export")):
+                    # Step 4: Enabled when analysis is complete
+                    self.nav_export = ui.item().props("clickable").on("click", lambda: self._navigate_to_step("export"))
+                    with self.nav_export:
                         with ui.item_section().props("avatar"):
                             ui.icon("download", color="primary")
                         with ui.item_section():
                             ui.item_label("Step 4: Export")
                             ui.item_label("Download results").props("caption")
+                    self.nav_export.bind_enabled_from(self, "analyzer", lambda x: x is not None)
 
                 ui.separator()
 
                 ui.label("Quick Actions").classes("text-subtitle2 q-pa-md")
                 with ui.list().props("dense"):
+                    with ui.item().props("clickable").on("click", self._start_over):
+                        with ui.item_section().props("avatar"):
+                            ui.icon("refresh", color="warning")
+                        with ui.item_section():
+                            ui.item_label("Start Over")
+                            ui.item_label("Reset all analysis and settings").props("caption")
+
                     with ui.item().props("clickable").on("click", self._show_citation_dialog):
                         with ui.item_section().props("avatar"):
                             ui.icon("format_quote", color="grey")
@@ -197,7 +219,8 @@ class HBATWebApp:
                             on_click=self._run_analysis,
                             icon="play_arrow",
                         ).props("color=primary size=lg")
-                        self.status_label = ui.label("").classes("text-caption q-mt-sm")
+                        self.analyze_button.bind_enabled_from(self, "current_file", lambda x: x is not None)
+                        self.status_label = ui.label("Ready").classes("text-caption q-mt-sm text-grey")
 
                     with ui.stepper_navigation():
                         ui.button("Back", icon="arrow_back", on_click=lambda: self.stepper.previous()).props(
@@ -254,23 +277,6 @@ class HBATWebApp:
                             "Start Over", icon="refresh", on_click=self._start_over
                         ).props("flat color=primary")
 
-    def _start_over(self):
-        """Reset the application to initial state."""
-        # Reset app state
-        self.current_file = None
-        self.current_file_path = None
-        self.pdb_content = None
-        self.analyzer = None
-
-        # Reset upload panel
-        if self.upload_panel:
-            self.upload_panel.reset()
-
-        # Go back to upload step
-        self.stepper.set_value("upload")
-
-        ui.notify("Application reset", type="info", position="top-left")
-
     async def _handle_upload_next(self):
         """Handle Next button in upload step - download PDB if ID provided."""
         if self.upload_panel:
@@ -319,6 +325,7 @@ class HBATWebApp:
         self.analysis_running = True
         self.analyze_button.disable()
         self.status_label.text = "Running analysis..."
+        self.status_label.classes(replace="text-caption q-mt-sm text-warning text-bold")
 
         try:
             # Get parameters from UI
@@ -335,6 +342,7 @@ class HBATWebApp:
 
             if success:
                 self.status_label.text = f"Analysis completed! File: uploads/{self.current_file}"
+                self.status_label.classes(replace="text-caption q-mt-sm text-positive")
                 ui.notify("Analysis completed!", type="positive", position="top-left")
 
                 # Update results display
@@ -346,10 +354,12 @@ class HBATWebApp:
                 self.stepper.next()
             else:
                 self.status_label.text = "Analysis failed"
+                self.status_label.classes(replace="text-caption q-mt-sm text-negative")
                 ui.notify("Analysis failed. Please check the PDB file.", type="negative", position="top-left")
 
         except Exception as e:
             self.status_label.text = f"Error: {str(e)}"
+            self.status_label.classes(replace="text-caption q-mt-sm text-negative")
             ui.notify(f"Error: {str(e)}", type="negative", position="top-left")
 
         finally:
@@ -411,6 +421,56 @@ class HBATWebApp:
         export_to_txt_single_file(self.analyzer, str(output_file))
         ui.download(str(output_file))
         ui.notify(f"Exported to {output_file.name}", type="positive", position="top-left")
+
+    def _navigate_to_step(self, step: str):
+        """Navigate to a specific step with validation.
+
+        :param step: Step name to navigate to
+        :type step: str
+        """
+        # Validate navigation based on step requirements
+        if step == "configure" and self.current_file is None:
+            ui.notify("Please upload a PDB file first", type="warning", position="top-left")
+            return
+
+        if step in ("results", "export") and self.analyzer is None:
+            ui.notify("Please run analysis first", type="warning", position="top-left")
+            return
+
+        # Navigate to the requested step
+        if self.stepper:
+            self.stepper.set_value(step)
+
+    def _start_over(self):
+        """Reset the application to initial state."""
+        # Reset analyzer and file state
+        self.analyzer = None
+        self.current_file = None
+        self.current_file_path = None
+        self.analysis_running = False
+        self.pdb_content = None
+
+        # Reset all panels
+        if self.upload_panel:
+            self.upload_panel.reset()
+        if self.parameter_panel:
+            self.parameter_panel.reset()
+        if self.results_panel:
+            self.results_panel.reset()
+
+        # Reset status label
+        if self.status_label:
+            self.status_label.text = "Ready"
+            self.status_label.classes(replace="text-caption text-grey")
+
+        # Note: Analyze button and navigation items are automatically
+        # disabled via bindings when current_file and analyzer are set to None
+
+        # Go back to upload step
+        if self.stepper:
+            self.stepper.set_value("upload")
+
+        ui.notify("Application reset to initial state", type="positive", position="top-left")
 
 
 def create_app():
@@ -505,6 +565,7 @@ def create_app():
         show=not is_production,  # Don't open browser in production/Docker
         host=host,
         port=port,
+        reconnect_timeout=300.0,  # 5 minutes - increased for long-running analysis
     )
 
 
