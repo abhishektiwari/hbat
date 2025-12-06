@@ -39,9 +39,9 @@ class UploadPanel:
                 if self.on_file_upload:
                     self.on_file_upload(filename, content)
 
-                ui.notify(f"Uploaded {filename}", type="positive")
+                ui.notify(f"Uploaded {filename}", type="positive", position="top-left")
             except Exception as error:
-                ui.notify(f"Upload failed: {str(error)}", type="negative")
+                ui.notify(f"Upload failed: {str(error)}", type="negative", position="top-left")
                 print(f"Upload error: {error}")
                 import traceback
                 traceback.print_exc()
@@ -50,18 +50,18 @@ class UploadPanel:
             """Download PDB file from RCSB using PDB ID."""
             pdb_id = pdb_id_input.value.strip().lower()
             if not pdb_id:
-                ui.notify("Please enter a PDB ID", type="warning")
+                ui.notify("Please enter a PDB ID", type="warning", position="top-left")
                 return
 
             if len(pdb_id) != 4:
-                ui.notify("PDB ID must be 4 characters", type="warning")
+                ui.notify("PDB ID must be 4 characters", type="warning", position="top-left")
                 return
 
             try:
                 import urllib.request
 
                 url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
-                ui.notify(f"Downloading {pdb_id} from RCSB PDB...", type="info")
+                ui.notify(f"Downloading {pdb_id} from RCSB PDB...", type="info", position="top-left")
 
                 with urllib.request.urlopen(url) as response:
                     content = response.read()
@@ -75,9 +75,9 @@ class UploadPanel:
                 if self.on_file_upload:
                     self.on_file_upload(filename, content)
 
-                ui.notify(f"Downloaded {filename} from RCSB PDB", type="positive")
+                ui.notify(f"Downloaded {filename} from RCSB PDB", type="positive", position="top-left")
             except Exception as error:
-                ui.notify(f"Download failed: {str(error)}", type="negative")
+                ui.notify(f"Download failed: {str(error)}", type="negative", position="top-left")
                 print(f"Download error: {error}")
 
         # Option 1: Upload file
@@ -118,18 +118,17 @@ class UploadPanel:
             ui.markdown(
                 """
 **Supported Files:**
-- **PDB files** (.pdb) - Protein Data Bank format
+
+- **PDB files** (.pdb)
+
+- Protein Data Bank format
 - Files can be downloaded from [RCSB PDB](https://www.rcsb.org/)
-- Maximum file size: 100 MB
+- Maximum file size: 1 MB
 
 **PDB IDs:**
+
 - Enter a 4-character PDB ID (e.g., 1BHL, 1GAI, 1UBI)
 - Files are downloaded directly from RCSB PDB
 - Common examples: 1BHL (Hemoglobin), 1UBI (Ubiquitin)
-
-**Upload Location:**
-- Files are saved to the `uploads/` directory
-- Files persist after analysis for future reference
-- Uploaded files can be reused without re-uploading
             """
             )

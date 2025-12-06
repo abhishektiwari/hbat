@@ -53,11 +53,13 @@ class HBATWebApp:
         # Header with menu button
         with ui.header().classes("items-center"):
             ui.button(icon="menu", on_click=lambda: left_drawer.toggle()).props("flat color=white")
-            ui.label(f"{APP_NAME}").classes("text-h5 q-ml-md")
+            ui.image("/static/hbat.svg").classes("w-10 h-10 q-ml-md")
+            ui.label(f"HBAT 2 - {APP_NAME}").classes("text-h5 q-ml-sm")
             ui.space()
-            ui.link("Documentation", "https://hbat.abhishek-tiwari.com/", new_tab=True).classes(
-                "text-white"
-            )
+            with ui.link(target="http://hbat.abhishek-tiwari.com", new_tab=True).classes("text-white no-underline"):
+                ui.button(icon="description").props("flat round color=white").tooltip("Documentation")
+            with ui.link(target="https://github.com/abhishektiwari/hbat", new_tab=True).classes("text-white no-underline"):
+                ui.button(icon="code").props("flat round color=white").tooltip("GitHub Repository")
 
         # Left drawer
         with ui.left_drawer(fixed=False).props("bordered") as left_drawer:
@@ -124,12 +126,9 @@ class HBATWebApp:
 
         # Main content area with stepper
         with ui.column().classes("w-full q-pa-md"):
-            with ui.stepper().props("vertical").classes("w-full") as self.stepper:
+            with ui.stepper().classes("w-full") as self.stepper:
                 # Step 1: Upload PDB File
                 with ui.step("upload", title="Upload PDB File", icon="upload_file"):
-                    ui.label("Upload a PDB file or enter a PDB ID to download").classes(
-                        "text-subtitle1 q-mb-md"
-                    )
                     self.upload_panel = UploadPanel(on_file_upload=self._on_file_upload)
                     self.upload_panel.create_ui()
 
@@ -142,21 +141,18 @@ class HBATWebApp:
                 with ui.step(
                     "configure", title="Configure Parameters & Run", icon="settings"
                 ):
-                    ui.label("Configure analysis parameters").classes(
-                        "text-subtitle1 q-mb-md"
-                    )
                     self.parameter_panel = ParameterPanel(param_drawer, param_drawer_content)
                     self.parameter_panel.create_ui()
 
                     ui.separator().classes("q-my-md")
 
-                    ui.label("Run Analysis").classes("text-h6 q-mt-md")
-                    self.analyze_button = ui.button(
-                        "Analyze",
-                        on_click=self._run_analysis,
-                        icon="play_arrow",
-                    ).props("color=primary size=lg")
-                    self.status_label = ui.label("").classes("text-caption q-mt-sm")
+                    with ui.column().classes("items-center w-full"):
+                        self.analyze_button = ui.button(
+                            "Analyze",
+                            on_click=self._run_analysis,
+                            icon="play_arrow",
+                        ).props("color=primary size=lg")
+                        self.status_label = ui.label("").classes("text-caption q-mt-sm")
 
                     with ui.stepper_navigation():
                         ui.button("Back", on_click=lambda: self.stepper.previous()).props(
@@ -168,7 +164,6 @@ class HBATWebApp:
 
                 # Step 3: View Results
                 with ui.step("results", title="View Results", icon="analytics"):
-                    ui.label("Analysis Results").classes("text-subtitle1 q-mb-md")
 
                     # Container for dynamically created results
                     results_container = ui.column().classes("w-full")
@@ -224,18 +219,18 @@ class HBATWebApp:
         with open(self.current_file_path, "w") as f:
             f.write(self.pdb_content)
 
-        ui.notify(f"File loaded: {filename}", type="positive")
+        ui.notify(f"File loaded: {filename}", type="positive", position="top-left")
         # Allow user to proceed to next step
         self.stepper.next()
 
     async def _run_analysis(self):
         """Run the molecular interaction analysis."""
         if self.analysis_running:
-            ui.notify("Analysis already running", type="warning")
+            ui.notify("Analysis already running", type="warning", position="top-left")
             return
 
         if not self.current_file_path or not self.current_file_path.exists():
-            ui.notify("Please upload a PDB file first", type="warning")
+            ui.notify("Please upload a PDB file first", type="warning", position="top-left")
             return
 
         self.analysis_running = True
@@ -257,7 +252,7 @@ class HBATWebApp:
 
             if success:
                 self.status_label.text = f"Analysis completed! File: uploads/{self.current_file}"
-                ui.notify("Analysis completed!", type="positive")
+                ui.notify("Analysis completed!", type="positive", position="top-left")
 
                 # Update results display
                 await self.results_panel.update_results(
@@ -268,11 +263,11 @@ class HBATWebApp:
                 self.stepper.next()
             else:
                 self.status_label.text = "Analysis failed"
-                ui.notify("Analysis failed. Please check the PDB file.", type="negative")
+                ui.notify("Analysis failed. Please check the PDB file.", type="negative", position="top-left")
 
         except Exception as e:
             self.status_label.text = f"Error: {str(e)}"
-            ui.notify(f"Error: {str(e)}", type="negative")
+            ui.notify(f"Error: {str(e)}", type="negative", position="top-left")
 
         finally:
             self.analysis_running = False
@@ -281,7 +276,7 @@ class HBATWebApp:
     def _export_json(self):
         """Export results as JSON."""
         if not self.analyzer:
-            ui.notify("No analysis results to export", type="warning")
+            ui.notify("No analysis results to export", type="warning", position="top-left")
             return
 
         base_name = Path(self.current_file).stem
@@ -290,12 +285,12 @@ class HBATWebApp:
             self.analyzer, str(output_file), input_file=self.current_file
         )
         ui.download(str(output_file))
-        ui.notify(f"Exported to {output_file.name}", type="positive")
+        ui.notify(f"Exported to {output_file.name}", type="positive", position="top-left")
 
     def _export_csv(self):
         """Export results as CSV."""
         if not self.analyzer:
-            ui.notify("No analysis results to export", type="warning")
+            ui.notify("No analysis results to export", type="warning", position="top-left")
             return
 
         # Remove extension from current_file to get base name
@@ -308,21 +303,21 @@ class HBATWebApp:
         if csv_files:
             for csv_file in csv_files:
                 ui.download(str(csv_file))
-            ui.notify(f"Exported {len(csv_files)} CSV file(s)", type="positive")
+            ui.notify(f"Exported {len(csv_files)} CSV file(s)", type="positive", position="top-left")
         else:
-            ui.notify("No CSV files were generated", type="warning")
+            ui.notify("No CSV files were generated", type="warning", position="top-left")
 
     def _export_txt(self):
         """Export results as TXT."""
         if not self.analyzer:
-            ui.notify("No analysis results to export", type="warning")
+            ui.notify("No analysis results to export", type="warning", position="top-left")
             return
 
         base_name = Path(self.current_file).stem
         output_file = UPLOADS_DIR / f"{base_name}_results.txt"
         export_to_txt_single_file(self.analyzer, str(output_file))
         ui.download(str(output_file))
-        ui.notify(f"Exported to {output_file.name}", type="positive")
+        ui.notify(f"Exported to {output_file.name}", type="positive", position="top-left")
 
 
 def create_app():
@@ -334,8 +329,66 @@ def create_app():
     @ui.page("/")
     def index():
         """Main page route."""
+        # Configure Quasar color theme
+        ui.colors(
+            primary='#20c997',
+            secondary='#6c757d',
+            accent='#9C27B0',
+            dark='#1d1d1d',
+            positive='#198754',
+            negative='#C10015',
+            info='#31CCEC',
+            warning='#ffc107'
+        )
+
         # Load 3Dmol library for this page
         ui.add_head_html('<script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>')
+
+        # Add meta tags for SEO and social sharing
+        ui.add_head_html('''
+            <meta name="description" content="HBAT 2 - Hydrogen Bond Analysis Tool for analyzing molecular interactions including hydrogen bonds, halogen bonds, π interactions, and cooperativity chains in protein structures">
+            <meta name="keywords" content="hydrogen bond analysis, hydrogen bond calculator, protein-ligand interactions, molecular interactions, protein structure, halogen bonds, pi interactions, cooperativity chains, structural biology, bioinformatics, PDB analysis">
+            <meta name="author" content="Abhishek Tiwari">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+            <!-- Open Graph / Facebook -->
+            <meta property="og:type" content="website">
+            <meta property="og:url" content="https://hbat.abhishek-tiwari.com/">
+            <meta property="og:title" content="HBAT - Hydrogen Bond Analysis Tool">
+            <meta property="og:description" content="Comprehensive tool for analyzing molecular interactions in protein structures including hydrogen bonds, halogen bonds, π interactions, and cooperativity chains">
+            <meta property="og:image" content="/static/hbat.svg">
+
+            <!-- Twitter -->
+            <meta property="twitter:card" content="summary_large_image">
+            <meta property="twitter:url" content="https://hbat.abhishek-tiwari.com/">
+            <meta property="twitter:title" content="HBAT 2 - Hydrogen Bond Analysis Tool">
+            <meta property="twitter:description" content="Comprehensive tool for analyzing molecular interactions in protein structures including hydrogen bonds, halogen bonds, π interactions, and cooperativity chains">
+            <meta property="twitter:image" content="/static/hbat.svg">
+
+            <!-- Custom Styling -->
+            <style>
+                /* Custom styling for cards */
+                .q-card {
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+
+                /* Smooth transitions */
+                .q-btn, .q-stepper__tab {
+                    transition: all 0.3s ease;
+                }
+
+                /* Enhance button appearance */
+                .q-btn {
+                    text-transform: none;
+                }
+
+                /* Notifications at top */
+                .q-notifications__list--top {
+                    top: 70px;
+                }
+            </style>
+        ''')
 
         hbat_app = HBATWebApp()
         hbat_app.create_ui()
@@ -346,8 +399,8 @@ def create_app():
         app.add_static_files("/static", str(static_dir))
 
     ui.run(
-        title=f"{APP_NAME} Web",
-        favicon="🧬",
+        title=f"HBAT 2 - {APP_NAME}",
+        favicon="/static/hbat.ico",
         dark=False,
         reload=False,
         show=True,

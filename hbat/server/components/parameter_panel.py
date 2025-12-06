@@ -534,7 +534,7 @@ class ParameterPanel:
 
     def _save_and_close(self):
         """Save parameters and close drawer."""
-        ui.notify("Parameters updated", type="positive")
+        ui.notify("Parameters updated", type="positive", position="top-left")
         self.param_drawer.hide()
 
     def get_parameters(self) -> AnalysisParameters:

@@ -133,8 +133,7 @@ class WebResultsPanel:
     def _update_summary_panel(self):
         """Update summary statistics panel."""
         with self.summary_panel:
-            ui.label("Analysis Summary").classes("text-h5")
-            ui.label(f"File: {self.current_file}").classes("text-subtitle1")
+            ui.label(f"Analysis Summary For: {self.current_file}").classes("text-h5")
 
             summary = self.analyzer.get_summary()
 
@@ -192,51 +191,37 @@ class WebResultsPanel:
 
             # Create table
             columns = [
-                {"name": "donor", "label": "Donor", "field": "donor", "align": "left"},
-                {
-                    "name": "hydrogen",
-                    "label": "Hydrogen",
-                    "field": "hydrogen",
-                    "align": "left",
-                },
-                {
-                    "name": "acceptor",
-                    "label": "Acceptor",
-                    "field": "acceptor",
-                    "align": "left",
-                },
-                {
-                    "name": "distance",
-                    "label": "Distance (Å)",
-                    "field": "distance",
-                    "align": "right",
-                },
-                {
-                    "name": "angle",
-                    "label": "Angle (°)",
-                    "field": "angle",
-                    "align": "right",
-                },
+                {"name": "visualize", "label": "3D View", "field": "visualize", "align": "center"},
+                {"name": "donor_res", "label": "Donor Residue", "field": "donor_res", "align": "left"},
+                {"name": "donor_atom", "label": "Donor Atom", "field": "donor_atom", "align": "left"},
+                {"name": "hydrogen", "label": "Hydrogen Atom", "field": "hydrogen", "align": "left"},
+                {"name": "acceptor_res", "label": "Acceptor Residue", "field": "acceptor_res", "align": "left"},
+                {"name": "acceptor_atom", "label": "Acceptor Atom", "field": "acceptor_atom", "align": "left"},
+                {"name": "distance", "label": "H...A (Å)", "field": "distance", "align": "right"},
+                {"name": "angle", "label": "Angle (°)", "field": "angle", "align": "right"},
+                {"name": "da_distance", "label": "D...A (Å)", "field": "da_distance", "align": "right"},
                 {"name": "type", "label": "Type", "field": "type", "align": "left"},
-                {
-                    "name": "visualize",
-                    "label": "3D View",
-                    "field": "visualize",
-                    "align": "center",
-                },
+                {"name": "da_props", "label": "D-A Props", "field": "da_props", "align": "left"},
+                {"name": "bs_int", "label": "B/S", "field": "bs_int", "align": "center"},
             ]
 
             rows = []
             for idx, hb in enumerate(self.analyzer.hydrogen_bonds):
+                bs_int = "B" if (hb.get_donor_residue() != hb.get_acceptor_residue()) else "S"
                 rows.append(
                     {
                         "id": idx,
-                        "donor": f"{hb.get_donor_residue()}",
+                        "donor_res": hb.get_donor_residue(),
+                        "donor_atom": hb.donor.name,
                         "hydrogen": hb.hydrogen.name,
-                        "acceptor": f"{hb.get_acceptor_residue()}",
+                        "acceptor_res": hb.get_acceptor_residue(),
+                        "acceptor_atom": hb.acceptor.name,
                         "distance": f"{hb.distance:.2f}",
-                        "angle": f"{hb.angle:.1f}",
+                        "angle": f"{math.degrees(hb.angle):.1f}",
+                        "da_distance": f"{hb.donor_acceptor_distance:.2f}",
                         "type": hb.bond_type,
+                        "da_props": hb.donor_acceptor_properties,
+                        "bs_int": bs_int,
                     }
                 )
 
@@ -272,7 +257,7 @@ class WebResultsPanel:
 
             with ui.card_section().classes("q-pa-md"):
                 ui.label(
-                    f"{hb.donor.res_name}{hb.donor.res_seq} → {hb.acceptor.res_name}{hb.acceptor.res_seq}"
+                    f"{hb.get_donor_residue()} → {hb.get_acceptor_residue()}"
                 ).classes("text-subtitle1 q-mb-md")
 
                 # Create unique viewer ID
@@ -342,11 +327,11 @@ class WebResultsPanel:
                     }});
 
                     // Add labels
-                    viewer.addLabel("{hb.donor.res_name}{hb.donor.res_seq}",
+                    viewer.addLabel("{hb.get_donor_residue()}",
                                    {{position: {{x: {hb.donor.coords.x}, y: {hb.donor.coords.y}, z: {hb.donor.coords.z}}},
                                     backgroundColor: 'cyan', fontColor: 'black', fontSize: 14}});
 
-                    viewer.addLabel("{hb.acceptor.res_name}{hb.acceptor.res_seq}",
+                    viewer.addLabel("{hb.get_acceptor_residue()}",
                                    {{position: {{x: {hb.acceptor.coords.x}, y: {hb.acceptor.coords.y}, z: {hb.acceptor.coords.z}}},
                                     backgroundColor: 'orange', fontColor: 'white', fontSize: 14}});
 
@@ -387,49 +372,35 @@ class WebResultsPanel:
 
             # Similar to hydrogen bonds but for halogen bonds
             columns = [
-                {"name": "donor", "label": "Donor", "field": "donor", "align": "left"},
-                {
-                    "name": "halogen",
-                    "label": "Halogen",
-                    "field": "halogen",
-                    "align": "left",
-                },
-                {
-                    "name": "acceptor",
-                    "label": "Acceptor",
-                    "field": "acceptor",
-                    "align": "left",
-                },
-                {
-                    "name": "distance",
-                    "label": "Distance (Å)",
-                    "field": "distance",
-                    "align": "right",
-                },
-                {
-                    "name": "angle",
-                    "label": "Angle (°)",
-                    "field": "angle",
-                    "align": "right",
-                },
-                {
-                    "name": "visualize",
-                    "label": "3D View",
-                    "field": "visualize",
-                    "align": "center",
-                },
+                {"name": "visualize", "label": "3D View", "field": "visualize", "align": "center"},
+                {"name": "halogen_res", "label": "Halogen Residue", "field": "halogen_res", "align": "left"},
+                {"name": "donor_atom", "label": "Donor Atom", "field": "donor_atom", "align": "left"},
+                {"name": "halogen_atom", "label": "Halogen Atom", "field": "halogen_atom", "align": "left"},
+                {"name": "acceptor_res", "label": "Acceptor Residue", "field": "acceptor_res", "align": "left"},
+                {"name": "acceptor_atom", "label": "Acceptor Atom", "field": "acceptor_atom", "align": "left"},
+                {"name": "distance", "label": "X...A (Å)", "field": "distance", "align": "right"},
+                {"name": "angle", "label": "Angle (°)", "field": "angle", "align": "right"},
+                {"name": "type", "label": "Type", "field": "type", "align": "left"},
+                {"name": "bs_interaction", "label": "B/S Interaction", "field": "bs_interaction", "align": "center"},
+                {"name": "da_properties", "label": "D-A Properties", "field": "da_properties", "align": "left"},
             ]
 
             rows = []
             for idx, xb in enumerate(self.analyzer.halogen_bonds):
+                bs_int = "B" if (xb.get_donor_residue() != xb.get_acceptor_residue()) else "S"
                 rows.append(
                     {
                         "id": idx,
-                        "donor": f"{xb.get_donor_residue()}",
-                        "halogen": xb.halogen.name,
-                        "acceptor": f"{xb.get_acceptor_residue()}",
+                        "halogen_res": xb.get_donor_residue(),
+                        "donor_atom": xb.donor.name if hasattr(xb, 'donor') and xb.donor else "",
+                        "halogen_atom": xb.halogen.name,
+                        "acceptor_res": xb.get_acceptor_residue(),
+                        "acceptor_atom": xb.acceptor.name,
                         "distance": f"{xb.distance:.2f}",
-                        "angle": f"{xb.angle:.1f}",
+                        "angle": f"{math.degrees(xb.angle):.1f}",
+                        "type": xb.bond_type,
+                        "bs_interaction": bs_int,
+                        "da_properties": xb.donor_acceptor_properties,
                     }
                 )
 
@@ -456,15 +427,12 @@ class WebResultsPanel:
     def _show_halogen_bond_visualization(self, xb):
         """Show 3D visualization of a halogen bond in a dialog."""
         with ui.dialog().props("persistent") as dialog, ui.card().style("width: 900px; max-width: 90vw;"):
-            with ui.card_section().classes("bg-orange text-white"):
-                with ui.row().classes("w-full items-center"):
-                    ui.label("3D Visualization - Halogen Bond").classes("text-h6")
-                    ui.space()
-                    ui.button(icon="close", on_click=dialog.close).props("flat round dense color=white")
+            with ui.card_actions().classes("justify-end"):
+                ui.button("Close", on_click=dialog.close).props("color=primary")
 
             with ui.card_section().classes("q-pa-md"):
                 ui.label(
-                    f"{xb.donor_atom.res_name}{xb.donor_atom.res_seq} → {xb.acceptor.res_name}{xb.acceptor.res_seq}"
+                    f"{xb.get_donor_residue()} → {xb.get_acceptor_residue()}"
                 ).classes("text-subtitle1 q-mb-md")
 
                 # Create unique viewer ID
@@ -473,9 +441,6 @@ class WebResultsPanel:
 
                 # Create div for viewer - container must have actual width
                 ui.html(f'<div id="{viewer_id}" style="width: 100%; height: 600px; min-width: 800px; position: relative;"></div>', sanitize=False)
-
-            with ui.card_actions().classes("justify-end"):
-                ui.button("Close", on_click=dialog.close).props("color=orange")
 
         dialog.open()
 
@@ -532,6 +497,15 @@ class WebResultsPanel:
                         dashed: true
                     }});
 
+                    // Add labels
+                    viewer.addLabel("{xb.get_donor_residue()}",
+                                   {{position: {{x: {xb.donor_atom.coords.x}, y: {xb.donor_atom.coords.y}, z: {xb.donor_atom.coords.z}}},
+                                    backgroundColor: 'purple', fontColor: 'white', fontSize: 14}});
+
+                    viewer.addLabel("{xb.get_acceptor_residue()}",
+                                   {{position: {{x: {xb.acceptor.coords.x}, y: {xb.acceptor.coords.y}, z: {xb.acceptor.coords.z}}},
+                                    backgroundColor: 'orange', fontColor: 'white', fontSize: 14}});
+
                     viewer.zoomTo({{chain: ['{donor_chain}', '{acceptor_chain}'], resi: [{donor_resi}, {acceptor_resi}]}});
                     viewer.render();
                     viewer.zoom(1.2);
@@ -565,20 +539,14 @@ class WebResultsPanel:
         import random
 
         with ui.dialog().props("persistent") as dialog, ui.card().style("width: 900px; max-width: 90vw;"):
-            with ui.card_section().classes("bg-primary text-white"):
-                with ui.row().classes("w-full items-center"):
-                    ui.label("3D Visualization - π Interaction").classes("text-h6")
-                    ui.space()
-                    ui.button(icon="close", on_click=dialog.close).props("flat round dense color=white")
+            with ui.card_actions().classes("justify-end"):
+                ui.button("Close", on_click=dialog.close).props("color=primary")
 
             with ui.card_section().classes("q-pa-md"):
                 ui.label(f"{pi.get_donor_residue()} → {pi.get_acceptor_residue()}").classes("text-subtitle1 q-mb-md")
 
                 viewer_id = f"pi_viewer_{random.randint(1000, 9999)}"
                 ui.html(f'<div id="{viewer_id}" style="width: 100%; height: 600px; min-width: 800px; position: relative;"></div>', sanitize=False)
-
-            with ui.card_actions().classes("justify-end"):
-                ui.button("Close", on_click=dialog.close).props("color=primary")
 
         dialog.open()
         ui.timer(0.1, lambda: self._initialize_pi_interaction_viewer(viewer_id, pi), once=True)
@@ -690,13 +658,15 @@ class WebResultsPanel:
 
             # Create table
             columns = [
-                {"name": "donor", "label": "Donor", "field": "donor", "align": "left"},
-                {"name": "interaction", "label": "X-atom", "field": "interaction", "align": "left"},
-                {"name": "pi_residue", "label": "π Residue", "field": "pi_residue", "align": "left"},
-                {"name": "distance", "label": "Distance (Å)", "field": "distance", "align": "right"},
-                {"name": "angle", "label": "Angle (°)", "field": "angle", "align": "right"},
-                {"name": "type", "label": "Subtype", "field": "type", "align": "left"},
                 {"name": "visualize", "label": "3D View", "field": "visualize", "align": "center"},
+                {"name": "donor_res", "label": "Donor Residue", "field": "donor_res", "align": "left"},
+                {"name": "donor_atom", "label": "Donor Atom", "field": "donor_atom", "align": "left"},
+                {"name": "pi_res", "label": "π Residue", "field": "pi_res", "align": "left"},
+                {"name": "distance", "label": "H...π (Å)", "field": "distance", "align": "right"},
+                {"name": "angle", "label": "Angle (°)", "field": "angle", "align": "right"},
+                {"name": "type", "label": "Type", "field": "type", "align": "left"},
+                {"name": "da_props", "label": "D-A Props", "field": "da_props", "align": "left"},
+                {"name": "bs_int", "label": "B/S", "field": "bs_int", "align": "center"},
             ]
 
             rows = []
@@ -724,14 +694,18 @@ class WebResultsPanel:
                 else:
                     subtype = f"{donor_atom}-{x_atom}...π"
 
+                bs_int = "B" if (pi.get_donor_residue() != pi.get_acceptor_residue()) else "S"
+
                 rows.append({
                     "id": idx,
-                    "donor": f"{pi.get_donor_residue()}:{pi.donor.name}",
-                    "interaction": pi.hydrogen.name,
-                    "pi_residue": pi.get_acceptor_residue(),
+                    "donor_res": pi.get_donor_residue(),
+                    "donor_atom": pi.donor.name,
+                    "pi_res": pi.get_acceptor_residue(),
                     "distance": f"{pi.distance:.2f}",
                     "angle": f"{math.degrees(pi.angle):.1f}",
                     "type": subtype,
+                    "da_props": pi.donor_acceptor_properties,
+                    "bs_int": bs_int,
                 })
 
             # Create table with custom styling
@@ -761,25 +735,40 @@ class WebResultsPanel:
 
             # Create table
             columns = [
-                {"name": "ring1", "label": "Ring 1", "field": "ring1", "align": "left"},
-                {"name": "ring2", "label": "Ring 2", "field": "ring2", "align": "left"},
-                {"name": "distance", "label": "Distance (Å)", "field": "distance", "align": "right"},
-                {"name": "angle", "label": "Plane Angle (°)", "field": "angle", "align": "right"},
-                {"name": "offset", "label": "Offset (Å)", "field": "offset", "align": "right"},
-                {"name": "type", "label": "Type", "field": "type", "align": "left"},
                 {"name": "visualize", "label": "3D View", "field": "visualize", "align": "center"},
+                {"name": "ring1_res", "label": "Ring 1 Residue", "field": "ring1_res", "align": "left"},
+                {"name": "ring1_atoms", "label": "Ring 1 Atoms", "field": "ring1_atoms", "align": "left"},
+                {"name": "ring2_res", "label": "Ring 2 Residue", "field": "ring2_res", "align": "left"},
+                {"name": "ring2_atoms", "label": "Ring 2 Atoms", "field": "ring2_atoms", "align": "left"},
+                {"name": "distance", "label": "Distance (Å)", "field": "distance", "align": "right"},
+                {"name": "plane_angle", "label": "Plane Angle (°)", "field": "plane_angle", "align": "right"},
+                {"name": "offset", "label": "Offset (Å)", "field": "offset", "align": "right"},
+                {"name": "stacking_type", "label": "Stacking Type", "field": "stacking_type", "align": "left"},
+                {"name": "bs_int", "label": "B/S", "field": "bs_int", "align": "center"},
             ]
 
             rows = []
             for idx, pi_pi in enumerate(self.analyzer.pi_pi_interactions):
+                ring1_atoms = ",".join([atom.name for atom in pi_pi.ring1_atoms[:3]])
+                if len(pi_pi.ring1_atoms) > 3:
+                    ring1_atoms += "..."
+                ring2_atoms = ",".join([atom.name for atom in pi_pi.ring2_atoms[:3]])
+                if len(pi_pi.ring2_atoms) > 3:
+                    ring2_atoms += "..."
+
+                bs_int = "B" if pi_pi.is_between_residues else "S"
+
                 rows.append({
                     "id": idx,
-                    "ring1": f"{pi_pi.ring1_residue}",
-                    "ring2": f"{pi_pi.ring2_residue}",
+                    "ring1_res": pi_pi.ring1_residue,
+                    "ring1_atoms": ring1_atoms,
+                    "ring2_res": pi_pi.ring2_residue,
+                    "ring2_atoms": ring2_atoms,
                     "distance": f"{pi_pi._distance:.2f}",
-                    "angle": f"{pi_pi.plane_angle:.1f}",
+                    "plane_angle": f"{pi_pi.plane_angle:.1f}",
                     "offset": f"{pi_pi.offset:.2f}",
-                    "type": pi_pi.stacking_type.capitalize(),
+                    "stacking_type": pi_pi.stacking_type.capitalize(),
+                    "bs_int": bs_int,
                 })
 
             table = ui.table(columns=columns, rows=rows, row_key="id").classes("w-full").props("dense")
@@ -808,24 +797,33 @@ class WebResultsPanel:
 
             # Create table
             columns = [
-                {"name": "donor", "label": "Donor C=O", "field": "donor", "align": "left"},
-                {"name": "acceptor", "label": "Acceptor C=O", "field": "acceptor", "align": "left"},
+                {"name": "visualize", "label": "3D View", "field": "visualize", "align": "center"},
+                {"name": "acceptor_res", "label": "Acceptor Residue", "field": "acceptor_res", "align": "left"},
+                {"name": "acceptor_atom", "label": "Acceptor Atom", "field": "acceptor_atom", "align": "left"},
+                {"name": "carbonyl_res", "label": "Carbonyl Residue", "field": "carbonyl_res", "align": "left"},
+                {"name": "carbonyl_atoms", "label": "Carbonyl C=O", "field": "carbonyl_atoms", "align": "left"},
                 {"name": "distance", "label": "O···C Distance (Å)", "field": "distance", "align": "right"},
                 {"name": "angle", "label": "Bürgi-Dunitz Angle (°)", "field": "angle", "align": "right"},
-                {"name": "type", "label": "Type", "field": "type", "align": "left"},
-                {"name": "visualize", "label": "3D View", "field": "visualize", "align": "center"},
+                {"name": "carbonyl_type", "label": "Carbonyl Type", "field": "carbonyl_type", "align": "left"},
+                {"name": "bs_int", "label": "B/S", "field": "bs_int", "align": "center"},
             ]
 
             rows = []
             for idx, carbonyl in enumerate(self.analyzer.carbonyl_interactions):
                 interaction_type = "Backbone" if carbonyl.is_backbone else "Sidechain"
+                bs_int = "B" if carbonyl.is_between_residues else "S"
+                carbonyl_atoms = f"{carbonyl.donor_carbon.name}={carbonyl.donor_oxygen.name}"
+
                 rows.append({
                     "id": idx,
-                    "donor": f"{carbonyl.get_donor_residue()}",
-                    "acceptor": f"{carbonyl.get_acceptor_residue()}",
+                    "acceptor_res": carbonyl.get_acceptor_residue(),
+                    "acceptor_atom": carbonyl.acceptor_carbon.name,
+                    "carbonyl_res": carbonyl.get_donor_residue(),
+                    "carbonyl_atoms": carbonyl_atoms,
                     "distance": f"{carbonyl.distance:.2f}",
                     "angle": f"{carbonyl.burgi_dunitz_angle:.1f}",
-                    "type": interaction_type,
+                    "carbonyl_type": interaction_type,
+                    "bs_int": bs_int,
                 })
 
             table = ui.table(columns=columns, rows=rows, row_key="id").classes("w-full").props("dense")
@@ -854,23 +852,28 @@ class WebResultsPanel:
 
             # Create table
             columns = [
-                {"name": "donor", "label": "Lone Pair Atom", "field": "donor", "align": "left"},
-                {"name": "pi_residue", "label": "π System", "field": "pi_residue", "align": "left"},
-                {"name": "distance", "label": "Distance (Å)", "field": "distance", "align": "right"},
-                {"name": "angle", "label": "Angle to Plane (°)", "field": "angle", "align": "right"},
-                {"name": "subtype", "label": "Subtype", "field": "subtype", "align": "left"},
                 {"name": "visualize", "label": "3D View", "field": "visualize", "align": "center"},
+                {"name": "donor_res", "label": "Donor Residue", "field": "donor_res", "align": "left"},
+                {"name": "donor_atom", "label": "Donor Atom", "field": "donor_atom", "align": "left"},
+                {"name": "pi_res", "label": "π Residue", "field": "pi_res", "align": "left"},
+                {"name": "distance", "label": "Distance (Å)", "field": "distance", "align": "right"},
+                {"name": "angle", "label": "Angle (°)", "field": "angle", "align": "right"},
+                {"name": "donor_element", "label": "Donor Element", "field": "donor_element", "align": "left"},
+                {"name": "bs_int", "label": "B/S", "field": "bs_int", "align": "center"},
             ]
 
             rows = []
             for idx, n_pi in enumerate(self.analyzer.n_pi_interactions):
+                bs_int = "B" if n_pi.is_between_residues else "S"
                 rows.append({
                     "id": idx,
-                    "donor": f"{n_pi.get_donor_residue()}:{n_pi.lone_pair_atom.name}",
-                    "pi_residue": f"{n_pi.get_acceptor_residue()}",
+                    "donor_res": n_pi.get_donor_residue(),
+                    "donor_atom": n_pi.lone_pair_atom.name,
+                    "pi_res": n_pi.get_acceptor_residue(),
                     "distance": f"{n_pi.distance:.2f}",
                     "angle": f"{n_pi.angle_to_plane:.1f}",
-                    "subtype": n_pi.subtype,
+                    "donor_element": n_pi.donor_element,
+                    "bs_int": bs_int,
                 })
 
             table = ui.table(columns=columns, rows=rows, row_key="id").classes("w-full").props("dense")
@@ -901,7 +904,7 @@ class WebResultsPanel:
             for idx, chain in enumerate(self.analyzer.cooperativity_chains):
                 with ui.card().classes("w-full q-mb-md"):
                     # Chain header
-                    with ui.card_section().classes("bg-grey-2"):
+                    with ui.card_section().classes("bg-grey-2 w-full"):
                         with ui.row().classes("w-full items-center justify-between"):
                             with ui.column():
                                 ui.label(f"Chain {idx + 1}").classes("text-h6")
@@ -967,20 +970,14 @@ class WebResultsPanel:
         import random
 
         with ui.dialog().props("persistent") as dialog, ui.card().style("width: 900px; max-width: 90vw;"):
-            with ui.card_section().classes("bg-primary text-white"):
-                with ui.row().classes("w-full items-center"):
-                    ui.label("3D Visualization - π-π Stacking").classes("text-h6")
-                    ui.space()
-                    ui.button(icon="close", on_click=dialog.close).props("flat round dense color=white")
+            with ui.card_actions().classes("justify-end"):
+                ui.button("Close", on_click=dialog.close).props("color=primary")
 
             with ui.card_section().classes("q-pa-md"):
                 ui.label(f"{pi_pi.ring1_residue} ⇄ {pi_pi.ring2_residue}").classes("text-subtitle1 q-mb-md")
 
                 viewer_id = f"pipi_viewer_{random.randint(1000, 9999)}"
                 ui.html(f'<div id="{viewer_id}" style="width: 100%; height: 600px; min-width: 800px; position: relative;"></div>', sanitize=False)
-
-            with ui.card_actions().classes("justify-end"):
-                ui.button("Close", on_click=dialog.close).props("color=primary")
 
         dialog.open()
         ui.timer(0.1, lambda: self._initialize_pi_pi_stacking_viewer(viewer_id, pi_pi), once=True)
@@ -1019,6 +1016,15 @@ class WebResultsPanel:
                     viewer.setStyle({{resi: '{ring1_res}', chain: '{ring1_chain}'}}, {{stick: {{colorscheme: 'cyanCarbon'}}}});
                     viewer.setStyle({{resi: '{ring2_res}', chain: '{ring2_chain}'}}, {{stick: {{colorscheme: 'magentaCarbon'}}}});
 
+                    // Add residue labels
+                    viewer.addLabel('{pi_pi.ring1_residue}',
+                                  {{position: {{x: {pi_pi.ring1_center.x}, y: {pi_pi.ring1_center.y}, z: {pi_pi.ring1_center.z}}},
+                                   backgroundColor: 'cyan', fontColor: 'black', fontSize: 14}});
+
+                    viewer.addLabel('{pi_pi.ring2_residue}',
+                                  {{position: {{x: {pi_pi.ring2_center.x}, y: {pi_pi.ring2_center.y}, z: {pi_pi.ring2_center.z}}},
+                                   backgroundColor: 'magenta', fontColor: 'white', fontSize: 14}});
+
                     // Add distance label
                     viewer.addLabel('{pi_pi._distance:.2f} Å ({pi_pi.stacking_type})',
                                   {{position: {{x: {pi_pi.midpoint.x}, y: {pi_pi.midpoint.y}, z: {pi_pi.midpoint.z}}},
@@ -1054,20 +1060,14 @@ class WebResultsPanel:
         import random
 
         with ui.dialog().props("persistent") as dialog, ui.card().style("width: 900px; max-width: 90vw;"):
-            with ui.card_section().classes("bg-primary text-white"):
-                with ui.row().classes("w-full items-center"):
-                    ui.label("3D Visualization - Carbonyl n→π*").classes("text-h6")
-                    ui.space()
-                    ui.button(icon="close", on_click=dialog.close).props("flat round dense color=white")
+            with ui.card_actions().classes("justify-end"):
+                ui.button("Close", on_click=dialog.close).props("color=primary")
 
             with ui.card_section().classes("q-pa-md"):
                 ui.label(f"{carbonyl.get_donor_residue()} → {carbonyl.get_acceptor_residue()}").classes("text-subtitle1 q-mb-md")
 
                 viewer_id = f"carbonyl_viewer_{random.randint(1000, 9999)}"
                 ui.html(f'<div id="{viewer_id}" style="width: 100%; height: 600px; min-width: 800px; position: relative;"></div>', sanitize=False)
-
-            with ui.card_actions().classes("justify-end"):
-                ui.button("Close", on_click=dialog.close).props("color=primary")
 
         dialog.open()
         ui.timer(0.1, lambda: self._initialize_carbonyl_interaction_viewer(viewer_id, carbonyl), once=True)
@@ -1102,9 +1102,23 @@ class WebResultsPanel:
                     viewer.setStyle({{resi: '{carbonyl.acceptor_carbon.res_seq}', chain: '{carbonyl.acceptor_carbon.chain_id}'}},
                                   {{stick: {{colorscheme: 'blueCarbon'}}}});
 
-                    // Add distance label
-                    viewer.addLabel('{carbonyl.distance:.2f} Å',
+                    // Add residue labels
+                    viewer.addLabel('{carbonyl.get_donor_residue()}',
                                   {{position: {{x: {carbonyl.donor_oxygen.coords.x}, y: {carbonyl.donor_oxygen.coords.y}, z: {carbonyl.donor_oxygen.coords.z}}},
+                                   backgroundColor: 'red', fontColor: 'white', fontSize: 14}});
+
+                    viewer.addLabel('{carbonyl.get_acceptor_residue()}',
+                                  {{position: {{x: {carbonyl.acceptor_carbon.coords.x}, y: {carbonyl.acceptor_carbon.coords.y}, z: {carbonyl.acceptor_carbon.coords.z}}},
+                                   backgroundColor: 'blue', fontColor: 'white', fontSize: 14}});
+
+                    // Add distance label (at midpoint)
+                    let carbonyl_midpoint = {{
+                        x: ({carbonyl.donor_oxygen.coords.x} + {carbonyl.acceptor_carbon.coords.x}) / 2,
+                        y: ({carbonyl.donor_oxygen.coords.y} + {carbonyl.acceptor_carbon.coords.y}) / 2,
+                        z: ({carbonyl.donor_oxygen.coords.z} + {carbonyl.acceptor_carbon.coords.z}) / 2
+                    }};
+                    viewer.addLabel('{carbonyl.distance:.2f} Å',
+                                  {{position: carbonyl_midpoint,
                                    backgroundColor: 'black', fontColor: 'white', fontSize: 12}});
 
                     // Add line from donor O to acceptor C
@@ -1137,20 +1151,14 @@ class WebResultsPanel:
         import random
 
         with ui.dialog().props("persistent") as dialog, ui.card().style("width: 900px; max-width: 90vw;"):
-            with ui.card_section().classes("bg-primary text-white"):
-                with ui.row().classes("w-full items-center"):
-                    ui.label("3D Visualization - n→π* Interaction").classes("text-h6")
-                    ui.space()
-                    ui.button(icon="close", on_click=dialog.close).props("flat round dense color=white")
+            with ui.card_actions().classes("justify-end"):
+                ui.button("Close", on_click=dialog.close).props("color=primary")
 
             with ui.card_section().classes("q-pa-md"):
                 ui.label(f"{n_pi.get_donor_residue()} → {n_pi.get_acceptor_residue()}").classes("text-subtitle1 q-mb-md")
 
                 viewer_id = f"npi_viewer_{random.randint(1000, 9999)}"
                 ui.html(f'<div id="{viewer_id}" style="width: 100%; height: 600px; min-width: 800px; position: relative;"></div>', sanitize=False)
-
-            with ui.card_actions().classes("justify-end"):
-                ui.button("Close", on_click=dialog.close).props("color=primary")
 
         dialog.open()
         ui.timer(0.1, lambda: self._initialize_n_pi_interaction_viewer(viewer_id, n_pi), once=True)
@@ -1191,9 +1199,23 @@ class WebResultsPanel:
                     viewer.setStyle({{resi: '{pi_res_seq}', chain: '{pi_chain_id}'}},
                                   {{stick: {{colorscheme: 'tealCarbon'}}}});
 
-                    // Add distance label
-                    viewer.addLabel('{n_pi.distance:.2f} Å',
+                    // Add residue labels
+                    viewer.addLabel('{n_pi.get_donor_residue()}',
                                   {{position: {{x: {n_pi.lone_pair_atom.coords.x}, y: {n_pi.lone_pair_atom.coords.y}, z: {n_pi.lone_pair_atom.coords.z}}},
+                                   backgroundColor: 'orange', fontColor: 'white', fontSize: 14}});
+
+                    viewer.addLabel('{n_pi.get_acceptor_residue()}',
+                                  {{position: {{x: {n_pi.pi_center.x}, y: {n_pi.pi_center.y}, z: {n_pi.pi_center.z}}},
+                                   backgroundColor: 'teal', fontColor: 'white', fontSize: 14}});
+
+                    // Add distance label (at midpoint)
+                    let npi_midpoint = {{
+                        x: ({n_pi.lone_pair_atom.coords.x} + {n_pi.pi_center.x}) / 2,
+                        y: ({n_pi.lone_pair_atom.coords.y} + {n_pi.pi_center.y}) / 2,
+                        z: ({n_pi.lone_pair_atom.coords.z} + {n_pi.pi_center.z}) / 2
+                    }};
+                    viewer.addLabel('{n_pi.distance:.2f} Å',
+                                  {{position: npi_midpoint,
                                    backgroundColor: 'black', fontColor: 'white', fontSize: 12}});
 
                     // Add line from lone pair atom to π center
@@ -1247,11 +1269,8 @@ class WebResultsPanel:
 
             if svg_content:
                 with ui.dialog().props("persistent") as dialog, ui.card().style("width: 900px; max-width: 90vw;"):
-                    with ui.card_section().classes("bg-primary text-white"):
-                        with ui.row().classes("w-full items-center"):
-                            ui.label("Cooperativity Chain Graph").classes("text-h6")
-                            ui.space()
-                            ui.button(icon="close", on_click=dialog.close).props("flat round dense color=white")
+                    with ui.card_actions().classes("justify-end"):
+                        ui.button("Close", on_click=dialog.close).props("color=primary")
 
                     with ui.card_section().classes("q-pa-md"):
                         ui.label(f"Chain: {chain.chain_type} (Length: {chain.chain_length})").classes("text-subtitle1 q-mb-md")
@@ -1259,14 +1278,11 @@ class WebResultsPanel:
                         # Display the SVG
                         ui.html(svg_content, sanitize=False).style("width: 100%; overflow: auto;")
 
-                    with ui.card_actions().classes("justify-end"):
-                        ui.button("Close", on_click=dialog.close).props("color=primary")
-
                 dialog.open()
             else:
-                ui.notify("Failed to generate chain graph", type="negative")
+                ui.notify("Failed to generate chain graph", type="negative", position="top-left")
 
         except ImportError:
-            ui.notify("Graphviz is not installed. Install with: pip install graphviz", type="warning")
+            ui.notify("Graphviz is not installed. Install with: pip install graphviz", type="warning", position="top-left")
         except Exception as e:
-            ui.notify(f"Error generating chain graph: {str(e)}", type="negative")
+            ui.notify(f"Error generating chain graph: {str(e)}", type="negative", position="top-left")
