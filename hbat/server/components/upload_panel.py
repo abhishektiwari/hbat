@@ -142,7 +142,7 @@ class UploadPanel:
         self._download_pdb_func = download_pdb
 
         # Option 1: Upload file
-        with ui.card().classes("w-full q-pa-md"):
+        with ui.card().classes("w-full q-pa-md mt-5"):
             ui.label("Option 1: Upload PDB File").classes("text-h6")
             ui.upload(
                 label="Choose PDB File",

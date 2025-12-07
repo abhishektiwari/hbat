@@ -547,6 +547,10 @@ class PDBParser:
         # Step 1: Try residue-based bond detection
         residue_bonds_found = self._detect_bonds_from_residue_lookup()
 
+        # Build bond adjacency map before distance-based detection
+        # This allows checking for 1-3 and 1-4 neighbors to avoid false positives
+        self._build_bond_adjacency_map()
+
         # Step 2: If residue lookup didn't find enough bonds, try distance-based detection
         # within same residue to improve performance
         if (
@@ -558,7 +562,7 @@ class PDBParser:
         if len(self.bonds) < len(self.atoms) / 4:
             self._detect_bonds_with_spatial_grid()
 
-        # Build bond adjacency map for fast lookups
+        # Rebuild bond adjacency map to include all bonds found
         self._build_bond_adjacency_map()
 
     def _detect_bonds_from_residue_lookup(self) -> int:
@@ -700,6 +704,10 @@ class PDBParser:
                     if distance > ParametersDefault.MAX_BOND_DISTANCE:
                         continue
 
+                    # Exclude 1-3 and 1-4 neighbors (non-bonded neighbors)
+                    if self._are_13_or_14_neighbors(atom1.serial, atom2.serial):
+                        continue
+
                     if self._are_atoms_bonded_with_distance(
                         atom1, atom2, float(distance)
                     ):
@@ -830,6 +838,10 @@ class PDBParser:
         if distance > ParametersDefault.MAX_BOND_DISTANCE:
             return
 
+        # Exclude 1-3 and 1-4 neighbors (non-bonded neighbors)
+        if self._are_13_or_14_neighbors(atom1.serial, atom2.serial):
+            return
+
         if self._are_atoms_bonded_with_distance(atom1, atom2, float(distance)):
             bond = Bond(
                 atom1_serial=atom1.serial,
@@ -838,7 +850,10 @@ class PDBParser:
                 distance=float(distance),
                 detection_method=BondDetectionMethods.DISTANCE_BASED,
             )
-            self.bonds.append(bond)
+
+            # Avoid duplicate bonds
+            if not self._bond_exists(bond):
+                self.bonds.append(bond)
 
     def _build_bond_adjacency_map(self) -> None:
         """Build fast bond lookup adjacency map for efficient neighbor queries.
@@ -958,6 +973,50 @@ class PDBParser:
                 and existing_bond.atom2_serial == new_bond.atom2_serial
             ):
                 return True
+        return False
+
+    def _are_13_or_14_neighbors(self, atom1_serial: int, atom2_serial: int) -> bool:
+        """Check if two atoms are 1-3 or 1-4 neighbors (separated by 2 or 3 bonds).
+
+        1-3 neighbors: A-B-C (atoms A and C are separated by 2 bonds)
+        1-4 neighbors: A-B-C-D (atoms A and D are separated by 3 bonds)
+
+        These should not be considered for distance-based bonding as they are
+        non-bonded neighbors that may be close in space but not directly bonded.
+
+        :param atom1_serial: Serial number of first atom
+        :type atom1_serial: int
+        :param atom2_serial: Serial number of second atom
+        :type atom2_serial: int
+        :returns: True if atoms are 1-3 or 1-4 neighbors
+        :rtype: bool
+        """
+        # Get direct neighbors of atom1
+        atom1_neighbors = self._bond_adjacency.get(atom1_serial, [])
+        atom2_neighbors = self._bond_adjacency.get(atom2_serial, [])
+
+        # Check for 1-3 neighbors: share a common bonded neighbor
+        common_neighbors = set(atom1_neighbors) & set(atom2_neighbors)
+        if common_neighbors:
+            return True
+
+        # Check for 1-4 neighbors: atom2 is bonded to a neighbor of atom1's neighbor
+        for neighbor1 in atom1_neighbors:
+            neighbor1_neighbors = self._bond_adjacency.get(neighbor1, [])
+            if atom2_serial in neighbor1_neighbors:
+                # This would be a 1-2 neighbor (direct bond), which shouldn't happen
+                # as we check _bond_exists before this
+                continue
+            # Check if atom2 is a neighbor of neighbor1's neighbors
+            for neighbor2 in neighbor1_neighbors:
+                if neighbor2 == atom1_serial:
+                    # Skip going back to atom1
+                    continue
+                neighbor2_neighbors = self._bond_adjacency.get(neighbor2, [])
+                if atom2_serial in neighbor2_neighbors:
+                    # Found 1-4 relationship: atom1 - neighbor1 - neighbor2 - atom2
+                    return True
+
         return False
 
     def get_bonds(self) -> List[Bond]:

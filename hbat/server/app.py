@@ -248,9 +248,8 @@ class HBATWebApp:
 
                 # Step 4: Export Results
                 with ui.step("export", title="Export Results", icon="download"):
-                    ui.label("Export analysis results").classes("text-subtitle1 q-mb-md")
 
-                    with ui.card().classes("w-full q-pa-md"):
+                    with ui.card().classes("w-full q-pa-md mt-5"):
                         ui.label("Choose export format:").classes("text-h6 q-mb-md")
 
                         with ui.row().classes("gap-4"):
@@ -415,9 +414,19 @@ class HBATWebApp:
                 self.status_label.classes(replace="text-caption q-mt-sm text-positive")
                 ui.notify("Analysis completed!", type="positive", position="top-left")
 
+                # Get PDB content for visualization
+                # If PDB fixing was applied, use the fixed file content
+                # Otherwise use the original uploaded content
+                pdb_content_for_viz = self.pdb_content
+                if hasattr(self.analyzer, '_pdb_fixing_info') and self.analyzer._pdb_fixing_info.get('applied'):
+                    fixed_file_path = self.analyzer._pdb_fixing_info.get('fixed_file_path')
+                    if fixed_file_path and os.path.exists(fixed_file_path):
+                        with open(fixed_file_path, 'r') as f:
+                            pdb_content_for_viz = f.read()
+
                 # Update results display
                 await self.results_panel.update_results(
-                    self.analyzer, self.pdb_content, self.current_file
+                    self.analyzer, pdb_content_for_viz, self.current_file
                 )
 
                 # Auto-advance to results step

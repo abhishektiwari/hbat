@@ -86,7 +86,7 @@ class ParameterPanel:
     def create_ui(self):
         """Create the parameter configuration UI."""
         # Parameter summary cards
-        with ui.row().classes("w-full gap-4"):
+        with ui.row().classes("w-full gap-4 mt-5"):
             # PDB Fixing card
             with ui.card().classes("flex-1"):
                 with ui.card_section():
