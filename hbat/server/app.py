@@ -415,14 +415,17 @@ class HBATWebApp:
                 ui.notify("Analysis completed!", type="positive", position="top-left")
 
                 # Get PDB content for visualization
-                # If PDB fixing was applied, use the fixed file content
-                # Otherwise use the original uploaded content
+                # If PDBFixer was used, we need the fixed file because it reorganizes chains
+                # OpenBabel preserves original chain structure, so use original file
                 pdb_content_for_viz = self.pdb_content
                 if hasattr(self.analyzer, '_pdb_fixing_info') and self.analyzer._pdb_fixing_info.get('applied'):
-                    fixed_file_path = self.analyzer._pdb_fixing_info.get('fixed_file_path')
-                    if fixed_file_path and os.path.exists(fixed_file_path):
-                        with open(fixed_file_path, 'r') as f:
-                            pdb_content_for_viz = f.read()
+                    method = self.analyzer._pdb_fixing_info.get('method', '')
+                    # Only use fixed file for PDBFixer (which reorganizes chains)
+                    if method == 'pdbfixer':
+                        fixed_file_path = self.analyzer._pdb_fixing_info.get('fixed_file_path')
+                        if fixed_file_path and os.path.exists(fixed_file_path):
+                            with open(fixed_file_path, 'r') as f:
+                                pdb_content_for_viz = f.read()
 
                 # Update results display
                 await self.results_panel.update_results(
