@@ -6,6 +6,7 @@ with integrated 3D visualization using py3Dmol.
 """
 
 import asyncio
+from datetime import datetime
 import os
 import tempfile
 import zipfile
@@ -109,7 +110,7 @@ class HBATWebApp:
         with ui.header().classes("items-center"):
             ui.button(icon="menu", on_click=lambda: left_drawer.toggle()).props("flat color=white")
             ui.image("/static/hbat.svg").classes("w-10 h-10 q-ml-md")
-            ui.label(f"HBAT 2 - {APP_NAME}").classes("text-h5 q-ml-sm")
+            ui.label(f"HBAT 2 - Web Server").classes("text-h5 q-ml-sm")
             ui.space()
             ui.button("Cite", icon="format_quote", on_click=self._show_citation_dialog).props("flat color=yellow")
             with ui.link(target="http://hbat.abhishek-tiwari.com", new_tab=True).classes("text-white no-underline"):
@@ -182,14 +183,14 @@ class HBATWebApp:
         # Footer
         with ui.footer(fixed=False).classes("items-center"):
             with ui.row().classes("w-full items-center justify-between q-px-md"):
-                ui.label(f"© 2025 {APP_NAME} ").classes("text-caption")
-                ui.link("GitHub", "https://github.com/abhishektiwari/hbat", new_tab=True).classes("text-white")
+                ui.label(f"© {datetime.now().year} Abhishek Tiwari ").classes("text-caption")
 
         # Right drawer for parameter editing
         with ui.right_drawer(fixed=False).props("bordered width=400") as param_drawer:
             param_drawer.hide()
             with ui.scroll_area().classes("w-full h-full"):
                 param_drawer_content = ui.column().classes("w-full q-pa-md")
+
 
         # Main content area with stepper
         with ui.column().classes("w-full q-pa-md"):
@@ -276,6 +277,24 @@ class HBATWebApp:
                         ui.button(
                             "Start Over", icon="refresh", on_click=self._start_over
                         ).props("flat color=primary")
+
+            # Info card below stepper
+            with ui.card().classes("w-full q-mt-md"):
+                with ui.row().classes("w-full items-center gap-4"):
+                    # Image section
+                    with ui.column().classes("flex-shrink-0"):
+                        ui.image("https://static.abhishek-tiwari.com/hbat/B_3WH_501_to_B_MET_146_xbond.png").classes("w-48 h-48 rounded")
+
+                    # Text section
+                    with ui.column().classes("flex-1"):
+                        ui.label("HBAT 2: Analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures").classes("text-h6 q-mb-sm")
+                        ui.label("HBAT 2 is open-source software licensed under MIT. HBAT 2 provides multiple interfaces including web server, desktop GUI, command-line (CLI), and ready-to-use Jupyter/Colab notebooks. The web server version is freely accessible to all users, including for commercial use.").classes("text-body2 text-grey-7")
+                        with ui.row().classes("gap-2 q-mt-sm"):
+                            with ui.link(target="http://hbat.abhishek-tiwari.com", new_tab=True).classes("no-underline"):
+                                ui.button("HBAT Documentation", icon="open_in_new").props("flat color=primary")
+                            with ui.link(target="https://github.com/abhishektiwari/hbat", new_tab=True).classes("no-underline"):
+                                ui.button("HBAT 2 Code", icon="code").props("flat color=primary")
+                            ui.button("Cite HBAT 2", icon="format_quote", on_click=self._show_citation_dialog).props("flat color=primary")
 
     async def _handle_upload_next(self):
         """Handle Next button in upload step - download PDB if ID provided."""
@@ -503,7 +522,7 @@ def create_app():
 
         # Add meta tags for SEO and social sharing
         ui.add_head_html('''
-            <meta name="description" content="HBAT 2 - Hydrogen Bond Analysis Tool for analyzing molecular interactions including hydrogen bonds, halogen bonds, π interactions, and cooperativity chains in protein structures">
+            <meta name="description" content="HBAT 2 (Hydrogen Bond Analysis Tool 2) for analyzing molecular interactions including hydrogen bonds, halogen bonds, π interactions, and cooperativity chains in protein structures">
             <meta name="keywords" content="hydrogen bond analysis, hydrogen bond calculator, protein-ligand interactions, molecular interactions, protein structure, halogen bonds, pi interactions, cooperativity chains, structural biology, bioinformatics, PDB analysis">
             <meta name="author" content="Abhishek Tiwari">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -518,7 +537,7 @@ def create_app():
             <!-- Twitter -->
             <meta property="twitter:card" content="summary_large_image">
             <meta property="twitter:url" content="https://hbat.abhishek-tiwari.com/">
-            <meta property="twitter:title" content="HBAT 2 - Hydrogen Bond Analysis Tool">
+            <meta property="twitter:title" content="HBAT 2 (Hydrogen Bond Analysis Tool 2)">
             <meta property="twitter:description" content="Comprehensive tool for analyzing molecular interactions in protein structures including hydrogen bonds, halogen bonds, π interactions, and cooperativity chains">
             <meta property="twitter:image" content="/static/hbat.svg">
 
@@ -560,7 +579,7 @@ def create_app():
     favicon_path = static_dir / "favicon.ico" if static_dir.exists() else None
 
     ui.run(
-        title=f"HBAT 2 - {APP_NAME}",
+        title=f"HBAT 2 - Web Server",
         favicon=str(favicon_path) if favicon_path else "🧬",
         dark=False,
         reload=False,
