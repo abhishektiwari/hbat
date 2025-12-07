@@ -278,18 +278,24 @@ class HBATWebApp:
                             "Start Over", icon="refresh", on_click=self._start_over
                         ).props("flat color=primary")
 
-            # Info card below stepper
-            with ui.card().classes("w-full q-mt-md"):
-                with ui.row().classes("w-full items-center gap-4"):
-                    # Image section
-                    with ui.column().classes("flex-shrink-0"):
-                        ui.image("https://static.abhishek-tiwari.com/hbat/B_3WH_501_to_B_MET_146_xbond.png").classes("w-48 h-48 rounded")
+            # Info card below stepper (responsive: stacks on mobile, horizontal on desktop)
+            with ui.card().classes("w-full q-mt-md q-pa-md"):
+                with ui.row().classes("w-full gap-4 flex-wrap items-center md:flex-nowrap md:items-start"):
+                    # Image section - 100% width on mobile, fixed size on desktop
+                    with ui.column().classes("w-full md:w-auto flex-shrink-0"):
+                        ui.image("https://static.abhishek-tiwari.com/hbat/B_3WH_501_to_B_MET_146_xbond.png").classes(
+                            "w-full md:w-48 md:h-48 rounded"
+                        )
 
-                    # Text section
-                    with ui.column().classes("flex-1"):
-                        ui.label("HBAT 2: Analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures").classes("text-h6 q-mb-sm")
-                        ui.label("HBAT 2 is open-source software licensed under MIT. HBAT 2 provides multiple interfaces including web server, desktop GUI, command-line (CLI), and ready-to-use Jupyter/Colab notebooks. The web server version is freely accessible to all users, including for commercial use.").classes("text-body2 text-grey-7")
-                        with ui.row().classes("gap-2 q-mt-sm"):
+                    # Text section - full width on mobile, flexible on desktop
+                    with ui.column().classes("w-full md:flex-1 items-center md:items-start"):
+                        ui.label("HBAT 2: Analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures").classes(
+                            "text-h6 q-mb-sm text-center md:text-left"
+                        )
+                        ui.label("HBAT 2 is open-source software licensed under MIT. HBAT 2 provides multiple interfaces including web server, desktop GUI, command-line (CLI), and ready-to-use Jupyter/Colab notebooks. The web server version is freely accessible to all users, including for commercial use.").classes(
+                            "text-body2 text-grey-7 text-center md:text-left"
+                        )
+                        with ui.row().classes("gap-2 q-mt-sm flex-wrap justify-center md:justify-start"):
                             ui.button("Cite", icon="format_quote", on_click=self._show_citation_dialog).props("flat color=primary")
                             with ui.link(target="http://hbat.abhishek-tiwari.com", new_tab=True).classes("no-underline"):
                                 ui.button("Docs", icon="open_in_new").props("flat color=primary")
@@ -608,6 +614,18 @@ def create_app():
                 .q-notifications__list--top {
                     top: 70px;
                 }
+
+                /* Parameter drawer input fields - ensure full width and labels don't wrap */
+                .q-drawer--right .q-field {
+                    width: 50%;
+                }
+
+                .q-drawer--right .q-field__label {
+                    white-space: normal;
+                    word-wrap: break-word;
+                    max-width: 100%;
+                    font-weight: bold;
+                }
             </style>
             <script async src="https://badge.dimensions.ai/badge.js" charset="utf-8"></script>
         ''')
@@ -628,7 +646,7 @@ def create_app():
         title=f"HBAT 2 - Web Server",
         favicon=str(favicon_path) if favicon_path else "🧬",
         dark=False,
-        reload=False,
+        reload=not is_production,  # Enable auto-reload in development mode
         show=not is_production,  # Don't open browser in production/Docker
         host=host,
         port=port,
@@ -636,5 +654,5 @@ def create_app():
     )
 
 
-if __name__ == "__main__":
+if __name__ in {"__main__", "__mp_main__"}:
     create_app()
