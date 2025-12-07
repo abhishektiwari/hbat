@@ -116,7 +116,7 @@ class HBATWebApp:
             with ui.link(target="http://hbat.abhishek-tiwari.com", new_tab=True).classes("text-white no-underline"):
                 ui.button("Docs", icon="description").props("flat color=white")
             with ui.link(target="https://github.com/abhishektiwari/hbat", new_tab=True).classes("text-white no-underline"):
-                ui.button("Code", icon="code").props("flat color=white")
+                ui.button("GitHub", icon="code").props("flat color=white")
 
         # Left drawer (set fixed=True to prevent JavaScript state queries during heavy operations)
         with ui.left_drawer(fixed=True).props("bordered") as left_drawer:
@@ -290,11 +290,56 @@ class HBATWebApp:
                         ui.label("HBAT 2: Analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures").classes("text-h6 q-mb-sm")
                         ui.label("HBAT 2 is open-source software licensed under MIT. HBAT 2 provides multiple interfaces including web server, desktop GUI, command-line (CLI), and ready-to-use Jupyter/Colab notebooks. The web server version is freely accessible to all users, including for commercial use.").classes("text-body2 text-grey-7")
                         with ui.row().classes("gap-2 q-mt-sm"):
+                            ui.button("Cite", icon="format_quote", on_click=self._show_citation_dialog).props("flat color=primary")
                             with ui.link(target="http://hbat.abhishek-tiwari.com", new_tab=True).classes("no-underline"):
-                                ui.button("Documentation", icon="open_in_new").props("flat color=primary")
+                                ui.button("Docs", icon="open_in_new").props("flat color=primary")
                             with ui.link(target="https://github.com/abhishektiwari/hbat", new_tab=True).classes("no-underline"):
                                 ui.button("GitHub", icon="code").props("flat color=primary")
-                            ui.button("Cite HBAT", icon="format_quote", on_click=self._show_citation_dialog).props("flat color=primary")
+
+            # Badges card below info card
+            with ui.card().classes("w-full q-mt-md q-pa-md"):
+                ui.html("""
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px;">
+                        <a href="https://github.com/abhishektiwari/hbat/releases" target="_blank">
+                            <img src="https://img.shields.io/github/v/release/abhishektiwari/hbat" alt="GitHub Release">
+                        </a>
+                        <a href="https://github.com/abhishektiwari/hbat/actions/workflows/test.yml" target="_blank">
+                            <img src="https://img.shields.io/github/actions/workflow/status/abhishektiwari/hbat/test.yml?label=tests" alt="Tests">
+                        </a>
+                        <img src="https://img.shields.io/pypi/v/hbat" alt="PyPI Version">
+                        <img src="https://img.shields.io/pypi/wheel/hbat" alt="PyPI Wheel">
+                        <img src="https://img.shields.io/pypi/pyversions/hbat" alt="Python Versions">
+                        <img src="https://img.shields.io/pypi/status/hbat" alt="PyPI Status">
+                        <img src="https://img.shields.io/conda/v/hbat/hbat" alt="Conda Version">
+                        <img src="https://img.shields.io/github/license/abhishektiwari/hbat" alt="License">
+                        <img src="https://img.shields.io/github/last-commit/abhishektiwari/hbat/main" alt="Last Commit">
+                        <a href="https://github.com/abhishektiwari/hbat/releases" target="_blank">
+                            <img src="https://img.shields.io/github/downloads/abhishektiwari/hbat/total?label=GitHub%20Downloads" alt="GitHub Downloads">
+                        </a>
+                        <a href="https://sourceforge.net/projects/hbat/files/" target="_blank">
+                            <img src="https://img.shields.io/sourceforge/dt/hbat?label=SourceForge%20Downloads" alt="SourceForge Downloads">
+                        </a>
+                        <a href="https://pypi.org/project/hbat/" target="_blank">
+                            <img src="https://img.shields.io/pepy/dt/hbat?label=PyPI%20Downloads" alt="PyPI Downloads">
+                        </a>
+                        <a href="https://codecov.io/gh/abhishektiwari/hbat" target="_blank">
+                            <img src="https://codecov.io/gh/abhishektiwari/hbat/graph/badge.svg?token=QSKYLB3M1V" alt="Code Coverage">
+                        </a>
+                        <a href="https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main" target="_blank">
+                            <img src="https://www.codefactor.io/repository/github/abhishektiwari/hbat/badge/main" alt="CodeFactor">
+                        </a>
+                        <a href="https://socket.dev/pypi/package/hbat" target="_blank">
+                            <img src="https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl" alt="Socket Security">
+                        </a>
+                        <a href="https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC" target="_blank">
+                            <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337" alt="Citations">
+                        </a>
+                        
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px;">
+                        <span class="__dimensions_badge_embed__" data-doi="10.3233/isi-2007-00337" data-legend="always" data-style="small_circle"></span>
+                    </div>
+                """, sanitize=False)
 
     async def _handle_upload_next(self):
         """Handle Next button in upload step - download PDB if ID provided."""
@@ -564,6 +609,7 @@ def create_app():
                     top: 70px;
                 }
             </style>
+            <script async src="https://badge.dimensions.ai/badge.js" charset="utf-8"></script>
         ''')
 
         hbat_app = HBATWebApp()
