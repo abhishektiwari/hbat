@@ -547,8 +547,9 @@ class PDBParser:
         # Step 1: Try residue-based bond detection
         residue_bonds_found = self._detect_bonds_from_residue_lookup()
 
-        # Build bond adjacency map before distance-based detection
+        # Build bond adjacency map once after residue-based detection
         # This allows checking for 1-3 and 1-4 neighbors to avoid false positives
+        # Distance-based detection will incrementally add to this map
         self._build_bond_adjacency_map()
 
         # Step 2: If residue lookup didn't find enough bonds, try distance-based detection
@@ -561,9 +562,6 @@ class PDBParser:
         # Step 3: If still not enough bonds, use full distance-based detection
         if len(self.bonds) < len(self.atoms) / 4:
             self._detect_bonds_with_spatial_grid()
-
-        # Rebuild bond adjacency map to include all bonds found
-        self._build_bond_adjacency_map()
 
     def _detect_bonds_from_residue_lookup(self) -> int:
         """Detect bonds using residue bond information from Chemical Component Dictionary (CCD).
@@ -722,6 +720,8 @@ class PDBParser:
                         # Avoid duplicate bonds
                         if not self._bond_exists(bond):
                             self.bonds.append(bond)
+                            # Incrementally add to adjacency map
+                            self._add_bond_to_adjacency_map(bond)
 
     def _detect_covalent_bonds(self) -> None:
         """Detect covalent bonds using spatial grid optimization."""
@@ -854,6 +854,8 @@ class PDBParser:
             # Avoid duplicate bonds
             if not self._bond_exists(bond):
                 self.bonds.append(bond)
+                # Incrementally add to adjacency map
+                self._add_bond_to_adjacency_map(bond)
 
     def _build_bond_adjacency_map(self) -> None:
         """Build fast bond lookup adjacency map for efficient neighbor queries.
@@ -911,6 +913,27 @@ class PDBParser:
             # Add bidirectional adjacency
             self._bond_adjacency[bond.atom1_serial].append(bond.atom2_serial)
             self._bond_adjacency[bond.atom2_serial].append(bond.atom1_serial)
+
+    def _add_bond_to_adjacency_map(self, bond: Bond) -> None:
+        """Add a single bond to the adjacency map (incremental update).
+
+        This is more efficient than rebuilding the entire map when adding
+        bonds during distance-based detection.
+
+        :param bond: Bond to add to adjacency map
+        :type bond: Bond
+        :returns: None (updates ``self._bond_adjacency`` dictionary)
+        :rtype: None
+        """
+        # Initialize lists if not present
+        if bond.atom1_serial not in self._bond_adjacency:
+            self._bond_adjacency[bond.atom1_serial] = []
+        if bond.atom2_serial not in self._bond_adjacency:
+            self._bond_adjacency[bond.atom2_serial] = []
+
+        # Add bidirectional adjacency
+        self._bond_adjacency[bond.atom1_serial].append(bond.atom2_serial)
+        self._bond_adjacency[bond.atom2_serial].append(bond.atom1_serial)
 
     def _are_atoms_bonded(self, atom1: Atom, atom2: Atom) -> bool:
         """Check if two atoms are bonded based on distance and VdW radii.
