@@ -66,7 +66,7 @@ class HBATWebApp:
                 ui.label("If you use HBAT in your research, please cite:").classes("text-body2 q-mb-md")
 
                 # HBAT 2 citation
-                ui.label("Tiwari, A. (2025). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. Zenodo. https://doi.org/10.5281/zenodo.17645377").classes("text-body2 q-mb-sm")
+                ui.label("Tiwari, A. (2025). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. Zenodo. https://doi.org/10.5281/zenodo.17645321").classes("text-body2 q-mb-sm")
 
                 with ui.expansion("BibTeX", icon="code").classes("w-full q-mb-md"):
                     ui.markdown("""
