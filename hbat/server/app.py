@@ -291,10 +291,10 @@ class HBATWebApp:
                         ui.label("HBAT 2 is open-source software licensed under MIT. HBAT 2 provides multiple interfaces including web server, desktop GUI, command-line (CLI), and ready-to-use Jupyter/Colab notebooks. The web server version is freely accessible to all users, including for commercial use.").classes("text-body2 text-grey-7")
                         with ui.row().classes("gap-2 q-mt-sm"):
                             with ui.link(target="http://hbat.abhishek-tiwari.com", new_tab=True).classes("no-underline"):
-                                ui.button("HBAT Documentation", icon="open_in_new").props("flat color=primary")
+                                ui.button("Documentation", icon="open_in_new").props("flat color=primary")
                             with ui.link(target="https://github.com/abhishektiwari/hbat", new_tab=True).classes("no-underline"):
-                                ui.button("HBAT 2 Code", icon="code").props("flat color=primary")
-                            ui.button("Cite HBAT 2", icon="format_quote", on_click=self._show_citation_dialog).props("flat color=primary")
+                                ui.button("GitHub", icon="code").props("flat color=primary")
+                            ui.button("Cite HBAT", icon="format_quote", on_click=self._show_citation_dialog).props("flat color=primary")
 
     async def _handle_upload_next(self):
         """Handle Next button in upload step - download PDB if ID provided."""
