@@ -268,6 +268,11 @@ class HBATWebApp:
                                 icon="description",
                                 on_click=self._export_txt,
                             ).props("color=primary")
+                            ui.button(
+                                "Download Fixed PDB",
+                                icon="science",
+                                on_click=self._export_fixed_pdb,
+                            ).props("color=primary")
 
                     with ui.stepper_navigation():
                         ui.button("Back", icon="arrow_back", on_click=lambda: self.stepper.previous()).props(
@@ -463,7 +468,7 @@ class HBATWebApp:
         ui.notify(f"Exported to {output_file.name}", type="positive", position="top-left")
 
     def _export_csv(self):
-        """Export results as CSV (creates a zip file with all CSV files)."""
+        """Export results as CSV (creates a zip file with all CSV files and fixed PDB)."""
         if not self.analyzer:
             ui.notify("No analysis results to export", type="warning", position="top-left")
             return
@@ -475,16 +480,40 @@ class HBATWebApp:
 
         # Get all generated CSV files
         csv_files = list(UPLOADS_DIR.glob(f"{base_name}_*.csv"))
+
+        # Check for fixed PDB file
+        fixed_pdb_path = None
+        if hasattr(self.analyzer, '_pdb_fixing_info') and self.analyzer._pdb_fixing_info.get('applied'):
+            fixed_file_path = self.analyzer._pdb_fixing_info.get('fixed_file_path')
+            if fixed_file_path and os.path.exists(fixed_file_path):
+                # Copy fixed PDB to uploads directory
+                method = self.analyzer._pdb_fixing_info.get('method', 'unknown')
+                fixed_pdb_path = UPLOADS_DIR / f"{base_name}_fixed_{method}.pdb"
+                with open(fixed_file_path, 'r') as src:
+                    with open(fixed_pdb_path, 'w') as dst:
+                        dst.write(src.read())
+
         if csv_files:
-            # Create a zip file containing all CSV files
+            # Create a zip file containing all CSV files and fixed PDB (if available)
             zip_path = UPLOADS_DIR / f"{base_name}_csv_export.zip"
             with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 for csv_file in csv_files:
                     zipf.write(csv_file, csv_file.name)
 
+                # Add fixed PDB file if available
+                if fixed_pdb_path and fixed_pdb_path.exists():
+                    zipf.write(fixed_pdb_path, fixed_pdb_path.name)
+
             # Download the zip file
             ui.download(str(zip_path))
-            ui.notify(f"Exported {len(csv_files)} CSV file(s) as ZIP", type="positive", position="top-left")
+
+            # Build notification message
+            files_count = len(csv_files)
+            if fixed_pdb_path and fixed_pdb_path.exists():
+                files_count += 1
+                ui.notify(f"Exported {len(csv_files)} CSV file(s) + fixed PDB as ZIP", type="positive", position="top-left")
+            else:
+                ui.notify(f"Exported {len(csv_files)} CSV file(s) as ZIP", type="positive", position="top-left")
 
             # Clean up individual CSV files (optional - keep them for now)
             # for csv_file in csv_files:
@@ -503,6 +532,35 @@ class HBATWebApp:
         export_to_txt_single_file(self.analyzer, str(output_file))
         ui.download(str(output_file))
         ui.notify(f"Exported to {output_file.name}", type="positive", position="top-left")
+
+    def _export_fixed_pdb(self):
+        """Export the fixed PDB file (with added hydrogens)."""
+        if not self.analyzer:
+            ui.notify("No analysis results to export", type="warning", position="top-left")
+            return
+
+        # Check if PDB fixing was applied
+        if not hasattr(self.analyzer, '_pdb_fixing_info') or not self.analyzer._pdb_fixing_info.get('applied'):
+            ui.notify("No PDB fixing was applied during analysis", type="warning", position="top-left")
+            return
+
+        fixed_file_path = self.analyzer._pdb_fixing_info.get('fixed_file_path')
+        if not fixed_file_path or not os.path.exists(fixed_file_path):
+            ui.notify("Fixed PDB file not found", type="warning", position="top-left")
+            return
+
+        # Copy to uploads directory with a clear name
+        base_name = Path(self.current_file).stem
+        method = self.analyzer._pdb_fixing_info.get('method', 'unknown')
+        output_file = UPLOADS_DIR / f"{base_name}_fixed_{method}.pdb"
+
+        # Copy the fixed file
+        with open(fixed_file_path, 'r') as src:
+            with open(output_file, 'w') as dst:
+                dst.write(src.read())
+
+        ui.download(str(output_file))
+        ui.notify(f"Downloaded fixed PDB ({method})", type="positive", position="top-left")
 
     def _navigate_to_step(self, step: str):
         """Navigate to a specific step with validation.
