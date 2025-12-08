@@ -86,15 +86,19 @@ class ParameterPanel:
     def create_ui(self):
         """Create the parameter configuration UI."""
         # Parameter summary cards
-        with ui.row().classes("w-full gap-4"):
+        with ui.row().classes("w-full gap-4 mt-5"):
             # PDB Fixing card
             with ui.card().classes("flex-1"):
                 with ui.card_section():
                     with ui.row().classes("items-center justify-between"):
                         ui.label("PDB Fixing").classes("text-h6")
                         ui.button(icon="edit", on_click=lambda: self._edit_pdb_fixing()).props("flat round dense color=primary")
-                    ui.label(f"Method: {self.fix_pdb_method}").classes("text-caption text-grey")
-                    ui.label(f"Enabled: {self.fix_pdb_enabled}").classes("text-caption text-grey")
+                    ui.label().classes("text-caption text-grey").bind_text_from(
+                        self, "fix_pdb_method", backward=lambda v: f"Method: {v}"
+                    )
+                    ui.label().classes("text-caption text-grey").bind_text_from(
+                        self, "fix_pdb_enabled", backward=lambda v: f"Enabled: {v}"
+                    )
 
             # Hydrogen Bonds card
             with ui.card().classes("flex-1"):
@@ -102,8 +106,12 @@ class ParameterPanel:
                     with ui.row().classes("items-center justify-between"):
                         ui.label("Hydrogen Bonds").classes("text-h6")
                         ui.button(icon="edit", on_click=lambda: self._edit_hydrogen_bonds()).props("flat round dense color=primary")
-                    ui.label(f"Distance: {self.hb_distance}Å").classes("text-caption text-grey")
-                    ui.label(f"Angle: {self.hb_angle}°").classes("text-caption text-grey")
+                    ui.label().classes("text-caption text-grey").bind_text_from(
+                        self, "hb_distance", backward=lambda v: f"Distance: {v}Å"
+                    )
+                    ui.label().classes("text-caption text-grey").bind_text_from(
+                        self, "hb_angle", backward=lambda v: f"Angle: {v}°"
+                    )
 
         with ui.row().classes("w-full gap-4 q-mt-md"):
             # Halogen Bonds card
@@ -112,8 +120,12 @@ class ParameterPanel:
                     with ui.row().classes("items-center justify-between"):
                         ui.label("Halogen Bonds").classes("text-h6")
                         ui.button(icon="edit", on_click=lambda: self._edit_halogen_bonds()).props("flat round dense color=primary")
-                    ui.label(f"Distance: {self.xb_distance}Å").classes("text-caption text-grey")
-                    ui.label(f"Angle: {self.xb_angle}°").classes("text-caption text-grey")
+                    ui.label().classes("text-caption text-grey").bind_text_from(
+                        self, "xb_distance", backward=lambda v: f"Distance: {v}Å"
+                    )
+                    ui.label().classes("text-caption text-grey").bind_text_from(
+                        self, "xb_angle", backward=lambda v: f"Angle: {v}°"
+                    )
 
             # π Interactions card
             with ui.card().classes("flex-1"):
@@ -130,7 +142,9 @@ class ParameterPanel:
                     with ui.row().classes("items-center justify-between"):
                         ui.label("π-π Stacking").classes("text-h6")
                         ui.button(icon="edit", on_click=lambda: self._edit_pi_pi_stacking()).props("flat round dense color=primary")
-                    ui.label(f"Distance: {self.pi_pi_distance}Å").classes("text-caption text-grey")
+                    ui.label().classes("text-caption text-grey").bind_text_from(
+                        self, "pi_pi_distance", backward=lambda v: f"Distance: {v}Å"
+                    )
 
             # Carbonyl n→π* card
             with ui.card().classes("flex-1"):
@@ -138,7 +152,9 @@ class ParameterPanel:
                     with ui.row().classes("items-center justify-between"):
                         ui.label("Carbonyl n→π*").classes("text-h6")
                         ui.button(icon="edit", on_click=lambda: self._edit_carbonyl()).props("flat round dense color=primary")
-                    ui.label(f"Distance: {self.carbonyl_distance}Å").classes("text-caption text-grey")
+                    ui.label().classes("text-caption text-grey").bind_text_from(
+                        self, "carbonyl_distance", backward=lambda v: f"Distance: {v}Å"
+                    )
 
         with ui.row().classes("w-full gap-4 q-mt-md"):
             # n→π* Interactions card
@@ -147,7 +163,9 @@ class ParameterPanel:
                     with ui.row().classes("items-center justify-between"):
                         ui.label("n→π* Interactions").classes("text-h6")
                         ui.button(icon="edit", on_click=lambda: self._edit_n_pi()).props("flat round dense color=primary")
-                    ui.label(f"Distance: {self.n_pi_distance}Å").classes("text-caption text-grey")
+                    ui.label().classes("text-caption text-grey").bind_text_from(
+                        self, "n_pi_distance", backward=lambda v: f"Distance: {v}Å"
+                    )
 
             # General Settings card
             with ui.card().classes("flex-1"):
@@ -155,7 +173,9 @@ class ParameterPanel:
                     with ui.row().classes("items-center justify-between"):
                         ui.label("General Settings").classes("text-h6")
                         ui.button(icon="edit", on_click=lambda: self._edit_general()).props("flat round dense color=primary")
-                    ui.label(f"Mode: {self.analysis_mode}").classes("text-caption text-grey")
+                    ui.label().classes("text-caption text-grey").bind_text_from(
+                        self, "analysis_mode", backward=lambda v: f"Mode: {v}"
+                    )
 
     def _edit_pdb_fixing(self):
         """Open right drawer to edit PDB fixing parameters."""

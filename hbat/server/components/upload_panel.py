@@ -142,7 +142,7 @@ class UploadPanel:
         self._download_pdb_func = download_pdb
 
         # Option 1: Upload file
-        with ui.card().classes("w-full q-pa-md"):
+        with ui.card().classes("w-full q-pa-md mt-5"):
             ui.label("Option 1: Upload PDB File").classes("text-h6")
             ui.upload(
                 label="Choose PDB File",
@@ -166,6 +166,16 @@ class UploadPanel:
                     icon="download",
                     on_click=download_pdb,
                 ).props("color=primary")
+
+            # Example PDB IDs
+            ui.label("Example PDB IDs:").classes("text-caption q-mt-sm")
+            with ui.row().classes("gap-1 q-mt-xs flex-wrap"):
+                example_ids = ["6RSA", "1CRN", "4HHB", "2PTC", "2IZF", "4LAZ"]
+                for pdb_id in example_ids:
+                    ui.button(
+                        pdb_id,
+                        on_click=lambda pid=pdb_id: self.pdb_id_input.set_value(pid)
+                    ).props("size=sm outline color=primary")
 
         # Status label
         self.upload_label = ui.label("No file loaded").classes(

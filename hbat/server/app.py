@@ -6,6 +6,7 @@ with integrated 3D visualization using py3Dmol.
 """
 
 import asyncio
+from datetime import datetime
 import os
 import tempfile
 import zipfile
@@ -65,7 +66,7 @@ class HBATWebApp:
                 ui.label("If you use HBAT in your research, please cite:").classes("text-body2 q-mb-md")
 
                 # HBAT 2 citation
-                ui.label("Tiwari, A. (2025). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. Zenodo. https://doi.org/10.5281/zenodo.17645377").classes("text-body2 q-mb-sm")
+                ui.label("Tiwari, A. (2025). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. Zenodo. https://doi.org/10.5281/zenodo.17645321").classes("text-body2 q-mb-sm")
 
                 with ui.expansion("BibTeX", icon="code").classes("w-full q-mb-md"):
                     ui.markdown("""
@@ -109,13 +110,13 @@ class HBATWebApp:
         with ui.header().classes("items-center"):
             ui.button(icon="menu", on_click=lambda: left_drawer.toggle()).props("flat color=white")
             ui.image("/static/hbat.svg").classes("w-10 h-10 q-ml-md")
-            ui.label(f"HBAT 2 - {APP_NAME}").classes("text-h5 q-ml-sm")
+            ui.label(f"HBAT 2 - Web Server").classes("text-h5 q-ml-sm")
             ui.space()
             ui.button("Cite", icon="format_quote", on_click=self._show_citation_dialog).props("flat color=yellow")
             with ui.link(target="http://hbat.abhishek-tiwari.com", new_tab=True).classes("text-white no-underline"):
                 ui.button("Docs", icon="description").props("flat color=white")
             with ui.link(target="https://github.com/abhishektiwari/hbat", new_tab=True).classes("text-white no-underline"):
-                ui.button("Code", icon="code").props("flat color=white")
+                ui.button("GitHub", icon="code").props("flat color=white")
 
         # Left drawer (set fixed=True to prevent JavaScript state queries during heavy operations)
         with ui.left_drawer(fixed=True).props("bordered") as left_drawer:
@@ -182,14 +183,14 @@ class HBATWebApp:
         # Footer
         with ui.footer(fixed=False).classes("items-center"):
             with ui.row().classes("w-full items-center justify-between q-px-md"):
-                ui.label(f"© 2025 {APP_NAME} ").classes("text-caption")
-                ui.link("GitHub", "https://github.com/abhishektiwari/hbat", new_tab=True).classes("text-white")
+                ui.label(f"© {datetime.now().year} Abhishek Tiwari ").classes("text-caption")
 
         # Right drawer for parameter editing
         with ui.right_drawer(fixed=False).props("bordered width=400") as param_drawer:
             param_drawer.hide()
             with ui.scroll_area().classes("w-full h-full"):
                 param_drawer_content = ui.column().classes("w-full q-pa-md")
+
 
         # Main content area with stepper
         with ui.column().classes("w-full q-pa-md"):
@@ -247,9 +248,8 @@ class HBATWebApp:
 
                 # Step 4: Export Results
                 with ui.step("export", title="Export Results", icon="download"):
-                    ui.label("Export analysis results").classes("text-subtitle1 q-mb-md")
 
-                    with ui.card().classes("w-full q-pa-md"):
+                    with ui.card().classes("w-full q-pa-md mt-5"):
                         ui.label("Choose export format:").classes("text-h6 q-mb-md")
 
                         with ui.row().classes("gap-4"):
@@ -276,6 +276,75 @@ class HBATWebApp:
                         ui.button(
                             "Start Over", icon="refresh", on_click=self._start_over
                         ).props("flat color=primary")
+
+            # Info card below stepper (responsive: stacks on mobile, horizontal on desktop)
+            with ui.card().classes("w-full q-mt-md q-pa-md"):
+                with ui.row().classes("w-full gap-4 flex-wrap items-center md:flex-nowrap md:items-start"):
+                    # Image section - 100% width on mobile, fixed size on desktop
+                    with ui.column().classes("w-full md:w-auto flex-shrink-0"):
+                        ui.image("https://static.abhishek-tiwari.com/hbat/B_3WH_501_to_B_MET_146_xbond.png").classes(
+                            "w-full md:w-48 md:h-48 rounded"
+                        )
+
+                    # Text section - full width on mobile, flexible on desktop
+                    with ui.column().classes("w-full md:flex-1 items-center md:items-start"):
+                        ui.label("HBAT 2: Analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures").classes(
+                            "text-h6 q-mb-sm text-center md:text-left"
+                        )
+                        ui.label("HBAT 2 is open-source software licensed under MIT. HBAT 2 provides multiple interfaces including web server, desktop GUI, command-line (CLI), and ready-to-use Jupyter/Colab notebooks. The web server version is freely accessible to all users, including for commercial use.").classes(
+                            "text-body2 text-grey-7 text-center md:text-left"
+                        )
+                        with ui.row().classes("gap-2 q-mt-sm flex-wrap justify-center md:justify-start"):
+                            ui.button("Cite", icon="format_quote", on_click=self._show_citation_dialog).props("flat color=primary")
+                            with ui.link(target="http://hbat.abhishek-tiwari.com", new_tab=True).classes("no-underline"):
+                                ui.button("Docs", icon="open_in_new").props("flat color=primary")
+                            with ui.link(target="https://github.com/abhishektiwari/hbat", new_tab=True).classes("no-underline"):
+                                ui.button("GitHub", icon="code").props("flat color=primary")
+
+            # Badges card below info card
+            with ui.card().classes("w-full q-mt-md q-pa-md"):
+                ui.html("""
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px;">
+                        <a href="https://github.com/abhishektiwari/hbat/releases" target="_blank">
+                            <img src="https://img.shields.io/github/v/release/abhishektiwari/hbat" alt="GitHub Release">
+                        </a>
+                        <a href="https://github.com/abhishektiwari/hbat/actions/workflows/test.yml" target="_blank">
+                            <img src="https://img.shields.io/github/actions/workflow/status/abhishektiwari/hbat/test.yml?label=tests" alt="Tests">
+                        </a>
+                        <img src="https://img.shields.io/pypi/v/hbat" alt="PyPI Version">
+                        <img src="https://img.shields.io/pypi/wheel/hbat" alt="PyPI Wheel">
+                        <img src="https://img.shields.io/pypi/pyversions/hbat" alt="Python Versions">
+                        <img src="https://img.shields.io/pypi/status/hbat" alt="PyPI Status">
+                        <img src="https://img.shields.io/conda/v/hbat/hbat" alt="Conda Version">
+                        <img src="https://img.shields.io/github/license/abhishektiwari/hbat" alt="License">
+                        <img src="https://img.shields.io/github/last-commit/abhishektiwari/hbat/main" alt="Last Commit">
+                        <a href="https://github.com/abhishektiwari/hbat/releases" target="_blank">
+                            <img src="https://img.shields.io/github/downloads/abhishektiwari/hbat/total?label=GitHub%20Downloads" alt="GitHub Downloads">
+                        </a>
+                        <a href="https://sourceforge.net/projects/hbat/files/" target="_blank">
+                            <img src="https://img.shields.io/sourceforge/dt/hbat?label=SourceForge%20Downloads" alt="SourceForge Downloads">
+                        </a>
+                        <a href="https://pypi.org/project/hbat/" target="_blank">
+                            <img src="https://img.shields.io/pepy/dt/hbat?label=PyPI%20Downloads" alt="PyPI Downloads">
+                        </a>
+                        <a href="https://codecov.io/gh/abhishektiwari/hbat" target="_blank">
+                            <img src="https://codecov.io/gh/abhishektiwari/hbat/graph/badge.svg?token=QSKYLB3M1V" alt="Code Coverage">
+                        </a>
+                        <a href="https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main" target="_blank">
+                            <img src="https://www.codefactor.io/repository/github/abhishektiwari/hbat/badge/main" alt="CodeFactor">
+                        </a>
+                        <a href="https://socket.dev/pypi/package/hbat" target="_blank">
+                            <img src="https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl" alt="Socket Security">
+                        </a>
+                        <a href="https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC" target="_blank">
+                            <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337" alt="Citations">
+                        </a>
+                        
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px;">
+                        <span class="__dimensions_badge_embed__" data-doi="10.3233/isi-2007-00337" data-legend="always" data-style="small_circle"></span>
+                    </div>
+                """, sanitize=False)
 
     async def _handle_upload_next(self):
         """Handle Next button in upload step - download PDB if ID provided."""
@@ -345,9 +414,22 @@ class HBATWebApp:
                 self.status_label.classes(replace="text-caption q-mt-sm text-positive")
                 ui.notify("Analysis completed!", type="positive", position="top-left")
 
+                # Get PDB content for visualization
+                # If PDBFixer was used, we need the fixed file because it reorganizes chains
+                # OpenBabel preserves original chain structure, so use original file
+                pdb_content_for_viz = self.pdb_content
+                if hasattr(self.analyzer, '_pdb_fixing_info') and self.analyzer._pdb_fixing_info.get('applied'):
+                    method = self.analyzer._pdb_fixing_info.get('method', '')
+                    # Only use fixed file for PDBFixer (which reorganizes chains)
+                    if method == 'pdbfixer':
+                        fixed_file_path = self.analyzer._pdb_fixing_info.get('fixed_file_path')
+                        if fixed_file_path and os.path.exists(fixed_file_path):
+                            with open(fixed_file_path, 'r') as f:
+                                pdb_content_for_viz = f.read()
+
                 # Update results display
                 await self.results_panel.update_results(
-                    self.analyzer, self.pdb_content, self.current_file
+                    self.analyzer, pdb_content_for_viz, self.current_file
                 )
 
                 # Auto-advance to results step
@@ -478,6 +560,10 @@ def create_app():
 
     :returns: None
     """
+    # Configure static files BEFORE page routes
+    static_dir = Path(__file__).parent / "static"
+    if static_dir.exists():
+        app.add_static_files("/static", str(static_dir))
 
     @ui.page("/")
     def index():
@@ -499,7 +585,7 @@ def create_app():
 
         # Add meta tags for SEO and social sharing
         ui.add_head_html('''
-            <meta name="description" content="HBAT 2 - Hydrogen Bond Analysis Tool for analyzing molecular interactions including hydrogen bonds, halogen bonds, π interactions, and cooperativity chains in protein structures">
+            <meta name="description" content="HBAT 2 (Hydrogen Bond Analysis Tool 2) for analyzing molecular interactions including hydrogen bonds, halogen bonds, π interactions, and cooperativity chains in protein structures">
             <meta name="keywords" content="hydrogen bond analysis, hydrogen bond calculator, protein-ligand interactions, molecular interactions, protein structure, halogen bonds, pi interactions, cooperativity chains, structural biology, bioinformatics, PDB analysis">
             <meta name="author" content="Abhishek Tiwari">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -514,7 +600,7 @@ def create_app():
             <!-- Twitter -->
             <meta property="twitter:card" content="summary_large_image">
             <meta property="twitter:url" content="https://hbat.abhishek-tiwari.com/">
-            <meta property="twitter:title" content="HBAT 2 - Hydrogen Bond Analysis Tool">
+            <meta property="twitter:title" content="HBAT 2 (Hydrogen Bond Analysis Tool 2)">
             <meta property="twitter:description" content="Comprehensive tool for analyzing molecular interactions in protein structures including hydrogen bonds, halogen bonds, π interactions, and cooperativity chains">
             <meta property="twitter:image" content="/static/hbat.svg">
 
@@ -540,16 +626,24 @@ def create_app():
                 .q-notifications__list--top {
                     top: 70px;
                 }
+
+                /* Parameter drawer input fields - ensure full width and labels don't wrap */
+                .q-drawer--right .q-field {
+                    width: 50%;
+                }
+
+                .q-drawer--right .q-field__label {
+                    white-space: normal;
+                    word-wrap: break-word;
+                    max-width: 100%;
+                    font-weight: bold;
+                }
             </style>
+            <script async src="https://badge.dimensions.ai/badge.js" charset="utf-8"></script>
         ''')
 
         hbat_app = HBATWebApp()
         hbat_app.create_ui()
-
-    # Configure static files if directory exists
-    static_dir = Path(__file__).parent / "static"
-    if static_dir.exists():
-        app.add_static_files("/static", str(static_dir))
 
     # Check if running in production/Docker environment
     is_production = os.getenv("HBAT_ENV") == "production"
@@ -557,11 +651,14 @@ def create_app():
     host = os.getenv("HBAT_HOST", "0.0.0.0" if is_production else "127.0.0.1")  # nosec B104
     port = int(os.getenv("HBAT_PORT", "8080"))
 
+    # Set favicon path
+    favicon_path = static_dir / "favicon.ico" if static_dir.exists() else None
+
     ui.run(
-        title=f"HBAT 2 - {APP_NAME}",
-        favicon="/static/hbat.ico",
+        title=f"HBAT 2 - Web Server",
+        favicon=str(favicon_path) if favicon_path else "🧬",
         dark=False,
-        reload=False,
+        reload=not is_production,  # Enable auto-reload in development mode
         show=not is_production,  # Don't open browser in production/Docker
         host=host,
         port=port,
@@ -569,5 +666,5 @@ def create_app():
     )
 
 
-if __name__ == "__main__":
+if __name__ in {"__main__", "__mp_main__"}:
     create_app()

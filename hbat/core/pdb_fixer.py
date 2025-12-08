@@ -701,6 +701,9 @@ class PDBFixer:
             if not conv.WriteFile(mol, output_path):
                 raise PDBFixerError(f"Failed to write fixed PDB file: {output_path}")
 
+            # Add TER records for proper chain termination (py3Dmol compatibility)
+            self._add_ter_records_to_pdb(output_path)
+
             self.last_fixed_file_path = output_path
             return True
 
@@ -757,6 +760,46 @@ class PDBFixer:
 
         except Exception as e:
             raise PDBFixerError(f"PDBFixer processing failed: {str(e)}")
+
+    def _add_ter_records_to_pdb(self, pdb_path: str) -> None:
+        """Add TER records to PDB file for proper chain termination.
+
+        OpenBabel removes TER records, which can cause py3Dmol and other viewers
+        to incorrectly parse the file. This method adds TER records before the
+        CONECT section to properly terminate the coordinate section.
+
+        :param pdb_path: Path to PDB file to fix
+        :type pdb_path: str
+        """
+        with open(pdb_path, 'r') as f:
+            lines = f.readlines()
+
+        # Find the last ATOM or HETATM record before CONECT
+        last_coord_idx = -1
+        last_chain = None
+        last_serial = None
+
+        for i, line in enumerate(lines):
+            if line.startswith('ATOM') or line.startswith('HETATM'):
+                last_coord_idx = i
+                last_chain = line[21:22] if len(line) > 21 else ''
+                # Get serial number from previous record for TER
+                if len(line) > 26:
+                    try:
+                        last_serial = int(line[6:11].strip())
+                    except ValueError:
+                        pass
+            elif line.startswith('CONECT'):
+                break
+
+        # Insert TER record after last coordinate record
+        if last_coord_idx >= 0 and last_serial:
+            ter_line = f"TER   {last_serial + 1:5d}      {last_chain}\n"
+            lines.insert(last_coord_idx + 1, ter_line)
+
+            # Write back
+            with open(pdb_path, 'w') as f:
+                f.writelines(lines)
 
     def get_missing_hydrogen_info(self, atoms: List[Atom]) -> Dict[str, Any]:
         """Analyze structure for missing hydrogen information.

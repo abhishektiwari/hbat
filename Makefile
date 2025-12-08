@@ -1,6 +1,6 @@
 # HBAT Development Makefile
 
-.PHONY: help install install-dev test test-all test-fast test-legacy test-pytest test-unit test-integration test-e2e test-performance test-cli test-gui test-coverage test-ccd clean lint format type-check docs generate-ccd-bonds
+.PHONY: help install install-dev test test-all test-fast test-legacy test-pytest test-unit test-integration test-e2e test-performance test-cli test-gui test-coverage test-ccd clean lint format type-check docs generate-ccd-bonds run-server
 
 # Default target
 help:
@@ -39,6 +39,7 @@ help:
 	@echo "  docs-watch    Build docs with auto-reload and open browser"
 	@echo "  run-gui       Launch GUI application"
 	@echo "  run-cli       Run CLI with test file"
+	@echo "  run-server    Run web server in watch mode with auto-reload"
 	@echo "  generate-ccd-bonds Generate residue bond constants from CCD files"
 
 # Installation
@@ -175,6 +176,11 @@ run-gui:
 
 run-cli:
 	python hbat_cli.py example_pdb_files/6RSA.pdb --verbose --summary-only
+
+run-server:
+	@echo "Starting HBAT web server in watch mode..."
+	@echo "Server will automatically reload on code changes"
+	python -m hbat.server.app
 
 # CCD Bond Data Generation
 generate-ccd-bonds:

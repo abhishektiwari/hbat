@@ -243,11 +243,64 @@ class WebResultsPanel:
                         str(summary.get("n_pi_interactions", {}).get("count", 0))
                     ).classes("text-h4 text-green")
 
-            with ui.card().classes("w-full"):
-                ui.label("Cooperativity Chains").classes("text-h6")
-                ui.label(str(summary["cooperativity_chains"]["count"])).classes(
-                    "text-h4 text-blue"
-                )
+            with ui.row().classes("w-full gap-2"):
+                with ui.card().classes("flex-1"):
+                    ui.label("Potential Chains").classes("text-h6")
+                    ui.label(str(summary["cooperativity_chains"]["count"])
+                    ).classes("text-h4 text-blue")
+
+                pdb_fix = summary["pdb_fixing"]
+                method = pdb_fix.get("method", "N/A")
+                original = pdb_fix.get("original_atoms", 0)
+                fixed = pdb_fix.get("fixed_atoms", 0)
+                added_h = pdb_fix.get("added_hydrogens", 0)
+                with ui.card().classes("flex-1"):
+                    ui.label(f"Atoms Fixed").classes("text-h6")
+                    ui.label(str(f"{fixed - original}")
+                    ).classes("text-h4 text-blue")
+
+                with ui.card().classes("flex-1"):
+                    ui.label("Hydrogen Added").classes("text-h6")
+                    ui.label(str(f"{added_h}")
+                    ).classes("text-h4 text-blue")
+
+            # Bond Detection Information
+            if "bond_detection" in summary:
+                bond_det = summary["bond_detection"]
+                breakdown = bond_det.get("breakdown", {})
+
+                with ui.row().classes("w-full gap-2 q-mt-md"):
+                    # Total Bonds Detected
+                    with ui.card().classes("flex-1"):
+                        ui.label("Bonds Detected").classes("text-h6")
+                        ui.label(str(bond_det.get("total_bonds", 0))).classes("text-h4 text-primary")
+
+                    # CONECT Records
+                    with ui.card().classes("flex-1"):
+                        ui.label("CONECT").classes("text-h6")
+                        if "conect_records" in breakdown:
+                            conect = breakdown["conect_records"]
+                            ui.label(f"{conect['percentage']}%").classes("text-h4 text-orange")
+                        else:
+                            ui.label("0.0%").classes("text-h4 text-orange")
+
+                    # Residue Lookup
+                    with ui.card().classes("flex-1"):
+                        ui.label("Residue Lookup").classes("text-h6")
+                        if "residue_lookup" in breakdown:
+                            residue = breakdown["residue_lookup"]
+                            ui.label(f"{residue['percentage']}%").classes("text-h4 text-purple")
+                        else:
+                            ui.label("0.0%").classes("text-h4 text-purple")
+
+                    # Distance Based
+                    with ui.card().classes("flex-1"):
+                        ui.label("Distance Based").classes("text-h6")
+                        if "distance_based" in breakdown:
+                            distance = breakdown["distance_based"]
+                            ui.label(f"{distance['percentage']}%").classes("text-h4 text-teal")
+                        else:
+                            ui.label("0.0%").classes("text-h4 text-teal")
 
     def _update_hydrogen_bonds_panel(self):
         """Update hydrogen bonds panel with table and visualization."""
