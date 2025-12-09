@@ -18,17 +18,25 @@ from hbat.constants.parameters import AnalysisParameters
 class TestCompleteAnalysisWorkflows:
     """Test complete analysis workflows with real PDB files."""
 
-    def test_standard_analysis_workflow(self, sample_pdb_file, expected_results):
+    @pytest.mark.parametrize("pdb_name", ["6rsa.pdb", "4laz.pdb"])
+    def test_standard_analysis_workflow(self, pdb_name, expected_results):
         """Test complete standard analysis workflow: file → analysis → results."""
-        # Create analyzer with default parameters
-        analyzer = MolecularInteractionAnalyzer()
+        # Get file path and expected values for this PDB
+        pdb_file = expected_results[pdb_name]["file"]
+        if not os.path.exists(pdb_file):
+            pytest.skip(f"PDB file {pdb_file} not found")
+
+        expected = expected_results[pdb_name]["pdbfixer"]
+
+        # Create analyzer with PDB fixing enabled (using pdbfixer method)
+        params = AnalysisParameters(
+            fix_pdb_enabled=True, fix_pdb_method="pdbfixer", fix_pdb_add_hydrogens=True
+        )
+        analyzer = MolecularInteractionAnalyzer(params)
 
         # Execute complete analysis
-        success = analyzer.analyze_file(sample_pdb_file)
+        success = analyzer.analyze_file(pdb_file)
         assert success, "Analysis should succeed"
-
-        # Get expected values for 6rsa.pdb with default pdbfixer method
-        expected = expected_results["6rsa.pdb"]["pdbfixer"]
 
         # Verify comprehensive results
         summary = analyzer.get_summary()
@@ -44,10 +52,10 @@ class TestCompleteAnalysisWorkflows:
         pi_min, pi_max = expected["pi_interactions"]
 
         assert hb_min <= summary["hydrogen_bonds"]["count"] <= hb_max, (
-            f"H-bonds {summary['hydrogen_bonds']['count']} should be in range [{hb_min}, {hb_max}]"
+            f"{pdb_name}: H-bonds {summary['hydrogen_bonds']['count']} should be in range [{hb_min}, {hb_max}]"
         )
         assert pi_min <= summary["pi_interactions"]["count"] <= pi_max, (
-            f"Pi interactions {summary['pi_interactions']['count']} should be in range [{pi_min}, {pi_max}]"
+            f"{pdb_name}: Pi interactions {summary['pi_interactions']['count']} should be in range [{pi_min}, {pi_max}]"
         )
         # Total should be at least minimum hydrogen bonds
         assert summary["total_interactions"] >= hb_min
@@ -57,8 +65,15 @@ class TestCompleteAnalysisWorkflows:
         assert len(analyzer.pi_interactions) == summary["pi_interactions"]["count"]
         assert len(analyzer.halogen_bonds) == summary["halogen_bonds"]["count"]
 
-    def test_pdb_fixing_workflow(self, sample_pdb_file, expected_results):
+    @pytest.mark.parametrize("pdb_name", ["6rsa.pdb", "4laz.pdb"])
+    def test_pdb_fixing_workflow(self, pdb_name, expected_results):
         """Test complete PDB fixing workflow: raw PDB → fixing → analysis → results."""
+        # Get file path and expected values for this PDB
+        pdb_file = expected_results[pdb_name]["file"]
+        if not os.path.exists(pdb_file):
+            pytest.skip(f"PDB file {pdb_file} not found")
+
+        expected = expected_results[pdb_name]["openbabel"]
         # Configure analysis with PDB fixing
         params = AnalysisParameters(
             fix_pdb_enabled=True, fix_pdb_method="openbabel", fix_pdb_add_hydrogens=True
@@ -66,20 +81,18 @@ class TestCompleteAnalysisWorkflows:
         analyzer = MolecularInteractionAnalyzer(params)
 
         # Execute analysis with fixing
-        success = analyzer.analyze_file(sample_pdb_file)
+        success = analyzer.analyze_file(pdb_file)
         assert success, "Analysis with PDB fixing should succeed"
 
-        # Get expected values for 6rsa.pdb with openbabel method
-        expected = expected_results["6rsa.pdb"]["openbabel"]
         hb_min, hb_max = expected["hydrogen_bonds"]
         pi_min, pi_max = expected["pi_interactions"]
 
         # Verify results meet expectations for fixed structure
         assert hb_min <= len(analyzer.hydrogen_bonds) <= hb_max, (
-            f"H-bonds {len(analyzer.hydrogen_bonds)} should be in range [{hb_min}, {hb_max}]"
+            f"{pdb_name}: H-bonds {len(analyzer.hydrogen_bonds)} should be in range [{hb_min}, {hb_max}]"
         )
         assert pi_min <= len(analyzer.pi_interactions) <= pi_max, (
-            f"Pi interactions {len(analyzer.pi_interactions)} should be in range [{pi_min}, {pi_max}]"
+            f"{pdb_name}: Pi interactions {len(analyzer.pi_interactions)} should be in range [{pi_min}, {pi_max}]"
         )
 
         # Verify fixing occurred by checking hydrogen presence
@@ -161,16 +174,26 @@ class TestCompleteAnalysisWorkflows:
 class TestResultsExportWorkflows:
     """Test complete workflows including results export."""
 
-    def test_json_export_workflow(self, sample_pdb_file, expected_results):
+    @pytest.mark.parametrize("pdb_name", ["6rsa.pdb"])
+    def test_json_export_workflow(self, pdb_name, expected_results):
         """Test complete workflow with JSON results export."""
-        analyzer = MolecularInteractionAnalyzer()
+        # Get file path and expected values for this PDB
+        pdb_file = expected_results[pdb_name]["file"]
+        if not os.path.exists(pdb_file):
+            pytest.skip(f"PDB file {pdb_file} not found")
+
+        expected = expected_results[pdb_name]["pdbfixer"]
+
+        # Configure analysis with PDB fixing enabled
+        params = AnalysisParameters(
+            fix_pdb_enabled=True, fix_pdb_method="pdbfixer", fix_pdb_add_hydrogens=True
+        )
+        analyzer = MolecularInteractionAnalyzer(params)
 
         # Run analysis
-        success = analyzer.analyze_file(sample_pdb_file)
+        success = analyzer.analyze_file(pdb_file)
         assert success
 
-        # Get expected values for 6rsa.pdb with default pdbfixer method
-        expected = expected_results["6rsa.pdb"]["pdbfixer"]
         hb_min, hb_max = expected["hydrogen_bonds"]
 
         # Export results to JSON
@@ -220,7 +243,7 @@ class TestResultsExportWorkflows:
             assert (
                 hb_min <= loaded_results["summary"]["hydrogen_bonds"]["count"] <= hb_max
             ), (
-                f"H-bonds {loaded_results['summary']['hydrogen_bonds']['count']} should be in range [{hb_min}, {hb_max}]"
+                f"{pdb_name}: H-bonds {loaded_results['summary']['hydrogen_bonds']['count']} should be in range [{hb_min}, {hb_max}]"
             )
 
         finally:
@@ -288,24 +311,36 @@ class TestResultsExportWorkflows:
 class TestLargeFileWorkflows:
     """Test workflows with larger PDB files (performance testing)."""
 
-    def test_large_structure_analysis_workflow(self, sample_pdb_file, expected_results):
+    @pytest.mark.parametrize("pdb_name", ["6rsa.pdb", "4laz.pdb"])
+    def test_large_structure_analysis_workflow(self, pdb_name, expected_results):
         """Test complete workflow with larger structure analysis."""
-        analyzer = MolecularInteractionAnalyzer()
+        # Get file path and expected values for this PDB
+        pdb_file = expected_results[pdb_name]["file"]
+        if not os.path.exists(pdb_file):
+            pytest.skip(f"PDB file {pdb_file} not found")
+
+        expected = expected_results[pdb_name]["pdbfixer"]
+
+        # Create analyzer with PDB fixing enabled (using pdbfixer method)
+        params = AnalysisParameters(
+            fix_pdb_enabled=True, fix_pdb_method="pdbfixer", fix_pdb_add_hydrogens=True
+        )
+        analyzer = MolecularInteractionAnalyzer(params)
 
         import time
 
         start_time = time.time()
 
         # Run analysis
-        success = analyzer.analyze_file(sample_pdb_file)
+        success = analyzer.analyze_file(pdb_file)
 
         analysis_time = time.time() - start_time
 
         assert success, "Large structure analysis should succeed"
-        assert analysis_time < 120.0, f"Analysis took too long: {analysis_time:.2f}s"
+        assert analysis_time < 120.0, (
+            f"{pdb_name}: Analysis took too long: {analysis_time:.2f}s"
+        )
 
-        # Get expected values for 6rsa.pdb with default pdbfixer method
-        expected = expected_results["6rsa.pdb"]["pdbfixer"]
         hb_min, hb_max = expected["hydrogen_bonds"]
 
         # Verify substantial results for large structure
@@ -315,7 +350,7 @@ class TestLargeFileWorkflows:
             + len(analyzer.pi_interactions)
         )
         assert total_interactions >= hb_min, (
-            f"Total interactions {total_interactions} should be at least {hb_min}"
+            f"{pdb_name}: Total interactions {total_interactions} should be at least {hb_min}"
         )
 
         # Check memory usage is reasonable
