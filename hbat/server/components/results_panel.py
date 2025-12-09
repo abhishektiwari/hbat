@@ -1504,9 +1504,21 @@ class WebResultsPanel:
                             f"Chain: {chain.chain_type} (Length: {chain.chain_length})"
                         ).classes("text-subtitle1 q-mb-md")
 
-                        # Display the SVG
-                        ui.html(svg_content, sanitize=False).style(
-                            "width: 100%; overflow: auto;"
+                        # Make SVG responsive by removing fixed width/height but preserving viewBox
+                        import re
+
+                        # Remove width and height attributes from SVG tag to make it responsive
+                        # The viewBox attribute will preserve the aspect ratio
+                        responsive_svg = re.sub(
+                            r'<svg([^>]*)\s+width="[^"]*"([^>]*)\s+height="[^"]*"',
+                            r'<svg\1\2',
+                            svg_content,
+                        )
+
+                        # Display the SVG with responsive styling - allow scrolling for long graphs
+                        # The SVG will scale to fit width while maintaining aspect ratio
+                        ui.html(responsive_svg, sanitize=False).style(
+                            "width: 100%; height: auto; max-height: 80vh; overflow: auto;"
                         )
 
                 dialog.open()
