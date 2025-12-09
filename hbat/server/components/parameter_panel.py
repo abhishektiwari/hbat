@@ -536,10 +536,14 @@ class ParameterPanel:
 
             with ui.column().classes("w-full q-mt-md gap-4"):
                 ui.select(
-                    options=["complete", "hydrogen_bonds_only", "quick"],
+                    options=["complete", "local"],
                     label="Analysis Mode",
                     value=self.analysis_mode,
-                ).bind_value(self, "analysis_mode")
+                    with_input=True,
+                ).bind_value(self, "analysis_mode").tooltip(
+                    "complete: Include all interactions (including intra-residue); "
+                    "local: Exclude intra-residue interactions"
+                )
 
                 ui.number(
                     label="Covalent Cutoff Factor",

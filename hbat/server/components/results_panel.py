@@ -962,7 +962,7 @@ class WebResultsPanel:
                 output_dir=UPLOADS_DIR,
                 filename_prefix=filename_prefix,
                 engine="dot",
-                rankdir="LR"
+                rankdir="TB"
             )
 
             if svg_content:

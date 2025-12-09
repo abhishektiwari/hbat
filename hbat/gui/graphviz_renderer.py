@@ -31,6 +31,15 @@ try:
 except ImportError:
     GRAPHVIZ_PYTHON_AVAILABLE = False
 
+# Import shared GraphViz utilities
+from hbat.visualization.graphviz_dot_helper import (
+    GRAPHVIZ_COLORS,
+    escape_label,
+    get_edge_style,
+    get_node_style,
+    sanitize_node_id,
+)
+
 # Layout mapping from existing HBAT layouts to GraphViz engines
 LAYOUT_ENGINE_MAPPING = {
     "circular": "circo",
@@ -39,17 +48,6 @@ LAYOUT_ENGINE_MAPPING = {
     "planar": "dot",
     "hierarchical": "dot",
     "spring": "fdp",
-}
-
-# Color mapping for GraphViz (HTML color names)
-GRAPHVIZ_COLORS = {
-    "springgreen": "springgreen",
-    "cyan": "cyan",
-    "mediumturquoise": "mediumturquoise",
-    "darkkhaki": "darkkhaki",
-    "lightgray": "lightgray",
-    "darkorange": "darkorange",
-    "peachpuff": "peachpuff",
 }
 
 
@@ -205,8 +203,8 @@ class GraphVizRenderer(BaseVisualizationRenderer):
 
         # Add nodes with styling
         for i, node in enumerate(graph.nodes()):
-            node_id = self._sanitize_node_id(node)
-            label = self._escape_label(str(node))
+            node_id = sanitize_node_id(node)
+            label = escape_label(str(node))
 
             # Get node color
             if i < len(self.node_data.get("colors", [])):
@@ -216,16 +214,7 @@ class GraphVizRenderer(BaseVisualizationRenderer):
                 graphviz_color = "lightgray"
 
             # Determine node style based on type
-            if "(" in node:
-                # Atom node - smaller, different style
-                style = "filled,dotted"
-                width = "0.5"
-                height = "0.3"
-            else:
-                # Residue node - larger, solid style
-                style = "filled,solid"
-                width = "0.7"
-                height = "0.5"
+            style, width, height = get_node_style(node)
 
             dot_lines.append(
                 f'  {node_id} [label="{label}", '
@@ -245,36 +234,20 @@ class GraphVizRenderer(BaseVisualizationRenderer):
             edges = [(u, v, 0, data) for u, v, data in graph.edges(data=True)]
 
         for u, v, key, data in edges:
-            u_id = self._sanitize_node_id(u)
-            v_id = self._sanitize_node_id(v)
+            u_id = sanitize_node_id(u)
+            v_id = sanitize_node_id(v)
 
             # Get edge label
             edge_key = (u, v, key)
             if edge_key in edge_labels:
-                label = self._escape_label(edge_labels[edge_key])
+                label = escape_label(edge_labels[edge_key])
                 label_attr = f'label="{label}", '
             else:
                 label_attr = ""
 
             # Edge styling
             interaction = data.get("interaction")
-            if interaction:
-                interaction_type = getattr(interaction, "interaction_type", "")
-                if "hydrogen" in interaction_type.lower():
-                    color = "blue"
-                    style = "solid"
-                elif "halogen" in interaction_type.lower():
-                    color = "red"
-                    style = "dashed"
-                elif "pi" in interaction_type.lower():
-                    color = "green"
-                    style = "dotted"
-                else:
-                    color = "black"
-                    style = "solid"
-            else:
-                color = "black"
-                style = "solid"
+            color, style = get_edge_style(interaction)
 
             dot_lines.append(
                 f"  {u_id} -> {v_id} ["
@@ -620,40 +593,6 @@ class GraphVizRenderer(BaseVisualizationRenderer):
         self.canvas.bind(
             "<Shift-Button-5>", lambda e: self.canvas.xview_scroll(1, "units")
         )
-
-    def _sanitize_node_id(self, node: str) -> str:
-        """Sanitize node ID for DOT format.
-
-        :param node: Original node identifier
-        :type node: str
-        :returns: Sanitized identifier
-        :rtype: str
-        """
-        # Replace problematic characters with underscores
-        sanitized = node.replace("(", "_").replace(")", "_").replace(" ", "_")
-        sanitized = sanitized.replace("-", "_").replace(":", "_").replace(".", "_")
-
-        # Ensure it starts with a letter or underscore
-        if sanitized and not (sanitized[0].isalpha() or sanitized[0] == "_"):
-            sanitized = f"node_{sanitized}"
-
-        return sanitized or "empty_node"
-
-    def _escape_label(self, label: str) -> str:
-        """Escape label text for DOT format.
-
-        :param label: Original label text
-        :type label: str
-        :returns: Escaped label text
-        :rtype: str
-        """
-        # Escape quotes and backslashes
-        escaped = label.replace("\\", "\\\\").replace('"', '\\"')
-
-        # Handle newlines
-        escaped = escaped.replace("\n", "\\n")
-
-        return escaped
 
     def cleanup(self) -> None:
         """Clean up temporary files and resources."""
