@@ -10,12 +10,12 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..core.interactions import (
-        HydrogenBond,
+        CarbonylInteraction,
         HalogenBond,
+        HydrogenBond,
+        NPiInteraction,
         PiInteraction,
         PiPiStacking,
-        CarbonylInteraction,
-        NPiInteraction,
     )
 
 
@@ -27,7 +27,7 @@ def _escape_pdb_content(pdb_content: str) -> str:
     :returns: Escaped PDB content safe for JavaScript template literals
     :rtype: str
     """
-    return pdb_content.replace('\\', '\\\\').replace('`', '\\`').replace('$', '\\$')
+    return pdb_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
 
 
 def generate_png_export_js(viewer_id: str, filename: str) -> str:
@@ -63,7 +63,9 @@ def generate_png_export_js(viewer_id: str, filename: str) -> str:
     """
 
 
-def generate_hydrogen_bond_viewer_js(hb: "HydrogenBond", pdb_content: str, viewer_id: str) -> str:
+def generate_hydrogen_bond_viewer_js(
+    hb: "HydrogenBond", pdb_content: str, viewer_id: str
+) -> str:
     """Generate JavaScript code for hydrogen bond 3D visualization.
 
     :param hb: Hydrogen bond interaction
@@ -176,7 +178,9 @@ def generate_hydrogen_bond_viewer_js(hb: "HydrogenBond", pdb_content: str, viewe
     return javascript
 
 
-def generate_halogen_bond_viewer_js(xb: "HalogenBond", pdb_content: str, viewer_id: str) -> str:
+def generate_halogen_bond_viewer_js(
+    xb: "HalogenBond", pdb_content: str, viewer_id: str
+) -> str:
     """Generate JavaScript code for halogen bond 3D visualization.
 
     :param xb: Halogen bond interaction
@@ -279,7 +283,9 @@ def generate_halogen_bond_viewer_js(xb: "HalogenBond", pdb_content: str, viewer_
     return javascript
 
 
-def generate_pi_interaction_viewer_js(pi: "PiInteraction", pdb_content: str, viewer_id: str) -> str:
+def generate_pi_interaction_viewer_js(
+    pi: "PiInteraction", pdb_content: str, viewer_id: str
+) -> str:
     """Generate JavaScript code for π interaction 3D visualization.
 
     :param pi: π interaction
@@ -390,7 +396,9 @@ def generate_pi_interaction_viewer_js(pi: "PiInteraction", pdb_content: str, vie
     return javascript
 
 
-def generate_pi_pi_stacking_viewer_js(pi_pi: "PiPiStacking", pdb_content: str, viewer_id: str) -> str:
+def generate_pi_pi_stacking_viewer_js(
+    pi_pi: "PiPiStacking", pdb_content: str, viewer_id: str
+) -> str:
     """Generate JavaScript code for π-π stacking 3D visualization.
 
     :param pi_pi: π-π stacking interaction
@@ -485,7 +493,9 @@ def generate_pi_pi_stacking_viewer_js(pi_pi: "PiPiStacking", pdb_content: str, v
     return javascript
 
 
-def generate_carbonyl_interaction_viewer_js(carbonyl: "CarbonylInteraction", pdb_content: str, viewer_id: str) -> str:
+def generate_carbonyl_interaction_viewer_js(
+    carbonyl: "CarbonylInteraction", pdb_content: str, viewer_id: str
+) -> str:
     """Generate JavaScript code for carbonyl n→π* interaction 3D visualization.
 
     :param carbonyl: Carbonyl interaction
@@ -581,7 +591,9 @@ def generate_carbonyl_interaction_viewer_js(carbonyl: "CarbonylInteraction", pdb
     return javascript
 
 
-def generate_n_pi_interaction_viewer_js(n_pi: "NPiInteraction", pdb_content: str, viewer_id: str) -> str:
+def generate_n_pi_interaction_viewer_js(
+    n_pi: "NPiInteraction", pdb_content: str, viewer_id: str
+) -> str:
     """Generate JavaScript code for n→π* interaction 3D visualization.
 
     :param n_pi: n→π* interaction

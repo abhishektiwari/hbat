@@ -11,13 +11,13 @@ import tempfile
 import tkinter as tk
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import networkx as nx
 from PIL import Image, ImageTk
 
 from hbat.core.app_config import HBATConfig
-from hbat.gui.visualization_renderer import BaseVisualizationRenderer
+from hbat.gui.base_graph_renderer import BaseVisualizationRenderer
 from hbat.utilities.graphviz_utils import GraphVizDetector
 
 # Set up logging
@@ -32,23 +32,10 @@ except ImportError:
     GRAPHVIZ_PYTHON_AVAILABLE = False
 
 # Import shared GraphViz utilities
-from hbat.visualization.graphviz_dot_helper import (
-    GRAPHVIZ_COLORS,
-    escape_label,
-    get_edge_style,
-    get_node_style,
-    sanitize_node_id,
-)
+from hbat.visualization.graphviz_dot_helper import generate_dot_string
 
-# Layout mapping from existing HBAT layouts to GraphViz engines
-LAYOUT_ENGINE_MAPPING = {
-    "circular": "circo",
-    "shell": "twopi",
-    "kamada_kawai": "neato",
-    "planar": "dot",
-    "hierarchical": "dot",
-    "spring": "fdp",
-}
+# GraphViz always uses dot engine for chain visualizations
+GRAPHVIZ_ENGINE = "dot"
 
 
 class GraphVizRenderer(BaseVisualizationRenderer):
@@ -153,10 +140,12 @@ class GraphVizRenderer(BaseVisualizationRenderer):
     def get_supported_layouts(self) -> List[str]:
         """Get list of supported layout algorithms.
 
-        :returns: List of supported layout names
+        GraphViz renderer only uses 'dot' engine, so no layout selection is needed.
+
+        :returns: Empty list since GraphViz doesn't support layout switching
         :rtype: List[str]
         """
-        return list(LAYOUT_ENGINE_MAPPING.keys())
+        return []
 
     def is_available(self) -> bool:
         """Check if GraphViz renderer is available.
@@ -184,82 +173,20 @@ class GraphVizRenderer(BaseVisualizationRenderer):
         :returns: DOT format string
         :rtype: str
         """
-        # Get GraphViz configuration - use configured engine instead of layout mapping
-        engine = self.config.get_graphviz_engine()
-        # Force background color to white for better visibility
-        bgcolor = "white"
+        # Get GraphViz configuration
         rankdir = self.config.get_graphviz_preference("rankdir", "TB")
         node_shape = self.config.get_graphviz_preference("node_shape", "ellipse")
+        dpi = self.config.get_graphviz_export_dpi()
 
-        # Start DOT string
-        dot_lines = [
-            f"digraph G {{",
-            f'  bgcolor="{bgcolor}";',
-            f'  rankdir="{rankdir}";',
-            f'  node [shape="{node_shape}"];',
-            f"  overlap=false;",
-            f"  splines=true;",
-        ]
-
-        # Add nodes with styling
-        for i, node in enumerate(graph.nodes()):
-            node_id = sanitize_node_id(node)
-            label = escape_label(str(node))
-
-            # Get node color
-            if i < len(self.node_data.get("colors", [])):
-                color = self.node_data["colors"][i]
-                graphviz_color = GRAPHVIZ_COLORS.get(color, color)
-            else:
-                graphviz_color = "lightgray"
-
-            # Determine node style based on type
-            style, width, height = get_node_style(node)
-
-            dot_lines.append(
-                f'  {node_id} [label="{label}", '
-                f'fillcolor="{graphviz_color}", '
-                f'style="{style}", '
-                f'width="{width}", '
-                f'height="{height}"];'
-            )
-
-        # Add edges with styling
-        edge_labels = self.edge_data.get("labels", {})
-        # Handle both MultiDiGraph and regular Graph
-        if isinstance(graph, (nx.MultiDiGraph, nx.MultiGraph)):
-            edges = graph.edges(keys=True, data=True)
-        else:
-            # For regular graphs, add a dummy key
-            edges = [(u, v, 0, data) for u, v, data in graph.edges(data=True)]
-
-        for u, v, key, data in edges:
-            u_id = sanitize_node_id(u)
-            v_id = sanitize_node_id(v)
-
-            # Get edge label
-            edge_key = (u, v, key)
-            if edge_key in edge_labels:
-                label = escape_label(edge_labels[edge_key])
-                label_attr = f'label="{label}", '
-            else:
-                label_attr = ""
-
-            # Edge styling
-            interaction = data.get("interaction")
-            color, style = get_edge_style(interaction)
-
-            dot_lines.append(
-                f"  {u_id} -> {v_id} ["
-                f"{label_attr}"
-                f'color="{color}", '
-                f'style="{style}", '
-                f'arrowhead="vee"];'
-            )
-
-        dot_lines.append("}")
-
-        return "\n".join(dot_lines)
+        # Use unified DOT generation function
+        return generate_dot_string(
+            graph=graph,
+            rankdir=rankdir,
+            node_shape=node_shape,
+            bgcolor="white",
+            fontsize="10",
+            dpi=dpi,  # Include DPI in DOT string for high-quality rendering
+        )
 
     def render_with_graphviz(
         self, dot_string: str, layout_type: str
@@ -268,12 +195,13 @@ class GraphVizRenderer(BaseVisualizationRenderer):
 
         :param dot_string: DOT format graph description
         :type dot_string: str
-        :param layout_type: Layout type for engine selection
+        :param layout_type: Layout type (ignored, always uses dot engine)
         :type layout_type: str
         :returns: PIL Image if successful
         :rtype: Optional[Image.Image]
         """
-        engine = self.config.get_graphviz_engine()
+        # Always use dot engine for chain visualizations
+        engine = GRAPHVIZ_ENGINE
 
         if GRAPHVIZ_PYTHON_AVAILABLE:
             return self._render_with_python_graphviz(dot_string, engine)
@@ -294,13 +222,11 @@ class GraphVizRenderer(BaseVisualizationRenderer):
         """
         try:
             # Use graphviz package
+            # DPI is already included in the DOT string from generate_dot()
             graph = graphviz.Source(dot_string)
             graph.engine = engine
 
-            # Get DPI from config
-            dpi = self.config.get_graphviz_export_dpi()
-
-            # Render to PNG bytes
+            # Render to PNG bytes (DPI is embedded in DOT string)
             png_bytes = graph.pipe(format="png", renderer="gd")
 
             # Convert to PIL Image
@@ -379,7 +305,8 @@ class GraphVizRenderer(BaseVisualizationRenderer):
         if format.lower() == "dot":
             return self._export_dot_source(dot_string, filename)
 
-        engine = self.config.get_graphviz_engine()
+        # Always use dot engine for chain visualizations
+        engine = GRAPHVIZ_ENGINE
 
         if GRAPHVIZ_PYTHON_AVAILABLE:
             return self._export_with_python_graphviz(

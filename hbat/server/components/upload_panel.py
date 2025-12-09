@@ -60,7 +60,7 @@ class UploadPanel:
                     ui.notify(
                         f"File too large: {size_mb:.2f} MB. Maximum allowed: 1 MB",
                         type="negative",
-                        position="top-left"
+                        position="top-left",
                     )
                     return
 
@@ -75,9 +75,12 @@ class UploadPanel:
 
                 ui.notify(f"Uploaded {filename}", type="positive", position="top-left")
             except Exception as error:
-                ui.notify(f"Upload failed: {str(error)}", type="negative", position="top-left")
+                ui.notify(
+                    f"Upload failed: {str(error)}", type="negative", position="top-left"
+                )
                 print(f"Upload error: {error}")
                 import traceback
+
                 traceback.print_exc()
 
         async def download_pdb():
@@ -88,22 +91,32 @@ class UploadPanel:
                 return
 
             if len(pdb_id) != 4:
-                ui.notify("PDB ID must be 4 characters", type="warning", position="top-left")
+                ui.notify(
+                    "PDB ID must be 4 characters", type="warning", position="top-left"
+                )
                 return
 
             # Validate PDB ID format (alphanumeric only, security check)
             if not pdb_id.isalnum():
-                ui.notify("PDB ID must contain only letters and numbers", type="warning", position="top-left")
+                ui.notify(
+                    "PDB ID must contain only letters and numbers",
+                    type="warning",
+                    position="top-left",
+                )
                 return
 
             try:
-                import urllib.request
                 import urllib.parse
+                import urllib.request
 
                 # Safely construct URL with validation
-                safe_pdb_id = urllib.parse.quote(pdb_id, safe='')
+                safe_pdb_id = urllib.parse.quote(pdb_id, safe="")
                 url = f"https://files.rcsb.org/download/{safe_pdb_id}.pdb"
-                ui.notify(f"Downloading {pdb_id} from RCSB PDB...", type="info", position="top-left")
+                ui.notify(
+                    f"Downloading {pdb_id} from RCSB PDB...",
+                    type="info",
+                    position="top-left",
+                )
 
                 # Add timeout for security (30 seconds)
                 with urllib.request.urlopen(url, timeout=30) as response:  # nosec B310
@@ -118,7 +131,7 @@ class UploadPanel:
                     ui.notify(
                         f"Downloaded file too large: {size_mb:.2f} MB. Maximum allowed: 1 MB",
                         type="negative",
-                        position="top-left"
+                        position="top-left",
                     )
                     return
 
@@ -133,9 +146,17 @@ class UploadPanel:
                 if self.on_file_upload:
                     self.on_file_upload(filename, content)
 
-                ui.notify(f"Downloaded {filename} from RCSB PDB", type="positive", position="top-left")
+                ui.notify(
+                    f"Downloaded {filename} from RCSB PDB",
+                    type="positive",
+                    position="top-left",
+                )
             except Exception as error:
-                ui.notify(f"Download failed: {str(error)}", type="negative", position="top-left")
+                ui.notify(
+                    f"Download failed: {str(error)}",
+                    type="negative",
+                    position="top-left",
+                )
                 print(f"Download error: {error}")
 
         # Store download function for external use
@@ -156,11 +177,19 @@ class UploadPanel:
         with ui.card().classes("w-full q-pa-md"):
             ui.label("Option 2: Download from RCSB PDB").classes("text-h6")
             with ui.row().classes("w-full items-center gap-2"):
-                self.pdb_id_input = ui.input(
-                    label="PDB ID",
-                    placeholder="e.g., 1BHL",
-                    validation={"Must be 4 characters": lambda v: len(v.strip()) == 4 if v else True},
-                ).props("maxlength=4").classes("flex-1")
+                self.pdb_id_input = (
+                    ui.input(
+                        label="PDB ID",
+                        placeholder="e.g., 1BHL",
+                        validation={
+                            "Must be 4 characters": lambda v: (
+                                len(v.strip()) == 4 if v else True
+                            )
+                        },
+                    )
+                    .props("maxlength=4")
+                    .classes("flex-1")
+                )
                 ui.button(
                     "Download",
                     icon="download",
@@ -174,7 +203,7 @@ class UploadPanel:
                 for pdb_id in example_ids:
                     ui.button(
                         pdb_id,
-                        on_click=lambda pid=pdb_id: self.pdb_id_input.set_value(pid)
+                        on_click=lambda pid=pdb_id: self.pdb_id_input.set_value(pid),
                     ).props("size=sm outline color=primary")
 
         # Status label

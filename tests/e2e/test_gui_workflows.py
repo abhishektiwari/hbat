@@ -383,7 +383,7 @@ class TestVisualizationWorkflows(BaseGUIWorkflowTest):
     def test_chain_visualization_integration(self):
         """Test chain visualization integration."""
         try:
-            from hbat.gui.chain_visualization import ChainVisualizationWindow
+            from hbat.gui.chain_visualization_window import ChainVisualizationWindow
             from hbat.core.app_config import HBATConfig
             
             # Skip if visualization dependencies not available

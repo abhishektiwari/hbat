@@ -87,7 +87,7 @@ test-gui:
 
 test-unit:
 	@echo "Running unit tests..."
-	pytest tests/unit/ -v -m "unit"
+	pytest tests/unit/ -v -m "unit" --cov=hbat --cov-report=term-missing
 
 test-integration:
 	@echo "Running integration tests..."

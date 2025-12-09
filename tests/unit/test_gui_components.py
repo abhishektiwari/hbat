@@ -29,7 +29,7 @@ class TestGUIImports:
     def test_chain_visualization_import(self):
         """Test importing chain visualization module."""
         try:
-            from hbat.gui.chain_visualization import ChainVisualizationWindow
+            from hbat.gui.chain_visualization_window import ChainVisualizationWindow
             assert ChainVisualizationWindow is not None
         except ImportError as e:
             pytest.skip(f"Chain visualization not available: {e}")

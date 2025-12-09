@@ -6,23 +6,23 @@ in notebooks, scripts, or other contexts outside the GUI.
 """
 
 from .chain_graph import create_chain_graph, render_chain_graphviz
-from .pymol3d import (
-    generate_png_export_js,
-    generate_hydrogen_bond_viewer_js,
-    generate_halogen_bond_viewer_js,
-    generate_pi_interaction_viewer_js,
-    generate_pi_pi_stacking_viewer_js,
-    generate_carbonyl_interaction_viewer_js,
-    generate_n_pi_interaction_viewer_js,
-)
 from .notebook import (
-    display_hydrogen_bond,
+    display_carbonyl_interaction,
     display_halogen_bond,
+    display_hydrogen_bond,
+    display_n_pi_interaction,
     display_pi_interaction,
     display_pi_pi_stacking,
-    display_carbonyl_interaction,
-    display_n_pi_interaction,
     load_3dmol_library,
+)
+from .pymol3d import (
+    generate_carbonyl_interaction_viewer_js,
+    generate_halogen_bond_viewer_js,
+    generate_hydrogen_bond_viewer_js,
+    generate_n_pi_interaction_viewer_js,
+    generate_pi_interaction_viewer_js,
+    generate_pi_pi_stacking_viewer_js,
+    generate_png_export_js,
 )
 
 __all__ = [

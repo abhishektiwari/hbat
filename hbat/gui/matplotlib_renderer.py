@@ -17,7 +17,7 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
 
 from hbat.core.app_config import HBATConfig
-from hbat.gui.visualization_renderer import BaseVisualizationRenderer
+from hbat.gui.base_graph_renderer import BaseVisualizationRenderer
 
 # Set up logging
 logger = logging.getLogger(__name__)

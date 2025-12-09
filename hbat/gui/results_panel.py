@@ -11,7 +11,7 @@ from tkinter import messagebox, ttk
 from typing import Optional
 
 try:
-    from .chain_visualization import ChainVisualizationWindow
+    from .chain_visualization_window import ChainVisualizationWindow
 
     VISUALIZATION_AVAILABLE = True
 except ImportError:

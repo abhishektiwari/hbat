@@ -6,10 +6,10 @@ cooperativity chain graphs, extracted from the GUI code for reuse in
 notebooks and scripts.
 """
 
+import shutil
+import tempfile
 from pathlib import Path
 from typing import Optional, Tuple, Union
-import tempfile
-import shutil
 
 import networkx as nx
 
@@ -22,12 +22,7 @@ except ImportError:
 
 # Import shared GraphViz utilities
 from hbat.visualization.graphviz_dot_helper import (
-    GRAPHVIZ_COLORS,
-    escape_label,
-    get_edge_style,
-    get_node_color,
-    get_node_style,
-    sanitize_node_id,
+    generate_dot_string,
 )
 
 
@@ -125,92 +120,15 @@ def render_chain_graphviz(
     # Create NetworkX graph using shared logic
     G = create_chain_graph(chain)
 
-    # Build DOT string manually (matching generate_dot style from graphviz_renderer.py)
-    bgcolor = "white"
-    node_shape = "box"  # Rectangle nodes for better readability
-    fontsize = "10"  # Smaller text size
-
-    # Start DOT string
-    dot_lines = [
-        f"digraph G {{",
-        f'  bgcolor="{bgcolor}";',
-        f'  dpi="{dpi}";',
-        f'  rankdir="{rankdir}";',
-        f'  node [shape="{node_shape}", fontsize="{fontsize}"];',
-        f'  edge [fontsize="{fontsize}"];',
-        f"  overlap=false;",
-        f"  splines=true;",
-    ]
-
-    # Add nodes with styling (matching graphviz_renderer.py lines 207-236)
-    for node in G.nodes():
-        node_id = sanitize_node_id(node)
-        label = escape_label(str(node))
-
-        # Get node color based on residue type (matching visualization_renderer.py)
-        color = get_node_color(node)
-        graphviz_color = GRAPHVIZ_COLORS.get(color, color)
-
-        # Determine node style based on type
-        style, width, height = get_node_style(node)
-
-        # Build node line carefully to avoid quote issues
-        node_line = (
-            f'  {node_id} [label="{label}", '
-            f'fillcolor="{graphviz_color}", '
-            f'style="{style}", '
-            f'width="{width}", '
-            f'height="{height}"];'
-        )
-        dot_lines.append(node_line)
-
-    # Add edges with styling (matching graphviz_renderer.py lines 238-285)
-    for u, v, key, data in G.edges(keys=True, data=True):
-        u_id = sanitize_node_id(u)
-        v_id = sanitize_node_id(v)
-
-        # Get interaction data
-        interaction = data.get("interaction")
-        if interaction:
-            # Get interaction type (matching visualization_renderer.py lines 264-278)
-            interaction_type = getattr(interaction, "interaction_type", "Unknown")
-            distance = getattr(interaction, "distance", 0)
-            angle = getattr(interaction, "angle", 0)
-
-            # Convert angle from radians to degrees if needed
-            import math
-
-            if hasattr(interaction, "angle") and interaction.angle:
-                angle_deg = math.degrees(interaction.angle)
-            else:
-                angle_deg = 0
-
-            # Create edge label with interaction type, distance, and angle
-            # (matching visualization_renderer.py line 276-278)
-            # Escape interaction_type first (it might contain quotes or backslashes)
-            int_type_escaped = escape_label(interaction_type)
-            # Build label with escaped interaction type and literal \n for newlines
-            label_text = f"{int_type_escaped}\\n{distance:.2f}Å\\n{angle_deg:.1f}°"
-            label_attr = f'label="{label_text}", '
-
-            # Edge styling by interaction type
-            color, style = get_edge_style(interaction)
-        else:
-            label_attr = ""
-            color, style = get_edge_style(None)
-
-        dot_lines.append(
-            f"  {u_id} -> {v_id} ["
-            f"{label_attr}"
-            f'color="{color}", '
-            f'style="{style}", '
-            f'arrowhead="vee"];'
-        )
-
-    dot_lines.append("}")
-
-    # Join all DOT lines into a single string
-    dot_string = "\n".join(dot_lines)
+    # Use unified DOT generation function
+    dot_string = generate_dot_string(
+        graph=G,
+        rankdir=rankdir,
+        node_shape="box",  # Rectangle nodes for better readability
+        bgcolor="white",
+        fontsize="10",
+        dpi=dpi,
+    )
 
     # Create graphviz object from DOT string
     dot = graphviz.Source(dot_string, engine=engine, format=format)

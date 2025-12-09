@@ -15,11 +15,11 @@ import networkx as nx
 import pytest
 
 from hbat.core.app_config import HBATConfig
-from hbat.gui.chain_visualization import ChainVisualizationWindow
+from hbat.gui.chain_visualization_window import ChainVisualizationWindow
 from hbat.gui.export_manager import ExportManager
 from hbat.gui.graphviz_preferences_dialog import show_graphviz_preferences
 from hbat.gui.graphviz_renderer import GraphVizRenderer
-from hbat.gui.visualization_renderer import RendererFactory
+from hbat.gui.base_graph_renderer import RendererFactory
 
 
 class MockCooperativityChain:

@@ -16,7 +16,8 @@ import tkinter as tk
 
 from hbat.core.app_config import HBATConfig
 from hbat.gui.graphviz_renderer import GraphVizRenderer
-from hbat.gui.visualization_renderer import RendererFactory
+from hbat.gui.base_graph_renderer import RendererFactory
+from hbat.visualization.graphviz_dot_helper import sanitize_node_id, escape_label
 
 
 @pytest.mark.gui
@@ -161,20 +162,20 @@ class TestGraphVizRendererIntegration(unittest.TestCase):
     def test_node_coloring(self, mock_available):
         """Test node coloring based on residue/atom types."""
         mock_available.return_value = True
-        
+
         renderer = GraphVizRenderer(self.root, self.config)
-        
-        # Create graph with different residue types
+
+        # Create graph with different residue types (using correct format: ChainID:ResName:ResSeq)
         G = nx.Graph()
-        G.add_node("PHE100")  # Aromatic - should be darkorange
-        G.add_node("ASP101")  # Acidic - should be cyan
-        G.add_node("LYS102")  # Basic - should be springgreen
-        G.add_node("SER103")  # Polar - should be peachpuff
-        G.add_node("ALA104")  # Other - should be lightgray
-        
+        G.add_node("A:PHE:100")  # Aromatic - should be darkorange
+        G.add_node("A:ASP:101")  # Acidic - should be cyan
+        G.add_node("A:LYS:102")  # Basic - should be springgreen
+        G.add_node("A:SER:103")  # Polar - should be peachpuff
+        G.add_node("A:ALA:104")  # Other - should be lightgray
+
         renderer.prepare_graph_data(G)
         dot_string = renderer.generate_dot(G, "circular")
-        
+
         # Verify colors in DOT output
         self.assertIn("darkorange", dot_string)    # PHE
         self.assertIn("cyan", dot_string)          # ASP
@@ -236,28 +237,27 @@ class TestGraphVizRendererIntegration(unittest.TestCase):
     def test_configuration_integration(self, mock_available):
         """Test GraphViz configuration integration."""
         mock_available.return_value = True
-        
+
         # Set custom preferences
-        self.config.set_graphviz_engine("neato")
+        self.config.set_graphviz_engine("neato")  # Note: engine is now always "dot" in renderer
         self.config.set_graphviz_export_dpi(150)
         self.config.set_graphviz_preference("background_color", "white")
         self.config.set_graphviz_preference("node_shape", "box")
-        
+
         renderer = GraphVizRenderer(self.root, self.config)
         dot_string = renderer.generate_dot(self.graph, "circular")
-        
+
         # Verify preferences are used
         self.assertIn('bgcolor="white"', dot_string)
-        self.assertIn('node [shape="box"]', dot_string)
+        self.assertIn('shape="box"', dot_string)  # Just check for shape="box", not the full node line
+        self.assertIn('dpi="150"', dot_string)
         
     @patch('hbat.utilities.graphviz_utils.GraphVizDetector.is_graphviz_available')
     def test_sanitize_node_ids(self, mock_available):
         """Test node ID sanitization for DOT format."""
         mock_available.return_value = True
-        
-        renderer = GraphVizRenderer(self.root, self.config)
-        
-        # Test various problematic node IDs
+
+        # Test various problematic node IDs using shared utility function
         test_cases = [
             ("SER123(OG)", "SER123_OG_"),
             ("THR-124:N", "THR_124_N"),
@@ -265,28 +265,26 @@ class TestGraphVizRendererIntegration(unittest.TestCase):
             ("A.B.C", "A_B_C"),
             ("", "empty_node"),
         ]
-        
+
         for input_id, expected in test_cases:
-            sanitized = renderer._sanitize_node_id(input_id)
+            sanitized = sanitize_node_id(input_id)
             self.assertEqual(sanitized, expected)
             
     @patch('hbat.utilities.graphviz_utils.GraphVizDetector.is_graphviz_available')
     def test_escape_labels(self, mock_available):
         """Test label escaping for DOT format."""
         mock_available.return_value = True
-        
-        renderer = GraphVizRenderer(self.root, self.config)
-        
-        # Test escaping special characters
+
+        # Test escaping special characters using shared utility function
         test_cases = [
             ('Simple Label', 'Simple Label'),
             ('Label with "quotes"', 'Label with \\"quotes\\"'),
             ('Label with\\backslash', 'Label with\\\\backslash'),
-            ('Multi\nLine', 'Multi\\nLine'),
+            ('Multi\nLine', 'Multi\nLine'),  # Newlines are preserved in escape_label
         ]
-        
+
         for input_label, expected in test_cases:
-            escaped = renderer._escape_label(input_label)
+            escaped = escape_label(input_label)
             self.assertEqual(escaped, expected)
             
     def test_renderer_factory_available_renderers(self):

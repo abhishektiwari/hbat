@@ -14,7 +14,7 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Dict, List, Optional, Tuple
 
 from hbat.core.app_config import HBATConfig
-from hbat.gui.visualization_renderer import VisualizationRenderer
+from hbat.gui.base_graph_renderer import VisualizationRenderer
 
 # Set up logging
 logger = logging.getLogger(__name__)

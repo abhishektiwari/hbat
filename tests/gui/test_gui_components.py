@@ -827,7 +827,7 @@ class TestChainVisualization:
     def test_chain_visualization_import(self):
         """Test importing chain visualization components."""
         try:
-            from hbat.gui.chain_visualization import ChainVisualizationWindow
+            from hbat.gui.chain_visualization_window import ChainVisualizationWindow
             assert ChainVisualizationWindow is not None
         except ImportError:
             pytest.skip("Chain visualization module not available")
@@ -836,7 +836,7 @@ class TestChainVisualization:
         """Test chain visualization window creation."""
         try:
             import tkinter as tk
-            from hbat.gui.chain_visualization import ChainVisualizationWindow
+            from hbat.gui.chain_visualization_window import ChainVisualizationWindow
             from hbat.core.app_config import HBATConfig
             from unittest.mock import Mock
             

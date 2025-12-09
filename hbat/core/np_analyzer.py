@@ -765,15 +765,22 @@ class NPMolecularInteractionAnalyzer:
                 angle_deg = math.degrees(float(angle_rad))
 
                 if angle_deg >= angle_cutoff:
-                    pi_residue_obj = center_info['residue']
+                    pi_residue_obj = center_info["residue"]
 
                     # Use NPVec3D directly
                     pi_center_vec3d = center_info["center"]
 
                     # Get the aromatic ring atoms
                     from ..constants import RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS
-                    ring_atom_names = RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS.get(pi_residue_obj.name, [])
-                    pi_atoms = [atom for atom in pi_residue_obj.atoms if atom.name in ring_atom_names]
+
+                    ring_atom_names = RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS.get(
+                        pi_residue_obj.name, []
+                    )
+                    pi_atoms = [
+                        atom
+                        for atom in pi_residue_obj.atoms
+                        if atom.name in ring_atom_names
+                    ]
 
                     pi_int = PiInteraction(
                         _donor=donor_atom,
@@ -1638,8 +1645,16 @@ class NPMolecularInteractionAnalyzer:
                 ring_atoms = ring_info["atoms"]
 
                 # Skip same residue interactions
-                donor_residue_key = (donor_atom.chain_id, donor_atom.res_seq, donor_atom.res_name)
-                acceptor_residue_key = (ring_info['residue'].chain_id, ring_info['residue'].seq_num, ring_info['residue'].name)
+                donor_residue_key = (
+                    donor_atom.chain_id,
+                    donor_atom.res_seq,
+                    donor_atom.res_name,
+                )
+                acceptor_residue_key = (
+                    ring_info["residue"].chain_id,
+                    ring_info["residue"].seq_num,
+                    ring_info["residue"].name,
+                )
                 if donor_residue_key == acceptor_residue_key:
                     continue
 
