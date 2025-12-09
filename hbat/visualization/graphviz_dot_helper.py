@@ -235,7 +235,6 @@ def get_edge_label_from_interaction(interaction) -> str:
 
     interaction_type = getattr(interaction, "interaction_type", "Unknown")
     distance = getattr(interaction, "distance", 0)
-    angle = getattr(interaction, "angle", 0)
 
     # Convert angle from radians to degrees if needed
     if hasattr(interaction, "angle") and interaction.angle:
@@ -293,7 +292,7 @@ def generate_dot_string(
 
     # Start DOT string
     dot_lines = [
-        f"digraph G {{",
+        "digraph G {",
         f'  bgcolor="{bgcolor}";',
     ]
 
@@ -306,8 +305,8 @@ def generate_dot_string(
             f'  rankdir="{rankdir}";',
             f'  node [shape="{node_shape}", fontsize="{fontsize}"];',
             f'  edge [fontsize="{fontsize}"];',
-            f"  overlap=false;",
-            f"  splines=true;",
+            "  overlap=false;",
+            "  splines=true;",
         ]
     )
 

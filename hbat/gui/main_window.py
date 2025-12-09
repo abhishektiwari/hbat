@@ -6,8 +6,6 @@ allowing users to load PDB files, configure analysis parameters, and view result
 """
 
 import asyncio
-import csv
-import json
 import os
 import tkinter as tk
 import webbrowser
@@ -436,8 +434,8 @@ class MainWindow:
         lines = content.split("\n")
 
         for i, line in enumerate(lines):
-            line_start = f"{i+1}.0"
-            line_end = f"{i+1}.end"
+            line_start = f"{i + 1}.0"
+            line_end = f"{i + 1}.end"
 
             if line.startswith("ATOM"):
                 self.file_text.tag_add("atom", line_start, line_end)
@@ -1036,8 +1034,8 @@ Author: Abhishek Tiwari
         lines = content.split("\n")
 
         for i, line in enumerate(lines):
-            line_start = f"{i+1}.0"
-            line_end = f"{i+1}.end"
+            line_start = f"{i + 1}.0"
+            line_end = f"{i + 1}.end"
 
             if line.startswith("ATOM"):
                 text_widget.tag_add("atom", line_start, line_end)

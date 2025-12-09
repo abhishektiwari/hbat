@@ -9,7 +9,6 @@ from typing import Dict
 
 from ..constants.pdb_constants import (
     AROMATIC_CODES,
-    BACKBONE_ATOMS,
     BACKBONE_SIDECHAIN_CODES,
     DNA_RESIDUES,
     DNA_RNA_BACKBONE_ATOMS,

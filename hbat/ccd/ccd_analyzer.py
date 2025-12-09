@@ -8,9 +8,8 @@ fast atom and bond lookups by residue and atom IDs.
 
 import os
 import urllib.request
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple
 
-import pandas as pd
 from mmcif.io.BinaryCifReader import BinaryCifReader
 
 

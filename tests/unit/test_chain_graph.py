@@ -233,7 +233,7 @@ class TestRenderChainForWeb(unittest.TestCase):
             if filename:
                 # Create dummy file
                 Path(f"{filename}.{format_type}").write_text(
-                    f"<svg>test</svg>" if format_type == "svg" else "PNG data"
+                    "<svg>test</svg>" if format_type == "svg" else "PNG data"
                 )
             return Mock()
 

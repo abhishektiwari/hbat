@@ -7,7 +7,6 @@ and matplotlib for backward compatibility with existing visualizations.
 
 import itertools as it
 import logging
-import math
 import tkinter as tk
 from typing import Any, Dict, List, Optional
 
@@ -24,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 # Check matplotlib availability
 try:
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # noqa: F401
 
     MATPLOTLIB_AVAILABLE = True
 except ImportError:

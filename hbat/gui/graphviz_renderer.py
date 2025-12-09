@@ -19,6 +19,7 @@ from PIL import Image, ImageTk
 from hbat.core.app_config import HBATConfig
 from hbat.gui.base_graph_renderer import BaseVisualizationRenderer
 from hbat.utilities.graphviz_utils import GraphVizDetector
+from hbat.visualization.graphviz_dot_helper import generate_dot_string
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -30,9 +31,6 @@ try:
     GRAPHVIZ_PYTHON_AVAILABLE = True
 except ImportError:
     GRAPHVIZ_PYTHON_AVAILABLE = False
-
-# Import shared GraphViz utilities
-from hbat.visualization.graphviz_dot_helper import generate_dot_string
 
 # GraphViz always uses dot engine for chain visualizations
 GRAPHVIZ_ENGINE = "dot"
@@ -472,9 +470,7 @@ class GraphVizRenderer(BaseVisualizationRenderer):
                 self.canvas_frame.update_idletasks()
 
             # Create image at top-left corner (0, 0) for proper scrolling
-            image_id = self.canvas.create_image(
-                0, 0, image=self.current_image, anchor=tk.NW
-            )
+            self.canvas.create_image(0, 0, image=self.current_image, anchor=tk.NW)
 
             # Store multiple references to prevent garbage collection
             self.canvas.image_ref = self.current_image
@@ -493,7 +489,7 @@ class GraphVizRenderer(BaseVisualizationRenderer):
             if self.canvas:
                 try:
                     self.canvas.configure(scrollregion=(0, 0, 0, 0))
-                except:
+                except Exception:
                     pass
 
     def _bind_mouse_scroll(self) -> None:

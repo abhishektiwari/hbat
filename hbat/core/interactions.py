@@ -8,7 +8,6 @@ and cooperativity chains.
 
 import math
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import List, Optional, Union
 
 from .np_vector import NPVec3D
@@ -1859,7 +1858,6 @@ class CooperativityChain(MolecularInteraction):
             and isinstance(last_acceptor, (Atom, NPVec3D))
             and isinstance(mid_interaction, (Atom, NPVec3D))
         ):
-
             donor_pos = first_donor.coords
             mid_pos = (
                 mid_interaction.coords
@@ -1936,7 +1934,7 @@ class CooperativityChain(MolecularInteraction):
                 interaction.get_interaction_type()
             )
             chain_str.append(
-                f" {interaction_symbol} {acceptor_str} [{interaction.get_donor_interaction_acceptor_angle()*180/3.14159:.1f}°]"
+                f" {interaction_symbol} {acceptor_str} [{interaction.get_donor_interaction_acceptor_angle() * 180 / 3.14159:.1f}°]"
             )
 
         return f"Potential Cooperative Chain[{self.chain_length}]: " + "".join(

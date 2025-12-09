@@ -7,16 +7,14 @@ with integrated 3D visualization using py3Dmol.
 
 import asyncio
 import os
-import tempfile
 import zipfile
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from nicegui import app, context, ui
+from nicegui import app, ui
 
-from ..constants import APP_NAME
-from ..core.analysis import AnalysisParameters, NPMolecularInteractionAnalyzer
+from ..core.analysis import NPMolecularInteractionAnalyzer
 from ..export import (
     export_to_csv_files,
     export_to_json_single_file,
@@ -129,7 +127,7 @@ class HBATWebApp:
                 "flat color=white"
             )
             ui.image("/static/hbat.svg").classes("w-10 h-10 q-ml-md")
-            ui.label(f"HBAT 2 - Web Server").classes("text-h5 q-ml-sm")
+            ui.label("HBAT 2 - Web Server").classes("text-h5 q-ml-sm")
             ui.space()
             ui.button(
                 "Cite", icon="format_quote", on_click=self._show_citation_dialog
@@ -303,7 +301,6 @@ class HBATWebApp:
 
                 # Step 3: View Results
                 with ui.step("results", title="View Results", icon="analytics"):
-
                     # Container for dynamically created results
                     results_container = ui.column().classes("w-full")
                     self.results_panel = WebResultsPanel(results_container)
@@ -322,7 +319,6 @@ class HBATWebApp:
 
                 # Step 4: Export Results
                 with ui.step("export", title="Export Results", icon="download"):
-
                     with ui.card().classes("w-full q-pa-md mt-5"):
                         ui.label("Choose export format:").classes("text-h6 q-mb-md")
 
@@ -856,16 +852,14 @@ def create_app():
     # Check if running in production/Docker environment
     is_production = os.getenv("HBAT_ENV") == "production"
     # Bind to 0.0.0.0 in production/Docker (intentional for containerized deployments)
-    host = os.getenv(
-        "HBAT_HOST", "0.0.0.0" if is_production else "127.0.0.1"
-    )  # nosec B104
+    host = os.getenv("HBAT_HOST", "0.0.0.0" if is_production else "127.0.0.1")  # nosec B104
     port = int(os.getenv("HBAT_PORT", "8080"))
 
     # Set favicon path
     favicon_path = static_dir / "favicon.ico" if static_dir.exists() else None
 
     ui.run(
-        title=f"HBAT 2 - Web Server",
+        title="HBAT 2 - Web Server",
         favicon=str(favicon_path) if favicon_path else "🧬",
         dark=False,
         reload=not is_production,  # Enable auto-reload in development mode

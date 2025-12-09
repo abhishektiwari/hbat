@@ -7,7 +7,7 @@ calculations of molecular interactions in protein structures.
 
 import math
 import time
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -1449,7 +1449,6 @@ class NPMolecularInteractionAnalyzer:
                         <= reverse_angle
                         <= self.parameters.carbonyl_angle_max
                     ):
-
                         reverse_interaction = CarbonylInteraction(
                             donor_carbon=acceptor_carbonyl["c_atom"],
                             donor_oxygen=acceptor_carbonyl["o_atom"],
@@ -1474,8 +1473,6 @@ class NPMolecularInteractionAnalyzer:
         lone_pair_donors = []
 
         for residue in self.parser.residues.values():
-            residue_id = f"{residue.name}{residue.seq_num}"
-
             for atom in residue.atoms:
                 element = atom.element.upper()
 
@@ -1776,9 +1773,6 @@ class NPMolecularInteractionAnalyzer:
         interaction_graph: Dict[
             int, List[Tuple[int, Union[HydrogenBond, HalogenBond, PiInteraction]]]
         ] = {}
-
-        # Keep mapping from serial to atom for lookups
-        serial_to_atom = {atom.serial: atom for atom in self.parser.atoms}
 
         # Add hydrogen bonds to graph
         for hb in self.hydrogen_bonds:

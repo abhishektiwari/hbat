@@ -10,7 +10,7 @@ import logging
 import os
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, simpledialog, ttk
+from tkinter import filedialog, messagebox, ttk
 from typing import Dict, List, Optional, Tuple
 
 from hbat.core.app_config import HBATConfig

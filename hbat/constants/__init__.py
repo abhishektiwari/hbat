@@ -107,6 +107,8 @@ __all__ = [
     "HYDROGEN_BOND_ACCEPTOR_ELEMENTS",
     "HYDROGEN_ELEMENTS",
     "PDB_ATOM_TO_ELEMENT",
+    "PI_INTERACTION_ATOMS",
+    "PI_INTERACTION_DONOR",
     "get_element_from_pdb_atom",
     "pdb_atom_to_element",
     # Residue bond constants

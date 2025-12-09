@@ -10,12 +10,11 @@ import json
 import os
 import sys
 import time
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 from .. import __version__
 from ..constants.parameters import ParametersDefault
 from ..core.analysis import AnalysisParameters, NPMolecularInteractionAnalyzer
-from ..core.pdb_parser import PDBParser
 from ..export.results import (
     export_to_csv_files,
     export_to_json_files,
@@ -1331,9 +1330,9 @@ def main() -> int:
             info = config.get_info()
             print(f"📁 HBAT data directory: {info['hbat_directory']}")
             if info["ccd_files_present"]:
-                print(f"✅ CCD data available")
+                print("✅ CCD data available")
             else:
-                print(f"⚠️  CCD data will be downloaded as needed")
+                print("⚠️  CCD data will be downloaded as needed")
         except ImportError:
             pass
 

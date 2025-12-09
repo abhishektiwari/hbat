@@ -63,7 +63,9 @@ class TestEscapeLabel(unittest.TestCase):
 
     def test_label_with_backslash(self):
         """Test escaping of backslashes."""
-        self.assertEqual(escape_label("Label with\\backslash"), "Label with\\\\backslash")
+        self.assertEqual(
+            escape_label("Label with\\backslash"), "Label with\\\\backslash"
+        )
 
     def test_label_with_newline(self):
         """Test that newlines are preserved."""

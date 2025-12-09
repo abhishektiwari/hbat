@@ -1,6 +1,6 @@
 # HBAT Development Makefile
 
-.PHONY: help install install-dev test test-all test-fast test-legacy test-pytest test-unit test-integration test-e2e test-performance test-cli test-gui test-coverage test-cov test-ccd clean lint format type-check docs generate-ccd-bonds run-server
+.PHONY: help install install-dev test test-all test-fast test-legacy test-pytest test-unit test-integration test-e2e test-performance test-cli test-gui test-coverage test-cov test-ccd clean lint lint-fix lint-fix-tests format type-check docs generate-ccd-bonds run-server
 
 # Default target
 help:
@@ -25,8 +25,10 @@ help:
 	@echo "  test-ccd      Run CCD performance tests only"
 	@echo ""
 	@echo "Code Quality:"
-	@echo "  lint          Run code linting"
-	@echo "  format        Format code with black and isort"
+	@echo "  lint          Run code linting with ruff"
+	@echo "  lint-fix      Auto-fix linting issues in hbat/ with ruff"
+	@echo "  lint-fix-tests Auto-fix linting issues in tests/ with ruff"
+	@echo "  format        Format code with ruff"
 	@echo "  type-check    Run type checking with mypy"
 	@echo ""
 	@echo "Building:"
@@ -112,16 +114,23 @@ test-ccd:
 
 # Code quality
 lint:
-	@echo "Running flake8..."
-	-flake8 hbat/ *.py
-	@echo "Running pylint..."
-	-pylint hbat/
+	@echo "Running ruff linter..."
+	ruff check hbat/ tests/ *.py
+
+lint-fix:
+	@echo "Auto-fixing linting issues in hbat/ with ruff..."
+	ruff check --fix hbat/
+	ruff check --fix *.py
+	@echo "✓ Linting fixes for hbat/ complete!"
+
+lint-fix-tests:
+	@echo "Auto-fixing linting issues in tests/ with ruff..."
+	ruff check --fix tests/
+	@echo "✓ Linting fixes for tests/ complete!"
 
 format:
-	@echo "Formatting with black..."
-	-black hbat/ *.py
-	@echo "Sorting imports with isort..."
-	-isort hbat/ *.py
+	@echo "Formatting code with ruff..."
+	ruff format hbat/ tests/ *.py
 
 type-check:
 	@echo "Type checking with mypy..."

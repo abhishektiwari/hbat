@@ -8,7 +8,7 @@ visualization.
 
 import abc
 import tkinter as tk
-from typing import Any, Dict, List, Optional, Protocol, Tuple, Union
+from typing import Any, Dict, List, Optional, Protocol, Tuple
 
 import networkx as nx
 
@@ -263,7 +263,6 @@ class BaseVisualizationRenderer(abc.ABC):
             if interaction:
                 interaction_type = getattr(interaction, "interaction_type", "Unknown")
                 distance = getattr(interaction, "distance", 0)
-                angle = getattr(interaction, "angle", 0)
 
                 # Convert angle from radians to degrees if needed
                 import math
@@ -378,7 +377,7 @@ class RendererFactory:
 
         # Check matplotlib availability
         try:
-            from hbat.gui.matplotlib_renderer import MatplotlibRenderer
+            from hbat.gui.matplotlib_renderer import MatplotlibRenderer  # noqa: F401
 
             renderers.append(("matplotlib", "NetworkX/Matplotlib"))
         except ImportError:
@@ -389,7 +388,7 @@ class RendererFactory:
 
         if GraphVizDetector.is_graphviz_available():
             try:
-                from hbat.gui.graphviz_renderer import GraphVizRenderer
+                from hbat.gui.graphviz_renderer import GraphVizRenderer  # noqa: F401
 
                 renderers.append(("graphviz", "GraphViz"))
             except ImportError:

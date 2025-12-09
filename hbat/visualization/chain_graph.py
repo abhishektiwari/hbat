@@ -194,7 +194,7 @@ def render_chain_for_web(
             temp_path = Path(tmpdir) / "graph"
 
             # Generate SVG with normal DPI for display (keeps dialog size manageable)
-            dot = render_chain_graphviz(
+            render_chain_graphviz(
                 chain,
                 engine=engine,
                 rankdir=rankdir,

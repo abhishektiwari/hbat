@@ -7,7 +7,6 @@ and other persistent data.
 """
 
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -89,12 +88,12 @@ class HBATConfig:
             # Initialize configuration if it doesn't exist
             if not self.config_file.exists():
                 self._create_initial_config()
-                print(f"   ⚙️  Created initial configuration")
+                print("   ⚙️  Created initial configuration")
 
             # Initialize state file if it doesn't exist
             if not self.state_file.exists():
                 self._create_initial_state()
-                print(f"   📊 Created application state file")
+                print("   📊 Created application state file")
 
             return True
 
@@ -516,7 +515,7 @@ def initialize_hbat_environment(verbose: bool = True) -> bool:
 
         if verbose:
             info = config.get_info()
-            print(f"✅ HBAT environment ready")
+            print("✅ HBAT environment ready")
             print(f"   📁 Data directory: {info['hbat_directory']}")
             print(f"   🗃️  CCD data path: {info['ccd_data_directory']}")
 

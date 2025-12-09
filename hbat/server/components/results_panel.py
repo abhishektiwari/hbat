@@ -6,7 +6,6 @@ for molecular interactions.
 """
 
 import math
-from pathlib import Path
 from typing import Optional
 
 from nicegui import ui
@@ -252,12 +251,11 @@ class WebResultsPanel:
                     )
 
                 pdb_fix = summary["pdb_fixing"]
-                method = pdb_fix.get("method", "N/A")
                 original = pdb_fix.get("original_atoms", 0)
                 fixed = pdb_fix.get("fixed_atoms", 0)
                 added_h = pdb_fix.get("added_hydrogens", 0)
                 with ui.card().classes("flex-1"):
-                    ui.label(f"Atoms Fixed").classes("text-h6")
+                    ui.label("Atoms Fixed").classes("text-h6")
                     ui.label(str(f"{fixed - original}")).classes("text-h4 text-blue")
 
                 with ui.card().classes("flex-1"):
