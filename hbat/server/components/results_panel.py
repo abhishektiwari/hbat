@@ -1464,7 +1464,9 @@ class WebResultsPanel:
             from ...server.app import UPLOADS_DIR
 
             # Generate both SVG (for display) and PNG (for export) using reusable function
-            filename_prefix = f"chain_{chain.chain_type}_{chain.chain_length}"
+            # Replace spaces and special chars in chain type for clean filenames
+            safe_chain_type = chain.chain_type.replace(" ", "_").replace("-", "_")
+            filename_prefix = f"chain_{safe_chain_type}_{chain.chain_length}"
             svg_content, png_path = render_chain_for_web(
                 chain,
                 output_dir=UPLOADS_DIR,
@@ -1503,6 +1505,32 @@ class WebResultsPanel:
                         ui.label(
                             f"Chain: {chain.chain_type} (Length: {chain.chain_length})"
                         ).classes("text-subtitle1 q-mb-md")
+
+                        # Fix SVG dimensions to match viewBox for consistency across Graphviz versions
+                        import re
+
+                        # Extract viewBox dimensions
+                        viewbox_match = re.search(
+                            r'viewBox="([^"]+)"', svg_content
+                        )
+                        if viewbox_match:
+                            viewbox = viewbox_match.group(1).split()
+                            if len(viewbox) == 4:
+                                vb_width = float(viewbox[2])
+                                vb_height = float(viewbox[3])
+
+                                # Set width and height to match viewBox dimensions
+                                fixed_svg = re.sub(
+                                    r'width="[^"]*"',
+                                    f'width="{vb_width}pt"',
+                                    svg_content
+                                )
+                                fixed_svg = re.sub(
+                                    r'height="[^"]*"',
+                                    f'height="{vb_height}pt"',
+                                    fixed_svg
+                                )
+                                svg_content = fixed_svg
 
                         # Display the SVG
                         ui.html(svg_content, sanitize=False).style(
