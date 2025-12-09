@@ -83,6 +83,28 @@ class ParameterPanel:
         self.covalent_cutoff_factor = ParametersDefault.COVALENT_CUTOFF_FACTOR
         self.analysis_mode = ParametersDefault.ANALYSIS_MODE
 
+    def _should_enable_keep_water(self) -> bool:
+        """Check if Keep Water switch should be enabled.
+
+        :returns: True if both PDBFixer is selected AND Remove Heterogens is checked
+        :rtype: bool
+        """
+        return self.fix_pdb_method == "pdbfixer" and self.fix_pdb_remove_heterogens
+
+    def _update_keep_water_state(self):
+        """Update the enabled state of Keep Water switch based on method and remove_heterogens."""
+        if hasattr(self, 'keep_water_switch'):
+            should_enable = self._should_enable_keep_water()
+            self.keep_water_switch.enabled = should_enable
+
+    def _reset_pdb_fixing_options(self):
+        """Reset PDB fixing options to defaults."""
+        self.fix_pdb_add_hydrogens = ParametersDefault.FIX_PDB_ADD_HYDROGENS
+        self.fix_pdb_add_heavy_atoms = ParametersDefault.FIX_PDB_ADD_HEAVY_ATOMS
+        self.fix_pdb_replace_nonstandard = ParametersDefault.FIX_PDB_REPLACE_NONSTANDARD
+        self.fix_pdb_remove_heterogens = ParametersDefault.FIX_PDB_REMOVE_HETEROGENS
+        self.fix_pdb_keep_water = ParametersDefault.FIX_PDB_KEEP_WATER
+
     def create_ui(self):
         """Create the parameter configuration UI."""
         # Parameter summary cards
@@ -212,33 +234,55 @@ class ParameterPanel:
                     self, "fix_pdb_enabled"
                 )
 
-                ui.select(
+                method_select = ui.select(
                     options=["openbabel", "pdbfixer"],
                     label="Fixing Method",
                     value=self.fix_pdb_method,
                 ).bind_value(self, "fix_pdb_method")
+                method_select.on_value_change(lambda: self._reset_pdb_fixing_options())
 
-                ui.switch("Add Hydrogens", value=self.fix_pdb_add_hydrogens).bind_value(
-                    self, "fix_pdb_add_hydrogens"
+                # Add Hydrogens - disabled for OpenBabel (always true), enabled for PDBFixer
+                add_hydrogens_switch = ui.switch(
+                    "Add Hydrogens",
+                    value=self.fix_pdb_add_hydrogens
+                ).bind_value(self, "fix_pdb_add_hydrogens")
+                add_hydrogens_switch.bind_enabled_from(
+                    self, "fix_pdb_method", lambda m: m == "pdbfixer"
                 )
 
-                ui.switch(
+                # PDBFixer-only options (disabled when OpenBabel is selected)
+                add_heavy_switch = ui.switch(
                     "Add Heavy Atoms (PDBFixer only)",
                     value=self.fix_pdb_add_heavy_atoms,
                 ).bind_value(self, "fix_pdb_add_heavy_atoms")
+                add_heavy_switch.bind_enabled_from(
+                    self, "fix_pdb_method", lambda m: m == "pdbfixer"
+                )
 
-                ui.switch(
-                    "Replace Nonstandard Residues",
+                replace_nonstandard_switch = ui.switch(
+                    "Replace Nonstandard Residues (PDBFixer only)",
                     value=self.fix_pdb_replace_nonstandard,
                 ).bind_value(self, "fix_pdb_replace_nonstandard")
-
-                ui.switch(
-                    "Remove Heterogens", value=self.fix_pdb_remove_heterogens
-                ).bind_value(self, "fix_pdb_remove_heterogens")
-
-                ui.switch("Keep Water", value=self.fix_pdb_keep_water).bind_value(
-                    self, "fix_pdb_keep_water"
+                replace_nonstandard_switch.bind_enabled_from(
+                    self, "fix_pdb_method", lambda m: m == "pdbfixer"
                 )
+
+                self.remove_heterogens_switch = ui.switch(
+                    "Remove Heterogens (PDBFixer only)",
+                    value=self.fix_pdb_remove_heterogens
+                ).bind_value(self, "fix_pdb_remove_heterogens")
+                self.remove_heterogens_switch.bind_enabled_from(
+                    self, "fix_pdb_method", lambda m: m == "pdbfixer"
+                )
+
+                # Keep Water switch - only enabled when Remove Heterogens is checked AND PDBFixer is selected
+                self.keep_water_switch = ui.switch(
+                    "Keep Water (PDBFixer only)",
+                    value=self.fix_pdb_keep_water
+                ).bind_value(self, "fix_pdb_keep_water")
+
+                # Update enable state when method changes
+                ui.timer(0.1, lambda: self._update_keep_water_state(), once=False)
 
         self.param_drawer.show()
 
