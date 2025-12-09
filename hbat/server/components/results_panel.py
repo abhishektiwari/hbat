@@ -6,7 +6,6 @@ for molecular interactions.
 """
 
 import math
-import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -22,7 +21,7 @@ from ...visualization.pymol3d import (
     generate_carbonyl_interaction_viewer_js,
     generate_n_pi_interaction_viewer_js,
 )
-from ...visualization.chain_graph import render_chain_graphviz
+from ...visualization.chain_graph import render_chain_for_web
 
 
 class WebResultsPanel:
@@ -954,30 +953,30 @@ class WebResultsPanel:
     def _show_cooperativity_chain_visualization(self, chain):
         """Show 2D graph visualization of cooperativity chain in a dialog."""
         try:
-            # Generate SVG graph using chain_graph module
-            with tempfile.TemporaryDirectory() as tmpdir:
-                output_path = Path(tmpdir) / "chain_graph"
+            from ...server.app import UPLOADS_DIR
 
-                # Generate the graph and get the SVG content
-                dot = render_chain_graphviz(
-                    chain,
-                    engine="dot",
-                    rankdir="LR",
-                    filename=str(output_path),
-                    format="svg",
-                    view=False
-                )
-
-                # Read the SVG file
-                svg_file = Path(f"{output_path}.svg")
-                if svg_file.exists():
-                    svg_content = svg_file.read_text()
-                else:
-                    svg_content = None
+            # Generate both SVG (for display) and PNG (for export) using reusable function
+            filename_prefix = f"chain_{chain.chain_type}_{chain.chain_length}"
+            svg_content, png_path = render_chain_for_web(
+                chain,
+                output_dir=UPLOADS_DIR,
+                filename_prefix=filename_prefix,
+                engine="dot",
+                rankdir="LR"
+            )
 
             if svg_content:
+                def export_png():
+                    """Export chain graph as PNG."""
+                    if png_path and png_path.exists():
+                        ui.download(str(png_path))
+                        ui.notify("Downloaded chain graph as PNG", type="positive", position="top-left")
+                    else:
+                        ui.notify("PNG file not found", type="warning", position="top-left")
+
                 with ui.dialog().props("persistent") as dialog, ui.card().style("width: 900px; max-width: 90vw;"):
                     with ui.card_actions().classes("justify-end"):
+                        ui.button("Export PNG", icon="download", on_click=export_png).props("outline color=secondary")
                         ui.button("Close", on_click=dialog.close).props("color=primary")
 
                     with ui.card_section().classes("q-pa-md"):
