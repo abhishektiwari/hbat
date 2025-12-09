@@ -174,7 +174,7 @@ class TestCompleteAnalysisWorkflows:
 class TestResultsExportWorkflows:
     """Test complete workflows including results export."""
 
-    @pytest.mark.parametrize("pdb_name", ["6rsa.pdb"])
+    @pytest.mark.parametrize("pdb_name", ["6rsa.pdb", "1ubi.pdb"])
     def test_json_export_workflow(self, pdb_name, expected_results):
         """Test complete workflow with JSON results export."""
         # Get file path and expected values for this PDB

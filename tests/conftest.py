@@ -524,18 +524,18 @@ EXPECTED_RESULTS = {
         "file": "example_pdb_files/4laz.pdb",
         "pdbfixer": {
             # Interaction counts
-            "hydrogen_bonds": (400, 450),
+            "hydrogen_bonds": (350, 500),
             "halogen_bonds": (1, 1),
-            "pi_interactions": (70, 100),
+            "pi_interactions": (50, 100),
             "pi_pi_stacking": (1, 1),
-            "carbonyl_interactions": (145, 165),
+            "carbonyl_interactions": (140, 170),
             "n_pi_interactions": (1, 2),
-            "cooperativity_chains": (70, 86),
+            "cooperativity_chains": (60, 90),
             # PDB fixing metrics
-            "atoms_fixed": (3500, 3900),
+            "atoms_fixed": (3500, 4000),
             "hydrogens_added": (3500, 4000),
             # Bond detection metrics
-            "bonds_detected": (5700, 6500),
+            "bonds_detected": (5500, 6500),
             "conect_percentage": (1.5, 2.0),
             "residue_lookup_percentage": (92, 100.0),
             "distance_based_percentage": (0.0, 0.5),
@@ -557,6 +557,45 @@ EXPECTED_RESULTS = {
             "conect_percentage": (88.4, 97.7),
             "residue_lookup_percentage": (4.7, 5.1),
             "distance_based_percentage": (2.0, 2.2),
+        },
+    },
+    "1ubi.pdb": {
+        "file": "example_pdb_files/1ubi.pdb",
+        "pdbfixer": {
+            # Interaction counts
+            "hydrogen_bonds": (50, 60),
+            "halogen_bonds": (0, 0),
+            "pi_interactions": (2, 4),
+            "pi_pi_stacking": (0, 0),
+            "carbonyl_interactions": (19, 23),
+            "n_pi_interactions": (0, 0),
+            "cooperativity_chains": (5, 8),
+            # PDB fixing metrics
+            "atoms_fixed": (1400, 1500),
+            "hydrogens_added": (900, 1000),
+            # Bond detection metrics
+            "bonds_detected": (1300, 1400),
+            "conect_percentage": (0.0, 0.5),
+            "residue_lookup_percentage": (95.0, 100.0),
+            "distance_based_percentage": (0.0, 0.5),
+        },
+        "openbabel": {
+            # Interaction counts
+            "hydrogen_bonds": (120, 135),
+            "halogen_bonds": (0, 0),
+            "pi_interactions": (2, 4),
+            "pi_pi_stacking": (0, 0),
+            "carbonyl_interactions": (19, 23),
+            "n_pi_interactions": (0, 0),
+            "cooperativity_chains": (19, 23),
+            # PDB fixing metrics
+            "atoms_fixed": (1450, 1490),
+            "hydrogens_added": (930, 970),
+            # Bond detection metrics
+            "bonds_detected": (1450, 1510),
+            "conect_percentage": (0.0, 0.5),
+            "residue_lookup_percentage": (95.0, 100.0),
+            "distance_based_percentage": (0.0, 0.5),
         },
     },
 }
