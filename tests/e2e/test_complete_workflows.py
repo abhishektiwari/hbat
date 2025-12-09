@@ -11,7 +11,6 @@ import os
 import json
 from hbat.core.analyzer import MolecularInteractionAnalyzer
 from hbat.constants.parameters import AnalysisParameters
-from tests.conftest import ExpectedResults, PDBFixingExpectedResults
 
 
 @pytest.mark.e2e
@@ -19,35 +18,44 @@ from tests.conftest import ExpectedResults, PDBFixingExpectedResults
 class TestCompleteAnalysisWorkflows:
     """Test complete analysis workflows with real PDB files."""
     
-    def test_standard_analysis_workflow(self, sample_pdb_file):
+    def test_standard_analysis_workflow(self, sample_pdb_file, expected_results):
         """Test complete standard analysis workflow: file → analysis → results."""
         # Create analyzer with default parameters
         analyzer = MolecularInteractionAnalyzer()
-        
+
         # Execute complete analysis
         success = analyzer.analyze_file(sample_pdb_file)
         assert success, "Analysis should succeed"
-        
+
+        # Get expected values for 6rsa.pdb with default pdbfixer method
+        expected = expected_results["6rsa.pdb"]["pdbfixer"]
+
         # Verify comprehensive results
         summary = analyzer.get_summary()
-        
+
         # Check all interaction types are analyzed
         assert 'hydrogen_bonds' in summary
         assert 'halogen_bonds' in summary
         assert 'pi_interactions' in summary
         assert 'total_interactions' in summary
-        
-        # Verify expected minimum results
-        assert summary['hydrogen_bonds']['count'] >= ExpectedResults.MIN_HYDROGEN_BONDS
-        assert summary['pi_interactions']['count'] >= ExpectedResults.MIN_PI_INTERACTIONS
-        assert summary['total_interactions'] >= ExpectedResults.MIN_TOTAL_INTERACTIONS
+
+        # Verify expected results within ranges
+        hb_min, hb_max = expected["hydrogen_bonds"]
+        pi_min, pi_max = expected["pi_interactions"]
+
+        assert hb_min <= summary['hydrogen_bonds']['count'] <= hb_max, \
+            f"H-bonds {summary['hydrogen_bonds']['count']} should be in range [{hb_min}, {hb_max}]"
+        assert pi_min <= summary['pi_interactions']['count'] <= pi_max, \
+            f"Pi interactions {summary['pi_interactions']['count']} should be in range [{pi_min}, {pi_max}]"
+        # Total should be at least minimum hydrogen bonds
+        assert summary['total_interactions'] >= hb_min
         
         # Verify result data structures
         assert len(analyzer.hydrogen_bonds) == summary['hydrogen_bonds']['count']
         assert len(analyzer.pi_interactions) == summary['pi_interactions']['count']
         assert len(analyzer.halogen_bonds) == summary['halogen_bonds']['count']
     
-    def test_pdb_fixing_workflow(self, pdb_fixing_test_file):
+    def test_pdb_fixing_workflow(self, sample_pdb_file, expected_results):
         """Test complete PDB fixing workflow: raw PDB → fixing → analysis → results."""
         # Configure analysis with PDB fixing
         params = AnalysisParameters(
@@ -56,19 +64,21 @@ class TestCompleteAnalysisWorkflows:
             fix_pdb_add_hydrogens=True
         )
         analyzer = MolecularInteractionAnalyzer(params)
-        
+
         # Execute analysis with fixing
-        success = analyzer.analyze_file(pdb_fixing_test_file)
+        success = analyzer.analyze_file(sample_pdb_file)
         assert success, "Analysis with PDB fixing should succeed"
-        
+
+        # Get expected values for 6rsa.pdb with openbabel method
+        expected = expected_results["6rsa.pdb"]["openbabel"]
+        hb_min, hb_max = expected["hydrogen_bonds"]
+        pi_min, pi_max = expected["pi_interactions"]
+
         # Verify results meet expectations for fixed structure
-        stats = {
-            'hydrogen_bonds': len(analyzer.hydrogen_bonds),
-            'halogen_bonds': len(analyzer.halogen_bonds),
-            'pi_interactions': len(analyzer.pi_interactions),
-            'total_interactions': len(analyzer.hydrogen_bonds) + len(analyzer.halogen_bonds) + len(analyzer.pi_interactions)
-        }
-        assert stats['total_interactions'] >= PDBFixingExpectedResults.MIN_TOTAL_INTERACTIONS
+        assert hb_min <= len(analyzer.hydrogen_bonds) <= hb_max, \
+            f"H-bonds {len(analyzer.hydrogen_bonds)} should be in range [{hb_min}, {hb_max}]"
+        assert pi_min <= len(analyzer.pi_interactions) <= pi_max, \
+            f"Pi interactions {len(analyzer.pi_interactions)} should be in range [{pi_min}, {pi_max}]"
         
         # Verify fixing occurred by checking hydrogen presence
         # (PDB fixing should add missing hydrogens - relaxed expectation based on actual results)
@@ -145,13 +155,17 @@ class TestCompleteAnalysisWorkflows:
 class TestResultsExportWorkflows:
     """Test complete workflows including results export."""
     
-    def test_json_export_workflow(self, sample_pdb_file):
+    def test_json_export_workflow(self, sample_pdb_file, expected_results):
         """Test complete workflow with JSON results export."""
         analyzer = MolecularInteractionAnalyzer()
-        
+
         # Run analysis
         success = analyzer.analyze_file(sample_pdb_file)
         assert success
+
+        # Get expected values for 6rsa.pdb with default pdbfixer method
+        expected = expected_results["6rsa.pdb"]["pdbfixer"]
+        hb_min, hb_max = expected["hydrogen_bonds"]
         
         # Export results to JSON
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
@@ -197,7 +211,8 @@ class TestResultsExportWorkflows:
             assert 'summary' in loaded_results
             assert 'hydrogen_bonds' in loaded_results
             assert 'pi_interactions' in loaded_results
-            assert loaded_results['summary']['hydrogen_bonds']['count'] >= ExpectedResults.MIN_HYDROGEN_BONDS
+            assert hb_min <= loaded_results['summary']['hydrogen_bonds']['count'] <= hb_max, \
+                f"H-bonds {loaded_results['summary']['hydrogen_bonds']['count']} should be in range [{hb_min}, {hb_max}]"
             
         finally:
             if os.path.exists(temp_path):
@@ -256,29 +271,29 @@ class TestResultsExportWorkflows:
 class TestLargeFileWorkflows:
     """Test workflows with larger PDB files (performance testing)."""
     
-    def test_large_structure_analysis_workflow(self, sample_pdb_file):
+    def test_large_structure_analysis_workflow(self, sample_pdb_file, expected_results):
         """Test complete workflow with larger structure analysis."""
         analyzer = MolecularInteractionAnalyzer()
-        
+
         import time
         start_time = time.time()
-        
+
         # Run analysis
         success = analyzer.analyze_file(sample_pdb_file)
-        
+
         analysis_time = time.time() - start_time
-        
+
         assert success, "Large structure analysis should succeed"
         assert analysis_time < 120.0, f"Analysis took too long: {analysis_time:.2f}s"
-        
+
+        # Get expected values for 6rsa.pdb with default pdbfixer method
+        expected = expected_results["6rsa.pdb"]["pdbfixer"]
+        hb_min, hb_max = expected["hydrogen_bonds"]
+
         # Verify substantial results for large structure
-        stats = {
-            'hydrogen_bonds': len(analyzer.hydrogen_bonds),
-            'halogen_bonds': len(analyzer.halogen_bonds),
-            'pi_interactions': len(analyzer.pi_interactions),
-            'total_interactions': len(analyzer.hydrogen_bonds) + len(analyzer.halogen_bonds) + len(analyzer.pi_interactions)
-        }
-        assert stats['total_interactions'] >= ExpectedResults.MIN_TOTAL_INTERACTIONS
+        total_interactions = len(analyzer.hydrogen_bonds) + len(analyzer.halogen_bonds) + len(analyzer.pi_interactions)
+        assert total_interactions >= hb_min, \
+            f"Total interactions {total_interactions} should be at least {hb_min}"
         
         # Check memory usage is reasonable
         # (This is a basic check - more sophisticated memory testing could be added)

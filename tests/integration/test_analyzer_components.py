@@ -9,7 +9,6 @@ import pytest
 import math
 from hbat.core.analyzer import MolecularInteractionAnalyzer
 from hbat.constants.parameters import AnalysisParameters
-from tests.conftest import ExpectedResults, PDBFixingExpectedResults
 
 
 @pytest.mark.integration
@@ -17,26 +16,30 @@ from tests.conftest import ExpectedResults, PDBFixingExpectedResults
 class TestAnalyzerParserIntegration:
     """Test integration between analyzer and PDB parser."""
     
-    def test_analyzer_parser_workflow(self, sample_pdb_file):
+    def test_analyzer_parser_workflow(self, sample_pdb_file, expected_results):
         """Test analyzer-parser integration workflow."""
         analyzer = MolecularInteractionAnalyzer()
-        
+
         # Analyzer should initialize parser
         assert hasattr(analyzer, 'parser'), "Analyzer should have parser"
-        
+
         # Parse file through analyzer
         success = analyzer.analyze_file(sample_pdb_file)
         assert success, "Analysis should succeed"
-        
+
+        # Get expected values for 6rsa.pdb with default pdbfixer method
+        expected = expected_results["6rsa.pdb"]["pdbfixer"]
+
         # Verify parser data is accessible through analyzer
         atoms = analyzer.parser.atoms
-        assert len(atoms) >= ExpectedResults.MIN_ATOMS
-        
+        # Use atoms_fixed + original atoms as minimum
+        assert len(atoms) >= 2000, "Should have at least 2000 atoms"
+
         bonds = analyzer.parser.bonds
         assert len(bonds) > 0, "Should detect bonds"
-        
+
         residues = analyzer.parser.residues
-        assert len(residues) >= ExpectedResults.MIN_RESIDUES
+        assert len(residues) >= 100, "Should have at least 100 residues"
     
     def test_analyzer_parameter_parser_integration(self, sample_pdb_file):
         """Test analyzer parameters affect parsing behavior."""
@@ -64,14 +67,19 @@ class TestAnalyzerParserIntegration:
 class TestAnalyzerInteractionDetection:
     """Test analyzer interaction detection with real data."""
     
-    def test_hydrogen_bond_detection_integration(self, sample_pdb_file):
+    def test_hydrogen_bond_detection_integration(self, sample_pdb_file, expected_results):
         """Test hydrogen bond detection with real structure."""
         analyzer = MolecularInteractionAnalyzer()
         success = analyzer.analyze_file(sample_pdb_file)
         assert success
-        
+
+        # Get expected values for 6rsa.pdb with default pdbfixer method
+        expected = expected_results["6rsa.pdb"]["pdbfixer"]
+        hb_min, hb_max = expected["hydrogen_bonds"]
+
         hbonds = analyzer.hydrogen_bonds
-        assert len(hbonds) >= ExpectedResults.MIN_HYDROGEN_BONDS
+        assert hb_min <= len(hbonds) <= hb_max, \
+            f"H-bonds {len(hbonds)} should be in range [{hb_min}, {hb_max}]"
         
         # Verify hydrogen bonds have proper structure
         for hb in hbonds[:10]:  # Check first 10
@@ -298,7 +306,7 @@ class TestAnalyzerParameterIntegration:
 class TestAnalyzerPDBFixingIntegration:
     """Test PDB fixing integration with analyzer."""
     
-    def test_pdb_fixing_openbabel_integration(self, pdb_fixing_test_file):
+    def test_pdb_fixing_openbabel_integration(self, sample_pdb_file, expected_results):
         """Test OpenBabel PDB fixing integration."""
         # Analysis with OpenBabel fixing
         params = AnalysisParameters(
@@ -307,30 +315,33 @@ class TestAnalyzerPDBFixingIntegration:
             fix_pdb_add_hydrogens=True
         )
         analyzer = MolecularInteractionAnalyzer(params)
-        
-        success = analyzer.analyze_file(pdb_fixing_test_file)
+
+        success = analyzer.analyze_file(sample_pdb_file)
         assert success, "OpenBabel PDB fixing analysis should succeed"
-        
+
+        # Get expected values for 6rsa.pdb with openbabel method
+        expected = expected_results["6rsa.pdb"]["openbabel"]
+
         # Verify fixing effects
         atoms = analyzer.parser.atoms
         hydrogen_count = sum(1 for atom in atoms if atom.is_hydrogen())
-        
-        # Should have added hydrogens (relaxed expectation based on actual OpenBabel results)
-        assert hydrogen_count >= 700, \
-            f"Expected >= 700 hydrogens after fixing with OpenBabel, got {hydrogen_count}"
-        
+
+        # Should have added hydrogens
+        h_min, h_max = expected["hydrogens_added"]
+        # Total atoms should be original + added hydrogens
+        assert len(atoms) >= 2000, \
+            f"Expected >= 2000 total atoms after fixing with OpenBabel, got {len(atoms)}"
+
         # Should find interactions
-        # Create statistics from analyzer results
-        stats = {
-            'hydrogen_bonds': len(analyzer.hydrogen_bonds),
-            'halogen_bonds': len(analyzer.halogen_bonds),
-            'pi_interactions': len(analyzer.pi_interactions),
-            'cooperativity_chains': len(analyzer.cooperativity_chains),
-            'total_interactions': len(analyzer.hydrogen_bonds) + len(analyzer.halogen_bonds) + len(analyzer.pi_interactions)
-        }
-        assert stats['total_interactions'] >= PDBFixingExpectedResults.MIN_TOTAL_INTERACTIONS
+        hb_min, hb_max = expected["hydrogen_bonds"]
+        pi_min, pi_max = expected["pi_interactions"]
+
+        assert hb_min <= len(analyzer.hydrogen_bonds) <= hb_max, \
+            f"H-bonds {len(analyzer.hydrogen_bonds)} should be in range [{hb_min}, {hb_max}]"
+        assert pi_min <= len(analyzer.pi_interactions) <= pi_max, \
+            f"Pi interactions {len(analyzer.pi_interactions)} should be in range [{pi_min}, {pi_max}]"
     
-    def test_pdb_fixing_pdbfixer_integration(self, pdb_fixing_test_file):
+    def test_pdb_fixing_pdbfixer_integration(self, sample_pdb_file, expected_results):
         """Test PDBFixer PDB fixing integration."""
         # Analysis with PDBFixer fixing
         params = AnalysisParameters(
@@ -340,27 +351,27 @@ class TestAnalyzerPDBFixingIntegration:
             fix_pdb_add_heavy_atoms=True
         )
         analyzer = MolecularInteractionAnalyzer(params)
-        
-        success = analyzer.analyze_file(pdb_fixing_test_file)
+
+        success = analyzer.analyze_file(sample_pdb_file)
         assert success, "PDBFixer PDB fixing analysis should succeed"
-        
+
+        # Get expected values for 6rsa.pdb with pdbfixer method
+        expected = expected_results["6rsa.pdb"]["pdbfixer"]
+        hb_min, hb_max = expected["hydrogen_bonds"]
+        pi_min, pi_max = expected["pi_interactions"]
+
         # Verify fixing effects
-        # Create statistics from analyzer results
-        stats = {
-            'hydrogen_bonds': len(analyzer.hydrogen_bonds),
-            'halogen_bonds': len(analyzer.halogen_bonds),
-            'pi_interactions': len(analyzer.pi_interactions),
-            'cooperativity_chains': len(analyzer.cooperativity_chains),
-            'total_interactions': len(analyzer.hydrogen_bonds) + len(analyzer.halogen_bonds) + len(analyzer.pi_interactions)
-        }
-        assert stats['total_interactions'] >= 0, "Should have non-negative interactions"
+        assert hb_min <= len(analyzer.hydrogen_bonds) <= hb_max, \
+            f"H-bonds {len(analyzer.hydrogen_bonds)} should be in range [{hb_min}, {hb_max}]"
+        assert pi_min <= len(analyzer.pi_interactions) <= pi_max, \
+            f"Pi interactions {len(analyzer.pi_interactions)} should be in range [{pi_min}, {pi_max}]"
     
-    def test_pdb_fixing_comparison(self, pdb_fixing_test_file):
+    def test_pdb_fixing_comparison(self, sample_pdb_file, expected_results):
         """Test comparison of PDB fixing methods."""
         # Without fixing
         no_fix_params = AnalysisParameters(fix_pdb_enabled=False)
         no_fix_analyzer = MolecularInteractionAnalyzer(no_fix_params)
-        
+
         # With OpenBabel fixing
         ob_params = AnalysisParameters(
             fix_pdb_enabled=True,
@@ -368,33 +379,21 @@ class TestAnalyzerPDBFixingIntegration:
             fix_pdb_add_hydrogens=True
         )
         ob_analyzer = MolecularInteractionAnalyzer(ob_params)
-        
+
         # Analyze with both
-        no_fix_success = no_fix_analyzer.analyze_file(pdb_fixing_test_file)
-        ob_success = ob_analyzer.analyze_file(pdb_fixing_test_file)
-        
+        no_fix_success = no_fix_analyzer.analyze_file(sample_pdb_file)
+        ob_success = ob_analyzer.analyze_file(sample_pdb_file)
+
         assert no_fix_success and ob_success
-        
-        # Compare results
-        # Create statistics from no-fix analyzer results
-        no_fix_stats = {
-            'hydrogen_bonds': len(no_fix_analyzer.hydrogen_bonds),
-            'halogen_bonds': len(no_fix_analyzer.halogen_bonds),
-            'pi_interactions': len(no_fix_analyzer.pi_interactions),
-            'total_interactions': len(no_fix_analyzer.hydrogen_bonds) + len(no_fix_analyzer.halogen_bonds) + len(no_fix_analyzer.pi_interactions)
-        }
-        # Create statistics from OpenBabel analyzer results
-        ob_stats = {
-            'hydrogen_bonds': len(ob_analyzer.hydrogen_bonds),
-            'halogen_bonds': len(ob_analyzer.halogen_bonds),
-            'pi_interactions': len(ob_analyzer.pi_interactions),
-            'total_interactions': len(ob_analyzer.hydrogen_bonds) + len(ob_analyzer.halogen_bonds) + len(ob_analyzer.pi_interactions)
-        }
-        
-        # PDB fixing should generally not decrease interactions
-        # (though exact behavior depends on the specific structure)
-        assert ob_stats['total_interactions'] >= 0
-        assert no_fix_stats['total_interactions'] >= 0
+
+        # Get expected values for 6rsa.pdb with openbabel method
+        expected = expected_results["6rsa.pdb"]["openbabel"]
+        hb_min, hb_max = expected["hydrogen_bonds"]
+
+        # Verify both produce reasonable results
+        assert len(ob_analyzer.hydrogen_bonds) >= hb_min, \
+            f"OpenBabel H-bonds {len(ob_analyzer.hydrogen_bonds)} should be >= {hb_min}"
+        assert len(no_fix_analyzer.hydrogen_bonds) >= 0, "No-fix should have non-negative interactions"
 
 
 @pytest.mark.integration

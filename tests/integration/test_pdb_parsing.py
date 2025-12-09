@@ -10,7 +10,6 @@ import tempfile
 import os
 from hbat.core.pdb_parser import PDBParser
 from hbat.core.pdb_fixer import PDBFixer, PDBFixerError
-from tests.conftest import ExpectedResults
 
 
 def has_openbabel():
@@ -40,27 +39,32 @@ def has_pdbfixer():
 class TestPDBParsingIntegration:
     """Test PDB parsing with real files."""
     
-    def test_parse_sample_pdb_file(self, sample_pdb_file):
+    def test_parse_sample_pdb_file(self, sample_pdb_file, expected_results):
         """Test parsing real sample PDB file."""
         parser = PDBParser()
         success = parser.parse_file(sample_pdb_file)
-        
+
         assert success, "Should successfully parse sample PDB file"
-        
+
+        # Get expected values for 6rsa.pdb with default pdbfixer method
+        expected = expected_results["6rsa.pdb"]["pdbfixer"]
+
         # Verify parser extracted meaningful data
         atoms = parser.atoms
-        assert len(atoms) >= ExpectedResults.MIN_ATOMS, \
-            f"Expected >= {ExpectedResults.MIN_ATOMS} atoms, got {len(atoms)}"
-        
+        # After PDB fixing, we expect at least 2000 atoms (original + hydrogens)
+        assert len(atoms) >= 2000, \
+            f"Expected >= 2000 atoms, got {len(atoms)}"
+
         # Verify atom types
         hydrogen_count = sum(1 for atom in atoms if atom.is_hydrogen())
-        assert hydrogen_count >= ExpectedResults.MIN_HYDROGENS, \
-            f"Expected >= {ExpectedResults.MIN_HYDROGENS} hydrogens, got {hydrogen_count}"
-        
+        # After PDB fixing, should have at least 1000 hydrogens
+        assert hydrogen_count >= 1000, \
+            f"Expected >= 1000 hydrogens, got {hydrogen_count}"
+
         # Verify residues
         residues = parser.residues
-        assert len(residues) >= ExpectedResults.MIN_RESIDUES, \
-            f"Expected >= {ExpectedResults.MIN_RESIDUES} residues, got {len(residues)}"
+        assert len(residues) >= 100, \
+            f"Expected >= 100 residues, got {len(residues)}"
     
     def test_parse_bonds_detection(self, sample_pdb_file):
         """Test bond detection during parsing."""

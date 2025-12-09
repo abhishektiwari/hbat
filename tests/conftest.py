@@ -26,7 +26,7 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "performance: marks performance benchmark tests"
     )
-    # New categorization markers
+
     config.addinivalue_line(
         "markers", "unit: marks pure unit tests (fast, isolated)"
     )
@@ -41,8 +41,8 @@ def find_sample_pdb_file():
     """Find the sample PDB file regardless of working directory."""
     sample_paths = [
         os.path.join(os.path.dirname(__file__), "..", "example_pdb_files", "6rsa.pdb"),
-        "../example_pdb_files/6rsa.pdb",  # When running from tests/
-        "example_pdb_files/6rsa.pdb",     # When running from project root
+        "../example_pdb_files/6rsa.pdb",
+        "example_pdb_files/6rsa.pdb",
     ]
     
     for path in sample_paths:
@@ -54,8 +54,8 @@ def find_pdb_fixing_test_file():
     """Find the PDB file for PDB fixing tests."""
     sample_paths = [
         os.path.join(os.path.dirname(__file__), "..", "example_pdb_files", "1ubi.pdb"),
-        "../example_pdb_files/1ubi.pdb",  # When running from tests/
-        "example_pdb_files/1ubi.pdb",     # When running from project root
+        "../example_pdb_files/1ubi.pdb",
+        "example_pdb_files/1ubi.pdb",
     ]
     
     for path in sample_paths:
@@ -67,8 +67,8 @@ def find_large_pdb_file():
     """Find the large PDB file for performance tests."""
     sample_paths = [
         os.path.join(os.path.dirname(__file__), "..", "example_pdb_files", "4jsv.pdb"),
-        "../example_pdb_files/4jsv.pdb",  # When running from tests/
-        "example_pdb_files/4jsv.pdb",     # When running from project root
+        "../example_pdb_files/4jsv.pdb",
+        "example_pdb_files/4jsv.pdb",
     ]
     
     for path in sample_paths:
@@ -111,8 +111,8 @@ def test_pdb_dir():
     """Provide path to test PDB files directory."""
     pdb_dir_paths = [
         os.path.join(os.path.dirname(__file__), "..", "example_pdb_files"),
-        "../example_pdb_files",  # When running from tests/
-        "example_pdb_files",     # When running from project root
+        "../example_pdb_files",
+        "example_pdb_files",
     ]
     
     for path in pdb_dir_paths:
@@ -246,7 +246,7 @@ def sample_pi_atoms():
         temp_factor=20.0, element="H", charge="", record_type="ATOM"
     )
 
-    # Create pi_atoms for PHE residue (ring atoms)
+
     pi_atom1 = Atom(
         serial=3, name="CG", alt_loc="", res_name="PHE", chain_id="A",
         res_seq=2, i_code="", coords=NPVec3D(2.5, 0, 0), occupancy=1.0,
@@ -271,7 +271,7 @@ def sample_interactions():
     from hbat.core.np_vector import NPVec3D
     import math
     
-    # Create atoms
+
     donor = Atom(
         serial=1, name="N", alt_loc="", res_name="ALA", chain_id="A",
         res_seq=1, i_code="", coords=NPVec3D(0, 0, 0), occupancy=1.0,
@@ -296,14 +296,14 @@ def sample_interactions():
         temp_factor=20.0, element="CL", charge="", record_type="ATOM"
     )
 
-    # Donor carbon atom bonded to halogen
+
     halogen_donor = Atom(
         serial=5, name="C", alt_loc="", res_name="CLU", chain_id="A",
         res_seq=3, i_code="", coords=NPVec3D(3.5, 0, 0), occupancy=1.0,
         temp_factor=20.0, element="C", charge="", record_type="ATOM"
     )
 
-    # Create interactions
+
     hb = HydrogenBond(
         _donor=donor, hydrogen=hydrogen, _acceptor=acceptor,
         distance=2.5, angle=math.radians(160.0), _donor_acceptor_distance=3.2,
@@ -318,26 +318,94 @@ def sample_interactions():
 
     return [hb, xb]
 
-# Constants for expected results with 6RSA.pdb
-class ExpectedResults:
-    """Expected results for 6RSA.pdb analysis."""
-    MIN_HYDROGEN_BONDS = 100
-    MIN_PI_INTERACTIONS = 5
-    MIN_TOTAL_INTERACTIONS = 50
-    MIN_COOPERATIVITY_CHAINS = 5
-    MIN_ATOMS = 2000
-    MIN_HYDROGENS = 1000
-    MIN_RESIDUES = 100
+# Expected results for test PDB files
+# All numerical values are ranges: (min, max) with 5% tolerance for PDB fixer variation
+# Structure: EXPECTED_RESULTS[filename][method][metric] = (min, max)
+# Methods: 'pdbfixer' (default) or 'openbabel'
+EXPECTED_RESULTS = {
+    "6rsa.pdb": {
+        "pdbfixer": {
+            # Interaction counts
+            "hydrogen_bonds": (95, 110),
+            "halogen_bonds": (0, 0),
+            "pi_interactions": (18, 21),
+            "pi_pi_stacking": (0, 0),
+            "carbonyl_interactions": (33, 37),
+            "n_pi_interactions": (1, 2),
+            "cooperativity_chains": (18, 22),
+            # PDB fixing metrics
+            "atoms_fixed": (210, 232),
+            "hydrogens_added": (210, 232),
+            # Bond detection metrics
+            "bonds_detected": (1908, 2108),
+            "conect_percentage": (1.6, 1.8),
+            "residue_lookup_percentage": (93.3, 100.0),
+            "distance_based_percentage": (0.0, 0.1),
+        },
+        "openbabel": {
+            # Interaction counts
+            "hydrogen_bonds": (200, 220),
+            "halogen_bonds": (0, 0),
+            "pi_interactions": (18, 21),
+            "pi_pi_stacking": (0, 0),
+            "carbonyl_interactions": (33, 37),
+            "n_pi_interactions": (1, 2),
+            "cooperativity_chains": (38, 42),
+            # PDB fixing metrics
+            "atoms_fixed": (17, 19),
+            "hydrogens_added": (17, 19),
+            # Bond detection metrics
+            "bonds_detected": (2087, 2307),
+            "conect_percentage": (93.2, 100.0),
+            "residue_lookup_percentage": (0.6, 0.8),
+            "distance_based_percentage": (1.1, 1.3),
+        },
+    },
 
-# Constants for expected results with 1ubi.pdb (PDB fixing tests)
-class PDBFixingExpectedResults:
-    """Expected results for 1ubi.pdb PDB fixing tests."""
-    MIN_HYDROGEN_BONDS = 5
-    MIN_PI_INTERACTIONS = 1
-    MIN_TOTAL_INTERACTIONS = 3
-    MIN_ATOMS_ORIGINAL = 600
-    MIN_ATOMS_WITH_HYDROGENS = 1400  # After adding hydrogens
-    MIN_RESIDUES = 70
+    "4laz.pdb": {
+        "pdbfixer": {
+            # Interaction counts
+            "hydrogen_bonds": (403, 445),
+            "halogen_bonds": (1, 1),
+            "pi_interactions": (86, 96),
+            "pi_pi_stacking": (1, 1),
+            "carbonyl_interactions": (149, 165),
+            "n_pi_interactions": (1, 2),
+            "cooperativity_chains": (72, 80),
+            # PDB fixing metrics
+            "atoms_fixed": (3525, 3897),
+            "hydrogens_added": (3579, 3956),
+            # Bond detection metrics
+            "bonds_detected": (5809, 6421),
+            "conect_percentage": (1.8, 2.0),
+            "residue_lookup_percentage": (93.2, 100.0),
+            "distance_based_percentage": (0.0, 0.1),
+        },
+        "openbabel": {
+            # Interaction counts
+            "hydrogen_bonds": (809, 895),
+            "halogen_bonds": (1, 1),
+            "pi_interactions": (62, 68),
+            "pi_pi_stacking": (1, 1),
+            "carbonyl_interactions": (149, 165),
+            "n_pi_interactions": (1, 2),
+            "cooperativity_chains": (145, 161),
+            # PDB fixing metrics
+            "atoms_fixed": (3662, 4048),
+            "hydrogens_added": (3662, 4048),
+            # Bond detection metrics
+            "bonds_detected": (6690, 7394),
+            "conect_percentage": (88.4, 97.7),
+            "residue_lookup_percentage": (4.7, 5.1),
+            "distance_based_percentage": (2.0, 2.2),
+        },
+    },
+}
+
+@pytest.fixture
+def expected_results():
+    """Provide expected results for test PDB files."""
+    return EXPECTED_RESULTS
 
 # Test data validation utilities
 def validate_interaction_attributes(interaction, interaction_type):
@@ -378,24 +446,24 @@ def validate_cooperativity_chain(chain):
     assert len(chain.interactions) > 0, "Chain should have at least one interaction"
     assert chain.chain_length == len(chain.interactions), "Length should match interactions count"
     
-    # Validate chain_type format - supports both old format and NumPy analyzer format
+
     valid_components = {"H-Bond", "X-Bond", "π-Int", "Unknown", "Empty"}
     valid_chain_types = {"H-bond chain", "X-bond chain", "π-bond chain", "Mixed chain", "Empty"}
     
     if chain.chain_type == "Empty":
         assert len(chain.interactions) == 0, "Empty chain should have no interactions"
     elif chain.chain_type in valid_chain_types:
-        # NumPy analyzer format - descriptive chain types
+
         assert len(chain.interactions) >= 2, "Non-empty chain should have at least 2 interactions"
     else:
-        # Original format - arrow-separated components
+
         components = chain.chain_type.split(" -> ")
         assert all(comp in valid_components for comp in components), \
             f"Invalid chain type components in '{chain.chain_type}'. Valid: {valid_components} or {valid_chain_types}"
         assert len(components) == len(chain.interactions), \
             f"Chain type components ({len(components)}) should match number of interactions ({len(chain.interactions)})"
     
-    # Validate each interaction in the chain
+
     for interaction in chain.interactions:
         assert hasattr(interaction, 'interaction_type'), "Chain interaction missing type"
         assert interaction.interaction_type in ["H-Bond", "X-Bond", "π–Inter"], \

@@ -412,7 +412,16 @@ class WebResultsPanel:
                     }
                 )
 
+            # Add filter input
+            filter_input = (
+                ui.input(placeholder="Filter interactions (residue, atom, type, etc.)")
+                .props("clearable outlined dense")
+                .classes("w-full mb-2")
+            )
+
             table = ui.table(columns=columns, rows=rows, row_key="id").classes("w-full")
+            filter_input.bind_value(table, "filter")
+
             table.add_slot(
                 "body-cell-visualize",
                 """
@@ -582,7 +591,16 @@ class WebResultsPanel:
                     }
                 )
 
+            # Add filter input
+            filter_input = (
+                ui.input(placeholder="Filter interactions (residue, atom, type, etc.)")
+                .props("clearable outlined dense")
+                .classes("w-full mb-2")
+            )
+
             table = ui.table(columns=columns, rows=rows, row_key="id").classes("w-full")
+            filter_input.bind_value(table, "filter")
+
             table.add_slot(
                 "body-cell-visualize",
                 """
@@ -805,12 +823,20 @@ class WebResultsPanel:
                     }
                 )
 
+            # Add filter input
+            filter_input = (
+                ui.input(placeholder="Filter interactions (residue, atom, type, etc.)")
+                .props("clearable outlined dense")
+                .classes("w-full mb-2")
+            )
+
             # Create table with custom styling
             table = (
                 ui.table(columns=columns, rows=rows, row_key="id")
                 .classes("w-full")
                 .props("dense")
             )
+            filter_input.bind_value(table, "filter")
 
             # Add custom slot for visualize column to show button
             table.add_slot(
@@ -927,11 +953,19 @@ class WebResultsPanel:
                     }
                 )
 
+            # Add filter input
+            filter_input = (
+                ui.input(placeholder="Filter interactions (residue, atom, type, etc.)")
+                .props("clearable outlined dense")
+                .classes("w-full mb-2")
+            )
+
             table = (
                 ui.table(columns=columns, rows=rows, row_key="id")
                 .classes("w-full")
                 .props("dense")
             )
+            filter_input.bind_value(table, "filter")
 
             # Add custom slot for visualize column to show button
             table.add_slot(
@@ -1038,11 +1072,19 @@ class WebResultsPanel:
                     }
                 )
 
+            # Add filter input
+            filter_input = (
+                ui.input(placeholder="Filter interactions (residue, atom, type, etc.)")
+                .props("clearable outlined dense")
+                .classes("w-full mb-2")
+            )
+
             table = (
                 ui.table(columns=columns, rows=rows, row_key="id")
                 .classes("w-full")
                 .props("dense")
             )
+            filter_input.bind_value(table, "filter")
 
             # Add custom slot for visualize column to show button
             table.add_slot(
@@ -1137,11 +1179,19 @@ class WebResultsPanel:
                     }
                 )
 
+            # Add filter input
+            filter_input = (
+                ui.input(placeholder="Filter interactions (residue, atom, type, etc.)")
+                .props("clearable outlined dense")
+                .classes("w-full mb-2")
+            )
+
             table = (
                 ui.table(columns=columns, rows=rows, row_key="id")
                 .classes("w-full")
                 .props("dense")
             )
+            filter_input.bind_value(table, "filter")
 
             # Add custom slot for visualize column to show button
             table.add_slot(
