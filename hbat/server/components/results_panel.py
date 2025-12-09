@@ -1506,32 +1506,6 @@ class WebResultsPanel:
                             f"Chain: {chain.chain_type} (Length: {chain.chain_length})"
                         ).classes("text-subtitle1 q-mb-md")
 
-                        # Fix SVG dimensions to match viewBox for consistency across Graphviz versions
-                        import re
-
-                        # Extract viewBox dimensions
-                        viewbox_match = re.search(
-                            r'viewBox="([^"]+)"', svg_content
-                        )
-                        if viewbox_match:
-                            viewbox = viewbox_match.group(1).split()
-                            if len(viewbox) == 4:
-                                vb_width = float(viewbox[2])
-                                vb_height = float(viewbox[3])
-
-                                # Set width and height to match viewBox dimensions
-                                fixed_svg = re.sub(
-                                    r'width="[^"]*"',
-                                    f'width="{vb_width}pt"',
-                                    svg_content
-                                )
-                                fixed_svg = re.sub(
-                                    r'height="[^"]*"',
-                                    f'height="{vb_height}pt"',
-                                    fixed_svg
-                                )
-                                svg_content = fixed_svg
-
                         # Display the SVG
                         ui.html(svg_content, sanitize=False).style(
                             "width: 100%; overflow: auto;"
