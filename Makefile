@@ -1,6 +1,6 @@
 # HBAT Development Makefile
 
-.PHONY: help install install-dev test test-all test-fast test-legacy test-pytest test-unit test-integration test-e2e test-performance test-cli test-gui test-coverage test-ccd clean lint format type-check docs generate-ccd-bonds run-server
+.PHONY: help install install-dev test test-all test-fast test-legacy test-pytest test-unit test-integration test-e2e test-performance test-cli test-gui test-coverage test-cov test-ccd clean lint format type-check docs generate-ccd-bonds run-server
 
 # Default target
 help:
@@ -20,7 +20,8 @@ help:
 	@echo "  test-performance Run performance benchmark tests only"
 	@echo "  test-cli      Run CLI tests only"
 	@echo "  test-gui      Run GUI tests only (requires display)"
-	@echo "  test-coverage Generate test coverage report"
+	@echo "  test-coverage Generate test coverage report (HTML/XML)"
+	@echo "  test-cov      Run tests with coverage report (terminal)"
 	@echo "  test-ccd      Run CCD performance tests only"
 	@echo ""
 	@echo "Code Quality:"
@@ -73,7 +74,11 @@ test-cli:
 
 test-coverage:
 	@echo "Running tests with coverage...(excludes slow tests)"
-	pytest tests/ -v -m "not slow" --cov --cov-branch --cov-report=xml --junitxml=junit.xml -o junit_family=legacy 
+	pytest tests/ -v -m "not slow" --cov --cov-branch --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+
+test-cov:
+	@echo "Running tests with coverage (terminal output)..."
+	pytest tests/ -v -m "not slow" --cov=hbat --cov-report=term-missing
 
 test-gui:
 	@echo "Running GUI tests..."
