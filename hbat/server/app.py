@@ -23,10 +23,18 @@ from ..export import (
 from .components.parameter_panel import ParameterPanel
 from .components.results_panel import WebResultsPanel
 from .components.upload_panel import UploadPanel
+from .session import SessionManager
 
-# Uploads directory
+# Base uploads directory (can be mounted as Docker volume)
 UPLOADS_DIR = Path("uploads")
 UPLOADS_DIR.mkdir(exist_ok=True)
+
+# Sessions directory inside uploads for easy Docker volume management
+SESSIONS_BASE_DIR = UPLOADS_DIR / "sessions"
+SESSIONS_BASE_DIR.mkdir(exist_ok=True)
+
+# Global session manager
+session_manager = SessionManager(SESSIONS_BASE_DIR, session_timeout_hours=24)
 
 
 class HBATWebApp:
@@ -39,6 +47,10 @@ class HBATWebApp:
         self.current_file_path: Optional[Path] = None
         self.analysis_running = False
         self.pdb_content: Optional[str] = None
+
+        # Session management
+        self.session_id: Optional[str] = None
+        self.session_dir: Optional[Path] = None
 
         # UI components
         self.upload_panel: Optional[UploadPanel] = None
@@ -303,7 +315,10 @@ class HBATWebApp:
                 with ui.step("results", title="View Results", icon="analytics"):
                     # Container for dynamically created results
                     results_container = ui.column().classes("w-full")
-                    self.results_panel = WebResultsPanel(results_container)
+                    self.results_panel = WebResultsPanel(
+                        results_container,
+                        session_dir_callback=lambda: self.session_dir
+                    )
 
                     with ui.stepper_navigation():
                         ui.button(
@@ -467,12 +482,19 @@ class HBATWebApp:
             self.stepper.next()
 
     def _on_file_upload(self, filename: str, content: bytes):
-        """Handle file upload and save to uploads directory."""
+        """Handle file upload and save to session directory."""
         self.current_file = filename
         self.pdb_content = content.decode("utf-8")
 
-        # Save file to uploads directory
-        self.current_file_path = UPLOADS_DIR / filename
+        # Create a new session if one doesn't exist
+        if not self.session_id:
+            self.session_id = session_manager.create_session()
+            self.session_dir = session_manager.get_session_dir(self.session_id)
+
+        # Save file to session directory
+        self.current_file_path = session_manager.get_session_file_path(
+            self.session_id, filename
+        )
         with open(self.current_file_path, "w") as f:
             f.write(self.pdb_content)
 
@@ -512,7 +534,7 @@ class HBATWebApp:
 
             if success:
                 self.status_label.text = (
-                    f"Analysis completed! File: uploads/{self.current_file}"
+                    f"Analysis completed! File: {self.current_file}"
                 )
                 self.status_label.classes(replace="text-caption q-mt-sm text-positive")
                 ui.notify("Analysis completed!", type="positive", position="top-left")
@@ -568,7 +590,9 @@ class HBATWebApp:
             return
 
         base_name = Path(self.current_file).stem
-        output_file = UPLOADS_DIR / f"{base_name}_results.json"
+        output_file = session_manager.get_session_file_path(
+            self.session_id, f"{base_name}_results.json"
+        )
         export_to_json_single_file(
             self.analyzer, str(output_file), input_file=self.current_file
         )
@@ -587,11 +611,11 @@ class HBATWebApp:
 
         # Remove extension from current_file to get base name
         base_name = Path(self.current_file).stem
-        base_filename = UPLOADS_DIR / base_name
+        base_filename = self.session_dir / base_name
         export_to_csv_files(self.analyzer, str(base_filename))
 
         # Get all generated CSV files
-        csv_files = list(UPLOADS_DIR.glob(f"{base_name}_*.csv"))
+        csv_files = list(self.session_dir.glob(f"{base_name}_*.csv"))
 
         # Check for fixed PDB file
         fixed_pdb_path = None
@@ -600,16 +624,16 @@ class HBATWebApp:
         ) and self.analyzer._pdb_fixing_info.get("applied"):
             fixed_file_path = self.analyzer._pdb_fixing_info.get("fixed_file_path")
             if fixed_file_path and os.path.exists(fixed_file_path):
-                # Copy fixed PDB to uploads directory
+                # Copy fixed PDB to session directory
                 method = self.analyzer._pdb_fixing_info.get("method", "unknown")
-                fixed_pdb_path = UPLOADS_DIR / f"{base_name}_fixed_{method}.pdb"
+                fixed_pdb_path = self.session_dir / f"{base_name}_fixed_{method}.pdb"
                 with open(fixed_file_path, "r") as src:
                     with open(fixed_pdb_path, "w") as dst:
                         dst.write(src.read())
 
         if csv_files:
             # Create a zip file containing all CSV files and fixed PDB (if available)
-            zip_path = UPLOADS_DIR / f"{base_name}_csv_export.zip"
+            zip_path = self.session_dir / f"{base_name}_csv_export.zip"
             with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
                 for csv_file in csv_files:
                     zipf.write(csv_file, csv_file.name)
@@ -654,7 +678,9 @@ class HBATWebApp:
             return
 
         base_name = Path(self.current_file).stem
-        output_file = UPLOADS_DIR / f"{base_name}_results.txt"
+        output_file = session_manager.get_session_file_path(
+            self.session_id, f"{base_name}_results.txt"
+        )
         export_to_txt_single_file(self.analyzer, str(output_file))
         ui.download(str(output_file))
         ui.notify(
@@ -685,10 +711,12 @@ class HBATWebApp:
             ui.notify("Fixed PDB file not found", type="warning", position="top-left")
             return
 
-        # Copy to uploads directory with a clear name
+        # Copy to session directory with a clear name
         base_name = Path(self.current_file).stem
         method = self.analyzer._pdb_fixing_info.get("method", "unknown")
-        output_file = UPLOADS_DIR / f"{base_name}_fixed_{method}.pdb"
+        output_file = session_manager.get_session_file_path(
+            self.session_id, f"{base_name}_fixed_{method}.pdb"
+        )
 
         # Copy the fixed file
         with open(fixed_file_path, "r") as src:
@@ -723,12 +751,18 @@ class HBATWebApp:
 
     def _start_over(self):
         """Reset the application to initial state."""
+        # Clean up old session if it exists
+        if self.session_id:
+            session_manager.delete_session(self.session_id)
+
         # Reset analyzer and file state
         self.analyzer = None
         self.current_file = None
         self.current_file_path = None
         self.analysis_running = False
         self.pdb_content = None
+        self.session_id = None
+        self.session_dir = None
 
         # Reset all panels
         if self.upload_panel:
@@ -760,6 +794,23 @@ def create_app():
 
     :returns: None
     """
+    # Cleanup expired sessions on startup
+    cleaned = session_manager.cleanup_expired_sessions()
+    if cleaned > 0:
+        print(f"Cleaned up {cleaned} expired session(s) on startup")
+
+    # Schedule periodic cleanup (every 6 hours)
+    async def periodic_cleanup():
+        """Periodically clean up expired sessions."""
+        while True:
+            await asyncio.sleep(6 * 3600)  # 6 hours
+            cleaned = session_manager.cleanup_expired_sessions()
+            if cleaned > 0:
+                print(f"Periodic cleanup: removed {cleaned} expired session(s)")
+
+    # Start background cleanup task
+    app.on_startup(lambda: asyncio.create_task(periodic_cleanup()))
+
     # Configure static files BEFORE page routes
     static_dir = Path(__file__).parent / "static"
     if static_dir.exists():

@@ -6,6 +6,7 @@ for molecular interactions.
 """
 
 import math
+from pathlib import Path
 from typing import Optional
 
 from nicegui import ui
@@ -26,15 +27,17 @@ from ...visualization.pymol3d import (
 class WebResultsPanel:
     """Results panel component with 3D visualization."""
 
-    def __init__(self, container):
+    def __init__(self, container, session_dir_callback=None):
         """Initialize the results panel.
 
         :param container: Container element for results display
+        :param session_dir_callback: Callable that returns the current session directory
         """
         self.container = container
         self.analyzer: Optional[NPMolecularInteractionAnalyzer] = None
         self.pdb_content: Optional[str] = None
         self.current_file: Optional[str] = None
+        self.session_dir_callback = session_dir_callback
 
         # Tab components
         self.tabs = None
@@ -49,6 +52,16 @@ class WebResultsPanel:
         self.carbonyl_panel = None
         self.n_pi_panel = None
         self.cooperativity_panel = None
+
+    def _get_pdb_basename(self) -> str:
+        """Get the base name of the current PDB file (without extension).
+
+        :returns: Base name of PDB file
+        :rtype: str
+        """
+        if self.current_file:
+            return Path(self.current_file).stem
+        return "structure"
 
     async def update_results(
         self, analyzer: NPMolecularInteractionAnalyzer, pdb_content: str, filename: str
@@ -450,7 +463,8 @@ class WebResultsPanel:
 
         def export_png():
             """Export viewer as PNG."""
-            filename = f"{hb.get_donor_residue()}_to_{hb.get_acceptor_residue()}_hbond.png".replace(
+            pdb_base = self._get_pdb_basename()
+            filename = f"{pdb_base}_{hb.get_donor_residue()}_to_{hb.get_acceptor_residue()}_hbond.png".replace(
                 ":", "_"
             )
             ui.run_javascript(generate_png_export_js(viewer_id, filename))
@@ -625,7 +639,8 @@ class WebResultsPanel:
 
         def export_png():
             """Export viewer as PNG."""
-            filename = f"{xb.get_donor_residue()}_to_{xb.get_acceptor_residue()}_xbond.png".replace(
+            pdb_base = self._get_pdb_basename()
+            filename = f"{pdb_base}_{xb.get_donor_residue()}_to_{xb.get_acceptor_residue()}_xbond.png".replace(
                 ":", "_"
             )
             ui.run_javascript(generate_png_export_js(viewer_id, filename))
@@ -675,7 +690,8 @@ class WebResultsPanel:
 
         def export_png():
             """Export viewer as PNG."""
-            filename = f"{pi.get_donor_residue()}_to_{pi.get_acceptor_residue()}_pi.png".replace(
+            pdb_base = self._get_pdb_basename()
+            filename = f"{pdb_base}_{pi.get_donor_residue()}_to_{pi.get_acceptor_residue()}_pi.png".replace(
                 ":", "_"
             )
             ui.run_javascript(generate_png_export_js(viewer_id, filename))
@@ -1311,8 +1327,9 @@ class WebResultsPanel:
 
         def export_png():
             """Export viewer as PNG."""
+            pdb_base = self._get_pdb_basename()
             filename = (
-                f"{pi_pi.ring1_residue}_to_{pi_pi.ring2_residue}_pipi.png".replace(
+                f"{pdb_base}_{pi_pi.ring1_residue}_to_{pi_pi.ring2_residue}_pipi.png".replace(
                     ":", "_"
                 )
             )
@@ -1364,7 +1381,8 @@ class WebResultsPanel:
 
         def export_png():
             """Export viewer as PNG."""
-            filename = f"{carbonyl.get_donor_residue()}_to_{carbonyl.get_acceptor_residue()}_carbonyl.png".replace(
+            pdb_base = self._get_pdb_basename()
+            filename = f"{pdb_base}_{carbonyl.get_donor_residue()}_to_{carbonyl.get_acceptor_residue()}_carbonyl.png".replace(
                 ":", "_"
             )
             ui.run_javascript(generate_png_export_js(viewer_id, filename))
@@ -1415,7 +1433,8 @@ class WebResultsPanel:
 
         def export_png():
             """Export viewer as PNG."""
-            filename = f"{n_pi.get_donor_residue()}_to_{n_pi.get_acceptor_residue()}_npi.png".replace(
+            pdb_base = self._get_pdb_basename()
+            filename = f"{pdb_base}_{n_pi.get_donor_residue()}_to_{n_pi.get_acceptor_residue()}_npi.png".replace(
                 ":", "_"
             )
             ui.run_javascript(generate_png_export_js(viewer_id, filename))
@@ -1461,15 +1480,21 @@ class WebResultsPanel:
     def _show_cooperativity_chain_visualization(self, chain):
         """Show 2D graph visualization of cooperativity chain in a dialog."""
         try:
-            from ...server.app import UPLOADS_DIR
+            # Get session directory from callback or fallback to SESSIONS_BASE_DIR
+            if self.session_dir_callback:
+                session_dir = self.session_dir_callback()
+            else:
+                from ...server.app import SESSIONS_BASE_DIR
+                session_dir = SESSIONS_BASE_DIR
 
             # Generate both SVG (for display) and PNG (for export) using reusable function
             # Replace spaces and special chars in chain type for clean filenames
+            pdb_base = self._get_pdb_basename()
             safe_chain_type = chain.chain_type.replace(" ", "_").replace("-", "_")
-            filename_prefix = f"chain_{safe_chain_type}_{chain.chain_length}"
+            filename_prefix = f"{pdb_base}_chain_{safe_chain_type}_{chain.chain_length}"
             svg_content, png_path = render_chain_for_web(
                 chain,
-                output_dir=UPLOADS_DIR,
+                output_dir=session_dir,
                 filename_prefix=filename_prefix,
                 engine="dot",
                 rankdir="LR",
