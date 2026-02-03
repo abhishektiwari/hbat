@@ -81,7 +81,7 @@ class ParametersDefault:
 
     # General analysis parameters
     COVALENT_CUTOFF_FACTOR = 0.85  # Covalent bond detection factor (0.0-1.0)
-    ANALYSIS_MODE = "complete"  # Analysis mode: "complete" or "local"
+    ANALYSIS_MODE = "local"  # Analysis mode: "complete" or "local"
 
     # Bond distance thresholds
     MAX_BOND_DISTANCE = 2.5  # Reasonable maximum for most covalent bonds (Angstroms)

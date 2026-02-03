@@ -9,6 +9,12 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Any, Dict, Optional
 
+from ..constants.parameters import (
+    AnalysisParameters,
+    ParameterRanges,
+    ParametersDefault,
+)
+
 
 class ToolTip:
     """Simple tooltip widget for providing help text on hover."""
@@ -73,14 +79,6 @@ class ToolTip:
         if self.tooltip:
             self.tooltip.destroy()
             self.tooltip = None
-
-
-from ..constants.parameters import (
-    AnalysisModes,
-    AnalysisParameters,
-    ParameterRanges,
-    ParametersDefault,
-)
 
 
 class GeometryCutoffsDialog:

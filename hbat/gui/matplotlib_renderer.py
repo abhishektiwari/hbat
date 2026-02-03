@@ -7,7 +7,6 @@ and matplotlib for backward compatibility with existing visualizations.
 
 import itertools as it
 import logging
-import math
 import tkinter as tk
 from typing import Any, Dict, List, Optional
 
@@ -17,14 +16,14 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
 
 from hbat.core.app_config import HBATConfig
-from hbat.gui.visualization_renderer import BaseVisualizationRenderer
+from hbat.gui.base_graph_renderer import BaseVisualizationRenderer
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 # Check matplotlib availability
 try:
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # noqa: F401
 
     MATPLOTLIB_AVAILABLE = True
 except ImportError:

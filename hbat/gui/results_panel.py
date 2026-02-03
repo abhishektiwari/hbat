@@ -11,7 +11,7 @@ from tkinter import messagebox, ttk
 from typing import Optional
 
 try:
-    from .chain_visualization import ChainVisualizationWindow
+    from .chain_visualization_window import ChainVisualizationWindow
 
     VISUALIZATION_AVAILABLE = True
 except ImportError:
@@ -903,7 +903,7 @@ class ResultsPanel:
 
             # Bond type distribution
             if "bond_types" in hb_data:
-                self.summary_text.insert(tk.END, f"  Bond Types:\n")
+                self.summary_text.insert(tk.END, "  Bond Types:\n")
                 for bond_type, count in sorted(hb_data["bond_types"].items()):
                     self.summary_text.insert(tk.END, f"    {bond_type}: {count}\n")
             self.summary_text.insert(tk.END, "\n")
@@ -921,7 +921,7 @@ class ResultsPanel:
 
             # Bond type distribution
             if "bond_types" in xb_data:
-                self.summary_text.insert(tk.END, f"  Bond Types:\n")
+                self.summary_text.insert(tk.END, "  Bond Types:\n")
                 for bond_type, count in sorted(xb_data["bond_types"].items()):
                     self.summary_text.insert(tk.END, f"    {bond_type}: {count}\n")
             self.summary_text.insert(tk.END, "\n")
@@ -951,13 +951,13 @@ class ResultsPanel:
                 for chain_type in coop_data["types"]:
                     type_counts[chain_type] = type_counts.get(chain_type, 0) + 1
 
-                self.summary_text.insert(tk.END, f"  Chain Types:\n")
+                self.summary_text.insert(tk.END, "  Chain Types:\n")
                 for chain_type, count in sorted(type_counts.items()):
                     self.summary_text.insert(tk.END, f"    {chain_type}: {count}\n")
 
             # Chain length distribution
             if "chain_lengths" in coop_data:
-                self.summary_text.insert(tk.END, f"  Chain Length Distribution:\n")
+                self.summary_text.insert(tk.END, "  Chain Length Distribution:\n")
                 for length, count in sorted(coop_data["chain_lengths"].items()):
                     self.summary_text.insert(
                         tk.END, f"    Length {length}: {count} chains\n"
@@ -968,7 +968,7 @@ class ResultsPanel:
         if self.analyzer.hydrogen_bonds:
             self.summary_text.insert(tk.END, "Sample Hydrogen Bonds:\n", "subheader")
             for i, hb in enumerate(self.analyzer.hydrogen_bonds[:5]):
-                self.summary_text.insert(tk.END, f"  {i+1}. {hb}\n")
+                self.summary_text.insert(tk.END, f"  {i + 1}. {hb}\n")
             if len(self.analyzer.hydrogen_bonds) > 5:
                 self.summary_text.insert(
                     tk.END,
@@ -978,7 +978,7 @@ class ResultsPanel:
         if self.analyzer.halogen_bonds:
             self.summary_text.insert(tk.END, "Sample Halogen Bonds:\n", "subheader")
             for i, xb in enumerate(self.analyzer.halogen_bonds[:3]):
-                self.summary_text.insert(tk.END, f"  {i+1}. {xb}\n")
+                self.summary_text.insert(tk.END, f"  {i + 1}. {xb}\n")
             if len(self.analyzer.halogen_bonds) > 3:
                 self.summary_text.insert(
                     tk.END, f"  ... and {len(self.analyzer.halogen_bonds) - 3} more\n\n"
@@ -987,7 +987,7 @@ class ResultsPanel:
         if self.analyzer.pi_interactions:
             self.summary_text.insert(tk.END, "Sample π Interactions:\n", "subheader")
             for i, pi in enumerate(self.analyzer.pi_interactions[:3]):
-                self.summary_text.insert(tk.END, f"  {i+1}. {pi}\n")
+                self.summary_text.insert(tk.END, f"  {i + 1}. {pi}\n")
             if len(self.analyzer.pi_interactions) > 3:
                 self.summary_text.insert(
                     tk.END, f"  ... and {len(self.analyzer.pi_interactions) - 3} more\n"

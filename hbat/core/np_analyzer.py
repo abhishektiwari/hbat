@@ -7,7 +7,7 @@ calculations of molecular interactions in protein structures.
 
 import math
 import time
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -765,15 +765,22 @@ class NPMolecularInteractionAnalyzer:
                 angle_deg = math.degrees(float(angle_rad))
 
                 if angle_deg >= angle_cutoff:
-                    pi_residue_obj = center_info['residue']
+                    pi_residue_obj = center_info["residue"]
 
                     # Use NPVec3D directly
                     pi_center_vec3d = center_info["center"]
 
                     # Get the aromatic ring atoms
                     from ..constants import RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS
-                    ring_atom_names = RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS.get(pi_residue_obj.name, [])
-                    pi_atoms = [atom for atom in pi_residue_obj.atoms if atom.name in ring_atom_names]
+
+                    ring_atom_names = RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS.get(
+                        pi_residue_obj.name, []
+                    )
+                    pi_atoms = [
+                        atom
+                        for atom in pi_residue_obj.atoms
+                        if atom.name in ring_atom_names
+                    ]
 
                     pi_int = PiInteraction(
                         _donor=donor_atom,
@@ -1442,7 +1449,6 @@ class NPMolecularInteractionAnalyzer:
                         <= reverse_angle
                         <= self.parameters.carbonyl_angle_max
                     ):
-
                         reverse_interaction = CarbonylInteraction(
                             donor_carbon=acceptor_carbonyl["c_atom"],
                             donor_oxygen=acceptor_carbonyl["o_atom"],
@@ -1467,8 +1473,6 @@ class NPMolecularInteractionAnalyzer:
         lone_pair_donors = []
 
         for residue in self.parser.residues.values():
-            residue_id = f"{residue.name}{residue.seq_num}"
-
             for atom in residue.atoms:
                 element = atom.element.upper()
 
@@ -1638,8 +1642,16 @@ class NPMolecularInteractionAnalyzer:
                 ring_atoms = ring_info["atoms"]
 
                 # Skip same residue interactions
-                donor_residue_key = (donor_atom.chain_id, donor_atom.res_seq, donor_atom.res_name)
-                acceptor_residue_key = (ring_info['residue'].chain_id, ring_info['residue'].seq_num, ring_info['residue'].name)
+                donor_residue_key = (
+                    donor_atom.chain_id,
+                    donor_atom.res_seq,
+                    donor_atom.res_name,
+                )
+                acceptor_residue_key = (
+                    ring_info["residue"].chain_id,
+                    ring_info["residue"].seq_num,
+                    ring_info["residue"].name,
+                )
                 if donor_residue_key == acceptor_residue_key:
                     continue
 
@@ -1761,9 +1773,6 @@ class NPMolecularInteractionAnalyzer:
         interaction_graph: Dict[
             int, List[Tuple[int, Union[HydrogenBond, HalogenBond, PiInteraction]]]
         ] = {}
-
-        # Keep mapping from serial to atom for lookups
-        serial_to_atom = {atom.serial: atom for atom in self.parser.atoms}
 
         # Add hydrogen bonds to graph
         for hb in self.hydrogen_bonds:

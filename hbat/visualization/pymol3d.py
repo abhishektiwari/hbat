@@ -10,12 +10,12 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..core.interactions import (
-        HydrogenBond,
+        CarbonylInteraction,
         HalogenBond,
+        HydrogenBond,
+        NPiInteraction,
         PiInteraction,
         PiPiStacking,
-        CarbonylInteraction,
-        NPiInteraction,
     )
 
 
@@ -27,7 +27,7 @@ def _escape_pdb_content(pdb_content: str) -> str:
     :returns: Escaped PDB content safe for JavaScript template literals
     :rtype: str
     """
-    return pdb_content.replace('\\', '\\\\').replace('`', '\\`').replace('$', '\\$')
+    return pdb_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
 
 
 def generate_png_export_js(viewer_id: str, filename: str) -> str:
@@ -63,7 +63,9 @@ def generate_png_export_js(viewer_id: str, filename: str) -> str:
     """
 
 
-def generate_hydrogen_bond_viewer_js(hb: "HydrogenBond", pdb_content: str, viewer_id: str) -> str:
+def generate_hydrogen_bond_viewer_js(
+    hb: "HydrogenBond", pdb_content: str, viewer_id: str
+) -> str:
     """Generate JavaScript code for hydrogen bond 3D visualization.
 
     :param hb: Hydrogen bond interaction
@@ -110,21 +112,29 @@ def generate_hydrogen_bond_viewer_js(hb: "HydrogenBond", pdb_content: str, viewe
                 window.{viewer_id}_instance = viewer;  // Store for PNG export
                 let pdbData = `{pdb_escaped}`;
 
-                viewer.addModel(pdbData, "pdb");
+                viewer.addModel(pdbData, "pdb", {{keepH: true}});
                 viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
 
-                // Show donor residue
+                // Show donor residue with hydrogens
                 viewer.addStyle({{chain: '{donor_chain}', resi: {donor_resi}}},
-                               {{stick: {{colorscheme: 'cyanCarbon', radius: 0.25}}}});
+                               {{stick: {{colorscheme: 'cyanCarbon', radius: 0.25, showNonBonded: false}}}});
 
-                // Show acceptor residue
+                // Show acceptor residue with hydrogens
                 viewer.addStyle({{chain: '{acceptor_chain}', resi: {acceptor_resi}}},
-                               {{stick: {{colorscheme: 'orangeCarbon', radius: 0.25}}}});
+                               {{stick: {{colorscheme: 'orangeCarbon', radius: 0.25, showNonBonded: false}}}});
 
-                // Add dashed line for hydrogen bond
+                // Add dashed line for hydrogen bond (shortened to avoid overlapping atoms)
+                const hx = {hb.hydrogen.coords.x}, hy = {hb.hydrogen.coords.y}, hz = {hb.hydrogen.coords.z};
+                const ax = {hb.acceptor.coords.x}, ay = {hb.acceptor.coords.y}, az = {hb.acceptor.coords.z};
+                const dx = ax - hx, dy = ay - hy, dz = az - hz;
+                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                const offset = 0.4; // Shorten by 0.4 Å on each end
+                const ratio_start = offset / dist;
+                const ratio_end = (dist - offset) / dist;
+
                 viewer.addCylinder({{
-                    start: {{x: {hb.hydrogen.coords.x}, y: {hb.hydrogen.coords.y}, z: {hb.hydrogen.coords.z}}},
-                    end: {{x: {hb.acceptor.coords.x}, y: {hb.acceptor.coords.y}, z: {hb.acceptor.coords.z}}},
+                    start: {{x: hx + dx*ratio_start, y: hy + dy*ratio_start, z: hz + dz*ratio_start}},
+                    end: {{x: hx + dx*ratio_end, y: hy + dy*ratio_end, z: hz + dz*ratio_end}},
                     radius: 0.15,
                     color: 'yellow',
                     dashed: true
@@ -168,7 +178,9 @@ def generate_hydrogen_bond_viewer_js(hb: "HydrogenBond", pdb_content: str, viewe
     return javascript
 
 
-def generate_halogen_bond_viewer_js(xb: "HalogenBond", pdb_content: str, viewer_id: str) -> str:
+def generate_halogen_bond_viewer_js(
+    xb: "HalogenBond", pdb_content: str, viewer_id: str
+) -> str:
     """Generate JavaScript code for halogen bond 3D visualization.
 
     :param xb: Halogen bond interaction
@@ -207,7 +219,7 @@ def generate_halogen_bond_viewer_js(xb: "HalogenBond", pdb_content: str, viewer_
                 window.{viewer_id}_instance = viewer;  // Store for PNG export
                 let pdbData = `{pdb_escaped}`;
 
-                viewer.addModel(pdbData, "pdb");
+                viewer.addModel(pdbData, "pdb", {{keepH: true}});
                 viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
 
                 viewer.addStyle({{chain: '{donor_chain}', resi: {donor_resi}}},
@@ -216,9 +228,18 @@ def generate_halogen_bond_viewer_js(xb: "HalogenBond", pdb_content: str, viewer_
                 viewer.addStyle({{chain: '{acceptor_chain}', resi: {acceptor_resi}}},
                                {{stick: {{colorscheme: 'orangeCarbon', radius: 0.25}}}});
 
+                // Add dashed line for halogen bond (shortened to avoid overlapping atoms)
+                const xx = {xb.halogen.coords.x}, xy = {xb.halogen.coords.y}, xz = {xb.halogen.coords.z};
+                const axb = {xb.acceptor.coords.x}, ayb = {xb.acceptor.coords.y}, azb = {xb.acceptor.coords.z};
+                const dxb = axb - xx, dyb = ayb - xy, dzb = azb - xz;
+                const dist_xb = Math.sqrt(dxb*dxb + dyb*dyb + dzb*dzb);
+                const offset_xb = 0.4;
+                const ratio_start_xb = offset_xb / dist_xb;
+                const ratio_end_xb = (dist_xb - offset_xb) / dist_xb;
+
                 viewer.addCylinder({{
-                    start: {{x: {xb.halogen.coords.x}, y: {xb.halogen.coords.y}, z: {xb.halogen.coords.z}}},
-                    end: {{x: {xb.acceptor.coords.x}, y: {xb.acceptor.coords.y}, z: {xb.acceptor.coords.z}}},
+                    start: {{x: xx + dxb*ratio_start_xb, y: xy + dyb*ratio_start_xb, z: xz + dzb*ratio_start_xb}},
+                    end: {{x: xx + dxb*ratio_end_xb, y: xy + dyb*ratio_end_xb, z: xz + dzb*ratio_end_xb}},
                     radius: 0.15,
                     color: 'orange',
                     dashed: true
@@ -262,7 +283,9 @@ def generate_halogen_bond_viewer_js(xb: "HalogenBond", pdb_content: str, viewer_
     return javascript
 
 
-def generate_pi_interaction_viewer_js(pi: "PiInteraction", pdb_content: str, viewer_id: str) -> str:
+def generate_pi_interaction_viewer_js(
+    pi: "PiInteraction", pdb_content: str, viewer_id: str
+) -> str:
     """Generate JavaScript code for π interaction 3D visualization.
 
     :param pi: π interaction
@@ -301,7 +324,7 @@ def generate_pi_interaction_viewer_js(pi: "PiInteraction", pdb_content: str, vie
                 let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
                 window.{viewer_id}_instance = viewer;  // Store for PNG export
                 let pdb_data = `{pdb_escaped}`;
-                viewer.addModel(pdb_data, "pdb");
+                viewer.addModel(pdb_data, "pdb", {{keepH: true}});
 
                 viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
 
@@ -323,10 +346,18 @@ def generate_pi_interaction_viewer_js(pi: "PiInteraction", pdb_content: str, vie
                 viewer.addStyle({{serial: {pi.hydrogen.serial}}},
                                {{sphere: {{color: 'yellow', radius: 0.5}}}});
 
-                // Add dashed line from X-atom to π center
+                // Add dashed line from X-atom to π center (shortened to avoid overlapping)
+                const pix = {pi.hydrogen.coords.x}, piy = {pi.hydrogen.coords.y}, piz = {pi.hydrogen.coords.z};
+                const pcx = {pi.pi_center.x}, pcy = {pi.pi_center.y}, pcz = {pi.pi_center.z};
+                const dpix = pcx - pix, dpiy = pcy - piy, dpiz = pcz - piz;
+                const dist_pi = Math.sqrt(dpix*dpix + dpiy*dpiy + dpiz*dpiz);
+                const offset_pi = 0.4;
+                const ratio_start_pi = offset_pi / dist_pi;
+                const ratio_end_pi = (dist_pi - offset_pi) / dist_pi;
+
                 viewer.addCylinder({{
-                    start: {{x: {pi.hydrogen.coords.x}, y: {pi.hydrogen.coords.y}, z: {pi.hydrogen.coords.z}}},
-                    end: {{x: {pi.pi_center.x}, y: {pi.pi_center.y}, z: {pi.pi_center.z}}},
+                    start: {{x: pix + dpix*ratio_start_pi, y: piy + dpiy*ratio_start_pi, z: piz + dpiz*ratio_start_pi}},
+                    end: {{x: pix + dpix*ratio_end_pi, y: piy + dpiy*ratio_end_pi, z: piz + dpiz*ratio_end_pi}},
                     radius: 0.1,
                     color: 'yellow',
                     dashed: true
@@ -365,7 +396,9 @@ def generate_pi_interaction_viewer_js(pi: "PiInteraction", pdb_content: str, vie
     return javascript
 
 
-def generate_pi_pi_stacking_viewer_js(pi_pi: "PiPiStacking", pdb_content: str, viewer_id: str) -> str:
+def generate_pi_pi_stacking_viewer_js(
+    pi_pi: "PiPiStacking", pdb_content: str, viewer_id: str
+) -> str:
     """Generate JavaScript code for π-π stacking 3D visualization.
 
     :param pi_pi: π-π stacking interaction
@@ -404,7 +437,7 @@ def generate_pi_pi_stacking_viewer_js(pi_pi: "PiPiStacking", pdb_content: str, v
                 window.{viewer_id}_instance = viewer;  // Store for PNG export
 
                 let pdb_data = `{pdb_escaped}`;
-                viewer.addModel(pdb_data, "pdb");
+                viewer.addModel(pdb_data, "pdb", {{keepH: true}});
 
                 viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
 
@@ -426,10 +459,18 @@ def generate_pi_pi_stacking_viewer_js(pi_pi: "PiPiStacking", pdb_content: str, v
                               {{position: {{x: {pi_pi.midpoint.x}, y: {pi_pi.midpoint.y}, z: {pi_pi.midpoint.z}}},
                                backgroundColor: 'black', fontColor: 'white', fontSize: 12}});
 
-                // Add line between ring centers
+                // Add line between ring centers (shortened to avoid overlapping)
+                const r1x = {pi_pi.ring1_center.x}, r1y = {pi_pi.ring1_center.y}, r1z = {pi_pi.ring1_center.z};
+                const r2x = {pi_pi.ring2_center.x}, r2y = {pi_pi.ring2_center.y}, r2z = {pi_pi.ring2_center.z};
+                const drx = r2x - r1x, dry = r2y - r1y, drz = r2z - r1z;
+                const dist_pipi = Math.sqrt(drx*drx + dry*dry + drz*drz);
+                const offset_pipi = 0.3; // Smaller offset for ring centers
+                const ratio_start_pipi = offset_pipi / dist_pipi;
+                const ratio_end_pipi = (dist_pipi - offset_pipi) / dist_pipi;
+
                 viewer.addCylinder({{
-                    start: {{x: {pi_pi.ring1_center.x}, y: {pi_pi.ring1_center.y}, z: {pi_pi.ring1_center.z}}},
-                    end: {{x: {pi_pi.ring2_center.x}, y: {pi_pi.ring2_center.y}, z: {pi_pi.ring2_center.z}}},
+                    start: {{x: r1x + drx*ratio_start_pipi, y: r1y + dry*ratio_start_pipi, z: r1z + drz*ratio_start_pipi}},
+                    end: {{x: r1x + drx*ratio_end_pipi, y: r1y + dry*ratio_end_pipi, z: r1z + drz*ratio_end_pipi}},
                     radius: 0.1,
                     color: 'purple',
                     dashed: true
@@ -452,7 +493,9 @@ def generate_pi_pi_stacking_viewer_js(pi_pi: "PiPiStacking", pdb_content: str, v
     return javascript
 
 
-def generate_carbonyl_interaction_viewer_js(carbonyl: "CarbonylInteraction", pdb_content: str, viewer_id: str) -> str:
+def generate_carbonyl_interaction_viewer_js(
+    carbonyl: "CarbonylInteraction", pdb_content: str, viewer_id: str
+) -> str:
     """Generate JavaScript code for carbonyl n→π* interaction 3D visualization.
 
     :param carbonyl: Carbonyl interaction
@@ -485,7 +528,7 @@ def generate_carbonyl_interaction_viewer_js(carbonyl: "CarbonylInteraction", pdb
                 window.{viewer_id}_instance = viewer;  // Store for PNG export
 
                 let pdb_data = `{pdb_escaped}`;
-                viewer.addModel(pdb_data, "pdb");
+                viewer.addModel(pdb_data, "pdb", {{keepH: true}});
 
                 viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
 
@@ -514,10 +557,18 @@ def generate_carbonyl_interaction_viewer_js(carbonyl: "CarbonylInteraction", pdb
                               {{position: carbonyl_midpoint,
                                backgroundColor: 'black', fontColor: 'white', fontSize: 12}});
 
-                // Add line from donor O to acceptor C
+                // Add line from donor O to acceptor C (shortened to avoid overlapping)
+                const cox = {carbonyl.donor_oxygen.coords.x}, coy = {carbonyl.donor_oxygen.coords.y}, coz = {carbonyl.donor_oxygen.coords.z};
+                const cax = {carbonyl.acceptor_carbon.coords.x}, cay = {carbonyl.acceptor_carbon.coords.y}, caz = {carbonyl.acceptor_carbon.coords.z};
+                const dcx = cax - cox, dcy = cay - coy, dcz = caz - coz;
+                const dist_co = Math.sqrt(dcx*dcx + dcy*dcy + dcz*dcz);
+                const offset_co = 0.4;
+                const ratio_start_co = offset_co / dist_co;
+                const ratio_end_co = (dist_co - offset_co) / dist_co;
+
                 viewer.addCylinder({{
-                    start: {{x: {carbonyl.donor_oxygen.coords.x}, y: {carbonyl.donor_oxygen.coords.y}, z: {carbonyl.donor_oxygen.coords.z}}},
-                    end: {{x: {carbonyl.acceptor_carbon.coords.x}, y: {carbonyl.acceptor_carbon.coords.y}, z: {carbonyl.acceptor_carbon.coords.z}}},
+                    start: {{x: cox + dcx*ratio_start_co, y: coy + dcy*ratio_start_co, z: coz + dcz*ratio_start_co}},
+                    end: {{x: cox + dcx*ratio_end_co, y: coy + dcy*ratio_end_co, z: coz + dcz*ratio_end_co}},
                     radius: 0.1,
                     color: 'orange',
                     dashed: true
@@ -540,7 +591,9 @@ def generate_carbonyl_interaction_viewer_js(carbonyl: "CarbonylInteraction", pdb
     return javascript
 
 
-def generate_n_pi_interaction_viewer_js(n_pi: "NPiInteraction", pdb_content: str, viewer_id: str) -> str:
+def generate_n_pi_interaction_viewer_js(
+    n_pi: "NPiInteraction", pdb_content: str, viewer_id: str
+) -> str:
     """Generate JavaScript code for n→π* interaction 3D visualization.
 
     :param n_pi: n→π* interaction
@@ -577,7 +630,7 @@ def generate_n_pi_interaction_viewer_js(n_pi: "NPiInteraction", pdb_content: str
                 window.{viewer_id}_instance = viewer;  // Store for PNG export
 
                 let pdb_data = `{pdb_escaped}`;
-                viewer.addModel(pdb_data, "pdb");
+                viewer.addModel(pdb_data, "pdb", {{keepH: true}});
 
                 viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
 
@@ -608,10 +661,18 @@ def generate_n_pi_interaction_viewer_js(n_pi: "NPiInteraction", pdb_content: str
                               {{position: npi_midpoint,
                                backgroundColor: 'black', fontColor: 'white', fontSize: 12}});
 
-                // Add line from lone pair atom to π center
+                // Add line from lone pair atom to π center (shortened to avoid overlapping)
+                const npx = {n_pi.lone_pair_atom.coords.x}, npy = {n_pi.lone_pair_atom.coords.y}, npz = {n_pi.lone_pair_atom.coords.z};
+                const npcx = {n_pi.pi_center.x}, npcy = {n_pi.pi_center.y}, npcz = {n_pi.pi_center.z};
+                const dnpx = npcx - npx, dnpy = npcy - npy, dnpz = npcz - npz;
+                const dist_npi = Math.sqrt(dnpx*dnpx + dnpy*dnpy + dnpz*dnpz);
+                const offset_npi = 0.4;
+                const ratio_start_npi = offset_npi / dist_npi;
+                const ratio_end_npi = (dist_npi - offset_npi) / dist_npi;
+
                 viewer.addCylinder({{
-                    start: {{x: {n_pi.lone_pair_atom.coords.x}, y: {n_pi.lone_pair_atom.coords.y}, z: {n_pi.lone_pair_atom.coords.z}}},
-                    end: {{x: {n_pi.pi_center.x}, y: {n_pi.pi_center.y}, z: {n_pi.pi_center.z}}},
+                    start: {{x: npx + dnpx*ratio_start_npi, y: npy + dnpy*ratio_start_npi, z: npz + dnpz*ratio_start_npi}},
+                    end: {{x: npx + dnpx*ratio_end_npi, y: npy + dnpy*ratio_end_npi, z: npz + dnpz*ratio_end_npi}},
                     radius: 0.1,
                     color: 'green',
                     dashed: true

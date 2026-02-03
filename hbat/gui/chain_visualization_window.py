@@ -13,8 +13,8 @@ from typing import Optional
 import networkx as nx
 
 from hbat.core.app_config import HBATConfig, get_hbat_config
+from hbat.gui.base_graph_renderer import RendererFactory, VisualizationRenderer
 from hbat.gui.export_manager import ExportManager
-from hbat.gui.visualization_renderer import RendererFactory, VisualizationRenderer
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -79,15 +79,16 @@ class ChainVisualizationWindow:
         self.viz_window.title(f"Cooperativity Chain Visualization - {self.chain_id}")
         self.viz_window.geometry("900x700")
 
-        # Create main container frames
-        main_frame = ttk.Frame(self.viz_window)
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        # Create the network graph
+        self.G = nx.MultiDiGraph()
 
-        # Create visualization frame
-        viz_frame = ttk.Frame(main_frame)
-        viz_frame.pack(fill=tk.BOTH, expand=True)
+        # Build the graph
+        self._build_graph()
 
-        # Create renderer
+        # Create visualization frame (will be packed after toolbar)
+        viz_frame = ttk.Frame(self.viz_window)
+
+        # Create renderer (needed before toolbar to get renderer name)
         try:
             self.renderer = RendererFactory.create_renderer(viz_frame, self.config)
             logger.info(f"Using {self.renderer.get_renderer_name()} renderer")
@@ -97,14 +98,11 @@ class ChainVisualizationWindow:
         except ImportError as e:
             raise ImportError(f"No visualization renderer available: {e}")
 
-        # Create the network graph
-        self.G = nx.MultiDiGraph()
-
-        # Build the graph
-        self._build_graph()
-
-        # Add toolbar first to set up engine preferences
+        # Add toolbar (at the top, no expand) - needs renderer to be created first
         self._create_toolbar()
+
+        # Pack visualization frame (in the middle, with expand)
+        viz_frame.pack(fill=tk.BOTH, expand=True)
 
         # Now render the graph with correct engine settings
         self._render_graph()
@@ -112,7 +110,7 @@ class ChainVisualizationWindow:
         # Pack the renderer's canvas widget
         self._pack_renderer_widget(viz_frame)
 
-        # Add chain information
+        # Add chain information (at the bottom, no expand)
         self._create_info_panel()
 
     def _build_graph(self):
@@ -229,51 +227,15 @@ class ChainVisualizationWindow:
             widget.destroy()
 
         renderer_name = self.renderer.get_renderer_name()
-        logger.debug(f"Updating layout controls for renderer: {renderer_name}")
+        logger.info(f"Updating layout controls for renderer: {renderer_name}")
 
         if "GraphViz" in renderer_name:
-            # For GraphViz, show actual engine names
-            ttk.Label(self.layout_section, text="Engine:").pack(side=tk.LEFT, padx=5)
-
-            # Get available GraphViz engines
-            from hbat.utilities.graphviz_utils import GraphVizDetector
-
-            available_engines = GraphVizDetector.get_available_engines()
-            if not available_engines:
-                available_engines = ["dot", "neato", "fdp", "circo", "twopi"]
-
-            # Ensure "dot" is first in the list
-            if "dot" in available_engines:
-                available_engines = ["dot"] + [
-                    engine for engine in available_engines if engine != "dot"
-                ]
-
-            # Create dropdown for engine selection
-            # Always prefer 'dot' as the default engine for new chain visualization windows
-            current_engine = (
-                "dot" if "dot" in available_engines else available_engines[0]
-            )
-
-            # Update config to use the preferred engine
-            self.config.set_graphviz_engine(current_engine)
-
-            self.engine_var = tk.StringVar(value=current_engine)
-            engine_menu = ttk.Combobox(
-                self.layout_section,
-                textvariable=self.engine_var,
-                values=available_engines,
-                state="readonly",
-                width=8,
-            )
-            engine_menu.pack(side=tk.LEFT, padx=5)
-            engine_menu.bind("<<ComboboxSelected>>", self._change_engine)
-
-            # Explicitly set the combobox to show the current engine
-            # This ensures the GUI displays the correct default value
-            engine_menu.set(current_engine)
+            # For GraphViz, use dot engine only
+            # Update config to use dot engine
+            self.config.set_graphviz_engine("dot")
 
         else:
-            # For other renderers, show layout names
+            # For other renderers, show layout dropdown
             ttk.Label(self.layout_section, text="Layout:").pack(side=tk.LEFT, padx=5)
 
             # Get supported layouts from renderer
@@ -282,12 +244,22 @@ class ChainVisualizationWindow:
             else:
                 layouts = ["circular", "shell", "kamada_kawai", "planar", "spring"]
 
-            for layout in layouts:
-                ttk.Button(
-                    self.layout_section,
-                    text=layout.replace("_", " ").title(),
-                    command=lambda lt=layout: self._update_layout(lt),
-                ).pack(side=tk.LEFT, padx=2)
+            # Format layout names for display
+            layout_names = [layout.replace("_", " ").title() for layout in layouts]
+
+            # Create layout variable and dropdown
+            self.layout_var = tk.StringVar(value=layout_names[0])
+            layout_menu = ttk.Combobox(
+                self.layout_section,
+                textvariable=self.layout_var,
+                values=layout_names,
+                state="readonly",
+                width=15,
+            )
+            layout_menu.pack(side=tk.LEFT, padx=5)
+
+            # Bind selection event to update layout
+            layout_menu.bind("<<ComboboxSelected>>", self._change_layout)
 
     def _create_info_panel(self):
         """Create information panel."""
@@ -304,6 +276,19 @@ class ChainVisualizationWindow:
     def _update_layout(self, layout_type):
         """Update the visualization with a new layout."""
         self._render_graph(layout_type)
+
+    def _change_layout(self, event=None):
+        """Change the layout when dropdown selection changes."""
+        if not hasattr(self, "layout_var"):
+            return
+
+        # Get the selected layout name and convert back to internal format
+        selected_name = self.layout_var.get()
+        # Convert "Kamada Kawai" back to "kamada_kawai"
+        layout_type = selected_name.lower().replace(" ", "_")
+
+        # Update the visualization
+        self._update_layout(layout_type)
 
     def _change_renderer(self, event=None):
         """Change the visualization renderer."""
@@ -366,27 +351,3 @@ class ChainVisualizationWindow:
         """Export the current visualization."""
         if self.export_manager:
             self.export_manager.export_visualization()
-
-    def _change_engine(self, event=None):
-        """Change the GraphViz engine and re-render."""
-        if (
-            not hasattr(self, "engine_var")
-            or self.renderer.get_renderer_name() != "GraphViz"
-        ):
-            return
-
-        selected_engine = self.engine_var.get()
-
-        try:
-            # Update the configuration with the selected engine
-            self.config.set_graphviz_engine(selected_engine)
-
-            # Re-render the graph with the new engine
-            # For GraphViz, we use a dummy layout since the engine determines the layout
-            self._render_graph("dot_layout")
-
-            logger.info(f"Switched GraphViz engine to: {selected_engine}")
-
-        except Exception as e:
-            logger.error(f"Failed to change GraphViz engine: {e}")
-            messagebox.showerror("Engine Error", f"Failed to change engine: {str(e)}")

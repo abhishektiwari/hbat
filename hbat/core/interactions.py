@@ -8,7 +8,6 @@ and cooperativity chains.
 
 import math
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import List, Optional, Union
 
 from .np_vector import NPVec3D
@@ -340,7 +339,9 @@ class HydrogenBond(MolecularInteraction):
         return f"{self.donor_chain_id}:{self.donor_res_name}:{self.donor_res_seq}"
 
     def get_acceptor_residue(self) -> str:
-        return f"{self.acceptor_chain_id}:{self.acceptor_res_name}:{self.acceptor_res_seq}"
+        return (
+            f"{self.acceptor_chain_id}:{self.acceptor_res_name}:{self.acceptor_res_seq}"
+        )
 
     def get_interaction_type(self) -> str:
         return "H-Bond"
@@ -553,7 +554,9 @@ class HalogenBond(MolecularInteraction):
         return f"{self.donor_chain_id}:{self.donor_res_name}:{self.donor_res_seq}"
 
     def get_acceptor_residue(self) -> str:
-        return f"{self.acceptor_chain_id}:{self.acceptor_res_name}:{self.acceptor_res_seq}"
+        return (
+            f"{self.acceptor_chain_id}:{self.acceptor_res_name}:{self.acceptor_res_seq}"
+        )
 
     def get_interaction_type(self) -> str:
         return "X-Bond"
@@ -1232,7 +1235,9 @@ class CarbonylInteraction(MolecularInteraction):
         self.interaction_classification = self._generate_interaction_classification()
 
         # Determine if interaction is between different residues
-        self.is_between_residues = self.get_donor_residue() != self.get_acceptor_residue()
+        self.is_between_residues = (
+            self.get_donor_residue() != self.get_acceptor_residue()
+        )
 
     # Backward compatibility properties
     @property
@@ -1296,7 +1301,9 @@ class CarbonylInteraction(MolecularInteraction):
         :returns: Residue identifier containing the acceptor carbonyl
         :rtype: str
         """
-        return f"{self.acceptor_chain_id}:{self.acceptor_res_name}:{self.acceptor_res_seq}"
+        return (
+            f"{self.acceptor_chain_id}:{self.acceptor_res_name}:{self.acceptor_res_seq}"
+        )
 
     def get_interaction_type(self) -> str:
         """Get the interaction type identifier.
@@ -1495,7 +1502,9 @@ class NPiInteraction(MolecularInteraction):
         self.pi_system_type = self._classify_pi_system()
 
         # Determine if interaction is between different residues
-        self.is_between_residues = self.get_donor_residue() != self.get_acceptor_residue()
+        self.is_between_residues = (
+            self.get_donor_residue() != self.get_acceptor_residue()
+        )
 
     # Backward compatibility properties
     @property
@@ -1849,7 +1858,6 @@ class CooperativityChain(MolecularInteraction):
             and isinstance(last_acceptor, (Atom, NPVec3D))
             and isinstance(mid_interaction, (Atom, NPVec3D))
         ):
-
             donor_pos = first_donor.coords
             mid_pos = (
                 mid_interaction.coords
@@ -1926,7 +1934,7 @@ class CooperativityChain(MolecularInteraction):
                 interaction.get_interaction_type()
             )
             chain_str.append(
-                f" {interaction_symbol} {acceptor_str} [{interaction.get_donor_interaction_acceptor_angle()*180/3.14159:.1f}°]"
+                f" {interaction_symbol} {acceptor_str} [{interaction.get_donor_interaction_acceptor_angle() * 180 / 3.14159:.1f}°]"
             )
 
         return f"Potential Cooperative Chain[{self.chain_length}]: " + "".join(

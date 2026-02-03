@@ -5,7 +5,6 @@ This module contains utility functions for working with PDB atoms and elements.
 """
 
 import re
-from typing import Dict
 
 from ..constants.pdb_constants import _COMMON_PDB_ATOMS
 

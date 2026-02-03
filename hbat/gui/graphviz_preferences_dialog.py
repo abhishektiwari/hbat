@@ -42,6 +42,16 @@ RANK_DIRECTIONS = [
     ("Right to Left", "RL"),
 ]
 
+# GraphViz engine descriptions
+ENGINE_DESCRIPTIONS = {
+    "dot": "Hierarchical layout (default)",
+    "neato": "Spring model layout",
+    "fdp": "Force-directed layout",
+    "sfdp": "Scalable force-directed layout",
+    "twopi": "Radial layout",
+    "circo": "Circular layout",
+}
+
 
 class GraphVizPreferencesDialog:
     """Dialog for configuring GraphViz preferences.

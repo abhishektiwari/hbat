@@ -6,7 +6,7 @@ from Chemical Component Dictionary (CCD) data using the CCDDataManager.
 """
 
 import os
-from typing import Dict, List, Union
+from typing import Dict, List
 
 from .ccd_analyzer import CCDDataManager
 
@@ -97,18 +97,18 @@ class CCDConstantsGenerator:
             f.write(f'        "bond_count": {bond_data["bond_count"]},\n')
             f.write(f'        "aromatic_bonds": {bond_data["aromatic_bonds"]},\n')
             f.write(f'        "bond_orders": {repr(bond_data["bond_orders"])},\n')
-            f.write(f'        "bonds": [\n')
+            f.write('        "bonds": [\n')
 
             for bond in bond_data["bonds"]:
-                f.write(f"            {{\n")
+                f.write("            {\n")
                 f.write(f'                "atom1": "{bond["atom1"]}",\n')
                 f.write(f'                "atom2": "{bond["atom2"]}",\n')
                 f.write(f'                "order": "{bond["order"]}",\n')
                 f.write(f'                "aromatic": {bond["aromatic"]}\n')
-                f.write(f"            }},\n")
+                f.write("            },\n")
 
-            f.write(f"        ],\n")
-            f.write(f"    }},\n")
+            f.write("        ],\n")
+            f.write("    },\n")
 
         f.write("}\n\n")
 
@@ -254,7 +254,7 @@ class CCDConstantsGenerator:
         print(f"Total bonds: {report['total_bonds']:,}")
 
         if report["bond_order_distribution"]:
-            print(f"\nBond order distribution:")
+            print("\nBond order distribution:")
             for order, count in sorted(report["bond_order_distribution"].items()):
                 print(f"  {order}: {count:,}")
 

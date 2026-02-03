@@ -7,9 +7,8 @@ and extract atomic coordinates and molecular information using the pdbreader lib
 
 import math
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
-import numpy as np
 
 from ..constants import AtomicData, BondDetectionMethods, get_residue_bonds
 from ..constants.parameters import ParametersDefault
@@ -283,7 +282,7 @@ class PDBParser:
                 row_info = (
                     f" (serial={serial_val}, name={name_val}, res={res_name_val})"
                 )
-            except:
+            except Exception:
                 pass
 
             print(f"Error converting atom row{row_info}: {e}")

@@ -83,6 +83,28 @@ class ParameterPanel:
         self.covalent_cutoff_factor = ParametersDefault.COVALENT_CUTOFF_FACTOR
         self.analysis_mode = ParametersDefault.ANALYSIS_MODE
 
+    def _should_enable_keep_water(self) -> bool:
+        """Check if Keep Water switch should be enabled.
+
+        :returns: True if both PDBFixer is selected AND Remove Heterogens is checked
+        :rtype: bool
+        """
+        return self.fix_pdb_method == "pdbfixer" and self.fix_pdb_remove_heterogens
+
+    def _update_keep_water_state(self):
+        """Update the enabled state of Keep Water switch based on method and remove_heterogens."""
+        if hasattr(self, 'keep_water_switch'):
+            should_enable = self._should_enable_keep_water()
+            self.keep_water_switch.enabled = should_enable
+
+    def _reset_pdb_fixing_options(self):
+        """Reset PDB fixing options to defaults."""
+        self.fix_pdb_add_hydrogens = ParametersDefault.FIX_PDB_ADD_HYDROGENS
+        self.fix_pdb_add_heavy_atoms = ParametersDefault.FIX_PDB_ADD_HEAVY_ATOMS
+        self.fix_pdb_replace_nonstandard = ParametersDefault.FIX_PDB_REPLACE_NONSTANDARD
+        self.fix_pdb_remove_heterogens = ParametersDefault.FIX_PDB_REMOVE_HETEROGENS
+        self.fix_pdb_keep_water = ParametersDefault.FIX_PDB_KEEP_WATER
+
     def create_ui(self):
         """Create the parameter configuration UI."""
         # Parameter summary cards
@@ -92,7 +114,9 @@ class ParameterPanel:
                 with ui.card_section():
                     with ui.row().classes("items-center justify-between"):
                         ui.label("PDB Fixing").classes("text-h6")
-                        ui.button(icon="edit", on_click=lambda: self._edit_pdb_fixing()).props("flat round dense color=primary")
+                        ui.button(
+                            icon="edit", on_click=lambda: self._edit_pdb_fixing()
+                        ).props("flat round dense color=primary")
                     ui.label().classes("text-caption text-grey").bind_text_from(
                         self, "fix_pdb_method", backward=lambda v: f"Method: {v}"
                     )
@@ -105,7 +129,9 @@ class ParameterPanel:
                 with ui.card_section():
                     with ui.row().classes("items-center justify-between"):
                         ui.label("Hydrogen Bonds").classes("text-h6")
-                        ui.button(icon="edit", on_click=lambda: self._edit_hydrogen_bonds()).props("flat round dense color=primary")
+                        ui.button(
+                            icon="edit", on_click=lambda: self._edit_hydrogen_bonds()
+                        ).props("flat round dense color=primary")
                     ui.label().classes("text-caption text-grey").bind_text_from(
                         self, "hb_distance", backward=lambda v: f"Distance: {v}Å"
                     )
@@ -119,7 +145,9 @@ class ParameterPanel:
                 with ui.card_section():
                     with ui.row().classes("items-center justify-between"):
                         ui.label("Halogen Bonds").classes("text-h6")
-                        ui.button(icon="edit", on_click=lambda: self._edit_halogen_bonds()).props("flat round dense color=primary")
+                        ui.button(
+                            icon="edit", on_click=lambda: self._edit_halogen_bonds()
+                        ).props("flat round dense color=primary")
                     ui.label().classes("text-caption text-grey").bind_text_from(
                         self, "xb_distance", backward=lambda v: f"Distance: {v}Å"
                     )
@@ -132,7 +160,9 @@ class ParameterPanel:
                 with ui.card_section():
                     with ui.row().classes("items-center justify-between"):
                         ui.label("π Interactions").classes("text-h6")
-                        ui.button(icon="edit", on_click=lambda: self._edit_pi_interactions()).props("flat round dense color=primary")
+                        ui.button(
+                            icon="edit", on_click=lambda: self._edit_pi_interactions()
+                        ).props("flat round dense color=primary")
                     ui.label("8 subtypes configured").classes("text-caption text-grey")
 
         with ui.row().classes("w-full gap-4 q-mt-md"):
@@ -141,7 +171,9 @@ class ParameterPanel:
                 with ui.card_section():
                     with ui.row().classes("items-center justify-between"):
                         ui.label("π-π Stacking").classes("text-h6")
-                        ui.button(icon="edit", on_click=lambda: self._edit_pi_pi_stacking()).props("flat round dense color=primary")
+                        ui.button(
+                            icon="edit", on_click=lambda: self._edit_pi_pi_stacking()
+                        ).props("flat round dense color=primary")
                     ui.label().classes("text-caption text-grey").bind_text_from(
                         self, "pi_pi_distance", backward=lambda v: f"Distance: {v}Å"
                     )
@@ -151,7 +183,9 @@ class ParameterPanel:
                 with ui.card_section():
                     with ui.row().classes("items-center justify-between"):
                         ui.label("Carbonyl n→π*").classes("text-h6")
-                        ui.button(icon="edit", on_click=lambda: self._edit_carbonyl()).props("flat round dense color=primary")
+                        ui.button(
+                            icon="edit", on_click=lambda: self._edit_carbonyl()
+                        ).props("flat round dense color=primary")
                     ui.label().classes("text-caption text-grey").bind_text_from(
                         self, "carbonyl_distance", backward=lambda v: f"Distance: {v}Å"
                     )
@@ -162,7 +196,9 @@ class ParameterPanel:
                 with ui.card_section():
                     with ui.row().classes("items-center justify-between"):
                         ui.label("n→π* Interactions").classes("text-h6")
-                        ui.button(icon="edit", on_click=lambda: self._edit_n_pi()).props("flat round dense color=primary")
+                        ui.button(
+                            icon="edit", on_click=lambda: self._edit_n_pi()
+                        ).props("flat round dense color=primary")
                     ui.label().classes("text-caption text-grey").bind_text_from(
                         self, "n_pi_distance", backward=lambda v: f"Distance: {v}Å"
                     )
@@ -172,7 +208,9 @@ class ParameterPanel:
                 with ui.card_section():
                     with ui.row().classes("items-center justify-between"):
                         ui.label("General Settings").classes("text-h6")
-                        ui.button(icon="edit", on_click=lambda: self._edit_general()).props("flat round dense color=primary")
+                        ui.button(
+                            icon="edit", on_click=lambda: self._edit_general()
+                        ).props("flat round dense color=primary")
                     ui.label().classes("text-caption text-grey").bind_text_from(
                         self, "analysis_mode", backward=lambda v: f"Mode: {v}"
                     )
@@ -185,7 +223,9 @@ class ParameterPanel:
             # Save button at top
             with ui.row().classes("w-full justify-between items-center q-mb-md"):
                 ui.label("PDB Fixing Parameters").classes("text-h6")
-                ui.button("Save", icon="save", on_click=lambda: self._save_and_close()).props("color=primary")
+                ui.button(
+                    "Save", icon="save", on_click=lambda: self._save_and_close()
+                ).props("color=primary")
 
             ui.separator()
 
@@ -194,31 +234,55 @@ class ParameterPanel:
                     self, "fix_pdb_enabled"
                 )
 
-                ui.select(
+                method_select = ui.select(
                     options=["openbabel", "pdbfixer"],
                     label="Fixing Method",
                     value=self.fix_pdb_method,
                 ).bind_value(self, "fix_pdb_method")
+                method_select.on_value_change(lambda: self._reset_pdb_fixing_options())
 
-                ui.switch("Add Hydrogens", value=self.fix_pdb_add_hydrogens).bind_value(
-                    self, "fix_pdb_add_hydrogens"
+                # Add Hydrogens - disabled for OpenBabel (always true), enabled for PDBFixer
+                add_hydrogens_switch = ui.switch(
+                    "Add Hydrogens",
+                    value=self.fix_pdb_add_hydrogens
+                ).bind_value(self, "fix_pdb_add_hydrogens")
+                add_hydrogens_switch.bind_enabled_from(
+                    self, "fix_pdb_method", lambda m: m == "pdbfixer"
                 )
 
-                ui.switch("Add Heavy Atoms (PDBFixer only)", value=self.fix_pdb_add_heavy_atoms).bind_value(
-                    self, "fix_pdb_add_heavy_atoms"
+                # PDBFixer-only options (disabled when OpenBabel is selected)
+                add_heavy_switch = ui.switch(
+                    "Add Heavy Atoms (PDBFixer only)",
+                    value=self.fix_pdb_add_heavy_atoms,
+                ).bind_value(self, "fix_pdb_add_heavy_atoms")
+                add_heavy_switch.bind_enabled_from(
+                    self, "fix_pdb_method", lambda m: m == "pdbfixer"
                 )
 
-                ui.switch("Replace Nonstandard Residues", value=self.fix_pdb_replace_nonstandard).bind_value(
-                    self, "fix_pdb_replace_nonstandard"
+                replace_nonstandard_switch = ui.switch(
+                    "Replace Nonstandard Residues (PDBFixer only)",
+                    value=self.fix_pdb_replace_nonstandard,
+                ).bind_value(self, "fix_pdb_replace_nonstandard")
+                replace_nonstandard_switch.bind_enabled_from(
+                    self, "fix_pdb_method", lambda m: m == "pdbfixer"
                 )
 
-                ui.switch("Remove Heterogens", value=self.fix_pdb_remove_heterogens).bind_value(
-                    self, "fix_pdb_remove_heterogens"
+                self.remove_heterogens_switch = ui.switch(
+                    "Remove Heterogens (PDBFixer only)",
+                    value=self.fix_pdb_remove_heterogens
+                ).bind_value(self, "fix_pdb_remove_heterogens")
+                self.remove_heterogens_switch.bind_enabled_from(
+                    self, "fix_pdb_method", lambda m: m == "pdbfixer"
                 )
 
-                ui.switch("Keep Water", value=self.fix_pdb_keep_water).bind_value(
-                    self, "fix_pdb_keep_water"
-                )
+                # Keep Water switch - only enabled when Remove Heterogens is checked AND PDBFixer is selected
+                self.keep_water_switch = ui.switch(
+                    "Keep Water (PDBFixer only)",
+                    value=self.fix_pdb_keep_water
+                ).bind_value(self, "fix_pdb_keep_water")
+
+                # Update enable state when method changes
+                ui.timer(0.1, lambda: self._update_keep_water_state(), once=False)
 
         self.param_drawer.show()
 
@@ -229,7 +293,9 @@ class ParameterPanel:
         with self.drawer_content:
             with ui.row().classes("w-full justify-between items-center q-mb-md"):
                 ui.label("Hydrogen Bond Parameters").classes("text-h6")
-                ui.button("Save", icon="save", on_click=lambda: self._save_and_close()).props("color=primary")
+                ui.button(
+                    "Save", icon="save", on_click=lambda: self._save_and_close()
+                ).props("color=primary")
 
             ui.separator()
 
@@ -301,7 +367,9 @@ class ParameterPanel:
         with self.drawer_content:
             with ui.row().classes("w-full justify-between items-center q-mb-md"):
                 ui.label("Halogen Bond Parameters").classes("text-h6")
-                ui.button("Save", icon="save", on_click=lambda: self._save_and_close()).props("color=primary")
+                ui.button(
+                    "Save", icon="save", on_click=lambda: self._save_and_close()
+                ).props("color=primary")
 
             ui.separator()
 
@@ -333,7 +401,9 @@ class ParameterPanel:
         with self.drawer_content:
             with ui.row().classes("w-full justify-between items-center q-mb-md"):
                 ui.label("π Interaction Parameters").classes("text-h6")
-                ui.button("Save", icon="save", on_click=lambda: self._save_and_close()).props("color=primary")
+                ui.button(
+                    "Save", icon="save", on_click=lambda: self._save_and_close()
+                ).props("color=primary")
 
             ui.separator()
 
@@ -341,35 +411,91 @@ class ParameterPanel:
                 ui.label("Halogen-π Interactions").classes("text-subtitle2")
 
                 with ui.expansion("C-Cl...π", icon="whatshot").classes("w-full"):
-                    ui.number("Distance (Å)", value=self.pi_ccl_distance, min=2.0, max=6.0, step=0.1).bind_value(self, "pi_ccl_distance")
-                    ui.number("Angle (°)", value=self.pi_ccl_angle, min=0, max=180, step=1).bind_value(self, "pi_ccl_angle")
+                    ui.number(
+                        "Distance (Å)",
+                        value=self.pi_ccl_distance,
+                        min=2.0,
+                        max=6.0,
+                        step=0.1,
+                    ).bind_value(self, "pi_ccl_distance")
+                    ui.number(
+                        "Angle (°)", value=self.pi_ccl_angle, min=0, max=180, step=1
+                    ).bind_value(self, "pi_ccl_angle")
 
                 with ui.expansion("C-Br...π", icon="whatshot").classes("w-full"):
-                    ui.number("Distance (Å)", value=self.pi_cbr_distance, min=2.0, max=6.0, step=0.1).bind_value(self, "pi_cbr_distance")
-                    ui.number("Angle (°)", value=self.pi_cbr_angle, min=0, max=180, step=1).bind_value(self, "pi_cbr_angle")
+                    ui.number(
+                        "Distance (Å)",
+                        value=self.pi_cbr_distance,
+                        min=2.0,
+                        max=6.0,
+                        step=0.1,
+                    ).bind_value(self, "pi_cbr_distance")
+                    ui.number(
+                        "Angle (°)", value=self.pi_cbr_angle, min=0, max=180, step=1
+                    ).bind_value(self, "pi_cbr_angle")
 
                 with ui.expansion("C-I...π", icon="whatshot").classes("w-full"):
-                    ui.number("Distance (Å)", value=self.pi_ci_distance, min=2.0, max=6.0, step=0.1).bind_value(self, "pi_ci_distance")
-                    ui.number("Angle (°)", value=self.pi_ci_angle, min=0, max=180, step=1).bind_value(self, "pi_ci_angle")
+                    ui.number(
+                        "Distance (Å)",
+                        value=self.pi_ci_distance,
+                        min=2.0,
+                        max=6.0,
+                        step=0.1,
+                    ).bind_value(self, "pi_ci_distance")
+                    ui.number(
+                        "Angle (°)", value=self.pi_ci_angle, min=0, max=180, step=1
+                    ).bind_value(self, "pi_ci_angle")
 
                 ui.separator()
                 ui.label("Hydrogen-π Interactions").classes("text-subtitle2")
 
                 with ui.expansion("C-H...π", icon="link").classes("w-full"):
-                    ui.number("Distance (Å)", value=self.pi_ch_distance, min=2.0, max=6.0, step=0.1).bind_value(self, "pi_ch_distance")
-                    ui.number("Angle (°)", value=self.pi_ch_angle, min=0, max=180, step=1).bind_value(self, "pi_ch_angle")
+                    ui.number(
+                        "Distance (Å)",
+                        value=self.pi_ch_distance,
+                        min=2.0,
+                        max=6.0,
+                        step=0.1,
+                    ).bind_value(self, "pi_ch_distance")
+                    ui.number(
+                        "Angle (°)", value=self.pi_ch_angle, min=0, max=180, step=1
+                    ).bind_value(self, "pi_ch_angle")
 
                 with ui.expansion("N-H...π", icon="link").classes("w-full"):
-                    ui.number("Distance (Å)", value=self.pi_nh_distance, min=2.0, max=6.0, step=0.1).bind_value(self, "pi_nh_distance")
-                    ui.number("Angle (°)", value=self.pi_nh_angle, min=0, max=180, step=1).bind_value(self, "pi_nh_angle")
+                    ui.number(
+                        "Distance (Å)",
+                        value=self.pi_nh_distance,
+                        min=2.0,
+                        max=6.0,
+                        step=0.1,
+                    ).bind_value(self, "pi_nh_distance")
+                    ui.number(
+                        "Angle (°)", value=self.pi_nh_angle, min=0, max=180, step=1
+                    ).bind_value(self, "pi_nh_angle")
 
                 with ui.expansion("O-H...π", icon="link").classes("w-full"):
-                    ui.number("Distance (Å)", value=self.pi_oh_distance, min=2.0, max=6.0, step=0.1).bind_value(self, "pi_oh_distance")
-                    ui.number("Angle (°)", value=self.pi_oh_angle, min=0, max=180, step=1).bind_value(self, "pi_oh_angle")
+                    ui.number(
+                        "Distance (Å)",
+                        value=self.pi_oh_distance,
+                        min=2.0,
+                        max=6.0,
+                        step=0.1,
+                    ).bind_value(self, "pi_oh_distance")
+                    ui.number(
+                        "Angle (°)", value=self.pi_oh_angle, min=0, max=180, step=1
+                    ).bind_value(self, "pi_oh_angle")
 
                 with ui.expansion("S-H...π", icon="link").classes("w-full"):
-                    ui.number("Distance (Å)", value=self.pi_sh_distance, min=2.0, max=6.0, step=0.1).bind_value(self, "pi_sh_distance")
-                    ui.number("Angle (°)", value=self.pi_sh_angle, min=0, max=180, step=1).bind_value(self, "pi_sh_angle")
+                    ui.number(
+                        "Distance (Å)",
+                        value=self.pi_sh_distance,
+                        min=2.0,
+                        max=6.0,
+                        step=0.1,
+                    ).bind_value(self, "pi_sh_distance")
+                    ui.number(
+                        "Angle (°)", value=self.pi_sh_angle, min=0, max=180, step=1
+                    ).bind_value(self, "pi_sh_angle")
 
         self.param_drawer.show()
 
@@ -380,7 +506,9 @@ class ParameterPanel:
         with self.drawer_content:
             with ui.row().classes("w-full justify-between items-center q-mb-md"):
                 ui.label("π-π Stacking Parameters").classes("text-h6")
-                ui.button("Save", icon="save", on_click=lambda: self._save_and_close()).props("color=primary")
+                ui.button(
+                    "Save", icon="save", on_click=lambda: self._save_and_close()
+                ).props("color=primary")
 
             ui.separator()
 
@@ -439,7 +567,9 @@ class ParameterPanel:
         with self.drawer_content:
             with ui.row().classes("w-full justify-between items-center q-mb-md"):
                 ui.label("Carbonyl n→π* Parameters").classes("text-h6")
-                ui.button("Save", icon="save", on_click=lambda: self._save_and_close()).props("color=primary")
+                ui.button(
+                    "Save", icon="save", on_click=lambda: self._save_and_close()
+                ).props("color=primary")
 
             ui.separator()
 
@@ -480,7 +610,9 @@ class ParameterPanel:
         with self.drawer_content:
             with ui.row().classes("w-full justify-between items-center q-mb-md"):
                 ui.label("n→π* Interaction Parameters").classes("text-h6")
-                ui.button("Save", icon="save", on_click=lambda: self._save_and_close()).props("color=primary")
+                ui.button(
+                    "Save", icon="save", on_click=lambda: self._save_and_close()
+                ).props("color=primary")
 
             ui.separator()
 
@@ -530,16 +662,22 @@ class ParameterPanel:
         with self.drawer_content:
             with ui.row().classes("w-full justify-between items-center q-mb-md"):
                 ui.label("General Parameters").classes("text-h6")
-                ui.button("Save", icon="save", on_click=lambda: self._save_and_close()).props("color=primary")
+                ui.button(
+                    "Save", icon="save", on_click=lambda: self._save_and_close()
+                ).props("color=primary")
 
             ui.separator()
 
             with ui.column().classes("w-full q-mt-md gap-4"):
                 ui.select(
-                    options=["complete", "hydrogen_bonds_only", "quick"],
+                    options=["complete", "local"],
                     label="Analysis Mode",
                     value=self.analysis_mode,
-                ).bind_value(self, "analysis_mode")
+                    with_input=True,
+                ).bind_value(self, "analysis_mode").tooltip(
+                    "complete: Include all interactions (including intra-residue); "
+                    "local: Exclude intra-residue interactions"
+                )
 
                 ui.number(
                     label="Covalent Cutoff Factor",

@@ -8,7 +8,7 @@ for molecular structure validation and bond detection in HBAT.
 Generated automatically from CCD BinaryCIF files.
 """
 
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 
 # Bond information for standard residues
 RESIDUE_BONDS: Dict[str, Dict] = {

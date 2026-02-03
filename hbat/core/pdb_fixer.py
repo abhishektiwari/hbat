@@ -771,7 +771,7 @@ class PDBFixer:
         :param pdb_path: Path to PDB file to fix
         :type pdb_path: str
         """
-        with open(pdb_path, 'r') as f:
+        with open(pdb_path, "r") as f:
             lines = f.readlines()
 
         # Find the last ATOM or HETATM record before CONECT
@@ -780,16 +780,16 @@ class PDBFixer:
         last_serial = None
 
         for i, line in enumerate(lines):
-            if line.startswith('ATOM') or line.startswith('HETATM'):
+            if line.startswith("ATOM") or line.startswith("HETATM"):
                 last_coord_idx = i
-                last_chain = line[21:22] if len(line) > 21 else ''
+                last_chain = line[21:22] if len(line) > 21 else ""
                 # Get serial number from previous record for TER
                 if len(line) > 26:
                     try:
                         last_serial = int(line[6:11].strip())
                     except ValueError:
                         pass
-            elif line.startswith('CONECT'):
+            elif line.startswith("CONECT"):
                 break
 
         # Insert TER record after last coordinate record
@@ -798,7 +798,7 @@ class PDBFixer:
             lines.insert(last_coord_idx + 1, ter_line)
 
             # Write back
-            with open(pdb_path, 'w') as f:
+            with open(pdb_path, "w") as f:
                 f.writelines(lines)
 
     def get_missing_hydrogen_info(self, atoms: List[Atom]) -> Dict[str, Any]:

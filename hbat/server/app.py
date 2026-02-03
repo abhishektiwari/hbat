@@ -6,25 +6,35 @@ with integrated 3D visualization using py3Dmol.
 """
 
 import asyncio
-from datetime import datetime
 import os
-import tempfile
 import zipfile
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from nicegui import app, context, ui
+from nicegui import app, ui
 
-from ..constants import APP_NAME
-from ..core.analysis import AnalysisParameters, NPMolecularInteractionAnalyzer
-from ..export import export_to_csv_files, export_to_json_single_file, export_to_txt_single_file
+from ..core.analysis import NPMolecularInteractionAnalyzer
+from ..export import (
+    export_to_csv_files,
+    export_to_json_single_file,
+    export_to_txt_single_file,
+)
 from .components.parameter_panel import ParameterPanel
 from .components.results_panel import WebResultsPanel
 from .components.upload_panel import UploadPanel
+from .session import SessionManager
 
-# Uploads directory
+# Base uploads directory (can be mounted as Docker volume)
 UPLOADS_DIR = Path("uploads")
 UPLOADS_DIR.mkdir(exist_ok=True)
+
+# Sessions directory inside uploads for easy Docker volume management
+SESSIONS_BASE_DIR = UPLOADS_DIR / "sessions"
+SESSIONS_BASE_DIR.mkdir(exist_ok=True)
+
+# Global session manager
+session_manager = SessionManager(SESSIONS_BASE_DIR, session_timeout_hours=24)
 
 
 class HBATWebApp:
@@ -37,6 +47,10 @@ class HBATWebApp:
         self.current_file_path: Optional[Path] = None
         self.analysis_running = False
         self.pdb_content: Optional[str] = None
+
+        # Session management
+        self.session_id: Optional[str] = None
+        self.session_dir: Optional[Path] = None
 
         # UI components
         self.upload_panel: Optional[UploadPanel] = None
@@ -57,19 +71,27 @@ class HBATWebApp:
 
     def _show_citation_dialog(self):
         """Show citation dialog."""
-        with ui.dialog().props("persistent") as dialog, ui.card().style("width: 700px; max-width: 90vw;"):
+        with (
+            ui.dialog().props("persistent") as dialog,
+            ui.card().style("width: 700px; max-width: 90vw;"),
+        ):
             with ui.card_actions().classes("justify-end"):
                 ui.button("Close", on_click=dialog.close).props("color=primary")
 
             with ui.card_section():
                 ui.label("Citation").classes("text-h6 q-mb-md")
-                ui.label("If you use HBAT in your research, please cite:").classes("text-body2 q-mb-md")
+                ui.label("If you use HBAT in your research, please cite:").classes(
+                    "text-body2 q-mb-md"
+                )
 
                 # HBAT 2 citation
-                ui.label("Tiwari, A. (2025). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. Zenodo. https://doi.org/10.5281/zenodo.17645321").classes("text-body2 q-mb-sm")
+                ui.label(
+                    "Tiwari, A. (2025). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. Zenodo. https://doi.org/10.5281/zenodo.17645321"
+                ).classes("text-body2 q-mb-sm")
 
                 with ui.expansion("BibTeX", icon="code").classes("w-full q-mb-md"):
-                    ui.markdown("""
+                    ui.markdown(
+                        """
 ```bibtex
 @misc{tiwari_2025_17645321,
    author    = {Tiwari, Abhishek},
@@ -81,13 +103,17 @@ class HBATWebApp:
    url       = {https://doi.org/10.5281/zenodo.17645321},
 }
 ```
-                    """)
+                    """
+                    )
 
                 # Original HBAT citation
-                ui.label("Tiwari, A., & Panigrahi, S. K. (2007). HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures. In Silico Biology, 7(6). https://doi.org/10.3233/ISI-2007-00337").classes("text-body2 q-mb-sm")
+                ui.label(
+                    "Tiwari, A., & Panigrahi, S. K. (2007). HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures. In Silico Biology, 7(6). https://doi.org/10.3233/ISI-2007-00337"
+                ).classes("text-body2 q-mb-sm")
 
                 with ui.expansion("BibTeX", icon="code").classes("w-full"):
-                    ui.markdown("""
+                    ui.markdown(
+                        """
 ```bibtex
 @article{tiwari2007hbat,
    author  = {Tiwari, Abhishek and Panigrahi, Sunil Kumar},
@@ -100,7 +126,8 @@ class HBATWebApp:
    year    = {2007}
 }
 ```
-                    """)
+                    """
+                    )
 
         dialog.open()
 
@@ -108,14 +135,22 @@ class HBATWebApp:
         """Create the main user interface."""
         # Header with menu button
         with ui.header().classes("items-center"):
-            ui.button(icon="menu", on_click=lambda: left_drawer.toggle()).props("flat color=white")
+            ui.button(icon="menu", on_click=lambda: left_drawer.toggle()).props(
+                "flat color=white"
+            )
             ui.image("/static/hbat.svg").classes("w-10 h-10 q-ml-md")
-            ui.label(f"HBAT 2 - Web Server").classes("text-h5 q-ml-sm")
+            ui.label("HBAT 2 - Web Server").classes("text-h5 q-ml-sm")
             ui.space()
-            ui.button("Cite", icon="format_quote", on_click=self._show_citation_dialog).props("flat color=yellow")
-            with ui.link(target="http://hbat.abhishek-tiwari.com", new_tab=True).classes("text-white no-underline"):
+            ui.button(
+                "Cite", icon="format_quote", on_click=self._show_citation_dialog
+            ).props("flat color=yellow")
+            with ui.link(
+                target="http://hbat.abhishek-tiwari.com", new_tab=True
+            ).classes("text-white no-underline"):
                 ui.button("Docs", icon="description").props("flat color=white")
-            with ui.link(target="https://github.com/abhishektiwari/hbat", new_tab=True).classes("text-white no-underline"):
+            with ui.link(
+                target="https://github.com/abhishektiwari/hbat", new_tab=True
+            ).classes("text-white no-underline"):
                 ui.button("GitHub", icon="code").props("flat color=white")
 
         # Left drawer (set fixed=True to prevent JavaScript state queries during heavy operations)
@@ -126,42 +161,66 @@ class HBATWebApp:
 
                 with ui.list().props("dense"):
                     # Step 1: Always enabled
-                    with ui.item().props("clickable").on("click", lambda: self.stepper.set_value("upload")):
+                    with (
+                        ui.item()
+                        .props("clickable")
+                        .on("click", lambda: self.stepper.set_value("upload"))
+                    ):
                         with ui.item_section().props("avatar"):
                             ui.icon("upload_file", color="primary")
                         with ui.item_section():
                             ui.item_label("Step 1: Upload PDB")
-                            ui.item_label("Upload or download PDB file").props("caption")
+                            ui.item_label("Upload or download PDB file").props(
+                                "caption"
+                            )
 
                     # Step 2: Enabled when file is uploaded
-                    self.nav_configure = ui.item().props("clickable").on("click", lambda: self._navigate_to_step("configure"))
+                    self.nav_configure = (
+                        ui.item()
+                        .props("clickable")
+                        .on("click", lambda: self._navigate_to_step("configure"))
+                    )
                     with self.nav_configure:
                         with ui.item_section().props("avatar"):
                             ui.icon("settings", color="primary")
                         with ui.item_section():
                             ui.item_label("Step 2: Configure")
                             ui.item_label("Set analysis parameters").props("caption")
-                    self.nav_configure.bind_enabled_from(self, "current_file", lambda x: x is not None)
+                    self.nav_configure.bind_enabled_from(
+                        self, "current_file", lambda x: x is not None
+                    )
 
                     # Step 3: Enabled when analysis is complete
-                    self.nav_results = ui.item().props("clickable").on("click", lambda: self._navigate_to_step("results"))
+                    self.nav_results = (
+                        ui.item()
+                        .props("clickable")
+                        .on("click", lambda: self._navigate_to_step("results"))
+                    )
                     with self.nav_results:
                         with ui.item_section().props("avatar"):
                             ui.icon("analytics", color="primary")
                         with ui.item_section():
                             ui.item_label("Step 3: Results")
                             ui.item_label("View analysis results").props("caption")
-                    self.nav_results.bind_enabled_from(self, "analyzer", lambda x: x is not None)
+                    self.nav_results.bind_enabled_from(
+                        self, "analyzer", lambda x: x is not None
+                    )
 
                     # Step 4: Enabled when analysis is complete
-                    self.nav_export = ui.item().props("clickable").on("click", lambda: self._navigate_to_step("export"))
+                    self.nav_export = (
+                        ui.item()
+                        .props("clickable")
+                        .on("click", lambda: self._navigate_to_step("export"))
+                    )
                     with self.nav_export:
                         with ui.item_section().props("avatar"):
                             ui.icon("download", color="primary")
                         with ui.item_section():
                             ui.item_label("Step 4: Export")
                             ui.item_label("Download results").props("caption")
-                    self.nav_export.bind_enabled_from(self, "analyzer", lambda x: x is not None)
+                    self.nav_export.bind_enabled_from(
+                        self, "analyzer", lambda x: x is not None
+                    )
 
                 ui.separator()
 
@@ -172,9 +231,15 @@ class HBATWebApp:
                             ui.icon("refresh", color="warning")
                         with ui.item_section():
                             ui.item_label("Start Over")
-                            ui.item_label("Reset all analysis and settings").props("caption")
+                            ui.item_label("Reset all analysis and settings").props(
+                                "caption"
+                            )
 
-                    with ui.item().props("clickable").on("click", self._show_citation_dialog):
+                    with (
+                        ui.item()
+                        .props("clickable")
+                        .on("click", self._show_citation_dialog)
+                    ):
                         with ui.item_section().props("avatar"):
                             ui.icon("format_quote", color="grey")
                         with ui.item_section():
@@ -183,14 +248,15 @@ class HBATWebApp:
         # Footer
         with ui.footer(fixed=False).classes("items-center"):
             with ui.row().classes("w-full items-center justify-between q-px-md"):
-                ui.label(f"© {datetime.now().year} Abhishek Tiwari ").classes("text-caption")
+                ui.label(f"© {datetime.now().year} Abhishek Tiwari ").classes(
+                    "text-caption"
+                )
 
         # Right drawer for parameter editing
         with ui.right_drawer(fixed=False).props("bordered width=400") as param_drawer:
             param_drawer.hide()
             with ui.scroll_area().classes("w-full h-full"):
                 param_drawer_content = ui.column().classes("w-full q-pa-md")
-
 
         # Main content area with stepper
         with ui.column().classes("w-full q-pa-md"):
@@ -201,15 +267,19 @@ class HBATWebApp:
                     self.upload_panel.create_ui()
 
                     with ui.stepper_navigation():
-                        ui.button("Next", icon="arrow_forward", on_click=self._handle_upload_next).props(
-                            "primary"
-                        )
+                        ui.button(
+                            "Next",
+                            icon="arrow_forward",
+                            on_click=self._handle_upload_next,
+                        ).props("primary")
 
                 # Step 2: Configure Parameters and Run Analysis
                 with ui.step(
                     "configure", title="Configure Parameters & Run", icon="settings"
                 ):
-                    self.parameter_panel = ParameterPanel(param_drawer, param_drawer_content)
+                    self.parameter_panel = ParameterPanel(
+                        param_drawer, param_drawer_content
+                    )
                     self.parameter_panel.create_ui()
 
                     ui.separator().classes("q-my-md")
@@ -220,35 +290,50 @@ class HBATWebApp:
                             on_click=self._run_analysis,
                             icon="play_arrow",
                         ).props("color=primary size=lg")
-                        self.analyze_button.bind_enabled_from(self, "current_file", lambda x: x is not None)
-                        self.status_label = ui.label("Ready").classes("text-caption q-mt-sm text-grey")
+                        self.analyze_button.bind_enabled_from(
+                            self, "current_file", lambda x: x is not None
+                        )
+                        self.status_label = ui.label("Ready").classes(
+                            "text-caption q-mt-sm text-grey"
+                        )
 
                     with ui.stepper_navigation():
-                        ui.button("Back", icon="arrow_back", on_click=lambda: self.stepper.previous()).props(
-                            "primary"
+                        ui.button(
+                            "Back",
+                            icon="arrow_back",
+                            on_click=lambda: self.stepper.previous(),
+                        ).props("primary")
+                        ui.button(
+                            "Next",
+                            icon="arrow_forward",
+                            on_click=lambda: self.stepper.next(),
+                        ).props("primary").bind_enabled_from(
+                            self, "analyzer", lambda x: x is not None
                         )
-                        ui.button("Next", icon="arrow_forward", on_click=lambda: self.stepper.next()).props(
-                            "primary"
-                        ).bind_enabled_from(self, "analyzer", lambda x: x is not None)
 
                 # Step 3: View Results
                 with ui.step("results", title="View Results", icon="analytics"):
-
                     # Container for dynamically created results
                     results_container = ui.column().classes("w-full")
-                    self.results_panel = WebResultsPanel(results_container)
+                    self.results_panel = WebResultsPanel(
+                        results_container,
+                        session_dir_callback=lambda: self.session_dir
+                    )
 
                     with ui.stepper_navigation():
-                        ui.button("Back", icon="arrow_back", on_click=lambda: self.stepper.previous()).props(
-                            "primary"
-                        )
-                        ui.button("Next", icon="arrow_forward", on_click=lambda: self.stepper.next()).props(
-                            "primary"
-                        )
+                        ui.button(
+                            "Back",
+                            icon="arrow_back",
+                            on_click=lambda: self.stepper.previous(),
+                        ).props("primary")
+                        ui.button(
+                            "Next",
+                            icon="arrow_forward",
+                            on_click=lambda: self.stepper.next(),
+                        ).props("primary")
 
                 # Step 4: Export Results
                 with ui.step("export", title="Export Results", icon="download"):
-
                     with ui.card().classes("w-full q-pa-md mt-5"):
                         ui.label("Choose export format:").classes("text-h6 q-mb-md")
 
@@ -268,42 +353,69 @@ class HBATWebApp:
                                 icon="description",
                                 on_click=self._export_txt,
                             ).props("color=primary")
+                            ui.button(
+                                "Download Fixed PDB",
+                                icon="science",
+                                on_click=self._export_fixed_pdb,
+                            ).props("color=primary")
 
                     with ui.stepper_navigation():
-                        ui.button("Back", icon="arrow_back", on_click=lambda: self.stepper.previous()).props(
-                            "primary"
-                        )
+                        ui.button(
+                            "Back",
+                            icon="arrow_back",
+                            on_click=lambda: self.stepper.previous(),
+                        ).props("primary")
                         ui.button(
                             "Start Over", icon="refresh", on_click=self._start_over
                         ).props("flat color=primary")
 
             # Info card below stepper (responsive: stacks on mobile, horizontal on desktop)
             with ui.card().classes("w-full q-mt-md q-pa-md"):
-                with ui.row().classes("w-full gap-4 flex-wrap items-center md:flex-nowrap md:items-start"):
+                with ui.row().classes(
+                    "w-full gap-4 flex-wrap items-center md:flex-nowrap md:items-start"
+                ):
                     # Image section - 100% width on mobile, fixed size on desktop
                     with ui.column().classes("w-full md:w-auto flex-shrink-0"):
-                        ui.image("https://static.abhishek-tiwari.com/hbat/B_3WH_501_to_B_MET_146_xbond.png").classes(
-                            "w-full md:w-48 md:h-48 rounded"
-                        )
+                        ui.image(
+                            "https://static.abhishek-tiwari.com/hbat/B_3WH_501_to_B_MET_146_xbond.png"
+                        ).classes("w-full md:w-48 md:h-48 rounded")
 
                     # Text section - full width on mobile, flexible on desktop
-                    with ui.column().classes("w-full md:flex-1 items-center md:items-start"):
-                        ui.label("HBAT 2: Analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures").classes(
-                            "text-h6 q-mb-sm text-center md:text-left"
-                        )
-                        ui.label("HBAT 2 is open-source software licensed under MIT. HBAT 2 provides multiple interfaces including web server, desktop GUI, command-line (CLI), and ready-to-use Jupyter/Colab notebooks. The web server version is freely accessible to all users, including for commercial use.").classes(
-                            "text-body2 text-grey-7 text-center md:text-left"
-                        )
-                        with ui.row().classes("gap-2 q-mt-sm flex-wrap justify-center md:justify-start"):
-                            ui.button("Cite", icon="format_quote", on_click=self._show_citation_dialog).props("flat color=primary")
-                            with ui.link(target="http://hbat.abhishek-tiwari.com", new_tab=True).classes("no-underline"):
-                                ui.button("Docs", icon="open_in_new").props("flat color=primary")
-                            with ui.link(target="https://github.com/abhishektiwari/hbat", new_tab=True).classes("no-underline"):
-                                ui.button("GitHub", icon="code").props("flat color=primary")
+                    with ui.column().classes(
+                        "w-full md:flex-1 items-center md:items-start"
+                    ):
+                        ui.label(
+                            "HBAT 2: Analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures"
+                        ).classes("text-h6 q-mb-sm text-center md:text-left")
+                        ui.label(
+                            "HBAT 2 is open-source software licensed under MIT. HBAT 2 provides multiple interfaces including web server, desktop GUI, command-line (CLI), and ready-to-use Jupyter/Colab notebooks. The web server version is freely accessible to all users, including for commercial use."
+                        ).classes("text-body2 text-grey-7 text-center md:text-left")
+                        with ui.row().classes(
+                            "gap-2 q-mt-sm flex-wrap justify-center md:justify-start"
+                        ):
+                            ui.button(
+                                "Cite",
+                                icon="format_quote",
+                                on_click=self._show_citation_dialog,
+                            ).props("flat color=primary")
+                            with ui.link(
+                                target="http://hbat.abhishek-tiwari.com", new_tab=True
+                            ).classes("no-underline"):
+                                ui.button("Docs", icon="open_in_new").props(
+                                    "flat color=primary"
+                                )
+                            with ui.link(
+                                target="https://github.com/abhishektiwari/hbat",
+                                new_tab=True,
+                            ).classes("no-underline"):
+                                ui.button("GitHub", icon="code").props(
+                                    "flat color=primary"
+                                )
 
             # Badges card below info card
             with ui.card().classes("w-full q-mt-md q-pa-md"):
-                ui.html("""
+                ui.html(
+                    """
                     <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px;">
                         <a href="https://github.com/abhishektiwari/hbat/releases" target="_blank">
                             <img src="https://img.shields.io/github/v/release/abhishektiwari/hbat" alt="GitHub Release">
@@ -344,7 +456,9 @@ class HBATWebApp:
                     <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px;">
                         <span class="__dimensions_badge_embed__" data-doi="10.3233/isi-2007-00337" data-legend="always" data-style="small_circle"></span>
                     </div>
-                """, sanitize=False)
+                """,
+                    sanitize=False,
+                )
 
     async def _handle_upload_next(self):
         """Handle Next button in upload step - download PDB if ID provided."""
@@ -362,18 +476,25 @@ class HBATWebApp:
                 ui.notify(
                     "Please upload a PDB file or enter a PDB ID to download",
                     type="warning",
-                    position="top-left"
+                    position="top-left",
                 )
         else:
             self.stepper.next()
 
     def _on_file_upload(self, filename: str, content: bytes):
-        """Handle file upload and save to uploads directory."""
+        """Handle file upload and save to session directory."""
         self.current_file = filename
         self.pdb_content = content.decode("utf-8")
 
-        # Save file to uploads directory
-        self.current_file_path = UPLOADS_DIR / filename
+        # Create a new session if one doesn't exist
+        if not self.session_id:
+            self.session_id = session_manager.create_session()
+            self.session_dir = session_manager.get_session_dir(self.session_id)
+
+        # Save file to session directory
+        self.current_file_path = session_manager.get_session_file_path(
+            self.session_id, filename
+        )
         with open(self.current_file_path, "w") as f:
             f.write(self.pdb_content)
 
@@ -388,7 +509,9 @@ class HBATWebApp:
             return
 
         if not self.current_file_path or not self.current_file_path.exists():
-            ui.notify("Please upload a PDB file first", type="warning", position="top-left")
+            ui.notify(
+                "Please upload a PDB file first", type="warning", position="top-left"
+            )
             return
 
         self.analysis_running = True
@@ -410,7 +533,9 @@ class HBATWebApp:
             )
 
             if success:
-                self.status_label.text = f"Analysis completed! File: uploads/{self.current_file}"
+                self.status_label.text = (
+                    f"Analysis completed! File: {self.current_file}"
+                )
                 self.status_label.classes(replace="text-caption q-mt-sm text-positive")
                 ui.notify("Analysis completed!", type="positive", position="top-left")
 
@@ -418,13 +543,17 @@ class HBATWebApp:
                 # If PDBFixer was used, we need the fixed file because it reorganizes chains
                 # OpenBabel preserves original chain structure, so use original file
                 pdb_content_for_viz = self.pdb_content
-                if hasattr(self.analyzer, '_pdb_fixing_info') and self.analyzer._pdb_fixing_info.get('applied'):
-                    method = self.analyzer._pdb_fixing_info.get('method', '')
+                if hasattr(
+                    self.analyzer, "_pdb_fixing_info"
+                ) and self.analyzer._pdb_fixing_info.get("applied"):
+                    method = self.analyzer._pdb_fixing_info.get("method", "")
                     # Only use fixed file for PDBFixer (which reorganizes chains)
-                    if method == 'pdbfixer':
-                        fixed_file_path = self.analyzer._pdb_fixing_info.get('fixed_file_path')
+                    if method == "pdbfixer":
+                        fixed_file_path = self.analyzer._pdb_fixing_info.get(
+                            "fixed_file_path"
+                        )
                         if fixed_file_path and os.path.exists(fixed_file_path):
-                            with open(fixed_file_path, 'r') as f:
+                            with open(fixed_file_path, "r") as f:
                                 pdb_content_for_viz = f.read()
 
                 # Update results display
@@ -437,7 +566,11 @@ class HBATWebApp:
             else:
                 self.status_label.text = "Analysis failed"
                 self.status_label.classes(replace="text-caption q-mt-sm text-negative")
-                ui.notify("Analysis failed. Please check the PDB file.", type="negative", position="top-left")
+                ui.notify(
+                    "Analysis failed. Please check the PDB file.",
+                    type="negative",
+                    position="top-left",
+                )
 
         except Exception as e:
             self.status_label.text = f"Error: {str(e)}"
@@ -451,58 +584,149 @@ class HBATWebApp:
     def _export_json(self):
         """Export results as JSON."""
         if not self.analyzer:
-            ui.notify("No analysis results to export", type="warning", position="top-left")
+            ui.notify(
+                "No analysis results to export", type="warning", position="top-left"
+            )
             return
 
         base_name = Path(self.current_file).stem
-        output_file = UPLOADS_DIR / f"{base_name}_results.json"
+        output_file = session_manager.get_session_file_path(
+            self.session_id, f"{base_name}_results.json"
+        )
         export_to_json_single_file(
             self.analyzer, str(output_file), input_file=self.current_file
         )
         ui.download(str(output_file))
-        ui.notify(f"Exported to {output_file.name}", type="positive", position="top-left")
+        ui.notify(
+            f"Exported to {output_file.name}", type="positive", position="top-left"
+        )
 
     def _export_csv(self):
-        """Export results as CSV (creates a zip file with all CSV files)."""
+        """Export results as CSV (creates a zip file with all CSV files and fixed PDB)."""
         if not self.analyzer:
-            ui.notify("No analysis results to export", type="warning", position="top-left")
+            ui.notify(
+                "No analysis results to export", type="warning", position="top-left"
+            )
             return
 
         # Remove extension from current_file to get base name
         base_name = Path(self.current_file).stem
-        base_filename = UPLOADS_DIR / base_name
+        base_filename = self.session_dir / base_name
         export_to_csv_files(self.analyzer, str(base_filename))
 
         # Get all generated CSV files
-        csv_files = list(UPLOADS_DIR.glob(f"{base_name}_*.csv"))
+        csv_files = list(self.session_dir.glob(f"{base_name}_*.csv"))
+
+        # Check for fixed PDB file
+        fixed_pdb_path = None
+        if hasattr(
+            self.analyzer, "_pdb_fixing_info"
+        ) and self.analyzer._pdb_fixing_info.get("applied"):
+            fixed_file_path = self.analyzer._pdb_fixing_info.get("fixed_file_path")
+            if fixed_file_path and os.path.exists(fixed_file_path):
+                # Copy fixed PDB to session directory
+                method = self.analyzer._pdb_fixing_info.get("method", "unknown")
+                fixed_pdb_path = self.session_dir / f"{base_name}_fixed_{method}.pdb"
+                with open(fixed_file_path, "r") as src:
+                    with open(fixed_pdb_path, "w") as dst:
+                        dst.write(src.read())
+
         if csv_files:
-            # Create a zip file containing all CSV files
-            zip_path = UPLOADS_DIR / f"{base_name}_csv_export.zip"
-            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Create a zip file containing all CSV files and fixed PDB (if available)
+            zip_path = self.session_dir / f"{base_name}_csv_export.zip"
+            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
                 for csv_file in csv_files:
                     zipf.write(csv_file, csv_file.name)
 
+                # Add fixed PDB file if available
+                if fixed_pdb_path and fixed_pdb_path.exists():
+                    zipf.write(fixed_pdb_path, fixed_pdb_path.name)
+
             # Download the zip file
             ui.download(str(zip_path))
-            ui.notify(f"Exported {len(csv_files)} CSV file(s) as ZIP", type="positive", position="top-left")
+
+            # Build notification message
+            files_count = len(csv_files)
+            if fixed_pdb_path and fixed_pdb_path.exists():
+                files_count += 1
+                ui.notify(
+                    f"Exported {len(csv_files)} CSV file(s) + fixed PDB as ZIP",
+                    type="positive",
+                    position="top-left",
+                )
+            else:
+                ui.notify(
+                    f"Exported {len(csv_files)} CSV file(s) as ZIP",
+                    type="positive",
+                    position="top-left",
+                )
 
             # Clean up individual CSV files (optional - keep them for now)
             # for csv_file in csv_files:
             #     csv_file.unlink()
         else:
-            ui.notify("No CSV files were generated", type="warning", position="top-left")
+            ui.notify(
+                "No CSV files were generated", type="warning", position="top-left"
+            )
 
     def _export_txt(self):
         """Export results as TXT."""
         if not self.analyzer:
-            ui.notify("No analysis results to export", type="warning", position="top-left")
+            ui.notify(
+                "No analysis results to export", type="warning", position="top-left"
+            )
             return
 
         base_name = Path(self.current_file).stem
-        output_file = UPLOADS_DIR / f"{base_name}_results.txt"
+        output_file = session_manager.get_session_file_path(
+            self.session_id, f"{base_name}_results.txt"
+        )
         export_to_txt_single_file(self.analyzer, str(output_file))
         ui.download(str(output_file))
-        ui.notify(f"Exported to {output_file.name}", type="positive", position="top-left")
+        ui.notify(
+            f"Exported to {output_file.name}", type="positive", position="top-left"
+        )
+
+    def _export_fixed_pdb(self):
+        """Export the fixed PDB file (with added hydrogens)."""
+        if not self.analyzer:
+            ui.notify(
+                "No analysis results to export", type="warning", position="top-left"
+            )
+            return
+
+        # Check if PDB fixing was applied
+        if not hasattr(
+            self.analyzer, "_pdb_fixing_info"
+        ) or not self.analyzer._pdb_fixing_info.get("applied"):
+            ui.notify(
+                "No PDB fixing was applied during analysis",
+                type="warning",
+                position="top-left",
+            )
+            return
+
+        fixed_file_path = self.analyzer._pdb_fixing_info.get("fixed_file_path")
+        if not fixed_file_path or not os.path.exists(fixed_file_path):
+            ui.notify("Fixed PDB file not found", type="warning", position="top-left")
+            return
+
+        # Copy to session directory with a clear name
+        base_name = Path(self.current_file).stem
+        method = self.analyzer._pdb_fixing_info.get("method", "unknown")
+        output_file = session_manager.get_session_file_path(
+            self.session_id, f"{base_name}_fixed_{method}.pdb"
+        )
+
+        # Copy the fixed file
+        with open(fixed_file_path, "r") as src:
+            with open(output_file, "w") as dst:
+                dst.write(src.read())
+
+        ui.download(str(output_file))
+        ui.notify(
+            f"Downloaded fixed PDB ({method})", type="positive", position="top-left"
+        )
 
     def _navigate_to_step(self, step: str):
         """Navigate to a specific step with validation.
@@ -512,7 +736,9 @@ class HBATWebApp:
         """
         # Validate navigation based on step requirements
         if step == "configure" and self.current_file is None:
-            ui.notify("Please upload a PDB file first", type="warning", position="top-left")
+            ui.notify(
+                "Please upload a PDB file first", type="warning", position="top-left"
+            )
             return
 
         if step in ("results", "export") and self.analyzer is None:
@@ -525,12 +751,18 @@ class HBATWebApp:
 
     def _start_over(self):
         """Reset the application to initial state."""
+        # Clean up old session if it exists
+        if self.session_id:
+            session_manager.delete_session(self.session_id)
+
         # Reset analyzer and file state
         self.analyzer = None
         self.current_file = None
         self.current_file_path = None
         self.analysis_running = False
         self.pdb_content = None
+        self.session_id = None
+        self.session_dir = None
 
         # Reset all panels
         if self.upload_panel:
@@ -552,7 +784,9 @@ class HBATWebApp:
         if self.stepper:
             self.stepper.set_value("upload")
 
-        ui.notify("Application reset to initial state", type="positive", position="top-left")
+        ui.notify(
+            "Application reset to initial state", type="positive", position="top-left"
+        )
 
 
 def create_app():
@@ -560,6 +794,23 @@ def create_app():
 
     :returns: None
     """
+    # Cleanup expired sessions on startup
+    cleaned = session_manager.cleanup_expired_sessions()
+    if cleaned > 0:
+        print(f"Cleaned up {cleaned} expired session(s) on startup")
+
+    # Schedule periodic cleanup (every 6 hours)
+    async def periodic_cleanup():
+        """Periodically clean up expired sessions."""
+        while True:
+            await asyncio.sleep(6 * 3600)  # 6 hours
+            cleaned = session_manager.cleanup_expired_sessions()
+            if cleaned > 0:
+                print(f"Periodic cleanup: removed {cleaned} expired session(s)")
+
+    # Start background cleanup task
+    app.on_startup(lambda: asyncio.create_task(periodic_cleanup()))
+
     # Configure static files BEFORE page routes
     static_dir = Path(__file__).parent / "static"
     if static_dir.exists():
@@ -570,21 +821,24 @@ def create_app():
         """Main page route."""
         # Configure Quasar color theme
         ui.colors(
-            primary='#20c997',
-            secondary='#6c757d',
-            accent='#9C27B0',
-            dark='#1d1d1d',
-            positive='#198754',
-            negative='#C10015',
-            info='#31CCEC',
-            warning='#ffc107'
+            primary="#20c997",
+            secondary="#6c757d",
+            accent="#9C27B0",
+            dark="#1d1d1d",
+            positive="#198754",
+            negative="#C10015",
+            info="#31CCEC",
+            warning="#ffc107",
         )
 
         # Load 3Dmol library for this page
-        ui.add_head_html('<script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>')
+        ui.add_head_html(
+            '<script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>'
+        )
 
         # Add meta tags for SEO and social sharing
-        ui.add_head_html('''
+        ui.add_head_html(
+            """
             <meta name="description" content="HBAT 2 (Hydrogen Bond Analysis Tool 2) for analyzing molecular interactions including hydrogen bonds, halogen bonds, π interactions, and cooperativity chains in protein structures">
             <meta name="keywords" content="hydrogen bond analysis, hydrogen bond calculator, protein-ligand interactions, molecular interactions, protein structure, halogen bonds, pi interactions, cooperativity chains, structural biology, bioinformatics, PDB analysis">
             <meta name="author" content="Abhishek Tiwari">
@@ -640,7 +894,8 @@ def create_app():
                 }
             </style>
             <script async src="https://badge.dimensions.ai/badge.js" charset="utf-8"></script>
-        ''')
+        """
+        )
 
         hbat_app = HBATWebApp()
         hbat_app.create_ui()
@@ -655,7 +910,7 @@ def create_app():
     favicon_path = static_dir / "favicon.ico" if static_dir.exists() else None
 
     ui.run(
-        title=f"HBAT 2 - Web Server",
+        title="HBAT 2 - Web Server",
         favicon=str(favicon_path) if favicon_path else "🧬",
         dark=False,
         reload=not is_production,  # Enable auto-reload in development mode

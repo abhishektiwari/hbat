@@ -50,3 +50,6 @@ pyinstaller>=5.0.0
 
 # psutil for system monitoring
 psutil>=7.0.0
+
+# Ruff for linting
+ruff>=0.0.241

@@ -9,11 +9,9 @@ import json
 import os
 import tkinter as tk
 from datetime import datetime
-from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
 
-from ..constants.parameters import ParametersDefault
 from ..core.analysis import AnalysisParameters
 
 
@@ -333,7 +331,7 @@ class PresetManagerDialog:
                                     created.replace("Z", "+00:00")
                                 )
                                 formatted_date = date_obj.strftime("%Y-%m-%d %H:%M")
-                            except:
+                            except Exception:
                                 formatted_date = created
                         else:
                             # Use file modification time
