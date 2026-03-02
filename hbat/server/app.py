@@ -86,21 +86,20 @@ class HBATWebApp:
 
                 # HBAT 2 citation
                 ui.label(
-                    "Tiwari, A. (2025). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. Zenodo. https://doi.org/10.5281/zenodo.17645321"
+                    "Tiwari, A. (2026). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. arXiv. https://doi.org/10.48550/arXiv.2602.17712"
                 ).classes("text-body2 q-mb-sm")
 
                 with ui.expansion("BibTeX", icon="code").classes("w-full q-mb-md"):
                     ui.markdown(
                         """
 ```bibtex
-@misc{tiwari_2025_17645321,
+@misc{tiwari2026hbat2arxiv,
    author    = {Tiwari, Abhishek},
    title     = {HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
-   month     = nov,
-   year      = 2025,
-   publisher = {Zenodo},
-   doi       = {10.5281/zenodo.17645321},
-   url       = {https://doi.org/10.5281/zenodo.17645321},
+   year      = 2026,
+   publisher = {arXiv},
+   doi       = {10.48550/arXiv.2602.17712},
+   url       = {https://arxiv.org/abs/2602.17712},
 }
 ```
                     """

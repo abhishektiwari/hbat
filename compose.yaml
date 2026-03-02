@@ -1,4 +1,6 @@
 services:
+  # List uncloud services
+  # uc services ls
   web:
     # Build an image from the Dockerfile in the current directory
     build:
