@@ -320,7 +320,10 @@ jobs:
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
         git tag -a "${{ needs.generate-version.outputs.version_tag }}" -m "Release ${{ needs.generate-version.outputs.version_tag }}"
-    
+
+    - name: Create docs/build directory
+      run: mkdir -p docs/build/html
+
     - name: Build documentation
       run: make docs
     
