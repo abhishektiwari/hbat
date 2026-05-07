@@ -32,6 +32,8 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 ![Google Scholar Citation](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337&link=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3Au-x6o8ySG0sC)
 [![Socket](https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl)](https://socket.dev/pypi/package/hbat/overview/2.2.11/py3-none-any-whl)
 [![CodeFactor](https://www.codefactor.io/repository/github/abhishektiwari/hbat/badge/main)](https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main)
+[![arXiv](https://img.shields.io/badge/arXiv-2602.17712-b31b1b.svg)](https://doi.org/10.48550/arXiv.2602.17712)
+[![Chemrxiv](https://img.shields.io/badge/chemrxiv-15000141--v1-green)](https://doi.org/10.26434/chemrxiv.15000141/v1)
 
 **HBAT Desktop (Mac, Windows, Linux):**
 ![HBAT Desktop](https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png)
@@ -306,6 +308,17 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you use HBAT or HBAT 2 in your research, please cite:
 
 ```
+@misc{tiwari_2025_17645321,
+  author       = {Tiwari, Abhishek},
+  title        = {HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
+  year         = 2026,
+  publisher    = {arXiv},
+  doi          = {10.48550/arXiv.2602.17712},
+  url.         = {https://arxiv.org/abs/2602.17712}, 
+}
+```
+
+```
 @article{tiwari2007hbat,
 author = {Tiwari, Abhishek and Panigrahi, Sunil Kumar},
 doi = {10.3233/ISI-2007-00337},
@@ -315,18 +328,6 @@ number = {6},
 title = {{HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures}},
 volume = {7},
 year = {2007}
-}
-```
-
-```
-@misc{tiwari_2025_17645321,
-  author       = {Tiwari, Abhishek},
-  title        = {HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
-  month        = nov,
-  year         = 2025,
-  publisher    = {Zenodo},
-  doi          = {10.5281/zenodo.17645321},
-  url          = {https://doi.org/10.5281/zenodo.17645321},
 }
 ```
 

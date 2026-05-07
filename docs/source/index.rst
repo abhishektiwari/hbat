@@ -81,6 +81,14 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
    :target: https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main
    :alt: CodeFactor
 
+.. image:: https://img.shields.io/badge/arXiv-2602.17712-b31b1b.svg
+   :alt: Arxiv Paper
+   :target: https://doi.org/10.48550/arXiv.2602.17712
+
+.. image:: https://img.shields.io/badge/chemrxiv-15000141--v1-green
+   :alt: ChemRxiv Paper
+   :target: https://doi.org/10.26434/chemrxiv.15000141/v1
+
 .. figure:: https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png
    :alt: HBAT Desktop
    :align: center
@@ -126,7 +134,23 @@ Highlights of HBAT 2
 - Cross-Platform: Works on Windows, macOS, and Linux.
 
 Cite HBAT & HBAT 2
------------------
+------------------
+
+.. code-block:: bash
+
+   @misc{tiwari2026hbat2arxiv,
+         title={HBAT 2: A Python Package to Analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures}, 
+         author={Abhishek Tiwari},
+         year={2026},
+         publisher= {arXiv},
+         doi={10.48550/arXiv.2602.17712},
+         url={https://arxiv.org/abs/2602.17712}, 
+   }
+
+
+.. code-block:: bash
+
+   Tiwari, A. (2026). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. arXiv. https://doi.org/10.48550/arXiv.2602.17712
 
 .. code-block:: bash
 
@@ -143,23 +167,8 @@ Cite HBAT & HBAT 2
 
 .. code-block:: bash
 
-   @misc{tiwari_2025_17645321,
-      author    = {Tiwari, Abhishek},
-      title     = {HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
-      month     = nov,
-      year      = 2025,
-      publisher = {Zenodo},
-      doi       = {10.5281/zenodo.17645321},
-      url       = {https://doi.org/10.5281/zenodo.17645321},
-   }
-
-.. code-block:: bash
-
    Tiwari, A., & Panigrahi, S. K. (2007). HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures. In Silico Biology, 7(6). https://doi.org/10.3233/ISI-2007-00337
 
-.. code-block:: bash
-
-   Tiwari, A. (2025). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. Zenodo. https://doi.org/10.5281/zenodo.17645321
 
 .. raw:: html
 

@@ -26,12 +26,7 @@ Graphical User Interface
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: hbat.gui.chain_visualization
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. automodule:: hbat.gui.visualization_renderer
+.. automodule:: hbat.gui.chain_visualization_window
    :members:
    :undoc-members:
    :show-inheritance:
