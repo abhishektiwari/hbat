@@ -33,7 +33,6 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.coverage',
     'sphinx.ext.githubpages',
-    'sphinx_toolbox.shields',
     'sphinx_sitemap',
     'sphinx_copybutton',
     'sphinxcontrib.bibtex',

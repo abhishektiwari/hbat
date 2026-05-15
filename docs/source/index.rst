@@ -26,32 +26,33 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
    :alt: GitHub Actions Test Workflow Status
    :target: https://github.com/abhishektiwari/hbat/actions/workflows/test.yml
 
-.. pypi-shield::
-   :project: hbat
-   :version:
+.. image:: https://img.shields.io/pypi/v/hbat
+   :alt: PyPI Version
+   :target: https://pypi.org/project/hbat/
 
-.. pypi-shield::
-   :wheel:
+.. image:: https://img.shields.io/pypi/wheel/hbat
+   :alt: PyPI Wheel
+   :target: https://pypi.org/project/hbat/
 
-.. pypi-shield::
-   :py-versions:
-   
-.. github-shield::
-   :username: abhishektiwari
-   :repository: hbat
-   :branch: main
-   :last-commit:
+.. image:: https://img.shields.io/pypi/pyversions/hbat
+   :alt: Python Versions
+   :target: https://pypi.org/project/hbat/
+
+.. image:: https://img.shields.io/github/last-commit/abhishektiwari/hbat/main
+   :alt: Last Commit
+   :target: https://github.com/abhishektiwari/hbat/commits/main
 
 .. image:: https://img.shields.io/pypi/status/hbat
    :alt: PyPI - Status
+   :target: https://pypi.org/project/hbat/
 
 .. image:: https://img.shields.io/conda/v/hbat/hbat
    :alt: Conda Version
+   :target: https://anaconda.org/hbat/hbat
 
-.. github-shield::
-   :username: abhishektiwari
-   :repository: hbat
-   :license:
+.. image:: https://img.shields.io/github/license/abhishektiwari/hbat
+   :alt: License
+   :target: https://github.com/abhishektiwari/hbat/blob/main/LICENSE
 
 .. image:: https://img.shields.io/github/downloads/abhishektiwari/hbat/total?label=GitHub%20Downloads
    :alt: GitHub Downloads (all assets, all releases)
