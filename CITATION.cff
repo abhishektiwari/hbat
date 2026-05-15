@@ -4,12 +4,9 @@ authors:
 - family-names: "Tiwari"
   given-names: "Abhishek"
   orcid: "https://orcid.org/0000-0003-2222-2395"
-- family-names: "Panigrahi"
-  given-names: "Sunil Kumar"
-title: "HBAT2"
-version: 2.0.4
-doi: 10.3233/ISI-2007-003
-date-released: 2017-12-18
+title: "HBAT 2"
+version: 2.4.2
+date-released: 2020-05-07
 url: "https://github.com/abhishektiwari/hbat"
 preferred-citation:
   type: article
@@ -17,12 +14,8 @@ preferred-citation:
   - family-names: "Tiwari"
     given-names: "Abhishek"
     orcid: "https://orcid.org/0000-0003-2222-2395"
-  - family-names: "Panigrahi"
-    given-names: "Sunil Kumar"
-  doi: "10.3233/ISI-2007-00337"
-  journal: "In Silico Biology"
-  month: 12
-  year: 2007
-  title: "HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures"
-  issue: 6
-  volume: 7
+  doi: "10.26434/chemrxiv.15000141/v1"
+  journal: "ChemRxiv"
+  year: 2026
+  title: "HBAT 2: A Python Package to Analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures"
+  url: "https://chemrxiv.org/doi/abs/10.26434/chemrxiv.15000141/v1"

@@ -1,6 +1,6 @@
 # HBAT Development Makefile
 
-.PHONY: help install install-dev test test-all test-fast test-legacy test-pytest test-unit test-integration test-e2e test-performance test-cli test-gui test-coverage test-cov test-ccd clean lint lint-fix lint-fix-tests format type-check docs generate-ccd-bonds run-server
+.PHONY: help install install-dev test test-all test-fast test-legacy test-pytest test-unit test-integration test-e2e test-performance test-cli test-gui test-coverage test-cov test-ccd clean lint lint-fix lint-fix-tests format type-check docs generate-ccd-bonds run-server uc-build uc-deploy uc-status
 
 # Default target
 help:
@@ -44,6 +44,11 @@ help:
 	@echo "  run-cli       Run CLI with test file"
 	@echo "  run-server    Run web server in watch mode with auto-reload"
 	@echo "  generate-ccd-bonds Generate residue bond constants from CCD files"
+	@echo ""
+	@echo "Uncloud Deployment:"
+	@echo "  uc-build      Build Docker image for Uncloud deployment"
+	@echo "  uc-deploy     Deploy web service to Uncloud"
+	@echo "  uc-status     Check deployment status on Uncloud"
 
 # Installation
 install:
@@ -364,3 +369,31 @@ setup-dev:
 	python -m venv venv
 	@echo "Activate virtual environment with: source venv/bin/activate (Linux/Mac) or venv\\Scripts\\activate (Windows)"
 	@echo "Then run: make install-dev"
+
+# Uncloud deployment
+uc-build:
+	@echo "Building Docker image for Uncloud deployment..."
+	@if ! command -v uc &> /dev/null; then \
+		echo "Error: 'uc' command not found. Install Uncloud CLI first."; \
+		echo "  https://docs.uncloud.com/getting-started/"; \
+		exit 1; \
+	fi
+	uc build
+
+uc-deploy:
+	@echo "Deploying to Uncloud..."
+	@if ! command -v uc &> /dev/null; then \
+		echo "Error: 'uc' command not found. Install Uncloud CLI first."; \
+		echo "  https://docs.uncloud.com/getting-started/"; \
+		exit 1; \
+	fi
+	uc deploy
+
+uc-status:
+	@echo "Checking Uncloud deployment status..."
+	@if ! command -v uc &> /dev/null; then \
+		echo "Error: 'uc' command not found. Install Uncloud CLI first."; \
+		echo "  https://docs.uncloud.com/getting-started/"; \
+		exit 1; \
+	fi
+	uc service inspect web

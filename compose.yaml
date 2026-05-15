@@ -13,6 +13,7 @@ services:
       - HBAT_ENV=production
       - HBAT_HOST=0.0.0.0
       - HBAT_PORT=8080
+      - HBAT_RELOAD=false
     volumes:
       - hbat-uploads:/app/uploads
     restart: unless-stopped

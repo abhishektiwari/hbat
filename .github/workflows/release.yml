@@ -246,29 +246,38 @@ jobs:
         git tag -a "${{ needs.generate-version.outputs.version_tag }}" -m "Release ${{ needs.generate-version.outputs.version_tag }}"
     
     - name: Setup Miniconda
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@v4.0.1
       with:
         auto-update-conda: true
         auto-activate-base: false
         python-version: 3.11
         channels: conda-forge,defaults
         channel-priority: true
+        miniforge-version: latest
+        use-miniforge: true
     
     - name: Install conda-build and dependencies
       shell: bash -l {0}
       run: |
-        conda install -y conda-build anaconda-client conda-verify
+        echo "Installing conda-build..."
+        conda install -y conda-build anaconda-client
         conda config --set anaconda_upload no
-    
+
+        echo "Verifying conda-build installation..."
+        conda-build --version
+        echo "✓ conda-build ready"
+
     - name: Build conda package
       shell: bash -l {0}
       run: |
         export GIT_DESCRIBE_TAG=${{ needs.generate-version.outputs.version_tag }}
         echo "Building conda package with version: ${GIT_DESCRIBE_TAG}"
-        conda build conda --output-folder conda-build-output -c conda-forge
 
+        conda-build conda --output-folder conda-build-output -c conda-forge
+
+        echo ""
         echo "Built conda packages:"
-        ls -la conda-build-output/noarch/
+        find conda-build-output -type f \( -name "*.tar.bz2" -o -name "*.conda" \)
     
     - name: Upload to Anaconda Cloud
       if: needs.generate-version.outputs.is_prerelease == 'false'

@@ -71,7 +71,8 @@ FROM python:3.13-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH" \
-    HBAT_ENV=production
+    HBAT_ENV=production \
+    HBAT_RELOAD=false
 
 # Install runtime dependencies for Graphviz
 RUN apt-get update && \
