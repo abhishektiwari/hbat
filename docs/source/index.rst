@@ -69,10 +69,6 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
    :alt: Codecov Coverage
    :target: https://codecov.io/gh/abhishektiwari/hbat
 
-.. image:: https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337
-   :alt: Scholar Citations
-   :target: https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC
-
 .. image:: https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl
    :alt: Socket
    :target: https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl
@@ -81,6 +77,14 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
    :target: https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main
    :alt: CodeFactor
 
+.. image:: https://img.shields.io/badge/10.3233%2FISI-2007-00337?logo=doi&label=10.3233%2FISI-2007-00337&link=https%3A%2F%2Fdoi.org%2F10.3233%2FISI-2007-00337
+   :alt: HBAT 1.0/1.1 DOI
+   :target: https://doi.org/10.3233/ISI-2007-00337
+
+.. image:: https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337
+   :alt: Scholar Citations
+   :target: https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC
+
 .. image:: https://img.shields.io/badge/arXiv-2602.17712-b31b1b.svg
    :alt: Arxiv Paper
    :target: https://doi.org/10.48550/arXiv.2602.17712
@@ -88,6 +92,10 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 .. image:: https://img.shields.io/badge/chemrxiv-15000141--v1-green
    :alt: ChemRxiv Paper
    :target: https://doi.org/10.26434/chemrxiv.15000141/v1
+
+.. image:: https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.26434%2Fchemrxiv.15000141%2Fv1&link=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3A3bvyWxjaHKcC
+   :alt: HBAT 2.0 Scholar Citations
+   :target: https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:3bvyWxjaHKcC
 
 .. figure:: https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png
    :alt: HBAT Desktop
@@ -133,18 +141,18 @@ Highlights of HBAT 2
 - Optimized algorithms for efficient analysis of large structures
 - Cross-Platform: Works on Windows, macOS, and Linux.
 
-Cite HBAT & HBAT 2
-------------------
+Cite HBAT 2
+-----------
 
 .. code-block:: bash
 
-   @misc{tiwari2026hbat2arxiv,
-         title={HBAT 2: A Python Package to Analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures}, 
-         author={Abhishek Tiwari},
-         year={2026},
-         publisher= {arXiv},
-         doi={10.48550/arXiv.2602.17712},
-         url={https://arxiv.org/abs/2602.17712}, 
+   @article{tiwari_2026_hbat_arxiv,
+      author       = {Tiwari, Abhishek},
+      title        = {HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
+      year         = 2026,
+      publisher    = {arXiv},
+      doi          = {10.48550/arXiv.2602.17712},
+      url.         = {https://arxiv.org/abs/2602.17712}, 
    }
 
 
@@ -152,6 +160,25 @@ Cite HBAT & HBAT 2
 
    Tiwari, A. (2026). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. arXiv. https://doi.org/10.48550/arXiv.2602.17712
 
+
+.. code-block:: bash
+
+   @article{tiwari_2026_hbat_chemrxiv,
+      author = {Abhishek Tiwari },
+      title = {HBAT 2: A Python Package to Analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
+      publisher = {ChemRxiv},
+      year = {2026},
+      doi = {10.26434/chemrxiv.15000141/v1},
+      URL = {https://chemrxiv.org/doi/abs/10.26434/chemrxiv.15000141/v1},
+      eprint = {https://chemrxiv.org/doi/pdf/10.26434/chemrxiv.15000141/v1},
+   }
+
+.. code-block:: bash
+
+   Tiwari, A. (2026). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. ChemRxiv. https://chemrxiv.org/doi/abs/10.26434/chemrxiv.15000141/v1
+
+Cite HBAT 1.0 and 1.1
+---------------------
 .. code-block:: bash
 
    @article{tiwari2007hbat,

@@ -307,10 +307,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Cite HBAT and HBAT 2
 
-If you use HBAT or HBAT 2 in your research, please cite:
+If you use HBAT 2  in your research, please cite:
 
+[![arXiv](https://img.shields.io/badge/arXiv-2602.17712-b31b1b.svg)](https://doi.org/10.48550/arXiv.2602.17712)
 ```
-@misc{tiwari_2025_17645321,
+@article{tiwari_2026_hbat_arxiv,
   author       = {Tiwari, Abhishek},
   title        = {HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
   year         = 2026,
@@ -319,6 +320,25 @@ If you use HBAT or HBAT 2 in your research, please cite:
   url.         = {https://arxiv.org/abs/2602.17712}, 
 }
 ```
+
+or 
+
+[![Chemrxiv](https://img.shields.io/badge/chemrxiv-15000141--v1-green)](https://doi.org/10.26434/chemrxiv.15000141/v1)
+```
+@article{tiwari_2026_hbat_chemrxiv,
+  author = {Abhishek Tiwari },
+  title = {HBAT 2: A Python Package to Analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
+  publisher = {ChemRxiv},
+  year = {2026},
+  doi = {10.26434/chemrxiv.15000141/v1},
+  URL = {https://chemrxiv.org/doi/abs/10.26434/chemrxiv.15000141/v1},
+  eprint = {https://chemrxiv.org/doi/pdf/10.26434/chemrxiv.15000141/v1},
+}
+```
+
+If you use HBAT 1.0 or 1.1 in your research, please cite:
+
+[![DOI HBAT](https://img.shields.io/badge/10.3233%2FISI-2007-00337?logo=doi&label=10.3233%2FISI-2007-00337&link=https%3A%2F%2Fdoi.org%2F10.3233%2FISI-2007-00337)](https://doi.org/10.3233/ISI-2007-00337)
 
 ```
 @article{tiwari2007hbat,
