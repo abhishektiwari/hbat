@@ -29,11 +29,13 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 ![SourceForge Downloads](https://img.shields.io/sourceforge/dt/hbat?label=SourceForge%20Downloads)
 ![PyPI Downloads](https://img.shields.io/pepy/dt/hbat?label=PyPI%20Downloads)
 [![codecov](https://codecov.io/gh/abhishektiwari/hbat/graph/badge.svg?token=QSKYLB3M1V)](https://codecov.io/gh/abhishektiwari/hbat)
-![Google Scholar Citation](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337&link=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3Au-x6o8ySG0sC)
 [![Socket](https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl)](https://socket.dev/pypi/package/hbat/overview/2.2.11/py3-none-any-whl)
 [![CodeFactor](https://www.codefactor.io/repository/github/abhishektiwari/hbat/badge/main)](https://www.codefactor.io/repository/github/abhishektiwari/hbat/overview/main)
+[![DOI HBAT](https://img.shields.io/badge/10.3233%2FISI-2007-00337?logo=doi&label=10.3233%2FISI-2007-00337&link=https%3A%2F%2Fdoi.org%2F10.3233%2FISI-2007-00337)](https://doi.org/10.3233/ISI-2007-00337)
+[![Google Scholar Citation](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337&link=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3Au-x6o8ySG0sC)](https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC)
 [![arXiv](https://img.shields.io/badge/arXiv-2602.17712-b31b1b.svg)](https://doi.org/10.48550/arXiv.2602.17712)
 [![Chemrxiv](https://img.shields.io/badge/chemrxiv-15000141--v1-green)](https://doi.org/10.26434/chemrxiv.15000141/v1)
+[![Google Scholar Citation](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.26434%2Fchemrxiv.15000141%2Fv1&link=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3A3bvyWxjaHKcC)](https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:3bvyWxjaHKcC)
 
 **HBAT Desktop (Mac, Windows, Linux):**
 ![HBAT Desktop](https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png)
