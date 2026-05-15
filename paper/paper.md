@@ -5,10 +5,10 @@ authors:
     orcid: 0000-0003-2222-2395
     affiliation: 1, 2
 affiliations:
- - name: Australian Computer Society, Brisbane, Australia
+ - name: Australian Computer Society, Sydney, Australia
    index: 1
    ror: 02zwd6322
- - name: D3ML.org, Sydney, Australia
+ - name: D3ML, Sydney, Australia
    index: 2
 date: 3 August 2025
 bibliography: paper.bib
