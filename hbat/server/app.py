@@ -921,7 +921,7 @@ def create_app():
         show=not is_production,  # Don't open browser in production/Docker
         host=host,
         port=port,
-        reconnect_timeout=300.0,  # 5 minutes - increased for long-running analysis
+        reconnect_timeout=3600.0,  # 60 minutes - increased for long-running analysis
     )
 
 
