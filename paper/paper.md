@@ -56,7 +56,7 @@ The software analyzes hydrogen bonds (O-H$\cdots$O, N-H$\cdots$O, N-H$\cdots$N, 
 
 ## 3D Visualization with 3Dmol.js Integration
 
-HBAT 2 integrates 3Dmol.js for interactive 3D molecular visualization in both web and Jupyter notebook environments. The JavaScript-based viewer enables researchers to interactively explore detected interactions with customizable color schemes, allowing rotation, zoom, and inspection of specific interaction geometries. Within Jupyter notebooks, the 3D visualization widget is embedded directly alongside analysis code, bridging automated analysis and manual structural inspection.
+HBAT 2 integrates 3Dmol.js [@rego_3dmol_2014] for interactive 3D molecular visualization in both web and Jupyter notebook environments. The JavaScript-based viewer enables researchers to interactively explore detected interactions with customizable color schemes, allowing rotation, zoom, and inspection of specific interaction geometries. Within Jupyter notebooks, the 3D visualization widget is embedded directly alongside analysis code, bridging automated analysis and manual structural inspection.
 
 # Research Impact Statement
 
@@ -72,7 +72,7 @@ Since its original publication, HBAT has been [cited more than 80 times](https:/
 
 **Recent citations**: Recent applications include biosorption and molecular docking studies utilizing HBAT 2 for hydrogen bond analysis in environmental remediation [@mehmet_karadayı_removal_2026].
 
-![An example visualization of hydrogen-bonds network detected by HBAT 2 software for Protein Data Bank (PDB) entry 4X21](./images/4x21-7-co-chain.png)
+![An example visualization of hydrogen-bonds network detected by HBAT 2 software for Protein Data Bank (PDB) entry 6RSA](./images/6rsa-network-hbonds.pdf)
 
 HBAT 2 extends this demonstrated impact by providing modern cross-platform access, expanded interaction coverage, and integration with contemporary Python workflows, supporting growing adoption across diverse research applications.
 
