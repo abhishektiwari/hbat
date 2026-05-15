@@ -257,18 +257,29 @@ jobs:
     - name: Install conda-build and dependencies
       shell: bash -l {0}
       run: |
-        conda install -y conda-build anaconda-client conda-verify
+        echo "Installing conda-build..."
+        conda install -y -c conda-forge conda-build anaconda-client conda-verify
         conda config --set anaconda_upload no
-    
+
+        echo "Verifying conda-build installation..."
+        conda build --version || python -m conda_build.cli --version
+        echo "conda-build installation verified"
+
     - name: Build conda package
       shell: bash -l {0}
       run: |
         export GIT_DESCRIBE_TAG=${{ needs.generate-version.outputs.version_tag }}
         echo "Building conda package with version: ${GIT_DESCRIBE_TAG}"
-        conda build conda --output-folder conda-build-output -c conda-forge
+
+        # Try conda build first, fall back to python -m conda_build if it fails
+        if ! conda build conda --output-folder conda-build-output -c conda-forge; then
+          echo "conda build failed, trying python -m conda_build..."
+          python -m conda_build.cli conda --output-folder conda-build-output -c conda-forge
+        fi
 
         echo "Built conda packages:"
-        ls -la conda-build-output/noarch/
+        ls -la conda-build-output/noarch/ || echo "No packages found in conda-build-output/noarch/"
+        find conda-build-output -type f -name "hbat*" 2>/dev/null || echo "Searching for hbat packages..."
     
     - name: Upload to Anaconda Cloud
       if: needs.generate-version.outputs.is_prerelease == 'false'

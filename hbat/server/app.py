@@ -905,6 +905,11 @@ def create_app():
     host = os.getenv("HBAT_HOST", "0.0.0.0" if is_production else "127.0.0.1")  # nosec B104
     port = int(os.getenv("HBAT_PORT", "8080"))
 
+    # Auto-reload disabled by default to preserve analysis state during active use.
+    # Only enable if explicitly requested via HBAT_RELOAD=true environment variable.
+    # This prevents loss of analysis results when source files change during development.
+    reload = os.getenv("HBAT_RELOAD", "false").lower() == "true"
+
     # Set favicon path
     favicon_path = static_dir / "favicon.ico" if static_dir.exists() else None
 
@@ -912,7 +917,7 @@ def create_app():
         title="HBAT 2 - Web Server",
         favicon=str(favicon_path) if favicon_path else "🧬",
         dark=False,
-        reload=not is_production,  # Enable auto-reload in development mode
+        reload=reload,  # Disabled by default to preserve state; enable with HBAT_RELOAD=true
         show=not is_production,  # Don't open browser in production/Docker
         host=host,
         port=port,
