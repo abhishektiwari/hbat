@@ -26,32 +26,33 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
    :alt: GitHub Actions Test Workflow Status
    :target: https://github.com/abhishektiwari/hbat/actions/workflows/test.yml
 
-.. pypi-shield::
-   :project: hbat
-   :version:
+.. image:: https://img.shields.io/pypi/v/hbat
+   :alt: PyPI Version
+   :target: https://pypi.org/project/hbat/
 
-.. pypi-shield::
-   :wheel:
+.. image:: https://img.shields.io/pypi/wheel/hbat
+   :alt: PyPI Wheel
+   :target: https://pypi.org/project/hbat/
 
-.. pypi-shield::
-   :py-versions:
-   
-.. github-shield::
-   :username: abhishektiwari
-   :repository: hbat
-   :branch: main
-   :last-commit:
+.. image:: https://img.shields.io/pypi/pyversions/hbat
+   :alt: Python Versions
+   :target: https://pypi.org/project/hbat/
+
+.. image:: https://img.shields.io/github/last-commit/abhishektiwari/hbat/main
+   :alt: Last Commit
+   :target: https://github.com/abhishektiwari/hbat/commits/main
 
 .. image:: https://img.shields.io/pypi/status/hbat
    :alt: PyPI - Status
+   :target: https://pypi.org/project/hbat/
 
 .. image:: https://img.shields.io/conda/v/hbat/hbat
    :alt: Conda Version
+   :target: https://anaconda.org/hbat/hbat
 
-.. github-shield::
-   :username: abhishektiwari
-   :repository: hbat
-   :license:
+.. image:: https://img.shields.io/github/license/abhishektiwari/hbat
+   :alt: License
+   :target: https://github.com/abhishektiwari/hbat/blob/main/LICENSE
 
 .. image:: https://img.shields.io/github/downloads/abhishektiwari/hbat/total?label=GitHub%20Downloads
    :alt: GitHub Downloads (all assets, all releases)
@@ -133,8 +134,8 @@ Highlights of HBAT 2
 - Automated PDB fixing with OpenBabel and PDBFixer integration
 - Support graphical (tkinter), command-line, and programming API interfaces
 - Use graphical interfaces for interactive analysis, CLI/API for batch processing and automation
-- Cooperativity chain visualization using NetworkX/matplotlib and GraphViz
-- Export cooperativity chain visualizations to PNG, SVG, PDF formats
+- Hydrogen bond network (potential cooperativity/anticooperativity chains and water-mediated hydrogen bond networks) visualization using NetworkX/matplotlib and GraphViz
+- Export hydrogen bond network visualizations to PNG, SVG, PDF formats
 - Built-in presets for different structure types (high-resolution, NMR, membrane proteins, etc.)
 - Customizable distance cutoffs, angle thresholds, and analysis modes.
 - Multiple Output Formats: Text, CSV, and JSON export options
