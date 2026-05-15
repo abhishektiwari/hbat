@@ -3,13 +3,10 @@ title: 'HBAT 2: A Python Package to Analyse Hydrogen Bonds and Other Non-covalen
 authors:
   - name: Abhishek Tiwari
     orcid: 0000-0003-2222-2395
-    affiliation: 1, 2
+    affiliation: 1
 affiliations:
- - name: Australian Computer Society, Sydney, Australia
+ - name: Independent Researcher, New York, United States
    index: 1
-   ror: 02zwd6322
- - name: D3ML, Sydney, Australia
-   index: 2
 date: 3 August 2025
 bibliography: paper.bib
 tags:
