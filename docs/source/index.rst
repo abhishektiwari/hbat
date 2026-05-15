@@ -133,8 +133,8 @@ Highlights of HBAT 2
 - Automated PDB fixing with OpenBabel and PDBFixer integration
 - Support graphical (tkinter), command-line, and programming API interfaces
 - Use graphical interfaces for interactive analysis, CLI/API for batch processing and automation
-- Cooperativity chain visualization using NetworkX/matplotlib and GraphViz
-- Export cooperativity chain visualizations to PNG, SVG, PDF formats
+- Hydrogen bond network (potential cooperativity/anticooperativity chains and water-mediated hydrogen bond networks) visualization using NetworkX/matplotlib and GraphViz
+- Export hydrogen bond network visualizations to PNG, SVG, PDF formats
 - Built-in presets for different structure types (high-resolution, NMR, membrane proteins, etc.)
 - Customizable distance cutoffs, angle thresholds, and analysis modes.
 - Multiple Output Formats: Text, CSV, and JSON export options
