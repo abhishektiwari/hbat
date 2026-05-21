@@ -176,25 +176,19 @@ class UploadPanel:
         # Option 2: Download from PDB
         with ui.card().classes("w-full q-pa-md"):
             ui.label("Option 2: Download from RCSB PDB").classes("text-h6")
-            with ui.row().classes("w-full items-center gap-2"):
-                self.pdb_id_input = (
-                    ui.input(
-                        label="PDB ID",
-                        placeholder="e.g., 1BHL",
-                        validation={
-                            "Must be 4 characters": lambda v: (
-                                len(v.strip()) == 4 if v else True
-                            )
-                        },
-                    )
-                    .props("maxlength=4")
-                    .classes("flex-1")
+            self.pdb_id_input = (
+                ui.input(
+                    label="PDB ID",
+                    placeholder="e.g., 1BHL",
+                    validation={
+                        "Must be 4 characters": lambda v: (
+                            len(v.strip()) == 4 if v else True
+                        )
+                    },
                 )
-                ui.button(
-                    "Download",
-                    icon="download",
-                    on_click=download_pdb,
-                ).props("color=primary")
+                .props("maxlength=4")
+                .classes("w-full")
+            )
 
             # Example PDB IDs
             ui.label("Example PDB IDs:").classes("text-caption q-mt-sm")
