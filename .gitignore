@@ -268,3 +268,7 @@ CLAUDE.md
 notebooks/*.pdb
 notebooks/*.json
 notebooks/*.csv
+
+# _fixed.cif and _fixed.pdb files
+example_pdb_files/*_fixed.cif
+example_pdb_files/*_fixed.pdb

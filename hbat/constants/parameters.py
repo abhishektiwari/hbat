@@ -1022,7 +1022,8 @@ class BondDetectionMethods:
     """Available bond detection methods."""
 
     CONECT_RECORDS = "conect_records"
+    STRUCT_CONN = "struct_conn"  # mmCIF struct_conn table (CIF equivalent of CONECT)
     RESIDUE_LOOKUP = "residue_lookup"
     DISTANCE_BASED = "distance_based"
 
-    ALL_METHODS = [CONECT_RECORDS, RESIDUE_LOOKUP, DISTANCE_BASED]
+    ALL_METHODS = [CONECT_RECORDS, STRUCT_CONN, RESIDUE_LOOKUP, DISTANCE_BASED]

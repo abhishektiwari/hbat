@@ -340,10 +340,29 @@ class PDBFixer:
 
         return output_path
 
+    def _get_file_format(self, file_path: str) -> str:
+        """Detect file format from extension.
+
+        :param file_path: Path to the file
+        :type file_path: str
+        :returns: File format string ('pdb' or 'cif')
+        :rtype: str
+        """
+        _, ext = os.path.splitext(file_path)
+        ext = ext.lower()
+        if ext == '.cif':
+            return 'cif'
+        return 'pdb'  # Default to PDB for .pdb or unknown extensions
+
     def _fix_with_openbabel(
         self, input_path: str, output_path: str, **kwargs: Any
     ) -> None:
-        """Fix structure using OpenBabel."""
+        """Fix structure using OpenBabel.
+
+        OpenBabel natively supports reading both PDB and CIF files. Output format
+        is determined by the output filename extension (auto-detected by OpenBabel).
+        Generic CIF output from OpenBabel is handled by the parser transparently.
+        """
         # Note: kwargs is kept for API consistency but not used by OpenBabel
         try:
             from openbabel import openbabel as ob
@@ -353,38 +372,62 @@ class PDBFixer:
                 "Install with: conda install -c conda-forge openbabel"
             )
 
-        # OpenBabel conversion
-        conv = ob.OBConversion()
-        conv.SetInFormat("pdb")
-        conv.SetOutFormat("pdb")
-
-        mol = ob.OBMol()
-        if not conv.ReadFile(mol, input_path):
-            raise PDBFixerError(f"Failed to read PDB file with OpenBabel: {input_path}")
-
-        # Improve bond perception before adding hydrogens
         try:
-            # Clear existing bonds and re-perceive them
-            mol.DeleteNonPolarHydrogens()  # Remove any existing hydrogens
-            mol.ConnectTheDots()  # Re-perceive bonds based on geometry
-            mol.PerceiveBondOrders()  # Assign bond orders
+            # Create OpenBabel conversion object - format auto-detected from output filename
+            conv = ob.OBConversion()
 
-            # Add hydrogens with proper bond perception
-            mol.AddHydrogens()
+            # Create molecule object
+            mol = ob.OBMol()
 
-            # Final cleanup - ensure all bonds are properly assigned
-            mol.ConnectTheDots()
+            # Read input file - OpenBabel auto-detects format from extension
+            if not conv.ReadFile(mol, input_path):
+                raise PDBFixerError(
+                    f"Failed to read input file with OpenBabel: {input_path}"
+                )
 
+            # Improve bond perception before adding hydrogens
+            try:
+                # Clear existing bonds and re-perceive them
+                mol.DeleteNonPolarHydrogens()  # Remove any existing hydrogens
+                mol.ConnectTheDots()  # Re-perceive bonds based on geometry
+                mol.PerceiveBondOrders()  # Assign bond orders
+
+                # Add hydrogens with proper bond perception
+                mol.AddHydrogens()
+
+                # Final cleanup - ensure all bonds are properly assigned
+                mol.ConnectTheDots()
+
+            except Exception as e:
+                # If advanced bond perception fails, fall back to simple hydrogen addition
+                print(
+                    f"Warning: Advanced bond perception failed ({e}), using simple hydrogen addition"
+                )
+                mol.AddHydrogens()
+
+            # Write output as PDB. Since WriteFile() uses extension to determine format,
+            # use temp .pdb file, then rename to desired extension for format preservation
+            actual_output_path = output_path
+            if output_path.endswith('.cif'):
+                # Use temporary .pdb filename to force PDB output
+                import os
+                base, _ = os.path.splitext(output_path)
+                temp_pdb_path = base + '_temp.pdb'
+                actual_output_path = temp_pdb_path
+
+            conv.SetOutFormat('pdb')
+            if not conv.WriteFile(mol, actual_output_path):
+                raise PDBFixerError(f"Failed to write fixed PDB file: {actual_output_path}")
+
+            # Rename temp file back to desired output path if needed
+            if actual_output_path != output_path:
+                import os
+                os.rename(actual_output_path, output_path)
+
+        except PDBFixerError:
+            raise
         except Exception as e:
-            # If advanced bond perception fails, fall back to simple hydrogen addition
-            print(
-                f"Warning: Advanced bond perception failed ({e}), using simple hydrogen addition"
-            )
-            mol.AddHydrogens()
-
-        # Write output
-        if not conv.WriteFile(mol, output_path):
-            raise PDBFixerError(f"Failed to write fixed PDB file: {output_path}")
+            raise PDBFixerError(f"OpenBabel processing failed: {str(e)}")
 
     def _fix_with_pdbfixer(
         self, input_path: str, output_path: str, pH: float, **kwargs: Any
@@ -674,7 +717,11 @@ class PDBFixer:
     def _fix_with_openbabel_to_file(
         self, input_path: str, output_path: str, pH: float = 7.0, **kwargs: Any
     ) -> bool:
-        """Fix PDB file using OpenBabel and save to output file."""
+        """Fix structure file using OpenBabel.
+
+        OpenBabel natively supports reading both PDB and CIF files. Output is always
+        in PDB format. If input is CIF, output is converted to PDB with .pdb extension.
+        """
         try:
             from openbabel import openbabel as ob
         except ImportError:
@@ -685,19 +732,21 @@ class PDBFixer:
         try:
             # Create OpenBabel conversion object
             conv = ob.OBConversion()
-            conv.SetInAndOutFormats("pdb", "pdb")
 
             # Create molecule object
             mol = ob.OBMol()
 
-            # Read input file
+            # Read input file - OpenBabel auto-detects format from extension
             if not conv.ReadFile(mol, input_path):
-                raise PDBFixerError(f"Failed to read PDB file: {input_path}")
+                raise PDBFixerError(
+                    f"Failed to read input file: {input_path}"
+                )
 
             # Add hydrogens
             mol.AddHydrogens()
 
-            # Write output file
+            # Always output as PDB
+            conv.SetOutFormat('pdb')
             if not conv.WriteFile(mol, output_path):
                 raise PDBFixerError(f"Failed to write fixed PDB file: {output_path}")
 
@@ -707,6 +756,8 @@ class PDBFixer:
             self.last_fixed_file_path = output_path
             return True
 
+        except PDBFixerError:
+            raise
         except Exception as e:
             raise PDBFixerError(f"OpenBabel processing failed: {str(e)}")
 
@@ -751,13 +802,32 @@ class PDBFixer:
             if add_hydrogens:
                 fixer.addMissingHydrogens(pH)
 
-            # Write the fixed structure
+            # Detect output format and write accordingly
+            output_format = self._get_file_format(output_path)
+
             with open(output_path, "w") as f:
-                PDBFile.writeFile(fixer.topology, fixer.positions, f)
+                if output_format == 'cif':
+                    # Write as CIF format using PDBxFile
+                    try:
+                        from openmm.app import PDBxFile
+                    except ImportError:
+                        try:
+                            from simtk.openmm.app import PDBxFile
+                        except ImportError:
+                            raise PDBFixerError(
+                                "PDBxFile not available for CIF output. "
+                                "Install with: conda install -c conda-forge openmm"
+                            )
+                    PDBxFile.writeFile(fixer.topology, fixer.positions, f, keepIds=True)
+                else:
+                    # Write as PDB format
+                    PDBFile.writeFile(fixer.topology, fixer.positions, f)
 
             self.last_fixed_file_path = output_path
             return True
 
+        except PDBFixerError:
+            raise
         except Exception as e:
             raise PDBFixerError(f"PDBFixer processing failed: {str(e)}")
 

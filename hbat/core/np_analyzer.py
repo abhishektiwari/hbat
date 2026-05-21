@@ -1978,14 +1978,18 @@ class NPMolecularInteractionAnalyzer:
     def _apply_pdb_fixing(self, pdb_file_path: str) -> str:
         """Apply PDB fixing by processing the original file and saving to a new file.
 
+        Supports both PDB and CIF formats:
+        - PDBFixer: preserves format (CIF→CIF, PDB→PDB)
+        - OpenBabel: always outputs PDB format (CIF→PDB, PDB→PDB)
+
         .. warning::
            PDBFixer (external library) has inherent non-determinism in hydrogen atom placement. Running analysis multiple times
            on the same file with PDBFixer enabled may produce slightly different results
            (e.g., hydrogen bond counts may vary by ±5%). This is expected behavior.
 
-        :param pdb_file_path: Path to the original PDB file
+        :param pdb_file_path: Path to the original PDB or CIF file
         :type pdb_file_path: str
-        :returns: Path to the fixed PDB file
+        :returns: Path to the fixed file
         :rtype: str
         """
         import os
@@ -1994,11 +1998,22 @@ class NPMolecularInteractionAnalyzer:
 
         fixer = PDBFixer()
 
-        # Generate output filename (e.g., 6rsa.pdb -> 6rsa_fixed.pdb)
+        # Detect file format
+        _, ext = os.path.splitext(pdb_file_path)
+        is_cif_file = ext.lower() == '.cif'
+
+        # Generate output filename based on fixing method
         base_dir = os.path.dirname(pdb_file_path)
         base_name = os.path.basename(pdb_file_path)
         name, ext = os.path.splitext(base_name)
-        fixed_file_path = os.path.join(base_dir, f"{name}_fixed{ext}")
+
+        # OpenBabel always outputs PDB; PDBFixer preserves format
+        if self.parameters.fix_pdb_method == 'openbabel' and is_cif_file:
+            # OpenBabel CIF input → PDB output
+            fixed_file_path = os.path.join(base_dir, f"{name}_fixed.pdb")
+        else:
+            # PDBFixer preserves format, or OpenBabel with PDB input
+            fixed_file_path = os.path.join(base_dir, f"{name}_fixed{ext}")
 
         # Use the new file-to-file fixing method
         success = fixer.fix_pdb_file_to_file(

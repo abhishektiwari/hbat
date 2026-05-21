@@ -94,7 +94,25 @@ class PDBParser:
         self._bond_adjacency: Dict[int, Set[int]] = {}  # Fast bond lookups
 
     def parse_file(self, filename: str) -> bool:
-        """Parse a PDB file.
+        """Parse a PDB or CIF file based on file extension.
+
+        Auto-detects the file format from the extension (.pdb or .cif)
+        and routes to the appropriate parser.
+
+        :param filename: Path to the PDB or CIF file to parse
+        :type filename: str
+        :returns: True if parsing completed successfully, False otherwise
+        :rtype: bool
+        :raises: IOError if file cannot be read
+        """
+        # Auto-detect format from file extension
+        if filename.lower().endswith('.cif'):
+            return self.parse_cif_file(filename)
+        else:
+            return self._parse_pdb_file(filename)
+
+    def _parse_pdb_file(self, filename: str) -> bool:
+        """Parse a PDB format file.
 
         Reads and parses a PDB format file, extracting all ATOM and HETATM
         records and converting them to HBAT's internal representation.
@@ -216,6 +234,196 @@ class PDBParser:
         except Exception as e:
             print(f"Error parsing PDB lines: {e}")
             return False
+
+
+    def parse_cif_file(self, filename: str) -> bool:
+        """Parse an mmCIF (PDBx) format file.
+
+        Reads and parses an mmCIF format file, extracting atom_site records
+        and converting them to HBAT's internal representation. Also parses
+        struct_conn records for explicit bond information.
+
+        :param filename: Path to the CIF file to parse
+        :type filename: str
+        :returns: True if parsing completed successfully, False otherwise
+        :rtype: bool
+        :raises: IOError if file cannot be read
+        """
+        try:
+            from pdbx import PdbxReader
+
+            # Check if this is actually a PDB file (e.g., OpenBabel output saved as .cif)
+            with open(filename, 'r') as f:
+                first_line = f.readline().strip()
+                if first_line.startswith(('HEADER', 'TITLE', 'ATOM', 'HETATM')):
+                    # This is actually a PDB file despite .cif extension
+                    return self.parse_file(filename)
+
+            # Read CIF file as standard mmCIF
+            reader = PdbxReader(open(filename, 'r'))
+            containers = []
+            reader.read(containers)
+
+            self.atoms = []
+            self.residues = {}
+            self.bonds = []
+            self._bond_adjacency = {}
+
+            # Process atom_site records
+            for container in containers:
+                atom_site_obj = container.get_object('atom_site')
+                if not atom_site_obj:
+                    continue
+
+                # Iterate through all atom rows
+                for i in range(atom_site_obj.row_count):
+                    row = atom_site_obj.get_full_row(i)
+                    atom = self._convert_cif_atom_row(atom_site_obj, row, i + 1)
+                    if atom:
+                        self.atoms.append(atom)
+                        self._add_atom_to_residue(atom)
+
+            # Build atom serial mapping for lookups
+            self._build_atom_serial_map()
+
+            # Parse struct_conn records (CIF equivalent of CONECT)
+            self._parse_struct_conn_records(containers)
+
+            # Always run three-step bond detection to find bonds not in struct_conn
+            import time
+
+            bond_start = time.time()
+            self._detect_bonds_three_step()
+            bond_time = time.time() - bond_start
+            print(
+                f"Bond detection completed in {bond_time:.3f} seconds ({len(self.bonds)} bonds found)"
+            )
+
+            return len(self.atoms) > 0
+
+        except ImportError:
+            print(
+                "Error: mmcif-pdbx library is required for CIF parsing. "
+                "Install with: pip install mmcif-pdbx"
+            )
+            return False
+        except Exception as e:
+            print(f"Error parsing CIF file '{filename}': {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+    def _convert_cif_atom_row(self, atom_site_obj: Any, row: List[str], serial: int) -> Optional[Atom]:
+        """Convert mmCIF atom_site row to HBAT Atom object.
+
+        Maps mmCIF atom_site table columns to HBAT Atom attributes using the
+        mmcif-pdbx DataCategory API.
+
+        :param atom_site_obj: mmCIF atom_site DataCategory object
+        :type atom_site_obj: Any
+        :param row: Row data from atom_site table
+        :type row: List[str]
+        :param serial: Sequential atom serial number
+        :type serial: int
+        :returns: HBAT Atom object or None if conversion fails
+        :rtype: Optional[Atom]
+        """
+        try:
+            # Get attribute indices for key fields
+            try:
+                group_pdb_idx = atom_site_obj.get_attribute_index('group_PDB')
+                label_atom_id_idx = atom_site_obj.get_attribute_index('label_atom_id')
+                label_comp_id_idx = atom_site_obj.get_attribute_index('label_comp_id')
+                label_asym_id_idx = atom_site_obj.get_attribute_index('label_asym_id')
+                label_seq_id_idx = atom_site_obj.get_attribute_index('label_seq_id')
+                auth_seq_id_idx = atom_site_obj.get_attribute_index('auth_seq_id')
+                type_symbol_idx = atom_site_obj.get_attribute_index('type_symbol')
+                cartn_x_idx = atom_site_obj.get_attribute_index('Cartn_x')
+                cartn_y_idx = atom_site_obj.get_attribute_index('Cartn_y')
+                cartn_z_idx = atom_site_obj.get_attribute_index('Cartn_z')
+                occupancy_idx = atom_site_obj.get_attribute_index('occupancy')
+                b_iso_idx = atom_site_obj.get_attribute_index('B_iso_or_equiv')
+            except Exception:
+                # If any required attribute is missing, skip this row
+                return None
+
+            # Extract atom information from row
+            name = str(row[label_atom_id_idx]).strip()
+            alt_loc = ""  # Simplified - CIF has label_alt_id but we skip it
+            res_name = str(row[label_comp_id_idx]).strip()
+            chain_id = str(row[label_asym_id_idx]).strip()
+
+            # Get record type from group_PDB field (ATOM or HETATM) before processing res_seq
+            record_type = str(row[group_pdb_idx]).strip().upper()
+            if record_type not in ('ATOM', 'HETATM'):
+                record_type = 'ATOM'  # Default to ATOM if invalid
+
+            # Handle residue sequence number
+            # For ATOM records: use label_seq_id (protein sequence numbering)
+            # For HETATM records: use auth_seq_id (PDB-style residue numbers for waters, ligands, etc.)
+            try:
+                if record_type == 'HETATM':
+                    # For heteroatoms, use auth_seq_id (PDB residue numbering)
+                    res_seq = int(row[auth_seq_id_idx])
+                else:
+                    # For protein atoms, use label_seq_id (sequential protein numbering)
+                    res_seq = int(row[label_seq_id_idx])
+            except (ValueError, TypeError):
+                res_seq = 0
+
+            i_code = ""  # CIF uses pdbx_PDB_ins_code, simplified here
+
+            # Extract coordinates
+            x = _safe_float_convert(row[cartn_x_idx], 0.0)
+            y = _safe_float_convert(row[cartn_y_idx], 0.0)
+            z = _safe_float_convert(row[cartn_z_idx], 0.0)
+            coords = NPVec3D(x, y, z)
+
+            # Extract other properties
+            occupancy = _safe_float_convert(row[occupancy_idx], 1.0)
+            temp_factor = _safe_float_convert(row[b_iso_idx], 0.0)
+            element = str(row[type_symbol_idx]).strip()
+            charge = ""
+
+            # If element not provided or numeric, guess from atom name
+            if not element or element.isdigit():
+                element = self._guess_element_from_name(name)
+
+            # Classify atom properties
+            atom_props = get_atom_properties(res_name, name)
+
+            return Atom(
+                serial=serial,
+                name=name,
+                alt_loc=alt_loc,
+                res_name=res_name,
+                chain_id=chain_id,
+                res_seq=res_seq,
+                i_code=i_code,
+                coords=coords,
+                occupancy=occupancy,
+                temp_factor=temp_factor,
+                element=element,
+                charge=charge,
+                record_type=record_type,
+                residue_type=atom_props["residue_type"],
+                backbone_sidechain=atom_props["backbone_sidechain"],
+                aromatic=atom_props["aromatic"],
+            )
+
+        except Exception as e:
+            row_info = ""
+            try:
+                label_atom_id_idx = atom_site_obj.get_attribute_index('label_atom_id')
+                label_comp_id_idx = atom_site_obj.get_attribute_index('label_comp_id')
+                atom_name = row[label_atom_id_idx]
+                res_name = row[label_comp_id_idx]
+                row_info = f" (atom={atom_name}, res={res_name})"
+            except Exception:
+                pass
+
+            print(f"Error converting CIF atom row{row_info}: {e}")
+            return None
 
     def _convert_atom_row(self, atom_row: Any, record_type: str) -> Optional[Atom]:
         """Convert pdbreader DataFrame row to HBAT atom."""
@@ -496,6 +704,208 @@ class PDBParser:
 
         except Exception as e:
             print(f"Error parsing CONECT records: {e}")
+
+    def _parse_struct_conn_records(self, containers: List[Any]) -> None:
+        """Parse struct_conn records from mmCIF format (CIF equivalent of CONECT).
+
+        Extracts explicit bond information from the struct_conn table in mmCIF files.
+        Uses smart filtering to avoid duplicate bonds with CCD data.
+
+        **Format:**
+
+        struct_conn table contains:
+        - ptnr1_label_asym_id, ptnr1_label_seq_id, ptnr1_label_atom_id (Atom 1)
+        - ptnr2_label_asym_id, ptnr2_label_seq_id, ptnr2_label_atom_id (Atom 2)
+        - conn_type_id (bond type: "covale", "disulf", etc.)
+        - value_distance (bond distance)
+        - value_order (bond order: "single", "double", etc.)
+
+        **Filtering Strategy:**
+
+        1. Skip standard intra-residue bonds (handled by CCD)
+        2. Skip sequential peptide bonds (C-N linkages, implicit)
+        3. KEEP heteroatom bonds, disulfides, inter-chain bonds
+
+        :param containers: List of mmCIF data containers from PdbxReader
+        :type containers: List[Any]
+        :returns: None (bonds stored in ``self.bonds`` list)
+        :rtype: None
+        """
+        try:
+            for container in containers:
+                # Get struct_conn table using DataCategory API
+                struct_conn_obj = container.get_object('struct_conn')
+                if not struct_conn_obj:
+                    continue
+
+                # Get attribute indices for required fields
+                try:
+                    ptnr1_asym_idx = struct_conn_obj.get_attribute_index('ptnr1_label_asym_id')
+                    ptnr1_seq_idx = struct_conn_obj.get_attribute_index('ptnr1_label_seq_id')
+                    ptnr1_atom_idx = struct_conn_obj.get_attribute_index('ptnr1_label_atom_id')
+                    ptnr2_asym_idx = struct_conn_obj.get_attribute_index('ptnr2_label_asym_id')
+                    ptnr2_seq_idx = struct_conn_obj.get_attribute_index('ptnr2_label_seq_id')
+                    ptnr2_atom_idx = struct_conn_obj.get_attribute_index('ptnr2_label_atom_id')
+                    conn_type_idx = struct_conn_obj.get_attribute_index('conn_type_id')
+
+                    # Optional attributes (may not exist)
+                    try:
+                        distance_idx = struct_conn_obj.get_attribute_index('value_distance')
+                    except Exception:
+                        distance_idx = None
+                except Exception:
+                    # Required attributes missing, skip struct_conn
+                    continue
+
+                # Iterate through all connection records
+                for i in range(struct_conn_obj.row_count):
+                    row = struct_conn_obj.get_full_row(i)
+
+                    # Extract connection information
+                    chain1 = str(row[ptnr1_asym_idx]).strip()
+                    resid1_str = str(row[ptnr1_seq_idx]).strip()
+                    atom1_name = str(row[ptnr1_atom_idx]).strip()
+
+                    chain2 = str(row[ptnr2_asym_idx]).strip()
+                    resid2_str = str(row[ptnr2_seq_idx]).strip()
+                    atom2_name = str(row[ptnr2_atom_idx]).strip()
+
+                    # Convert residue IDs to integers
+                    try:
+                        resid1 = int(resid1_str)
+                        resid2 = int(resid2_str)
+                    except (ValueError, TypeError):
+                        continue
+
+                    conn_type = str(row[conn_type_idx]).strip() if conn_type_idx is not None else ''
+
+                    # Get distance if available
+                    distance_val = None
+                    if distance_idx is not None:
+                        try:
+                            distance_val = float(row[distance_idx])
+                        except (ValueError, TypeError):
+                            distance_val = None
+
+                    # ===== FILTER 1: Skip standard intra-residue bonds =====
+                    # These are handled by CCD residue lookup, no need to duplicate
+                    if chain1 == chain2 and resid1 == resid2:
+                        if self._is_standard_intra_residue_bond(resid1, chain1, atom1_name, atom2_name):
+                            continue
+
+                    # ===== FILTER 2: Skip sequential peptide bonds =====
+                    # These are implicit (C-N linkages) and handled by CCD
+                    if (chain1 == chain2 and abs(resid1 - resid2) == 1 and
+                        atom1_name in ['C', 'O', 'OXT'] and
+                        atom2_name in ['N', 'CA']):
+                        continue
+
+                    # ===== KEEP: Everything else (heteroatoms, disulfides, inter-chain) =====
+
+                    # Find atoms by location
+                    atom1 = self._find_atom_by_location(chain1, resid1, atom1_name)
+                    atom2 = self._find_atom_by_location(chain2, resid2, atom2_name)
+
+                    if atom1 and atom2:
+                        # Calculate distance if not provided
+                        if distance_val is not None:
+                            distance = distance_val
+                        else:
+                            distance = atom1.coords.distance_to(atom2.coords)
+
+                        bond = Bond(
+                            atom1_serial=atom1.serial,
+                            atom2_serial=atom2.serial,
+                            bond_type="explicit",
+                            distance=distance,
+                            detection_method=BondDetectionMethods.STRUCT_CONN,
+                        )
+
+                        # Check to prevent duplicates
+                        if not self._bond_exists(bond):
+                            self.bonds.append(bond)
+
+        except Exception as e:
+            print(f"Warning: Error parsing struct_conn: {e}")
+
+    def _find_atom_by_location(
+        self, chain_id: str, res_seq: int, atom_name: str
+    ) -> Optional[Atom]:
+        """Find atom by (chain, residue number, atom name).
+
+        This is needed for CIF format which uses location-based atom identification
+        instead of serial numbers.
+
+        :param chain_id: Chain identifier
+        :type chain_id: str
+        :param res_seq: Residue sequence number
+        :type res_seq: int
+        :param atom_name: Atom name
+        :type atom_name: str
+        :returns: Atom object if found, None otherwise
+        :rtype: Optional[Atom]
+        """
+        atom_name = atom_name.strip()
+
+        for atom in self.atoms:
+            if (atom.chain_id == chain_id and
+                atom.res_seq == res_seq and
+                atom.name == atom_name):
+                return atom
+
+        return None
+
+    def _is_standard_intra_residue_bond(
+        self, res_seq: int, chain_id: str, atom1_name: str, atom2_name: str
+    ) -> bool:
+        """Check if a bond is a standard bond within a standard residue.
+
+        Uses CCD (Chemical Component Dictionary) data to determine if a bond
+        between two atoms in the same residue is a standard bond.
+
+        :param res_seq: Residue sequence number
+        :type res_seq: int
+        :param chain_id: Chain identifier
+        :type chain_id: str
+        :param atom1_name: First atom name
+        :type atom1_name: str
+        :param atom2_name: Second atom name
+        :type atom2_name: str
+        :returns: True if bond is standard (in CCD), False otherwise
+        :rtype: bool
+        """
+        # Find residue at this location
+        res_key = None
+        res_name = None
+
+        for key, residue in self.residues.items():
+            if residue.chain_id == chain_id and residue.seq_num == res_seq:
+                res_key = key
+                res_name = residue.name
+                break
+
+        if not res_name:
+            return False
+
+        # Get CCD bond data for this residue
+        residue_bonds = get_residue_bonds(res_name)
+        if not residue_bonds:
+            return False
+
+        # Normalize atom names
+        atom1_name = atom1_name.strip()
+        atom2_name = atom2_name.strip()
+
+        # Check if this bond is in CCD data
+        for bond_info in residue_bonds:
+            bond_atom1 = str(bond_info.get('atom1', '')).strip()
+            bond_atom2 = str(bond_info.get('atom2', '')).strip()
+
+            if ((bond_atom1 == atom1_name and bond_atom2 == atom2_name) or
+                (bond_atom1 == atom2_name and bond_atom2 == atom1_name)):
+                return True
+
+        return False
 
     def _detect_bonds_three_step(self) -> None:
         """Detect covalent bonds using three-step hierarchical approach.
