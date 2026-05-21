@@ -12,6 +12,7 @@ from typing import Optional
 from nicegui import ui
 
 from ...core.analysis import NPMolecularInteractionAnalyzer
+from ...core.pdb_extractor import extract_minimal_pdb
 from ...visualization.chain_graph import render_chain_for_web
 from ...visualization.pymol3d import (
     generate_carbonyl_interaction_viewer_js,
@@ -503,7 +504,9 @@ class WebResultsPanel:
         :param viewer_id: Unique ID for the viewer div
         :param hb: Hydrogen bond interaction
         """
-        javascript = generate_hydrogen_bond_viewer_js(hb, self.pdb_content, viewer_id)
+        # Extract minimal PDB with only interacting residues
+        minimal_pdb = extract_minimal_pdb(self.pdb_content, [hb])
+        javascript = generate_hydrogen_bond_viewer_js(hb, minimal_pdb, viewer_id)
         ui.run_javascript(javascript)
 
     def _update_halogen_bonds_panel(self):
@@ -679,7 +682,9 @@ class WebResultsPanel:
         :param viewer_id: Unique ID for the viewer div
         :param xb: Halogen bond interaction
         """
-        javascript = generate_halogen_bond_viewer_js(xb, self.pdb_content, viewer_id)
+        # Extract minimal PDB with only interacting residues
+        minimal_pdb = extract_minimal_pdb(self.pdb_content, [xb])
+        javascript = generate_halogen_bond_viewer_js(xb, minimal_pdb, viewer_id)
         ui.run_javascript(javascript)
 
     def _show_pi_interaction_visualization(self, pi):
@@ -729,7 +734,9 @@ class WebResultsPanel:
         :param viewer_id: Unique ID for the viewer div
         :param pi: Pi interaction
         """
-        javascript = generate_pi_interaction_viewer_js(pi, self.pdb_content, viewer_id)
+        # Extract minimal PDB with only interacting residues
+        minimal_pdb = extract_minimal_pdb(self.pdb_content, [pi])
+        javascript = generate_pi_interaction_viewer_js(pi, minimal_pdb, viewer_id)
         ui.run_javascript(javascript)
 
     def _update_pi_interactions_panel(self):
@@ -1368,8 +1375,10 @@ class WebResultsPanel:
         :param viewer_id: Unique ID for the viewer div
         :param pi_pi: Pi-pi stacking interaction
         """
+        # Extract minimal PDB with only interacting residues
+        minimal_pdb = extract_minimal_pdb(self.pdb_content, [pi_pi])
         javascript = generate_pi_pi_stacking_viewer_js(
-            pi_pi, self.pdb_content, viewer_id
+            pi_pi, minimal_pdb, viewer_id
         )
         ui.run_javascript(javascript)
 
@@ -1420,8 +1429,10 @@ class WebResultsPanel:
         :param viewer_id: Unique ID for the viewer div
         :param carbonyl: Carbonyl interaction
         """
+        # Extract minimal PDB with only interacting residues
+        minimal_pdb = extract_minimal_pdb(self.pdb_content, [carbonyl])
         javascript = generate_carbonyl_interaction_viewer_js(
-            carbonyl, self.pdb_content, viewer_id
+            carbonyl, minimal_pdb, viewer_id
         )
         ui.run_javascript(javascript)
 
@@ -1472,8 +1483,10 @@ class WebResultsPanel:
         :param viewer_id: Unique ID for the viewer div
         :param n_pi: N-pi interaction
         """
+        # Extract minimal PDB with only interacting residues
+        minimal_pdb = extract_minimal_pdb(self.pdb_content, [n_pi])
         javascript = generate_n_pi_interaction_viewer_js(
-            n_pi, self.pdb_content, viewer_id
+            n_pi, minimal_pdb, viewer_id
         )
         ui.run_javascript(javascript)
 
