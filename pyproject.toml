@@ -7,7 +7,7 @@ name = "hbat"
 authors = [
     {name = "Abhishek Tiwari", email = "hbat@abhishek-tiwari.com"},
 ]
-description = "Hydrogen Bond Analysis Tool for PDB structures"
+description = "Hydrogen Bond Analysis Tool supporting PDB and mmCIF structure formats"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"

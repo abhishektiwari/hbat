@@ -1,7 +1,7 @@
 HBAT 2 (Hydrogen Bond Analysis Tool 2)
 =====================
 
-A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions in macromolecular structures, available in Protein Data Bank (PDB) file format. HBAT uses a geometric approach to identify molecular interactions by analyzing distance and angular criteria.
+A Python package to automate the analysis of potential hydrogen bonds and similar type of weak interactions in macromolecular structures from Protein Data Bank (PDB). HBAT supports both ``.pdb`` and ``.cif`` (mmCIF) file formats and uses a geometric approach to identify molecular interactions by analyzing distance and angular criteria.
 
 **Supported Interaction Types:**
 

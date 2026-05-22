@@ -9,12 +9,14 @@ Basic Usage
 .. code-block:: bash
 
    hbat input.pdb [options]
+   hbat input.cif [options]
 
-The simplest usage requires only a PDB file as input:
+The simplest usage requires only a structure file (PDB or CIF format) as input:
 
 .. code-block:: bash
 
-   hbat structure.pdb
+   hbat structure.pdb    # Analyze PDB format file
+   hbat structure.cif    # Analyze mmCIF format file
 
 This will analyze the structure using default parameters and display results to the console.
 
@@ -37,7 +39,10 @@ Input/Output Options
 
 .. option:: input
 
-   Input PDB file (required for analysis).
+   Input structure file (required for analysis). Supported formats:
+
+   - ``.pdb`` - Protein Data Bank format (PDB)
+   - ``.cif`` - Macromolecular Crystallographic Information Format (mmCIF)
 
 .. option:: -o OUTPUT, --output OUTPUT
 
@@ -180,30 +185,32 @@ General Parameters
    - ``complete``: Analyze all interactions (default)
    - ``local``: Analyze only intra-residue interactions
 
-PDB Fixing Options
-~~~~~~~~~~~~~~~~~~~
+Structure Fixing Options
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-HBAT can automatically fix common PDB file issues before analysis:
+HBAT can automatically fix common issues in PDB and CIF files before analysis:
 
 .. option:: --fix-pdb
 
-   Enable automatic PDB fixing to resolve common structural issues like:
-   
+   Enable automatic structure fixing to resolve common structural issues like:
+
    - Missing hydrogen atoms
    - Incomplete residues
    - Chain breaks
    - Non-standard residues
 
+   Works with both PDB and CIF formats. The output format matches the input format.
+
 .. option:: --fix-method {pdbfixer,openbabel}
 
-   Choose the method for PDB fixing (default: pdbfixer):
-   
+   Choose the method for structure fixing (default: pdbfixer):
+
    - ``pdbfixer``: Use PDBFixer (default method, recommended for protein structures)
-   - ``openbabel``: Use OpenBabel (alternative method)
+   - ``openbabel``: Use OpenBabel (alternative method, supports both PDB and CIF)
 
 .. option:: --save-fixed PATH
 
-   Save the fixed PDB structure to the specified file path. Useful for:
+   Save the fixed structure to the specified file path. The output format is automatically determined from the file extension. Useful for:
    
    - Inspecting the fixed structure
    - Reusing the fixed structure in other analyses
@@ -318,10 +325,37 @@ This creates files like:
 - ``results_pi_interactions.csv``
 - ``results_cooperativity_chains.csv``
 
-PDB Fixing Examples
-~~~~~~~~~~~~~~~~~~~~
+CIF (mmCIF) File Analysis
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Fix PDB structure automatically before analysis:
+HBAT now supports Macromolecular Crystallographic Information (mmCIF) format files from RCSB PDB:
+
+.. code-block:: bash
+
+   hbat structure.cif                                # Analyze CIF file with default parameters
+   hbat 6rsa.cif                                    # Analyze PDB entry 6RSA in CIF format
+   hbat 6rsa.cif -o results.json                    # Save results to JSON file
+   hbat 6rsa.cif --fix-pdb --save-fixed 6rsa_fixed.cif  # Fix and save the CIF file
+
+CIF files are automatically detected from the file extension (``.cif``) and processed the same way as PDB files:
+
+.. code-block:: bash
+
+   # Compare analysis results between PDB and CIF formats
+   hbat 6rsa.pdb -o results_pdb.json
+   hbat 6rsa.cif -o results_cif.json
+
+   # Analyze multiple structures in different formats
+   hbat protein1.pdb --csv protein1_results
+   hbat protein2.cif --csv protein2_results
+
+   # Process CIF with fixing and custom parameters
+   hbat crystal_structure.cif --fix-pdb --fix-method=openbabel --hb-distance 3.0
+
+Structure Fixing Examples
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Fix PDB structures automatically before analysis:
 
 .. code-block:: bash
 
@@ -329,19 +363,29 @@ Fix PDB structure automatically before analysis:
    hbat input.pdb --fix-pdb --fix-method=pdbfixer              # Explicitly use PDBFixer
    hbat input.pdb --fix-pdb --fix-method=openbabel             # Use OpenBabel for fixing
 
-Save the fixed structure for inspection:
+Fix CIF structures automatically before analysis:
 
 .. code-block:: bash
 
-   hbat input.pdb --fix-pdb --save-fixed input_fixed.pdb       # Save fixed structure
+   hbat 6rsa.cif --fix-pdb                                     # Auto-fix CIF using PDBFixer
+   hbat 6rsa.cif --fix-pdb --fix-method=openbabel              # Use OpenBabel for CIF fixing
+   hbat structure.cif --fix-pdb --fix-method=pdbfixer --verbose # Detailed fixing process
+
+Save the fixed structure for inspection (maintains original format):
+
+.. code-block:: bash
+
+   hbat input.pdb --fix-pdb --save-fixed input_fixed.pdb       # Save fixed PDB structure
+   hbat 6rsa.cif --fix-pdb --save-fixed 6rsa_fixed.cif         # Save fixed CIF structure
    hbat input.pdb --fix-pdb --save-fixed input_fixed.pdb -o results.json  # Fix, save, and analyze
 
-For structures missing hydrogen atoms:
+For structures missing hydrogen atoms (works with both formats):
 
 .. code-block:: bash
 
-   hbat no_hydrogens.pdb --fix-pdb -o results.txt              # Fix and analyze
-   hbat crystal.pdb --fix-pdb --fix-method=pdbfixer --verbose  # Detailed fixing process
+   hbat no_hydrogens.pdb --fix-pdb -o results.txt              # Fix and analyze PDB
+   hbat crystal.cif --fix-pdb --fix-method=pdbfixer --verbose  # Detailed CIF fixing process
+   hbat protein.cif --fix-pdb --save-fixed protein_fixed.cif --json results  # CIF workflow
 
 Custom Analysis Parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
