@@ -56,6 +56,7 @@ class HBATWebApp:
         self.upload_panel: Optional[UploadPanel] = None
         self.parameter_panel: Optional[ParameterPanel] = None
         self.results_panel: Optional[WebResultsPanel] = None
+        self.fixed_structure_format: Optional[ui.select] = None
 
         # Status tracking
         self.status_label: Optional[ui.label] = None
@@ -68,6 +69,17 @@ class HBATWebApp:
         self.nav_configure: Optional[ui.item] = None
         self.nav_results: Optional[ui.item] = None
         self.nav_export: Optional[ui.item] = None
+
+    def _update_status_label(self, message: str = "Ready"):
+        """Update status label with current file information.
+
+        :param message: Status message to display
+        """
+        if self.status_label:
+            if self.current_file and message == "Ready":
+                self.status_label.text = f"Ready - File: {self.current_file}"
+            else:
+                self.status_label.text = message
 
     def _show_citation_dialog(self):
         """Show citation dialog."""
@@ -352,10 +364,23 @@ class HBATWebApp:
                                 icon="description",
                                 on_click=self._export_txt,
                             ).props("color=primary")
+                        # Download Fixed Structure section
+                        ui.separator().classes("q-my-md")
+                        ui.label("Download Fixed Structure:").classes(
+                            "text-h6 q-mb-md"
+                        )
+
+                        with ui.row().classes("w-full gap-2 items-end"):
+                            self.fixed_structure_format = ui.select(
+                                label="Format",
+                                value="pdb",
+                                options={"pdb": "PDB (.pdb)", "cif": "mmCIF (.cif)"},
+                            ).props("outlined dense")
+
                             ui.button(
-                                "Download Fixed PDB",
-                                icon="science",
-                                on_click=self._export_fixed_pdb,
+                                "Download",
+                                icon="download",
+                                on_click=self._export_fixed_structure,
                             ).props("color=primary")
 
                     with ui.stepper_navigation():
@@ -498,6 +523,10 @@ class HBATWebApp:
             f.write(self.pdb_content)
 
         ui.notify(f"File loaded: {filename}", type="positive", position="top-left")
+
+        # Update status label with filename
+        self._update_status_label("Ready")
+
         # Allow user to proceed to next step
         self.stepper.next()
 
@@ -538,23 +567,9 @@ class HBATWebApp:
                 self.status_label.classes(replace="text-caption q-mt-sm text-positive")
                 ui.notify("Analysis completed!", type="positive", position="top-left")
 
-                # Get PDB content for visualization
-                # Use fixed file for visualization when PDB fixing is applied
-                # to ensure consistency with the analysis performed on the fixed structure
-                pdb_content_for_viz = self.pdb_content
-                if hasattr(
-                    self.analyzer, "_pdb_fixing_info"
-                ) and self.analyzer._pdb_fixing_info.get("applied"):
-                    fixed_file_path = self.analyzer._pdb_fixing_info.get(
-                        "fixed_file_path"
-                    )
-                    if fixed_file_path and os.path.exists(fixed_file_path):
-                        with open(fixed_file_path, "r") as f:
-                            pdb_content_for_viz = f.read()
-
                 # Update results display
                 await self.results_panel.update_results(
-                    self.analyzer, pdb_content_for_viz, self.current_file
+                    self.analyzer, self.current_file
                 )
 
                 # Auto-advance to results step
@@ -683,8 +698,8 @@ class HBATWebApp:
             f"Exported to {output_file.name}", type="positive", position="top-left"
         )
 
-    def _export_fixed_pdb(self):
-        """Export the fixed PDB file (with added hydrogens)."""
+    def _export_fixed_structure(self):
+        """Download the fixed structure in selected format (PDB or CIF)."""
         if not self.analyzer:
             ui.notify(
                 "No analysis results to export", type="warning", position="top-left"
@@ -696,33 +711,83 @@ class HBATWebApp:
             self.analyzer, "_pdb_fixing_info"
         ) or not self.analyzer._pdb_fixing_info.get("applied"):
             ui.notify(
-                "No PDB fixing was applied during analysis",
+                "No structure fixing was applied during analysis",
                 type="warning",
                 position="top-left",
             )
             return
 
+        # Get selected format and fixed file path
+        selected_format = (
+            self.fixed_structure_format.value
+            if self.fixed_structure_format
+            else "pdb"
+        )
         fixed_file_path = self.analyzer._pdb_fixing_info.get("fixed_file_path")
-        if not fixed_file_path or not os.path.exists(fixed_file_path):
-            ui.notify("Fixed PDB file not found", type="warning", position="top-left")
-            return
-
-        # Copy to session directory with a clear name
-        base_name = Path(self.current_file).stem
         method = self.analyzer._pdb_fixing_info.get("method", "unknown")
-        output_file = session_manager.get_session_file_path(
-            self.session_id, f"{base_name}_fixed_{method}.pdb"
-        )
+        base_name = Path(self.current_file).stem
 
-        # Copy the fixed file
-        with open(fixed_file_path, "r") as src:
-            with open(output_file, "w") as dst:
-                dst.write(src.read())
+        try:
+            if not fixed_file_path or not os.path.exists(fixed_file_path):
+                ui.notify(
+                    "Fixed structure file not found",
+                    type="negative",
+                    position="top-left",
+                )
+                return
 
-        ui.download(str(output_file))
-        ui.notify(
-            f"Downloaded fixed PDB ({method})", type="positive", position="top-left"
-        )
+            if selected_format == "cif":
+                # Convert PDB to CIF using OpenBabel
+                import tempfile
+                import subprocess
+
+                with tempfile.NamedTemporaryFile(
+                    suffix=".cif", delete=False
+                ) as temp_cif:
+                    temp_cif_path = temp_cif.name
+
+                try:
+                    result = subprocess.run(
+                        ["obabel", fixed_file_path, "-O", temp_cif_path],
+                        capture_output=True,
+                        timeout=30,
+                    )
+
+                    if result.returncode == 0:
+                        output_file = session_manager.get_session_file_path(
+                            self.session_id, f"{base_name}_fixed_{method}.cif"
+                        )
+                        # Copy converted file to session directory
+                        with open(temp_cif_path, "r") as src:
+                            with open(output_file, "w") as dst:
+                                dst.write(src.read())
+                        file_ext = "cif"
+                    else:
+                        raise Exception("OpenBabel conversion failed")
+                finally:
+                    if os.path.exists(temp_cif_path):
+                        os.remove(temp_cif_path)
+            else:
+                # Export as PDB - copy fixed file to session directory
+                output_file = session_manager.get_session_file_path(
+                    self.session_id, f"{base_name}_fixed_{method}.pdb"
+                )
+                with open(fixed_file_path, "r") as src:
+                    with open(output_file, "w") as dst:
+                        dst.write(src.read())
+                file_ext = "pdb"
+
+            ui.download(str(output_file))
+            ui.notify(
+                f"Downloaded fixed structure ({file_ext.upper()}, {method})",
+                type="positive",
+                position="top-left",
+            )
+
+        except Exception as e:
+            ui.notify(
+                f"Download failed: {str(e)}", type="negative", position="top-left"
+            )
 
     def _navigate_to_step(self, step: str):
         """Navigate to a specific step with validation.
@@ -769,8 +834,8 @@ class HBATWebApp:
             self.results_panel.reset()
 
         # Reset status label
+        self._update_status_label("Ready")
         if self.status_label:
-            self.status_label.text = "Ready"
             self.status_label.classes(replace="text-caption text-grey")
 
         # Note: Analyze button and navigation items are automatically

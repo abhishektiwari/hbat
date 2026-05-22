@@ -21,6 +21,7 @@ class UploadPanel:
         self.on_file_upload = on_file_upload
         self.upload_label: Optional[ui.label] = None
         self.pdb_id_input: Optional[ui.input] = None
+        self.format_select: Optional[ui.select] = None
         self.file_uploaded: bool = False
         self._download_pdb_func: Optional[Callable] = None
 
@@ -83,8 +84,8 @@ class UploadPanel:
 
                 traceback.print_exc()
 
-        async def download_pdb():
-            """Download PDB file from RCSB using PDB ID."""
+        async def download_structure():
+            """Download structure file from RCSB using PDB ID."""
             pdb_id = self.pdb_id_input.value.strip().lower()
             if not pdb_id:
                 ui.notify("Please enter a PDB ID", type="warning", position="top-left")
@@ -109,11 +110,21 @@ class UploadPanel:
                 import urllib.parse
                 import urllib.request
 
+                # Get selected format
+                file_format = self.format_select.value if self.format_select else "pdb"
+
                 # Safely construct URL with validation
                 safe_pdb_id = urllib.parse.quote(pdb_id, safe="")
-                url = f"https://files.rcsb.org/download/{safe_pdb_id}.pdb"
+
+                if file_format == "pdb":
+                    url = f"https://files.rcsb.org/download/{safe_pdb_id}.pdb"
+                    filename = f"{pdb_id}.pdb"
+                else:  # mmcif
+                    url = f"https://files.rcsb.org/download/{safe_pdb_id}.cif"
+                    filename = f"{pdb_id}.cif"
+
                 ui.notify(
-                    f"Downloading {pdb_id} from RCSB PDB...",
+                    f"Downloading {pdb_id} ({file_format.upper()}) from RCSB PDB...",
                     type="info",
                     position="top-left",
                 )
@@ -134,8 +145,6 @@ class UploadPanel:
                         position="top-left",
                     )
                     return
-
-                filename = f"{pdb_id}.pdb"
 
                 if self.upload_label:
                     self.upload_label.text = f"✓ Downloaded: {filename}"
@@ -160,22 +169,31 @@ class UploadPanel:
                 print(f"Download error: {error}")
 
         # Store download function for external use
-        self._download_pdb_func = download_pdb
+        self._download_pdb_func = download_structure
 
         # Option 1: Upload file
         with ui.card().classes("w-full q-pa-md mt-5"):
-            ui.label("Option 1: Upload PDB File").classes("text-h6")
+            ui.label("Option 1: Upload Structure File").classes("text-h6")
             ui.upload(
-                label="Choose PDB File",
+                label="Choose PDB or CIF File",
                 on_upload=handle_upload,
                 auto_upload=True,
-            ).props('accept=".pdb"').classes("w-full")
+            ).props('accept=".pdb,.cif"').classes("w-full")
 
         ui.label("OR").classes("text-center text-bold q-my-md")
 
         # Option 2: Download from PDB
         with ui.card().classes("w-full q-pa-md"):
             ui.label("Option 2: Download from RCSB PDB").classes("text-h6")
+
+            # Format selector
+            self.format_select = ui.select(
+                label="Format",
+                value="pdb",
+                options={"pdb": "PDB (.pdb)", "mmcif": "mmCIF (.cif)"},
+            ).props("outlined").classes("w-full")
+
+            # PDB ID input
             self.pdb_id_input = (
                 ui.input(
                     label="PDB ID",
@@ -211,19 +229,26 @@ class UploadPanel:
         ):
             ui.markdown(
                 """
-**Supported Files:**
+**Supported File Formats:**
 
-- **PDB files** (.pdb)
+- **PDB** (.pdb) - Protein Data Bank format
+- **mmCIF** (.cif) - Macromolecular Crystallographic Information File
 
-- Protein Data Bank format
-- Files can be downloaded from [RCSB PDB](https://www.rcsb.org/)
-- Maximum file size: 1 MB
+Both formats can be uploaded directly or downloaded from [RCSB PDB](https://www.rcsb.org/)
 
-**PDB IDs:**
+Maximum file size: 1 MB
+
+**Download from RCSB PDB:**
 
 - Enter a 4-character PDB ID (e.g., 1BHL, 1GAI, 1UBI)
+- Select desired format (PDB or mmCIF)
 - Files are downloaded directly from RCSB PDB
 - Common examples: 1BHL (Hemoglobin), 1UBI (Ubiquitin)
+
+**Format Notes:**
+
+- **PDB**: Traditional Protein Data Bank format, widely supported
+- **mmCIF**: Modern standard for macromolecular structures, handles larger and more complex structures better
             """
             )
 
