@@ -158,6 +158,7 @@ clean:
 	find . -name "*.pyo" -delete
 	rm -rf conda-build-output/
 	rm -rf example_pdb_files/*_fixed.pdb
+	rm -rf example_pdb_files/*_fixed.cif
 	rm -rf example_pdb_files/*.csv
 	rm -rf example_pdb_files/*.json
 	rm -rf example_pdb_files/*.txt

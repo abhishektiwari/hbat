@@ -12,6 +12,9 @@ from typing import Optional
 from nicegui import ui
 
 from ...core.analysis import NPMolecularInteractionAnalyzer
+from ...visualization.minimal_pdb_extractor import (
+    format_minimal_pdb,
+)
 from ...visualization.chain_graph import render_chain_for_web
 from ...visualization.pymol3d import (
     generate_carbonyl_interaction_viewer_js,
@@ -35,7 +38,6 @@ class WebResultsPanel:
         """
         self.container = container
         self.analyzer: Optional[NPMolecularInteractionAnalyzer] = None
-        self.pdb_content: Optional[str] = None
         self.current_file: Optional[str] = None
         self.session_dir_callback = session_dir_callback
 
@@ -64,16 +66,14 @@ class WebResultsPanel:
         return "structure"
 
     async def update_results(
-        self, analyzer: NPMolecularInteractionAnalyzer, pdb_content: str, filename: str
+        self, analyzer: NPMolecularInteractionAnalyzer, filename: str
     ):
         """Update results display with analysis results.
 
         :param analyzer: The analyzer with results
-        :param pdb_content: PDB file content for visualization
         :param filename: Name of the analyzed file
         """
         self.analyzer = analyzer
-        self.pdb_content = pdb_content
         self.current_file = filename
 
         # Clear container and recreate tabs
@@ -503,7 +503,9 @@ class WebResultsPanel:
         :param viewer_id: Unique ID for the viewer div
         :param hb: Hydrogen bond interaction
         """
-        javascript = generate_hydrogen_bond_viewer_js(hb, self.pdb_content, viewer_id)
+        # Extract minimal PDB with only interacting residues using in-memory parser
+        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [hb])
+        javascript = generate_hydrogen_bond_viewer_js(hb, minimal_pdb, viewer_id)
         ui.run_javascript(javascript)
 
     def _update_halogen_bonds_panel(self):
@@ -679,7 +681,9 @@ class WebResultsPanel:
         :param viewer_id: Unique ID for the viewer div
         :param xb: Halogen bond interaction
         """
-        javascript = generate_halogen_bond_viewer_js(xb, self.pdb_content, viewer_id)
+        # Extract minimal PDB with only interacting residues using in-memory parser
+        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [xb])
+        javascript = generate_halogen_bond_viewer_js(xb, minimal_pdb, viewer_id)
         ui.run_javascript(javascript)
 
     def _show_pi_interaction_visualization(self, pi):
@@ -729,7 +733,9 @@ class WebResultsPanel:
         :param viewer_id: Unique ID for the viewer div
         :param pi: Pi interaction
         """
-        javascript = generate_pi_interaction_viewer_js(pi, self.pdb_content, viewer_id)
+        # Extract minimal PDB with only interacting residues using in-memory parser
+        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [pi])
+        javascript = generate_pi_interaction_viewer_js(pi, minimal_pdb, viewer_id)
         ui.run_javascript(javascript)
 
     def _update_pi_interactions_panel(self):
@@ -1368,8 +1374,10 @@ class WebResultsPanel:
         :param viewer_id: Unique ID for the viewer div
         :param pi_pi: Pi-pi stacking interaction
         """
+        # Extract minimal PDB with only interacting residues using in-memory parser
+        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [pi_pi])
         javascript = generate_pi_pi_stacking_viewer_js(
-            pi_pi, self.pdb_content, viewer_id
+            pi_pi, minimal_pdb, viewer_id
         )
         ui.run_javascript(javascript)
 
@@ -1420,8 +1428,10 @@ class WebResultsPanel:
         :param viewer_id: Unique ID for the viewer div
         :param carbonyl: Carbonyl interaction
         """
+        # Extract minimal PDB with only interacting residues using in-memory parser
+        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [carbonyl])
         javascript = generate_carbonyl_interaction_viewer_js(
-            carbonyl, self.pdb_content, viewer_id
+            carbonyl, minimal_pdb, viewer_id
         )
         ui.run_javascript(javascript)
 
@@ -1472,8 +1482,10 @@ class WebResultsPanel:
         :param viewer_id: Unique ID for the viewer div
         :param n_pi: N-pi interaction
         """
+        # Extract minimal PDB with only interacting residues using in-memory parser
+        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [n_pi])
         javascript = generate_n_pi_interaction_viewer_js(
-            n_pi, self.pdb_content, viewer_id
+            n_pi, minimal_pdb, viewer_id
         )
         ui.run_javascript(javascript)
 
@@ -1560,7 +1572,6 @@ class WebResultsPanel:
     def reset(self):
         """Reset the results panel and clear all analysis results."""
         self.analyzer = None
-        self.pdb_content = None
         self.current_file = None
         self.container.clear()
 

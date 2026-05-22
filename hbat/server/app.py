@@ -69,6 +69,17 @@ class HBATWebApp:
         self.nav_results: Optional[ui.item] = None
         self.nav_export: Optional[ui.item] = None
 
+    def _update_status_label(self, message: str = "Ready"):
+        """Update status label with current file information.
+
+        :param message: Status message to display
+        """
+        if self.status_label:
+            if self.current_file and message == "Ready":
+                self.status_label.text = f"Ready - File: {self.current_file}"
+            else:
+                self.status_label.text = message
+
     def _show_citation_dialog(self):
         """Show citation dialog."""
         with (
@@ -352,11 +363,13 @@ class HBATWebApp:
                                 icon="description",
                                 on_click=self._export_txt,
                             ).props("color=primary")
-                            ui.button(
-                                "Download Fixed PDB",
-                                icon="science",
-                                on_click=self._export_fixed_pdb,
-                            ).props("color=primary")
+                        # Download Fixed Structure section
+                        ui.separator().classes("q-my-md")
+                        ui.button(
+                            "Download Fixed Structure",
+                            icon="download",
+                            on_click=self._export_fixed_structure,
+                        ).props("color=primary")
 
                     with ui.stepper_navigation():
                         ui.button(
@@ -498,6 +511,10 @@ class HBATWebApp:
             f.write(self.pdb_content)
 
         ui.notify(f"File loaded: {filename}", type="positive", position="top-left")
+
+        # Update status label with filename
+        self._update_status_label("Ready")
+
         # Allow user to proceed to next step
         self.stepper.next()
 
@@ -538,26 +555,9 @@ class HBATWebApp:
                 self.status_label.classes(replace="text-caption q-mt-sm text-positive")
                 ui.notify("Analysis completed!", type="positive", position="top-left")
 
-                # Get PDB content for visualization
-                # If PDBFixer was used, we need the fixed file because it reorganizes chains
-                # OpenBabel preserves original chain structure, so use original file
-                pdb_content_for_viz = self.pdb_content
-                if hasattr(
-                    self.analyzer, "_pdb_fixing_info"
-                ) and self.analyzer._pdb_fixing_info.get("applied"):
-                    method = self.analyzer._pdb_fixing_info.get("method", "")
-                    # Only use fixed file for PDBFixer (which reorganizes chains)
-                    if method == "pdbfixer":
-                        fixed_file_path = self.analyzer._pdb_fixing_info.get(
-                            "fixed_file_path"
-                        )
-                        if fixed_file_path and os.path.exists(fixed_file_path):
-                            with open(fixed_file_path, "r") as f:
-                                pdb_content_for_viz = f.read()
-
                 # Update results display
                 await self.results_panel.update_results(
-                    self.analyzer, pdb_content_for_viz, self.current_file
+                    self.analyzer, self.current_file
                 )
 
                 # Auto-advance to results step
@@ -686,8 +686,8 @@ class HBATWebApp:
             f"Exported to {output_file.name}", type="positive", position="top-left"
         )
 
-    def _export_fixed_pdb(self):
-        """Export the fixed PDB file (with added hydrogens)."""
+    def _export_fixed_structure(self):
+        """Download the fixed structure in selected format (PDB or CIF)."""
         if not self.analyzer:
             ui.notify(
                 "No analysis results to export", type="warning", position="top-left"
@@ -699,33 +699,35 @@ class HBATWebApp:
             self.analyzer, "_pdb_fixing_info"
         ) or not self.analyzer._pdb_fixing_info.get("applied"):
             ui.notify(
-                "No PDB fixing was applied during analysis",
+                "No structure fixing was applied during analysis",
                 type="warning",
                 position="top-left",
             )
             return
 
         fixed_file_path = self.analyzer._pdb_fixing_info.get("fixed_file_path")
-        if not fixed_file_path or not os.path.exists(fixed_file_path):
-            ui.notify("Fixed PDB file not found", type="warning", position="top-left")
-            return
 
-        # Copy to session directory with a clear name
-        base_name = Path(self.current_file).stem
-        method = self.analyzer._pdb_fixing_info.get("method", "unknown")
-        output_file = session_manager.get_session_file_path(
-            self.session_id, f"{base_name}_fixed_{method}.pdb"
-        )
+        try:
+            if not os.path.exists(fixed_file_path):
+                ui.notify(
+                    "Fixed structure file not found",
+                    type="negative",
+                    position="top-left",
+                )
+                return
 
-        # Copy the fixed file
-        with open(fixed_file_path, "r") as src:
-            with open(output_file, "w") as dst:
-                dst.write(src.read())
+            # Download the fixed file directly
+            ui.download(fixed_file_path)
+            ui.notify(
+                "Downloaded fixed structure",
+                type="positive",
+                position="top-left",
+            )
 
-        ui.download(str(output_file))
-        ui.notify(
-            f"Downloaded fixed PDB ({method})", type="positive", position="top-left"
-        )
+        except Exception as e:
+            ui.notify(
+                f"Download failed: {str(e)}", type="negative", position="top-left"
+            )
 
     def _navigate_to_step(self, step: str):
         """Navigate to a specific step with validation.
@@ -772,8 +774,8 @@ class HBATWebApp:
             self.results_panel.reset()
 
         # Reset status label
+        self._update_status_label("Ready")
         if self.status_label:
-            self.status_label.text = "Ready"
             self.status_label.classes(replace="text-caption text-grey")
 
         # Note: Analyze button and navigation items are automatically

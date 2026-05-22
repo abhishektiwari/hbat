@@ -1212,7 +1212,7 @@ class ResultsPanel:
         # Add placeholder text
         self.summary_text.insert(tk.END, "No analysis results available.\n\n")
         self.summary_text.insert(
-            tk.END, "Please load a PDB file and run analysis to see results."
+            tk.END, "Please load a structure file (PDB or CIF) and run analysis to see results."
         )
 
     def _visualize_selected_chain(self):

@@ -79,6 +79,7 @@ def create_parser() -> argparse.ArgumentParser:
         epilog="""
 Examples:
   %(prog)s input.pdb                         # Display results to console
+  %(prog)s input.cif                         # Parse CIF (mmCIF/PDBx) format
   %(prog)s input.pdb -o results.txt          # Save results to text file
   %(prog)s input.pdb -o results.json         # Save results to JSON file (single file)
   %(prog)s input.pdb --csv results           # Export to multiple CSV files (one per interaction type)
@@ -96,7 +97,7 @@ Examples:
     )
 
     # Input file (optional when listing presets)
-    parser.add_argument("input", nargs="?", help="Input PDB file")
+    parser.add_argument("input", nargs="?", help="Input PDB or CIF file")
 
     # Output options
     parser.add_argument(
@@ -937,12 +938,12 @@ def print_error(message: str) -> None:
 
 
 def validate_input_file(filename: str) -> bool:
-    """Validate input PDB file.
+    """Validate input PDB or CIF file.
 
     Checks if the input file exists, is readable, and contains
-    valid PDB-format content.
+    valid PDB or CIF format content.
 
-    :param filename: Path to the PDB file to validate
+    :param filename: Path to the PDB or CIF file to validate
     :type filename: str
     :returns: True if file is valid, False otherwise
     :rtype: bool
@@ -955,11 +956,26 @@ def validate_input_file(filename: str) -> bool:
         print_error(f"'{filename}' is not a regular file")
         return False
 
+    # Get file extension to determine expected format
+    _, ext = os.path.splitext(filename)
+    ext_lower = ext.lower()
+
     try:
         with open(filename, "r") as f:
-            # Check if file contains PDB-like content
-            # Read more lines to account for headers
+            # Check if file contains PDB or CIF content
             content = f.read()
+
+            # Check for CIF format (mmCIF/PDBx)
+            if ext_lower == ".cif":
+                # CIF files should contain data_ blocks at line start
+                import re
+                has_cif_content = bool(re.search(r'^\s*data_', content, re.MULTILINE))
+                if not has_cif_content:
+                    print_error(f"'{filename}' does not appear to be a valid CIF file (missing 'data_' block)")
+                    return False
+                return True
+
+            # Check for PDB format (default)
             has_atoms = "ATOM" in content or "HETATM" in content
             has_pdb_keywords = any(
                 keyword in content
@@ -1343,7 +1359,7 @@ def main() -> int:
 
     # Validate that input file is provided for analysis
     if not args.input:
-        print_error("Input PDB file is required for analysis")
+        print_error("Input PDB or CIF file is required for analysis")
         print_error(
             "Use --help for usage information or --list-presets to see available presets"
         )

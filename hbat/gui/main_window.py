@@ -2,7 +2,7 @@
 Main GUI window for HBAT application.
 
 This module provides the main tkinter interface for the HBAT application,
-allowing users to load PDB files, configure analysis parameters, and view results.
+allowing users to load structure files (PDB or CIF), configure analysis parameters, and view results.
 """
 
 import asyncio
@@ -99,7 +99,7 @@ class MainWindow:
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(
-            label="Open PDB File...", accelerator="Ctrl+O", command=self._open_file
+            label="Open Structure File (PDB/CIF)...", accelerator="Ctrl+O", command=self._open_file
         )
         file_menu.add_separator()
         file_menu.add_command(
@@ -192,7 +192,7 @@ class MainWindow:
     def _create_main_content(self) -> None:
         """Create the main content area.
 
-        Sets up the main interface with a vertical paned window containing PDB file
+        Sets up the main interface with a vertical paned window containing structure file
         content on top (30%) and results display area below (70%).
 
         :returns: None
@@ -202,17 +202,17 @@ class MainWindow:
         main_paned = ttk.PanedWindow(self.root, orient=tk.VERTICAL)
         main_paned.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        # Top panel - PDB File content (30% of height)
+        # Top panel - Structure file content (30% of height)
         top_frame = ttk.Frame(main_paned)
         main_paned.add(top_frame, weight=3)  # 30% weight ratio
 
-        # Create notebook for PDB file tabs
+        # Create notebook for structure file tabs
         self.left_notebook = ttk.Notebook(top_frame)
         self.left_notebook.pack(fill=tk.BOTH, expand=True)
 
         # File content tab
         file_frame = ttk.Frame(self.left_notebook)
-        self.left_notebook.add(file_frame, text="PDB File")
+        self.left_notebook.add(file_frame, text="Structure File")
 
         # Create text widget with both vertical and horizontal scrollbars
         text_frame = ttk.Frame(file_frame)
@@ -304,17 +304,22 @@ class MainWindow:
         ).pack(fill=tk.X, padx=2, pady=1)
 
     def _open_file(self) -> None:
-        """Open a PDB file.
+        """Open a structure file (PDB or CIF format).
 
-        Displays a file dialog to select a PDB file, loads its content,
+        Displays a file dialog to select a structure file (PDB or CIF), loads its content,
         and enables analysis functionality.
 
         :returns: None
         :rtype: None
         """
         filename = filedialog.askopenfilename(
-            title="Open PDB File",
-            filetypes=[("PDB files", "*.pdb"), ("All files", "*.*")],
+            title="Open Structure File (PDB or CIF)",
+            filetypes=[
+                ("Structure files", "*.pdb *.cif"),
+                ("PDB files", "*.pdb"),
+                ("CIF files", "*.cif"),
+                ("All files", "*.*")
+            ],
         )
 
         if filename:
@@ -334,10 +339,10 @@ class MainWindow:
     def _load_file_content(self, filename: str) -> None:
         """Load and display file content.
 
-        Reads the PDB file content and displays it in the text widget
-        with syntax highlighting for PDB record types.
+        Reads the structure file (PDB or CIF) content and displays it in the text widget
+        with syntax highlighting for structure record types.
 
-        :param filename: Path to the PDB file to load
+        :param filename: Path to the structure file to load
         :type filename: str
         :returns: None
         :rtype: None
@@ -362,7 +367,7 @@ class MainWindow:
     def _load_file_in_chunks(self, filename: str) -> None:
         """Load file content in chunks to prevent GUI freezing.
 
-        :param filename: Path to the PDB file to load
+        :param filename: Path to the structure file to load (PDB or CIF)
         :type filename: str
         :returns: None
         :rtype: None
@@ -453,7 +458,7 @@ class MainWindow:
         :rtype: None
         """
         if not self.current_file:
-            messagebox.showwarning("Warning", "Please open a PDB file first.")
+            messagebox.showwarning("Warning", "Please open a structure file (PDB or CIF) first.")
             return
 
         if self.analysis_running:
@@ -1107,15 +1112,23 @@ Author: Abhishek Tiwari
                 return
 
         # Get save filename
+        # Determine default extension based on input format
+        input_file = self.current_file or 'structure'
+        input_ext = os.path.splitext(input_file)[1].lower()
+        is_cif_input = input_ext == '.cif'
+        default_ext = ".cif" if is_cif_input else ".pdb"
+        default_name = f"{os.path.splitext(os.path.basename(input_file))[0]}_fixed{default_ext}"
+
         filename = filedialog.asksaveasfilename(
-            title="Save Fixed PDB",
-            defaultextension=".pdb",
+            title="Save Fixed Structure",
+            defaultextension=default_ext,
             filetypes=[
                 ("PDB files", "*.pdb"),
+                ("CIF files", "*.cif"),
                 ("Text files", "*.txt"),
                 ("All files", "*.*"),
             ],
-            initialname=f"{os.path.splitext(os.path.basename(self.current_file or 'structure'))[0]}_fixed.pdb",
+            initialname=default_name,
         )
 
         if filename:
