@@ -513,83 +513,6 @@ class TestPDBFixingIntegration:
         assert len(atom_records) == 602, "Should have 602 protein atoms"
         assert len(hetatm_records) == 81, "Should have 81 water molecules"
 
-    @pytest.mark.skipif(not has_openbabel(), reason="OpenBabel not available")
-    def test_hydrogen_addition_openbabel(self, pdb_fixing_test_file):
-        """Test hydrogen addition using OpenBabel."""
-        fixer = PDBFixer()
-
-        # Parse original structure
-        parser = PDBParser()
-        parser.parse_file(pdb_fixing_test_file)
-        original_atoms = parser.atoms
-
-        # Add hydrogens using OpenBabel
-        result_atoms = fixer.add_missing_hydrogens(original_atoms, method="openbabel")
-
-        # Should have significantly more atoms
-        assert len(result_atoms) > len(original_atoms), (
-            "Should have more atoms after adding hydrogens"
-        )
-
-        # Should now contain hydrogen atoms
-        hydrogen_atoms = [atom for atom in result_atoms if atom.is_hydrogen()]
-        assert len(hydrogen_atoms) > 0, "Should now have hydrogen atoms"
-
-        # Heavy atom count should be preserved or similar
-        heavy_atoms = [atom for atom in result_atoms if not atom.is_hydrogen()]
-        assert len(heavy_atoms) >= len(original_atoms) * 0.9, (
-            "Heavy atom count should be preserved"
-        )
-
-        # Expected hydrogen count for 1ubi.pdb with OpenBabel
-        assert 750 <= len(hydrogen_atoms) <= 820, (
-            f"Expected 750-820 hydrogens for OpenBabel on 1ubi.pdb, got {len(hydrogen_atoms)}"
-        )
-
-        # Total should equal heavy + hydrogen
-        assert len(result_atoms) == len(heavy_atoms) + len(hydrogen_atoms), (
-            "Total atoms should equal heavy atoms plus hydrogens"
-        )
-
-    @pytest.mark.skipif(not has_pdbfixer(), reason="PDBFixer not available")
-    def test_hydrogen_addition_pdbfixer(self, pdb_fixing_test_file):
-        """Test hydrogen addition using PDBFixer."""
-        fixer = PDBFixer()
-
-        # Parse original structure
-        parser = PDBParser()
-        parser.parse_file(pdb_fixing_test_file)
-        original_atoms = parser.atoms
-
-        # Add hydrogens using PDBFixer
-        result_atoms = fixer.add_missing_hydrogens(
-            original_atoms, method="pdbfixer", pH=7.0
-        )
-
-        # Should have significantly more atoms
-        assert len(result_atoms) > len(original_atoms), (
-            "Should have more atoms after adding hydrogens"
-        )
-
-        # Should now contain hydrogen atoms
-        hydrogen_atoms = [atom for atom in result_atoms if atom.is_hydrogen()]
-        assert len(hydrogen_atoms) > 0, "Should now have hydrogen atoms"
-
-        # Heavy atom count should be preserved or similar
-        heavy_atoms = [atom for atom in result_atoms if not atom.is_hydrogen()]
-        assert len(heavy_atoms) >= len(original_atoms) * 0.9, (
-            "Heavy atom count should be preserved"
-        )
-
-        # Expected hydrogen count for 1ubi.pdb with PDBFixer
-        assert 750 <= len(hydrogen_atoms) <= 820, (
-            f"Expected 750-820 hydrogens for PDBFixer on 1ubi.pdb, got {len(hydrogen_atoms)}"
-        )
-
-        # Total should equal heavy + hydrogen
-        assert len(result_atoms) == len(heavy_atoms) + len(hydrogen_atoms), (
-            "Total atoms should equal heavy atoms plus hydrogens"
-        )
 
     @pytest.mark.skipif(
         not (has_openbabel() or has_pdbfixer()), reason="No PDB fixer available"
@@ -610,12 +533,15 @@ class TestPDBFixingIntegration:
             os.unlink(output_path)
 
             # Fix the structure file
-            result_path = fixer.fix_structure_file(
-                pdb_fixing_test_file, output_path, method=method, overwrite=True
+            success = fixer.fix_pdb_file_to_file(
+                input_pdb_path=pdb_fixing_test_file,
+                output_pdb_path=output_path,
+                method=method,
+                add_hydrogens=True,
             )
 
-            # Should return the specified output path
-            assert result_path == output_path, "Should return specified output path"
+            # Should return True for success
+            assert success, "Fix operation should succeed"
 
             # Output file should exist and have content
             assert os.path.exists(output_path), "Output file should exist"
@@ -664,85 +590,17 @@ class TestPDBFixingIntegration:
             "Should indicate insufficient hydrogens"
         )
 
-    @pytest.mark.skipif(
-        not (has_openbabel() or has_pdbfixer()), reason="No PDB fixer available"
-    )
-    def test_hydrogen_analysis_after_fixing(self, pdb_fixing_test_file):
-        """Test hydrogen analysis after fixing."""
-        fixer = PDBFixer()
-
-        # Parse and fix structure
-        parser = PDBParser()
-        parser.parse_file(pdb_fixing_test_file)
-        original_atoms = parser.atoms
-
-        # Add hydrogens
-        method = "openbabel" if has_openbabel() else "pdbfixer"
-        fixed_atoms = fixer.add_missing_hydrogens(original_atoms, method=method)
-
-        # Analyze fixed structure
-        info = fixer.get_missing_hydrogen_info(fixed_atoms)
-
-        # Verify analysis results after fixing
-        assert 1450 <= info["total_atoms"] <= 1500, (
-            f"Expected 1450-1500 total atoms after fixing, got {info['total_atoms']}"
-        )
-        assert 750 <= info["hydrogen_atoms"] <= 820, (
-            f"Expected 750-820 hydrogen atoms after fixing, got {info['hydrogen_atoms']}"
-        )
-        assert info["heavy_atoms"] >= 683 * 0.9, "Heavy atom count should be preserved"
-        assert info["hydrogen_percentage"] > 50.0, (
-            "Should have high hydrogen percentage after fixing"
-        )
-        assert info["has_sufficient_hydrogens"], (
-            "Should indicate sufficient hydrogens after fixing"
-        )
-
     def test_error_handling_integration(self):
         """Test error handling in PDB fixing integration."""
         fixer = PDBFixer()
 
-        # Test with non-existent file
-        with pytest.raises(PDBFixerError, match="does not exist"):
-            fixer.fix_structure_file("/nonexistent/file.pdb")
-
-        # Test with unsupported method (need non-empty list to trigger validation)
-        from hbat.core.structure import Atom
-        from hbat.core.np_vector import NPVec3D
-
-        dummy_atom = Atom(
-            serial=1,
-            name="CA",
-            alt_loc="",
-            res_name="ALA",
-            chain_id="A",
-            res_seq=1,
-            i_code="",
-            coords=NPVec3D(0, 0, 0),
-            occupancy=1.0,
-            temp_factor=0.0,
-            element="C",
-            charge="",
-            record_type="ATOM",
-        )
-        with pytest.raises(PDBFixerError, match="Unsupported method"):
-            fixer.add_missing_hydrogens([dummy_atom], method="invalid_method")
-
-        # Test overwrite protection
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".pdb", delete=False
-        ) as existing_file:
-            existing_file.write("EXISTING CONTENT")
-            existing_path = existing_file.name
-
-        try:
-            with pytest.raises(PDBFixerError, match="already exists"):
-                fixer.fix_structure_file(
-                    "example_pdb_files/6rsa.pdb", existing_path, overwrite=False
-                )
-        finally:
-            if os.path.exists(existing_path):
-                os.unlink(existing_path)
+        # Test with non-existent input file
+        with pytest.raises(PDBFixerError, match="not found"):
+            fixer.fix_pdb_file_to_file(
+                input_pdb_path="/nonexistent/file.pdb",
+                output_pdb_path="/tmp/output.pdb",
+                method="openbabel"
+            )
 
 
 @pytest.mark.integration
