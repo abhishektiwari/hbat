@@ -56,7 +56,6 @@ class HBATWebApp:
         self.upload_panel: Optional[UploadPanel] = None
         self.parameter_panel: Optional[ParameterPanel] = None
         self.results_panel: Optional[WebResultsPanel] = None
-        self.fixed_structure_format: Optional[ui.select] = None
 
         # Status tracking
         self.status_label: Optional[ui.label] = None
@@ -366,22 +365,11 @@ class HBATWebApp:
                             ).props("color=primary")
                         # Download Fixed Structure section
                         ui.separator().classes("q-my-md")
-                        ui.label("Download Fixed Structure:").classes(
-                            "text-h6 q-mb-md"
-                        )
-
-                        with ui.row().classes("w-full gap-2 items-end"):
-                            self.fixed_structure_format = ui.select(
-                                label="Format",
-                                value="pdb",
-                                options={"pdb": "PDB (.pdb)", "cif": "mmCIF (.cif)"},
-                            ).props("outlined dense")
-
-                            ui.button(
-                                "Download",
-                                icon="download",
-                                on_click=self._export_fixed_structure,
-                            ).props("color=primary")
+                        ui.button(
+                            "Download Fixed Structure",
+                            icon="download",
+                            on_click=self._export_fixed_structure,
+                        ).props("color=primary")
 
                     with ui.stepper_navigation():
                         ui.button(
@@ -717,18 +705,10 @@ class HBATWebApp:
             )
             return
 
-        # Get selected format and fixed file path
-        selected_format = (
-            self.fixed_structure_format.value
-            if self.fixed_structure_format
-            else "pdb"
-        )
         fixed_file_path = self.analyzer._pdb_fixing_info.get("fixed_file_path")
-        method = self.analyzer._pdb_fixing_info.get("method", "unknown")
-        base_name = Path(self.current_file).stem
 
         try:
-            if not fixed_file_path or not os.path.exists(fixed_file_path):
+            if not os.path.exists(fixed_file_path):
                 ui.notify(
                     "Fixed structure file not found",
                     type="negative",
@@ -736,50 +716,10 @@ class HBATWebApp:
                 )
                 return
 
-            if selected_format == "cif":
-                # Convert PDB to CIF using OpenBabel
-                import tempfile
-                import subprocess
-
-                with tempfile.NamedTemporaryFile(
-                    suffix=".cif", delete=False
-                ) as temp_cif:
-                    temp_cif_path = temp_cif.name
-
-                try:
-                    result = subprocess.run(
-                        ["obabel", fixed_file_path, "-O", temp_cif_path],
-                        capture_output=True,
-                        timeout=30,
-                    )
-
-                    if result.returncode == 0:
-                        output_file = session_manager.get_session_file_path(
-                            self.session_id, f"{base_name}_fixed_{method}.cif"
-                        )
-                        # Copy converted file to session directory
-                        with open(temp_cif_path, "r") as src:
-                            with open(output_file, "w") as dst:
-                                dst.write(src.read())
-                        file_ext = "cif"
-                    else:
-                        raise Exception("OpenBabel conversion failed")
-                finally:
-                    if os.path.exists(temp_cif_path):
-                        os.remove(temp_cif_path)
-            else:
-                # Export as PDB - copy fixed file to session directory
-                output_file = session_manager.get_session_file_path(
-                    self.session_id, f"{base_name}_fixed_{method}.pdb"
-                )
-                with open(fixed_file_path, "r") as src:
-                    with open(output_file, "w") as dst:
-                        dst.write(src.read())
-                file_ext = "pdb"
-
-            ui.download(str(output_file))
+            # Download the fixed file directly
+            ui.download(fixed_file_path)
             ui.notify(
-                f"Downloaded fixed structure ({file_ext.upper()}, {method})",
+                "Downloaded fixed structure",
                 type="positive",
                 position="top-left",
             )
