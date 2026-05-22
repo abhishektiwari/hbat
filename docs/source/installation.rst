@@ -69,6 +69,7 @@ From Source
    git clone https://github.com/abhishektiwari/hbat.git
    cd hbat
    pip install -e .
+
 From Conda
 ~~~~~~~~~~
 

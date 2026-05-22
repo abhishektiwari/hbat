@@ -113,9 +113,9 @@ Geometric Criteria
 
 Classical hydrogen bond detection criteria:
 
-- **H···A distance**: ≤ ``ParametersDefault.HB_DISTANCE_CUTOFF`` (``2.5`` Å)
-- **D-H···A angle**: ≥ ``ParametersDefault.HB_ANGLE_CUTOFF`` (``120.0``°)
-- **D···A distance**: ≤ ``ParametersDefault.HB_DA_DISTANCE`` (``3.5`` Å)
+- **H···A distance**: ≤ ``ParametersDefault.HB_DISTANCE_CUTOFF`` (``2.5 Å``)
+- **D-H···A angle**: ≥ ``ParametersDefault.HB_ANGLE_CUTOFF`` (``120.0°``)
+- **D···A distance**: ≤ ``ParametersDefault.HB_DA_DISTANCE`` (``3.5 Å``)
 
 Weak Hydrogen Bonds (C-H Donors)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -132,11 +132,11 @@ Geometric Criteria
 
 Weak hydrogen bond detection criteria (more permissive than classical H-bonds):
 
-- **H···A distance**: ≤ ``ParametersDefault.WHB_DISTANCE_CUTOFF`` (``3.6`` Å)
-- **D-H···A angle**: ≥ ``ParametersDefault.WHB_ANGLE_CUTOFF`` (``150.0``°)
-- **D···A distance**: ≤ ``ParametersDefault.WHB_DA_DISTANCE`` (``3.5`` Å)
+- **H···A distance**: ≤ ``ParametersDefault.WHB_DISTANCE_CUTOFF`` (``3.6 Å``)
+- **D-H···A angle**: ≥ ``ParametersDefault.WHB_ANGLE_CUTOFF`` (``150.0°``)
+- **D···A distance**: ≤ ``ParametersDefault.WHB_DA_DISTANCE`` (``3.5 Å``)
 
-Note: Weak hydrogen bonds require a more stringent angular cutoff (``150.0``° vs ``120.0``°) to compensate for their weaker electrostatic nature and reduce false positives.
+Note: Weak hydrogen bonds require a more stringent angular cutoff (``150.0°`` vs ``120.0°``) to compensate for their weaker electrostatic nature and reduce false positives.
 
 Halogen Bonds
 ~~~~~~~~~~~~~
@@ -156,8 +156,8 @@ Geometric Criteria
 
 Halogen bond detection criteria:
 
-- **X···A distance**: ≤ ``ParametersDefault.XB_DISTANCE_CUTOFF`` (``3.9`` Å, approximately the sum of van der Waals radii)
-- **C-X···A angle**: ≥ ``ParametersDefault.XB_ANGLE_CUTOFF`` (``150.0``°, ensures linear geometry for σ-hole interaction)
+- **X···A distance**: ≤ ``ParametersDefault.XB_DISTANCE_CUTOFF`` (``3.9 Å``, approximately the sum of van der Waals radii)
+- **C-X···A angle**: ≥ ``ParametersDefault.XB_ANGLE_CUTOFF`` (``150.0°``, ensures linear geometry for σ-hole interaction)
 
 π Interaction
 ~~~~~~~~~~~~~
@@ -207,12 +207,12 @@ Once the aromatic center is calculated:
 
 1. **Distance Check**: ``H``...π center distance
 
-   - **Cutoff**: ≤ ``ParametersDefault.PI_DISTANCE_CUTOFF`` (``3.5`` Å)
+   - **Cutoff**: ≤ ``ParametersDefault.PI_DISTANCE_CUTOFF`` (``3.5 Å``)
    - **Calculation**: 3D Euclidean distance from hydrogen to ring centroid
 
 2. **Angular Check**: ``D-H``...π angle
 
-   - **Cutoff**: ≥ ``ParametersDefault.PI_ANGLE_CUTOFF`` (``110.0``°)
+   - **Cutoff**: ≥ ``ParametersDefault.PI_ANGLE_CUTOFF`` (``110.0°``)
    - **Calculation**: Angle between donor-hydrogen vector and hydrogen-π_center vector
    - Uses same ``angle_between_vectors()`` function as regular hydrogen bonds
 
@@ -233,21 +233,21 @@ Stacking Types
 
 HBAT classifies π-π interactions into three categories based on the angle between ring planes and lateral offset:
 
-1. **Parallel Stacking** (``plane_angle ≤ ParametersDefault.PI_PI_PARALLEL_ANGLE_CUTOFF`` (``30.0``°)):
+1. **Parallel Stacking** (``plane_angle ≤ ParametersDefault.PI_PI_PARALLEL_ANGLE_CUTOFF`` ``30.0°``):
 
    - Ring planes are nearly parallel
    - Offset geometry preferred over face-to-face due to electrostatic repulsion
-   - Maximum offset: ``ParametersDefault.PI_PI_OFFSET_CUTOFF`` (``2.0`` Å) for optimal interaction
-   - Distance: typically ``3.3``-``4.0`` Å between centroids
+   - Maximum offset: ``ParametersDefault.PI_PI_OFFSET_CUTOFF`` (``2.0 Å``) for optimal interaction
+   - Distance: typically ``3.3-4.0 Å`` between centroids
 
-2. **T-shaped Stacking** (``ParametersDefault.PI_PI_TSHAPED_ANGLE_MIN ≤ plane_angle ≤ ParametersDefault.PI_PI_TSHAPED_ANGLE_MAX`` (``60.0``-``90.0``°)):
+2. **T-shaped Stacking** (``ParametersDefault.PI_PI_TSHAPED_ANGLE_MIN ≤ plane_angle ≤ ParametersDefault.PI_PI_TSHAPED_ANGLE_MAX`` ``60.0°-90.0°``):
 
    - Ring planes are approximately perpendicular (edge-to-face)
    - One ring's edge approaches the face of the other
    - Minimizes electrostatic repulsion while maximizing ``C-H···π`` interactions
-   - Distance: typically ``4.5``-``5.5`` Å between centroids
+   - Distance: typically ``4.5-5.5 Å`` between centroids
 
-3. **Offset Stacking** (``ParametersDefault.PI_PI_PARALLEL_ANGLE_CUTOFF < plane_angle < ParametersDefault.PI_PI_TSHAPED_ANGLE_MIN`` (``30.0``-``60.0``°)):
+3. **Offset Stacking** (``ParametersDefault.PI_PI_PARALLEL_ANGLE_CUTOFF < plane_angle < ParametersDefault.PI_PI_TSHAPED_ANGLE_MIN`` ``30.0°-60.0°``):
 
    - Intermediate geometry between parallel and T-shaped
    - Provides balance between π-π overlap and electrostatic favorability
@@ -362,9 +362,9 @@ Geometric Criteria
 
 n-π interaction detection criteria:
 
-- **Distance**: ≤ ``ParametersDefault.N_PI_DISTANCE_CUTOFF`` (``3.6`` Å) from lone pair atom to π center (``ParametersDefault.N_PI_SULFUR_DISTANCE_CUTOFF`` (``4.0`` Å) for sulfur)
-- **Minimum distance**: ≥ ``ParametersDefault.N_PI_DISTANCE_MIN`` (``2.5`` Å) to avoid unrealistic close contacts
-- **Angle to plane**: ``ParametersDefault.N_PI_ANGLE_MIN``-``ParametersDefault.N_PI_ANGLE_MAX`` (``0.0``-``45.0``°)
+- **Distance**: ≤ ``ParametersDefault.N_PI_DISTANCE_CUTOFF`` (``3.6 Å``) from lone pair atom to π center (``ParametersDefault.N_PI_SULFUR_DISTANCE_CUTOFF`` ``4.0 Å`` for sulfur)
+- **Minimum distance**: ≥ ``ParametersDefault.N_PI_DISTANCE_MIN`` (``2.5 Å``) to avoid unrealistic close contacts
+- **Angle to plane**: ``ParametersDefault.N_PI_ANGLE_MIN``-``ParametersDefault.N_PI_ANGLE_MAX`` (``0.0°-45.0°``)
 
   - Calculated as: ``angle_to_plane = 90° - angle_to_normal``
   - ``angle_to_plane`` range of ``0-45°`` corresponds to ``angle_to_normal`` of ``45-90°``
