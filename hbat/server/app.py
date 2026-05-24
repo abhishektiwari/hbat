@@ -512,7 +512,7 @@ class HBATWebApp:
         with open(self.current_file_path, "w") as f:
             f.write(self.pdb_content)
 
-        ui.notify(f"File loaded: {filename}", type="positive", position="top-left")
+        # ui.notify(f"File loaded: {filename}", type="positive", position="top-left")
 
         # Update status label with filename
         self._update_status_label("Ready")
@@ -537,6 +537,11 @@ class HBATWebApp:
         self.status_label.text = "Running analysis..."
         self.status_label.classes(replace="text-caption q-mt-sm text-warning text-bold")
 
+        # Create notification for progress feedback
+        notification = ui.notification(timeout=None)
+        notification.message = "Analyzing molecular interactions..."
+        notification.spinner = True
+
         try:
             # Get parameters from UI
             params = self.parameter_panel.get_parameters()
@@ -555,7 +560,11 @@ class HBATWebApp:
                     f"Analysis completed! File: {self.current_file}"
                 )
                 self.status_label.classes(replace="text-caption q-mt-sm text-positive")
-                ui.notify("Analysis completed!", type="positive", position="top-left")
+
+                notification.message = "Analysis completed!"
+                notification.spinner = False
+                await asyncio.sleep(1)
+                notification.dismiss()
 
                 # Update download button label based on whether fixing was applied
                 if (
@@ -579,16 +588,16 @@ class HBATWebApp:
             else:
                 self.status_label.text = "Analysis failed"
                 self.status_label.classes(replace="text-caption q-mt-sm text-negative")
-                ui.notify(
-                    "Analysis failed. Please check the PDB file.",
-                    type="negative",
-                    position="top-left",
-                )
+
+                notification.message = "Analysis failed. Please check the PDB file."
+                notification.spinner = False
 
         except Exception as e:
             self.status_label.text = f"Error: {str(e)}"
             self.status_label.classes(replace="text-caption q-mt-sm text-negative")
-            ui.notify(f"Error: {str(e)}", type="negative", position="top-left")
+
+            notification.message = f"Error: {str(e)}"
+            notification.spinner = False
 
         finally:
             self.analysis_running = False

@@ -124,12 +124,6 @@ class UploadPanel:
                     url = f"https://files.rcsb.org/download/{safe_pdb_id}.cif"
                     filename = f"{pdb_id}.cif"
 
-                ui.notify(
-                    f"Downloading {pdb_id} ({file_format.upper()}) from RCSB PDB...",
-                    type="info",
-                    position="top-left",
-                )
-
                 # Add timeout for security (30 seconds)
                 with urllib.request.urlopen(url, timeout=30) as response:  # nosec B310
                     content = response.read()
