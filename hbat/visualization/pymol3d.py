@@ -908,3 +908,140 @@ def generate_water_bridge_viewer_js(
     }})();
     """
     return javascript
+
+
+def generate_ligand_interactions_viewer_js(
+    interactions_data: list, pdb_content: str, viewer_id: str, ligand_res: str = None
+) -> str:
+    """Generate JavaScript code for unified 3D visualization of all ligand interactions.
+
+    :param interactions_data: List of interaction dicts with donor/acceptor atom info
+    :type interactions_data: list
+    :param pdb_content: PDB file content
+    :type pdb_content: str
+    :param viewer_id: Unique ID for the viewer div
+    :type viewer_id: str
+    :param ligand_res: Ligand residue name (e.g., "GTP") for styling
+    :type ligand_res: str
+    :returns: JavaScript code to initialize the viewer
+    :rtype: str
+    """
+    import json
+    pdb_escaped = _escape_pdb_content(pdb_content)
+    ligand_name = ligand_res or ""  # Use residue name if provided
+
+    # Convert interactions_data to JSON for embedding in JavaScript
+    interactions_json = json.dumps(interactions_data or [])
+
+    javascript = f"""
+    (function() {{
+        function init3Dmol() {{
+            if (typeof $3Dmol === 'undefined') {{
+                setTimeout(init3Dmol, 100);
+                return;
+            }}
+
+            let element = document.getElementById("{viewer_id}");
+            if (!element) {{
+                setTimeout(init3Dmol, 100);
+                return;
+            }}
+
+            try {{
+                let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
+                window.{viewer_id}_instance = viewer;
+                let pdbData = `{pdb_escaped}`;
+
+                let model = viewer.addModel(pdbData, "pdb", {{keepH: true}});
+
+                // Show protein/RNA as cartoon
+                viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.4}}}});
+
+                // Highlight ligand atoms
+                viewer.addStyle({{resn: '{ligand_name}'}},
+                               {{stick: {{colorscheme: 'cyanCarbon', radius: 0.20, showNonBonded: true}}}},
+                               {{cartoon: {{color: 'yellow', thickness: 0.8, opacity: 0.8}}}});
+
+                // Show interacting residues as sticks
+                viewer.addStyle({{not: {{resn: '{ligand_name}'}}}},
+                               {{stick: {{colorscheme: 'whiteCarbon', radius: 0.15}}}});
+
+                // Draw dashed interaction lines using actual interaction data
+                let interactions = {interactions_json};
+                let atoms = model.atoms;
+
+                // Helper function to find atom by name and residue
+                function findAtom(atomName, residueId) {{
+                    // Parse residue ID (e.g., "A:GTP:300" or "B:ASP:42")
+                    let parts = residueId.split(':');
+                    let chain = parts[0];
+                    let resName = parts[1];
+                    let resSeq = parts[2];
+
+                    return atoms.find(a =>
+                        a.atom === atomName &&
+                        a.chain === chain &&
+                        a.resn === resName &&
+                        a.resi == resSeq
+                    );
+                }}
+
+                // Track labeled residues to avoid duplicates
+                let labeledResidues = new Set();
+
+                // Draw dashed lines for each interaction and collect residues
+                interactions.forEach(interaction => {{
+                    let donorAtom = findAtom(interaction.donor_atom, interaction.donor_res);
+                    let acceptorAtom = findAtom(interaction.acceptor_atom, interaction.acceptor_res);
+
+                    if (donorAtom && acceptorAtom) {{
+                        try {{
+                            // Draw dashed cylinder between donor and acceptor atoms
+                            viewer.addCylinder({{
+                                start: {{x: donorAtom.x, y: donorAtom.y, z: donorAtom.z}},
+                                end: {{x: acceptorAtom.x, y: acceptorAtom.y, z: acceptorAtom.z}},
+                                radius: 0.15,
+                                color: 'yellow',
+                                dashed: true
+                            }});
+
+                            // Add label for donor residue if not already labeled
+                            if (!labeledResidues.has(interaction.donor_res)) {{
+                                viewer.addLabel(interaction.donor_res,
+                                               {{position: {{x: donorAtom.x, y: donorAtom.y, z: donorAtom.z}},
+                                                 backgroundColor: 'cyan', fontColor: 'black', fontSize: 12}});
+                                labeledResidues.add(interaction.donor_res);
+                            }}
+
+                            // Add label for acceptor residue if not already labeled
+                            if (!labeledResidues.has(interaction.acceptor_res)) {{
+                                viewer.addLabel(interaction.acceptor_res,
+                                               {{position: {{x: acceptorAtom.x, y: acceptorAtom.y, z: acceptorAtom.z}},
+                                                 backgroundColor: 'orange', fontColor: 'white', fontSize: 12}});
+                                labeledResidues.add(interaction.acceptor_res);
+                            }}
+                        }} catch (e) {{
+                            console.warn('Could not draw interaction line:', interaction, e);
+                        }}
+                    }}
+                }});
+
+                viewer.zoomTo();
+                viewer.render();
+
+                // Force resize to ensure proper rendering
+                setTimeout(function() {{
+                    viewer.resize();
+                    viewer.render();
+                }}, 100);
+
+            }} catch(error) {{
+                console.error('Error initializing ligand interactions viewer:', error);
+                console.error(error.stack);
+            }}
+        }}
+
+        setTimeout(init3Dmol, 400);
+    }})();
+    """
+    return javascript

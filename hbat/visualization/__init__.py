@@ -23,6 +23,7 @@ from .pymol3d import (
     generate_pi_interaction_viewer_js,
     generate_pi_pi_stacking_viewer_js,
     generate_png_export_js,
+    generate_ligand_interactions_viewer_js,
 )
 from .pymol_exporter import (
     PyMOLExporter,
@@ -41,6 +42,7 @@ __all__ = [
     "generate_pi_pi_stacking_viewer_js",
     "generate_carbonyl_interaction_viewer_js",
     "generate_n_pi_interaction_viewer_js",
+    "generate_ligand_interactions_viewer_js",
     # Jupyter notebook helpers (recommended for notebooks)
     "display_hydrogen_bond",
     "display_halogen_bond",

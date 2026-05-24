@@ -34,6 +34,7 @@ from .interactions import (
     CooperativityChain,
     HalogenBond,
     HydrogenBond,
+    MolecularInteraction,
     NPiInteraction,
     PiInteraction,
     PiPiInteraction,
@@ -86,6 +87,7 @@ class NPMolecularInteractionAnalyzer:
         self.n_pi_interactions: List[NPiInteraction] = []
         self.cooperativity_chains: List[CooperativityChain] = []
         self.water_bridges: List[WaterBridge] = []
+        self.ligand_interactions: List[MolecularInteraction] = []  # Interactions involving ligands
 
         # Aromatic residues for π interactions
         self._aromatic_residues = set(RESIDUES_WITH_AROMATIC_RINGS)
@@ -228,6 +230,7 @@ class NPMolecularInteractionAnalyzer:
         self.n_pi_interactions = []
         self.cooperativity_chains = []
         self.water_bridges = []
+        self.ligand_interactions = []
 
         # Analyze interactions with progress updates
         update_progress("Finding hydrogen bonds...")
@@ -254,6 +257,9 @@ class NPMolecularInteractionAnalyzer:
 
         update_progress("Finding water bridges...")
         self._find_water_bridges()
+
+        update_progress("Extracting ligand interactions...")
+        self._extract_ligand_interactions()
 
         update_progress("Analysis complete")
         self._analysis_end_time = time.time()
@@ -1735,6 +1741,62 @@ class NPMolecularInteractionAnalyzer:
                 )
 
                 self.n_pi_interactions.append(n_pi_interaction)
+
+    def _extract_ligand_interactions(self) -> None:
+        """Extract interactions involving ligands from all interaction types.
+
+        Identifies true ligands by checking for HETATM records in PDB structure.
+        Excludes water molecules and common crystallographic solvents.
+        Stores the filtered interactions in self.ligand_interactions.
+
+        A ligand is defined as:
+        - A HETATM record (non-protein atom)
+        - NOT a water molecule or common solvent
+        """
+        from ..constants import WATER_MOLECULES, COMMON_SOLVENTS
+
+        # Define excluded residues (convert lists to sets for union operation)
+        excluded_residues = set(WATER_MOLECULES) | set(COMMON_SOLVENTS)
+
+        # Collect all interactions from all types
+        all_interactions = (
+            self.hydrogen_bonds +
+            self.halogen_bonds +
+            self.pi_interactions +
+            self.pi_pi_interactions +
+            self.carbonyl_interactions +
+            self.n_pi_interactions +
+            self.water_bridges
+        )
+
+        # Filter to only those involving true ligands (HETATM records, excluding water/solvents)
+        for interaction in all_interactions:
+            # Get donor and acceptor atoms
+            donor_atom = interaction.get_donor()
+            acceptor_atom = interaction.get_acceptor()
+
+            # Get residue names
+            donor_res_name = donor_atom.res_name if hasattr(donor_atom, 'res_name') else ""
+            acceptor_res_name = acceptor_atom.res_name if hasattr(acceptor_atom, 'res_name') else ""
+
+            # Normalize residue names for comparison
+            donor_name_upper = donor_res_name.strip().upper()
+            acceptor_name_upper = acceptor_res_name.strip().upper()
+
+            # Check if at least one atom is a true ligand (HETATM and not water/solvent)
+            donor_is_hetatm = hasattr(donor_atom, 'record_type') and donor_atom.record_type == 'HETATM'
+            acceptor_is_hetatm = hasattr(acceptor_atom, 'record_type') and acceptor_atom.record_type == 'HETATM'
+
+            donor_is_ligand = donor_is_hetatm and donor_name_upper not in excluded_residues
+            acceptor_is_ligand = acceptor_is_hetatm and acceptor_name_upper not in excluded_residues
+
+            # Include only if at least one is a true ligand (HETATM but not water/solvent)
+            has_ligand = donor_is_ligand or acceptor_is_ligand
+            if not has_ligand:
+                continue
+
+            # Add to ligand interactions
+            self.ligand_interactions.append(interaction)
 
     def _find_cooperativity_chains(self) -> None:
         """Find cooperativity chains in interactions.
