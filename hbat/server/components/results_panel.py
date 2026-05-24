@@ -2266,13 +2266,13 @@ class WebResultsPanel:
                         )).props("outline color=secondary")
                         ui.button("Download PyMOL", icon="movie", on_click=lambda: self._download_pymol_visualization(
                             selected_ligand_res.replace(':', '_') + "_all",
-                            hydrogen_bonds=[i for i in selected_interactions if "hydrogen" in i.get_interaction_type().lower()],
-                            halogen_bonds=[i for i in selected_interactions if "halogen" in i.get_interaction_type().lower()],
-                            pi_interactions=[i for i in selected_interactions if "pi" in i.get_interaction_type().lower() and "pi-pi" not in i.get_interaction_type().lower()],
-                            pi_pi_stacking=[i for i in selected_interactions if "pi-pi" in i.get_interaction_type().lower() or "stacking" in i.get_interaction_type().lower()],
+                            hydrogen_bonds=[i for i in selected_interactions if "h-bond" in i.get_interaction_type().lower()],
+                            halogen_bonds=[i for i in selected_interactions if "x-bond" in i.get_interaction_type().lower()],
+                            pi_interactions=[i for i in selected_interactions if ("π" in i.get_interaction_type().lower() or "pi" in i.get_interaction_type().lower()) and "pi-pi" not in i.get_interaction_type().lower() and "n-pi" not in i.get_interaction_type().lower()],
+                            pi_pi_stacking=[i for i in selected_interactions if "pi-pi" in i.get_interaction_type().lower()],
                             carbonyl_interactions=[i for i in selected_interactions if "carbonyl" in i.get_interaction_type().lower()],
                             n_pi_interactions=[i for i in selected_interactions if "n-pi" in i.get_interaction_type().lower()],
-                            water_bridges=[i for i in selected_interactions if "water" in i.get_interaction_type().lower()],
+                            water_bridges=[i for i in selected_interactions if "water_bridge" in i.get_interaction_type().lower()],
                         )).props("outline color=secondary")
                         ui.button("Close", on_click=dialog.close).props("color=primary")
 
@@ -2312,13 +2312,13 @@ class WebResultsPanel:
                 # Organize interactions by type
                 self._download_pymol_visualization(
                     selected_ligand_res.replace(':', '_') + "_all",
-                    hydrogen_bonds=[i for i in selected_interactions if "hydrogen" in i.get_interaction_type().lower()],
-                    halogen_bonds=[i for i in selected_interactions if "halogen" in i.get_interaction_type().lower()],
-                    pi_interactions=[i for i in selected_interactions if "pi" in i.get_interaction_type().lower() and "pi-pi" not in i.get_interaction_type().lower()],
-                    pi_pi_stacking=[i for i in selected_interactions if "pi-pi" in i.get_interaction_type().lower() or "stacking" in i.get_interaction_type().lower()],
+                    hydrogen_bonds=[i for i in selected_interactions if "h-bond" in i.get_interaction_type().lower()],
+                    halogen_bonds=[i for i in selected_interactions if "x-bond" in i.get_interaction_type().lower()],
+                    pi_interactions=[i for i in selected_interactions if ("π" in i.get_interaction_type().lower() or "pi" in i.get_interaction_type().lower()) and "pi-pi" not in i.get_interaction_type().lower() and "n-pi" not in i.get_interaction_type().lower()],
+                    pi_pi_stacking=[i for i in selected_interactions if "pi-pi" in i.get_interaction_type().lower()],
                     carbonyl_interactions=[i for i in selected_interactions if "carbonyl" in i.get_interaction_type().lower()],
                     n_pi_interactions=[i for i in selected_interactions if "n-pi" in i.get_interaction_type().lower()],
-                    water_bridges=[i for i in selected_interactions if "water" in i.get_interaction_type().lower()],
+                    water_bridges=[i for i in selected_interactions if "water_bridge" in i.get_interaction_type().lower()],
                 )
 
             # Action buttons container

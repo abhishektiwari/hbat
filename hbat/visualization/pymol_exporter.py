@@ -162,10 +162,9 @@ class PyMOLExporter:
             # Track residues for visualization
             self.residues_for_sticks.add((donor.chain_id, donor.res_seq))
 
-            # Track pi system residue
-            if pi.pi_atoms:
-                pi_atom = pi.pi_atoms[0]
-                self.residues_for_sticks.add((pi_atom.chain_id, pi_atom.res_seq))
+            # Track pi system residue (use structured acceptor info from PiInteraction)
+            if pi.acceptor_chain_id is not None and pi.acceptor_res_seq is not None:
+                self.residues_for_sticks.add((pi.acceptor_chain_id, pi.acceptor_res_seq))
 
             donor_sel = f"pi_donor_{i}"
             pi_center_pseudo = f"pi_center_{i}"
@@ -423,10 +422,9 @@ class PyMOLExporter:
             # Track residues for visualization
             self.residues_for_sticks.add((donor.chain_id, donor.res_seq))
 
-            # Track pi system residue
-            if npi.pi_atoms:
-                pi_atom = npi.pi_atoms[0]
-                self.residues_for_sticks.add((pi_atom.chain_id, pi_atom.res_seq))
+            # Track pi system residue (use structured acceptor info from NPiInteraction)
+            if npi.acceptor_chain_id is not None and npi.acceptor_res_seq is not None:
+                self.residues_for_sticks.add((npi.acceptor_chain_id, npi.acceptor_res_seq))
 
             donor_sel = f"npi_donor_{i}"
             pi_center_pseudo = f"npi_center_{i}"
