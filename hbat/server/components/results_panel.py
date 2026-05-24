@@ -2217,7 +2217,7 @@ class WebResultsPanel:
                     ui.notify("No interactions found for this ligand", type="warning")
                     return
 
-                # Extract interaction data (donor/acceptor atom pairs)
+                # Extract interaction data (donor/acceptor atom pairs, with π-center for π-interactions)
                 interactions_data = []
                 for interaction in selected_interactions:
                     try:
@@ -2225,13 +2225,25 @@ class WebResultsPanel:
                         acceptor_atom = interaction.get_acceptor()
                         donor_res = interaction.get_donor_residue()
                         acceptor_res = interaction.get_acceptor_residue()
+                        int_type = interaction.get_interaction_type().lower()
 
-                        interactions_data.append({
+                        interaction_dict = {
                             "donor_atom": donor_atom.name if hasattr(donor_atom, 'name') else "",
                             "donor_res": donor_res,
                             "acceptor_atom": acceptor_atom.name if hasattr(acceptor_atom, 'name') else "",
                             "acceptor_res": acceptor_res,
-                        })
+                            "type": int_type,
+                        }
+
+                        # For π-interactions, include the ring center coordinates
+                        if "pi" in int_type and hasattr(interaction, 'pi_center'):
+                            interaction_dict["pi_center"] = {
+                                "x": interaction.pi_center.x,
+                                "y": interaction.pi_center.y,
+                                "z": interaction.pi_center.z
+                            }
+
+                        interactions_data.append(interaction_dict)
                     except Exception as e:
                         # Skip interactions that can't be extracted
                         continue

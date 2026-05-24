@@ -994,12 +994,38 @@ def generate_ligand_interactions_viewer_js(
                     let donorAtom = findAtom(interaction.donor_atom, interaction.donor_res);
                     let acceptorAtom = findAtom(interaction.acceptor_atom, interaction.acceptor_res);
 
-                    if (donorAtom && acceptorAtom) {{
+                    if (donorAtom) {{
                         try {{
-                            // Draw dashed cylinder between donor and acceptor atoms
+                            // Determine endpoint: π-center for π-interactions, acceptor atom otherwise
+                            let endPoint;
+                            let endLabel = interaction.acceptor_res;
+                            let endColor = 'orange';
+
+                            if (interaction.type && interaction.type.includes('pi') && interaction.pi_center) {{
+                                // π-interaction: draw to ring center
+                                endPoint = interaction.pi_center;
+                                endLabel = interaction.acceptor_res + ' (π)';
+                                endColor = 'green';
+
+                                // Add green sphere at π center
+                                viewer.addSphere({{
+                                    center: endPoint,
+                                    radius: 0.3,
+                                    color: 'green',
+                                    alpha: 0.7
+                                }});
+                            }} else if (acceptorAtom) {{
+                                // Regular interaction: draw to acceptor atom
+                                endPoint = {{x: acceptorAtom.x, y: acceptorAtom.y, z: acceptorAtom.z}};
+                            }} else {{
+                                // No endpoint found, skip
+                                return;
+                            }}
+
+                            // Draw dashed cylinder
                             viewer.addCylinder({{
                                 start: {{x: donorAtom.x, y: donorAtom.y, z: donorAtom.z}},
-                                end: {{x: acceptorAtom.x, y: acceptorAtom.y, z: acceptorAtom.z}},
+                                end: endPoint,
                                 radius: 0.15,
                                 color: 'yellow',
                                 dashed: true
@@ -1014,11 +1040,11 @@ def generate_ligand_interactions_viewer_js(
                             }}
 
                             // Add label for acceptor residue if not already labeled
-                            if (!labeledResidues.has(interaction.acceptor_res)) {{
-                                viewer.addLabel(interaction.acceptor_res,
-                                               {{position: {{x: acceptorAtom.x, y: acceptorAtom.y, z: acceptorAtom.z}},
-                                                 backgroundColor: 'orange', fontColor: 'white', fontSize: 12}});
-                                labeledResidues.add(interaction.acceptor_res);
+                            if (!labeledResidues.has(endLabel)) {{
+                                viewer.addLabel(endLabel,
+                                               {{position: endPoint,
+                                                 backgroundColor: endColor, fontColor: 'white', fontSize: 12}});
+                                labeledResidues.add(endLabel);
                             }}
                         }} catch (e) {{
                             console.warn('Could not draw interaction line:', interaction, e);
