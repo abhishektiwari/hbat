@@ -205,15 +205,19 @@ class PyMOLExporter:
         self.script_lines.append("set_color pipi_dist_color, [1.0, 0.5, 0.0]  # Orange")
 
         for i, stack in enumerate(stacking):
-            ring1 = stack.get_ring1()
-            ring2 = stack.get_ring2()
+            # Get first atom from each ring to determine chain and residue
+            if not (stack.ring1_atoms and stack.ring2_atoms):
+                continue
 
-            if not (hasattr(ring1, 'res_seq') and hasattr(ring2, 'res_seq')):
+            ring1_atom = stack.ring1_atoms[0]
+            ring2_atom = stack.ring2_atoms[0]
+
+            if not (hasattr(ring1_atom, 'res_seq') and hasattr(ring2_atom, 'res_seq')):
                 continue
 
             # Track residues for visualization
-            self.residues_for_sticks.add((ring1.chain_id, ring1.res_seq))
-            self.residues_for_sticks.add((ring2.chain_id, ring2.res_seq))
+            self.residues_for_sticks.add((ring1_atom.chain_id, ring1_atom.res_seq))
+            self.residues_for_sticks.add((ring2_atom.chain_id, ring2_atom.res_seq))
 
             ring1_sel = f"pipi_ring1_{i}"
             ring2_sel = f"pipi_ring2_{i}"
@@ -222,10 +226,10 @@ class PyMOLExporter:
             pipi_dist_sel = f"pipi_dist_{i}"
 
             self.script_lines.append(
-                f"select {ring1_sel}, chain {ring1.chain_id} and resi {ring1.res_seq}"
+                f"select {ring1_sel}, chain {ring1_atom.chain_id} and resi {ring1_atom.res_seq}"
             )
             self.script_lines.append(
-                f"select {ring2_sel}, chain {ring2.chain_id} and resi {ring2.res_seq}"
+                f"select {ring2_sel}, chain {ring2_atom.chain_id} and resi {ring2_atom.res_seq}"
             )
             self.script_lines.append(f"color ring1_color, {ring1_sel}")
             self.script_lines.append(f"color ring2_color, {ring2_sel}")
