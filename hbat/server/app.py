@@ -366,12 +366,12 @@ class HBATWebApp:
                             ).props("color=primary")
                         # Download Structure section
                         ui.separator().classes("q-my-md")
-                        with ui.row().classes("w-full gap-md"):
+                        with ui.row().classes("gap-md"):
                             self.download_structure_button = ui.button(
                                 "Download Original Structure",
                                 icon="download",
                                 on_click=self._export_fixed_structure,
-                            ).props("color=primary").classes("flex-1")
+                            ).props("color=primary")
 
                     with ui.stepper_navigation():
                         ui.button(

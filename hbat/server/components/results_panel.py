@@ -73,6 +73,85 @@ class WebResultsPanel:
             return Path(self.current_file).stem
         return "structure"
 
+    def _download_pymol_visualization(self, interaction_label: str, **interaction_kwargs):
+        """Generic helper to download PyMOL visualization for any interaction type.
+
+        :param interaction_label: Label for the interaction (e.g., "A:ALA:1_to_B:GLY:2")
+        :param interaction_kwargs: Keyword arguments to pass to export_interactions_to_pymol
+                                  (e.g., hydrogen_bonds=[...], water_bridges=[...])
+        """
+        try:
+            # Determine which PDB file to use
+            pdb_file_path = None
+            if hasattr(
+                self.analyzer, "_pdb_fixing_info"
+            ) and self.analyzer._pdb_fixing_info.get("applied"):
+                pdb_file_path = self.analyzer._pdb_fixing_info.get("fixed_file_path")
+            else:
+                pdb_file_path = self.analyzer._pdb_fixing_info.get("input_file_path")
+
+            if not pdb_file_path or not os.path.exists(pdb_file_path):
+                ui.notify(
+                    "PDB file not found for visualization",
+                    type="negative",
+                    position="top-left",
+                )
+                return
+
+            # Create temporary directory for PyMOL export
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Export interaction with provided kwargs
+                success = export_interactions_to_pymol(
+                    pdb_file_path=pdb_file_path,
+                    parser=self.analyzer.parser,
+                    output_dir=temp_dir,
+                    **interaction_kwargs,
+                )
+
+                if not success:
+                    ui.notify(
+                        "Failed to generate PyMOL visualization",
+                        type="negative",
+                        position="top-left",
+                    )
+                    return
+
+                # Create a zip file with visualization files
+                pdb_base = self._get_pdb_basename()
+                zip_filename = f"{pdb_base}_{interaction_label}_pymol.zip"
+
+                basename = os.path.splitext(os.path.basename(pdb_file_path))[0]
+                pdb_file = os.path.join(temp_dir, f"{basename}.pdb")
+                script_file = os.path.join(temp_dir, f"{basename}.pml")
+                readme_file = os.path.join(temp_dir, "README.txt")
+
+                # Create zip in temp location then download
+                zip_path = os.path.join(temp_dir, zip_filename)
+                with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+                    if os.path.exists(pdb_file):
+                        zipf.write(pdb_file, os.path.basename(pdb_file))
+                    if os.path.exists(script_file):
+                        zipf.write(script_file, os.path.basename(script_file))
+                    if os.path.exists(readme_file):
+                        zipf.write(readme_file, os.path.basename(readme_file))
+
+                # Read and download the zip file
+                with open(zip_path, "rb") as f:
+                    ui.download(f.read(), filename=zip_filename)
+
+                ui.notify(
+                    "PyMOL visualization downloaded",
+                    type="positive",
+                    position="top-left",
+                )
+
+        except Exception as e:
+            ui.notify(
+                f"PyMOL export failed: {str(e)}",
+                type="negative",
+                position="top-left",
+            )
+
     async def update_results(
         self, analyzer: NPMolecularInteractionAnalyzer, filename: str
     ):
@@ -502,6 +581,13 @@ class WebResultsPanel:
             )
             ui.download(minimal_pdb.encode(), filename=filename)
 
+        def download_pymol():
+            """Download hydrogen bond as PyMOL visualization package."""
+            hbond_label = f"{hb.get_donor_residue()}_to_{hb.get_acceptor_residue()}".replace(
+                ":", "_"
+            )
+            self._download_pymol_visualization(hbond_label, hydrogen_bonds=[hb])
+
         with (
             ui.dialog().props("persistent") as dialog,
             ui.card().style("width: 900px; max-width: 90vw;"),
@@ -511,6 +597,9 @@ class WebResultsPanel:
                     "outline color=secondary"
                 )
                 ui.button("Download PDB", icon="download", on_click=download_pdb).props(
+                    "outline color=secondary"
+                )
+                ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -693,6 +782,13 @@ class WebResultsPanel:
             )
             ui.download(minimal_pdb.encode(), filename=filename)
 
+        def download_pymol():
+            """Download halogen bond as PyMOL visualization package."""
+            xbond_label = f"{xb.get_donor_residue()}_to_{xb.get_acceptor_residue()}".replace(
+                ":", "_"
+            )
+            self._download_pymol_visualization(xbond_label, halogen_bonds=[xb])
+
         with (
             ui.dialog().props("persistent") as dialog,
             ui.card().style("width: 900px; max-width: 90vw;"),
@@ -702,6 +798,9 @@ class WebResultsPanel:
                     "outline color=secondary"
                 )
                 ui.button("Download PDB", icon="download", on_click=download_pdb).props(
+                    "outline color=secondary"
+                )
+                ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -759,6 +858,13 @@ class WebResultsPanel:
             )
             ui.download(minimal_pdb.encode(), filename=filename)
 
+        def download_pymol():
+            """Download pi interaction as PyMOL visualization package."""
+            pi_label = f"{pi.get_donor_residue()}_to_{pi.get_acceptor_residue()}".replace(
+                ":", "_"
+            )
+            self._download_pymol_visualization(pi_label, pi_interactions=[pi])
+
         with (
             ui.dialog().props("persistent") as dialog,
             ui.card().style("width: 900px; max-width: 90vw;"),
@@ -768,6 +874,9 @@ class WebResultsPanel:
                     "outline color=secondary"
                 )
                 ui.button("Download PDB", icon="download", on_click=download_pdb).props(
+                    "outline color=secondary"
+                )
+                ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -1415,80 +1524,10 @@ class WebResultsPanel:
 
         def download_pymol():
             """Download water bridge as PyMOL visualization package."""
-            try:
-                # Determine which PDB file to use
-                pdb_file_path = None
-                if hasattr(
-                    self.analyzer, "_pdb_fixing_info"
-                ) and self.analyzer._pdb_fixing_info.get("applied"):
-                    pdb_file_path = self.analyzer._pdb_fixing_info.get("fixed_file_path")
-                else:
-                    pdb_file_path = self.analyzer._pdb_fixing_info.get("input_file_path")
-
-                if not pdb_file_path or not os.path.exists(pdb_file_path):
-                    ui.notify(
-                        "PDB file not found for visualization",
-                        type="negative",
-                        position="top-left",
-                    )
-                    return
-
-                # Create temporary directory for PyMOL export
-                with tempfile.TemporaryDirectory() as temp_dir:
-                    # Export only this water bridge
-                    success = export_interactions_to_pymol(
-                        pdb_file_path=pdb_file_path,
-                        water_bridges=[wb],
-                        parser=self.analyzer.parser,
-                        output_dir=temp_dir,
-                    )
-
-                    if not success:
-                        ui.notify(
-                            "Failed to generate PyMOL visualization",
-                            type="negative",
-                            position="top-left",
-                        )
-                        return
-
-                    # Create a zip file with visualization files
-                    basename = os.path.splitext(os.path.basename(pdb_file_path))[0]
-                    pdb_base = self._get_pdb_basename()
-                    wbridge_label = f"{wb.get_donor_residue()}_to_{wb.get_acceptor_residue()}".replace(
-                        ":", "_"
-                    )
-                    zip_filename = f"{pdb_base}_{wbridge_label}_pymol.zip"
-
-                    pdb_file = os.path.join(temp_dir, f"{basename}.pdb")
-                    script_file = os.path.join(temp_dir, f"{basename}.pml")
-                    readme_file = os.path.join(temp_dir, "README.txt")
-
-                    # Create zip in temp location then download
-                    zip_path = os.path.join(temp_dir, zip_filename)
-                    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-                        if os.path.exists(pdb_file):
-                            zipf.write(pdb_file, os.path.basename(pdb_file))
-                        if os.path.exists(script_file):
-                            zipf.write(script_file, os.path.basename(script_file))
-                        if os.path.exists(readme_file):
-                            zipf.write(readme_file, os.path.basename(readme_file))
-
-                    # Read and download the zip file
-                    with open(zip_path, "rb") as f:
-                        ui.download(f.read(), filename=zip_filename)
-
-                    ui.notify(
-                        "PyMOL visualization downloaded",
-                        type="positive",
-                        position="top-left",
-                    )
-
-            except Exception as e:
-                ui.notify(
-                    f"PyMOL export failed: {str(e)}",
-                    type="negative",
-                    position="top-left",
-                )
+            wbridge_label = f"{wb.get_donor_residue()}_to_{wb.get_acceptor_residue()}".replace(
+                ":", "_"
+            )
+            self._download_pymol_visualization(wbridge_label, water_bridges=[wb])
 
         with (
             ui.dialog().props("persistent") as dialog,
@@ -1665,6 +1704,13 @@ class WebResultsPanel:
             )
             ui.download(minimal_pdb.encode(), filename=filename)
 
+        def download_pymol():
+            """Download pi-pi stacking as PyMOL visualization package."""
+            pipi_label = f"{pi_pi.ring1_residue}_to_{pi_pi.ring2_residue}".replace(
+                ":", "_"
+            )
+            self._download_pymol_visualization(pipi_label, pi_pi_stacking=[pi_pi])
+
         with (
             ui.dialog().props("persistent") as dialog,
             ui.card().style("width: 900px; max-width: 90vw;"),
@@ -1674,6 +1720,9 @@ class WebResultsPanel:
                     "outline color=secondary"
                 )
                 ui.button("Download PDB", icon="download", on_click=download_pdb).props(
+                    "outline color=secondary"
+                )
+                ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -1732,6 +1781,13 @@ class WebResultsPanel:
             )
             ui.download(minimal_pdb.encode(), filename=filename)
 
+        def download_pymol():
+            """Download carbonyl interaction as PyMOL visualization package."""
+            carbonyl_label = f"{carbonyl.get_donor_residue()}_to_{carbonyl.get_acceptor_residue()}".replace(
+                ":", "_"
+            )
+            self._download_pymol_visualization(carbonyl_label, carbonyl_interactions=[carbonyl])
+
         with (
             ui.dialog().props("persistent") as dialog,
             ui.card().style("width: 900px; max-width: 90vw;"),
@@ -1741,6 +1797,9 @@ class WebResultsPanel:
                     "outline color=secondary"
                 )
                 ui.button("Download PDB", icon="download", on_click=download_pdb).props(
+                    "outline color=secondary"
+                )
+                ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -1799,6 +1858,13 @@ class WebResultsPanel:
             )
             ui.download(minimal_pdb.encode(), filename=filename)
 
+        def download_pymol():
+            """Download N-pi interaction as PyMOL visualization package."""
+            npi_label = f"{n_pi.get_donor_residue()}_to_{n_pi.get_acceptor_residue()}".replace(
+                ":", "_"
+            )
+            self._download_pymol_visualization(npi_label, n_pi_interactions=[n_pi])
+
         with (
             ui.dialog().props("persistent") as dialog,
             ui.card().style("width: 900px; max-width: 90vw;"),
@@ -1808,6 +1874,9 @@ class WebResultsPanel:
                     "outline color=secondary"
                 )
                 ui.button("Download PDB", icon="download", on_click=download_pdb).props(
+                    "outline color=secondary"
+                )
+                ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")

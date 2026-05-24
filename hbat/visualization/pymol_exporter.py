@@ -155,29 +155,36 @@ class PyMOLExporter:
 
         for i, pi in enumerate(pi_interactions):
             donor = pi.get_donor()
-            acceptor = pi.get_acceptor()
 
-            if not (hasattr(donor, 'res_seq') and hasattr(acceptor, 'res_seq')):
+            if not hasattr(donor, 'res_seq'):
                 continue
 
             # Track residues for visualization
             self.residues_for_sticks.add((donor.chain_id, donor.res_seq))
-            self.residues_for_sticks.add((acceptor.chain_id, acceptor.res_seq))
+
+            # Track pi system residue
+            if pi.pi_atoms:
+                pi_atom = pi.pi_atoms[0]
+                self.residues_for_sticks.add((pi_atom.chain_id, pi_atom.res_seq))
 
             donor_sel = f"pi_donor_{i}"
-            acceptor_sel = f"pi_acceptor_{i}"
+            pi_center_pseudo = f"pi_center_{i}"
             pi_dist_sel = f"pi_dist_{i}"
 
             self.script_lines.append(
                 f"select {donor_sel}, chain {donor.chain_id} and resi {donor.res_seq} and name {donor.name}"
             )
+
+            self.script_lines.append(f"color pi_color, {donor_sel}")
+
+            # Create pseudoatom at pi center for distance visualization
             self.script_lines.append(
-                f"select {acceptor_sel}, chain {acceptor.chain_id} and resi {acceptor.res_seq} and name {acceptor.name}"
+                f"pseudoatom {pi_center_pseudo}, pos=[{pi.pi_center.x}, {pi.pi_center.y}, {pi.pi_center.z}]"
             )
 
-            # Draw distance line
+            # Draw distance line from donor to pi center
             self.script_lines.append(
-                f"distance {pi_dist_sel}, {donor_sel}, {acceptor_sel}"
+                f"distance {pi_dist_sel}, {donor_sel}, {pi_center_pseudo}"
             )
             self.script_lines.append(f"hide labels, {pi_dist_sel}")
             self.script_lines.append(f"color pi_color, {pi_dist_sel}")
@@ -193,7 +200,9 @@ class PyMOLExporter:
             return
 
         self.script_lines.append("# Pi-Pi Stacking")
-        self.script_lines.append("set_color pipi_color, [0.0, 1.0, 0.5]")
+        self.script_lines.append("set_color ring1_color, [0.0, 1.0, 1.0]  # Cyan")
+        self.script_lines.append("set_color ring2_color, [1.0, 0.0, 1.0]  # Magenta")
+        self.script_lines.append("set_color pipi_dist_color, [1.0, 0.5, 0.0]  # Orange")
 
         for i, stack in enumerate(stacking):
             ring1 = stack.get_ring1()
@@ -208,6 +217,8 @@ class PyMOLExporter:
 
             ring1_sel = f"pipi_ring1_{i}"
             ring2_sel = f"pipi_ring2_{i}"
+            ring1_center_pseudo = f"pipi_ring1_center_{i}"
+            ring2_center_pseudo = f"pipi_ring2_center_{i}"
             pipi_dist_sel = f"pipi_dist_{i}"
 
             self.script_lines.append(
@@ -216,13 +227,23 @@ class PyMOLExporter:
             self.script_lines.append(
                 f"select {ring2_sel}, chain {ring2.chain_id} and resi {ring2.res_seq}"
             )
+            self.script_lines.append(f"color ring1_color, {ring1_sel}")
+            self.script_lines.append(f"color ring2_color, {ring2_sel}")
 
-            # Draw distance line
+            # Create pseudoatoms at ring centers for distance visualization
             self.script_lines.append(
-                f"distance {pipi_dist_sel}, {ring1_sel}, {ring2_sel}"
+                f"pseudoatom {ring1_center_pseudo}, pos=[{stack.ring1_center.x}, {stack.ring1_center.y}, {stack.ring1_center.z}]"
+            )
+            self.script_lines.append(
+                f"pseudoatom {ring2_center_pseudo}, pos=[{stack.ring2_center.x}, {stack.ring2_center.y}, {stack.ring2_center.z}]"
+            )
+
+            # Draw distance line from ring center to ring center
+            self.script_lines.append(
+                f"distance {pipi_dist_sel}, {ring1_center_pseudo}, {ring2_center_pseudo}"
             )
             self.script_lines.append(f"hide labels, {pipi_dist_sel}")
-            self.script_lines.append(f"color pipi_color, {pipi_dist_sel}")
+            self.script_lines.append(f"color pipi_dist_color, {pipi_dist_sel}")
             self.script_lines.append("")
 
     def add_water_bridges(self, bridges: List[WaterBridge]) -> None:
@@ -391,29 +412,36 @@ class PyMOLExporter:
 
         for i, npi in enumerate(n_pi_interactions):
             donor = npi.get_donor()
-            acceptor = npi.get_acceptor()
 
-            if not (hasattr(donor, 'res_seq') and hasattr(acceptor, 'res_seq')):
+            if not hasattr(donor, 'res_seq'):
                 continue
 
             # Track residues for visualization
             self.residues_for_sticks.add((donor.chain_id, donor.res_seq))
-            self.residues_for_sticks.add((acceptor.chain_id, acceptor.res_seq))
+
+            # Track pi system residue
+            if npi.pi_atoms:
+                pi_atom = npi.pi_atoms[0]
+                self.residues_for_sticks.add((pi_atom.chain_id, pi_atom.res_seq))
 
             donor_sel = f"npi_donor_{i}"
-            acceptor_sel = f"npi_acceptor_{i}"
+            pi_center_pseudo = f"npi_center_{i}"
             npi_dist_sel = f"npi_dist_{i}"
 
             self.script_lines.append(
                 f"select {donor_sel}, chain {donor.chain_id} and resi {donor.res_seq} and name {donor.name}"
             )
+
+            self.script_lines.append(f"color npi_color, {donor_sel}")
+
+            # Create pseudoatom at pi center for distance visualization
             self.script_lines.append(
-                f"select {acceptor_sel}, chain {acceptor.chain_id} and resi {acceptor.res_seq} and name {acceptor.name}"
+                f"pseudoatom {pi_center_pseudo}, pos=[{npi.pi_center.x}, {npi.pi_center.y}, {npi.pi_center.z}]"
             )
 
-            # Draw distance line
+            # Draw distance line from donor to pi center
             self.script_lines.append(
-                f"distance {npi_dist_sel}, {donor_sel}, {acceptor_sel}"
+                f"distance {npi_dist_sel}, {donor_sel}, {pi_center_pseudo}"
             )
             self.script_lines.append(f"hide labels, {npi_dist_sel}")
             self.script_lines.append(f"color npi_color, {npi_dist_sel}")
