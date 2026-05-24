@@ -1046,6 +1046,16 @@ def format_results_text(
     lines.append(f"  Total interactions: {summary['total_interactions']}")
     lines.append("")
 
+    # Water bridges summary
+    if "water_bridges" in summary:
+        wb_stats = summary["water_bridges"]
+        if wb_stats["count"] > 0:
+            lines.append("Water Bridges:")
+            lines.append(f"  Total bridges: {wb_stats['count']}")
+            if "average_bridge_length" in wb_stats:
+                lines.append(f"  Average bridge length: {wb_stats['average_bridge_length']:.2f} hops")
+            lines.append("")
+
     # Ligand interactions summary
     if "ligand_interactions" in summary:
         lig_stats = summary["ligand_interactions"]

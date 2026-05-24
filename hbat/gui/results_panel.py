@@ -58,6 +58,9 @@ class ResultsPanel:
         # Hydrogen bonds tab
         self._create_hydrogen_bonds_tab()
 
+        # Water bridges tab
+        self._create_water_bridges_tab()
+
         # Halogen bonds tab
         self._create_halogen_bonds_tab()
 
@@ -203,6 +206,77 @@ class ResultsPanel:
             search_frame,
             text="Clear",
             command=lambda: self._clear_filter(self.hb_tree, self.hb_search_var),
+        ).pack(side=tk.LEFT, padx=5)
+
+    def _create_water_bridges_tab(self):
+        """Create water bridges results tab."""
+        wb_frame = ttk.Frame(self.notebook)
+        self.notebook.add(wb_frame, text="Water Bridges")
+
+        # Create treeview for water bridges
+        tree_frame = ttk.Frame(wb_frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ("start_res", "end_res", "hops", "water_residues", "distance")
+
+        self.wb_tree = ttk.Treeview(
+            tree_frame, columns=columns, show="headings", height=15
+        )
+
+        # Configure columns
+        self.wb_tree.heading("start_res", text="Start Residue")
+        self.wb_tree.heading("end_res", text="End Residue")
+        self.wb_tree.heading("hops", text="Hops")
+        self.wb_tree.heading("water_residues", text="Water Residues")
+        self.wb_tree.heading("distance", text="Distance (Å)")
+
+        # Configure column widths
+        self.wb_tree.column("start_res", width=140)
+        self.wb_tree.column("end_res", width=140)
+        self.wb_tree.column("hops", width=60)
+        self.wb_tree.column("water_residues", width=300)
+        self.wb_tree.column("distance", width=100)
+
+        # Add scrollbars
+        wb_v_scrollbar = ttk.Scrollbar(
+            tree_frame, orient=tk.VERTICAL, command=self.wb_tree.yview
+        )
+        wb_h_scrollbar = ttk.Scrollbar(
+            tree_frame, orient=tk.HORIZONTAL, command=self.wb_tree.xview
+        )
+        self.wb_tree.configure(
+            yscrollcommand=wb_v_scrollbar.set, xscrollcommand=wb_h_scrollbar.set
+        )
+
+        self.wb_tree.grid(row=0, column=0, sticky="nsew")
+        wb_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        wb_h_scrollbar.grid(row=1, column=0, sticky="ew")
+
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
+
+        # Add search functionality
+        search_frame = ttk.Frame(wb_frame)
+        search_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+        self.wb_search_var = tk.StringVar()
+        search_entry = ttk.Entry(
+            search_frame, textvariable=self.wb_search_var, width=30
+        )
+        search_entry.pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            search_frame,
+            text="Filter",
+            command=lambda: self._filter_results(
+                self.wb_tree, self.wb_search_var.get()
+            ),
+        ).pack(side=tk.LEFT, padx=5)
+        ttk.Button(
+            search_frame,
+            text="Clear",
+            command=lambda: self._clear_filter(self.wb_tree, self.wb_search_var),
         ).pack(side=tk.LEFT, padx=5)
 
     def _create_halogen_bonds_tab(self):
@@ -774,6 +848,7 @@ class ResultsPanel:
         # Update all tabs
         self._update_summary()
         self._update_hydrogen_bonds()
+        self._update_water_bridges()
         self._update_halogen_bonds()
         self._update_pi_interactions()
         self._update_pi_pi_stacking()
@@ -868,6 +943,10 @@ class ResultsPanel:
             tk.END,
             f"  Cooperativity Chains: {summary['cooperativity_chains']['count']}\n",
         )
+        if "water_bridges" in summary:
+            self.summary_text.insert(
+                tk.END, f"  Water Bridges: {summary['water_bridges']['count']}\n"
+            )
         self.summary_text.insert(
             tk.END, f"  Total Interactions: {summary['total_interactions']}\n\n"
         )
@@ -1019,6 +1098,37 @@ class ResultsPanel:
                     hb.bond_type,
                     hb.donor_acceptor_properties,
                     hb.get_backbone_sidechain_interaction(),
+                ),
+            )
+
+    def _update_water_bridges(self):
+        """Update the water bridges tab."""
+        if not self.analyzer:
+            return
+
+        # Clear existing items
+        for item in self.wb_tree.get_children():
+            self.wb_tree.delete(item)
+
+        # Check if water bridges exist
+        if not hasattr(self.analyzer, "water_bridges"):
+            return
+
+        # Add water bridges
+        for wb in self.analyzer.water_bridges:
+            donor_res = wb.get_donor_residue()
+            acceptor_res = wb.get_acceptor_residue()
+            water_res = "; ".join(wb.water_residues)
+            distance = round(wb.get_donor_acceptor_distance(), 2)
+            self.wb_tree.insert(
+                "",
+                tk.END,
+                values=(
+                    donor_res,
+                    acceptor_res,
+                    wb.bridge_length,
+                    water_res,
+                    f"{distance:.2f}",
                 ),
             )
 
