@@ -47,6 +47,9 @@ def export_to_txt_single_file(
         f.write(
             f"  n-π interactions: {summary.get('n_pi_interactions', {}).get('count', 0)}\n"
         )
+        f.write(
+            f"  Water bridges: {summary.get('water_bridges', {}).get('count', 0)}\n"
+        )
         f.write(f"  Total interactions: {summary['total_interactions']}\n\n")
 
         # Write detailed results
@@ -96,6 +99,13 @@ def export_to_txt_single_file(
             for chain in analyzer.cooperativity_chains:
                 f.write(f"{chain}\n")
 
+        # Write water bridges if available
+        if hasattr(analyzer, "water_bridges") and analyzer.water_bridges:
+            f.write("\nWater Bridges:\n")
+            f.write("-" * 30 + "\n")
+            for bridge in analyzer.water_bridges:
+                f.write(f"{bridge}\n")
+
 
 def export_to_csv_files(
     analyzer: NPMolecularInteractionAnalyzer, base_filename: str
@@ -144,6 +154,10 @@ def export_to_csv_files(
     if hasattr(analyzer, "cooperativity_chains") and analyzer.cooperativity_chains:
         chains_file = directory / f"{base_name}_cooperativity_chains.csv"
         write_cooperativity_chains_csv(analyzer, chains_file)
+
+    if hasattr(analyzer, "water_bridges") and analyzer.water_bridges:
+        wb_file = directory / f"{base_name}_water_bridges.csv"
+        write_water_bridges_csv(analyzer, wb_file)
 
 
 def export_to_json_files(
@@ -197,6 +211,10 @@ def export_to_json_files(
     if hasattr(analyzer, "cooperativity_chains") and analyzer.cooperativity_chains:
         chains_file = directory / f"{base_name}_cooperativity_chains.json"
         write_cooperativity_chains_json(analyzer, chains_file, input_file)
+
+    if hasattr(analyzer, "water_bridges") and analyzer.water_bridges:
+        wb_file = directory / f"{base_name}_water_bridges.json"
+        write_water_bridges_json(analyzer, wb_file, input_file)
 
 
 def export_to_json_single_file(
@@ -984,6 +1002,88 @@ def write_cooperativity_chains_json(
             chain_data["interactions"].append(interaction_data)
 
         data["chains"].append(chain_data)
+
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def write_water_bridges_csv(
+    analyzer: NPMolecularInteractionAnalyzer, filename: Path
+) -> None:
+    """Write water bridges to CSV file.
+
+    :param analyzer: Analyzer instance with water bridge results
+    :type analyzer: NPMolecularInteractionAnalyzer
+    :param filename: Output CSV file path
+    :type filename: Path
+    :returns: None
+    :rtype: None
+    """
+    with open(filename, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(
+            [
+                "Donor Residue",
+                "Acceptor Residue",
+                "Bridge Length (hops)",
+                "Water Residues",
+                "Donor-Acceptor Distance (Å)",
+            ]
+        )
+
+        for wb in analyzer.water_bridges:
+            water_residues_str = "; ".join(wb.water_residues)
+            writer.writerow(
+                [
+                    wb.get_donor_residue(),
+                    wb.get_acceptor_residue(),
+                    wb.bridge_length,
+                    water_residues_str,
+                    f"{wb.get_donor_acceptor_distance():.2f}",
+                ]
+            )
+
+
+def write_water_bridges_json(
+    analyzer: NPMolecularInteractionAnalyzer,
+    filename: Path,
+    input_file: Optional[str] = None,
+) -> None:
+    """Write water bridges to JSON file.
+
+    :param analyzer: Analyzer instance with water bridge results
+    :type analyzer: NPMolecularInteractionAnalyzer
+    :param filename: Output JSON file path
+    :type filename: Path
+    :param input_file: Original input file path (for metadata)
+    :type input_file: Optional[str]
+    :returns: None
+    :rtype: None
+    """
+    data = {
+        "version": __version__,
+        "input_file": input_file,
+        "interaction_type": "water_bridges",
+        "bridges": [],
+    }
+
+    for wb in analyzer.water_bridges:
+        water_residues = [
+            {
+                "chain_id": parts[0],
+                "res_name": parts[1],
+                "res_seq": int(parts[2]),
+            }
+            for parts in [res.split(":") for res in wb.water_residues]
+        ]
+        bridge_data = {
+            "donor_residue": wb.get_donor_residue(),
+            "acceptor_residue": wb.get_acceptor_residue(),
+            "bridge_length": wb.bridge_length,
+            "water_residues": water_residues,
+            "donor_acceptor_distance": f"{wb.get_donor_acceptor_distance():.2f}",
+        }
+        data["bridges"].append(bridge_data)
 
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)

@@ -25,6 +25,7 @@ from ..constants import (
     RESIDUES_WITH_BACKBONE_CARBONYLS,
     RESIDUES_WITH_SIDECHAIN_CARBONYLS,
     RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS,
+    WATER_MOLECULES,
 )
 from ..constants.atomic_data import AtomicData
 from ..constants.parameters import AnalysisParameters
@@ -36,6 +37,7 @@ from .interactions import (
     NPiInteraction,
     PiInteraction,
     PiPiInteraction,
+    WaterBridge,
 )
 from .np_vector import NPVec3D, batch_angle_between, compute_distance_matrix
 from .pdb_parser import PDBParser
@@ -83,6 +85,7 @@ class NPMolecularInteractionAnalyzer:
         self.carbonyl_interactions: List[CarbonylInteraction] = []
         self.n_pi_interactions: List[NPiInteraction] = []
         self.cooperativity_chains: List[CooperativityChain] = []
+        self.water_bridges: List[WaterBridge] = []
 
         # Aromatic residues for π interactions
         self._aromatic_residues = set(RESIDUES_WITH_AROMATIC_RINGS)
@@ -215,6 +218,7 @@ class NPMolecularInteractionAnalyzer:
         self.carbonyl_interactions = []
         self.n_pi_interactions = []
         self.cooperativity_chains = []
+        self.water_bridges = []
 
         # Analyze interactions with progress updates
         update_progress("Finding hydrogen bonds...")
@@ -238,6 +242,9 @@ class NPMolecularInteractionAnalyzer:
         update_progress("Analyzing cooperativity...")
         # Find cooperativity chains (still uses graph-based approach)
         self._find_cooperativity_chains()
+
+        update_progress("Finding water bridges...")
+        self._find_water_bridges()
 
         update_progress("Analysis complete")
         self._analysis_end_time = time.time()
@@ -1876,6 +1883,158 @@ class NPMolecularInteractionAnalyzer:
                 )
                 self.cooperativity_chains.append(chain)
 
+    def _find_water_bridges(self) -> None:
+        """Find water-mediated bridges between protein atoms using BFS.
+
+        Uses breadth-first search (BFS) to detect the shortest water-mediated
+        pathways between protein atoms. This approach is particularly useful for
+        identifying direct water bridges and hydration networks.
+
+        **Water Bridge Definition:**
+
+        A water bridge is formed when water molecule(s) mediate hydrogen bonds
+        between two protein atoms (or other molecules). For example:
+        - Direct bridge: Protein_A —H→ Water —H→ Protein_B
+        - Multi-hop: Protein_A —H→ Water1 —H→ Water2 —H→ Protein_B
+
+        **Algorithm:**
+
+        1. Build a BFS graph where nodes are atoms involved in H-bonds
+        2. For each hydrogen bond, identify if water is the donor or acceptor
+        3. Use BFS to find shortest paths from protein atoms through water to other protein atoms
+        4. Track the water molecules involved in each path
+        5. Create WaterBridge objects for paths with at least one water molecule
+
+        **Why BFS?**
+
+        BFS finds the shortest path through water molecules, which is more
+        biologically meaningful than longer, indirect paths. This matches the
+        approach used in ProDy's water bridge detection.
+        """
+        from collections import deque
+
+        # Build water-atom graph from hydrogen bonds
+        # Graph structure: {atom_serial: [(neighbor_serial, hbond_obj), ...]}
+        water_graph: Dict[int, List[Tuple[int, HydrogenBond]]] = {}
+
+        # Process hydrogen bonds to identify water-mediated connections
+        for hb in self.hydrogen_bonds:
+            donor = hb.get_donor()
+            acceptor = hb.get_acceptor()
+
+            # Only process if both are Atom objects
+            if not (isinstance(donor, Atom) and isinstance(acceptor, Atom)):
+                continue
+
+            donor_serial = donor.serial
+            acceptor_serial = acceptor.serial
+
+            # Initialize graph nodes if needed
+            if donor_serial not in water_graph:
+                water_graph[donor_serial] = []
+            if acceptor_serial not in water_graph:
+                water_graph[acceptor_serial] = []
+
+            # Add bidirectional edge
+            water_graph[donor_serial].append((acceptor_serial, hb))
+            water_graph[acceptor_serial].append((donor_serial, hb))
+
+        # Helper function to check if atom is water
+        def is_water_atom(atom: Atom) -> bool:
+            return atom.res_name in WATER_MOLECULES
+
+        # BFS to find shortest water bridges
+        visited_bridges: set = set()  # Track (donor, acceptor) pairs
+
+        for start_serial in water_graph:
+            start_atom = self._get_atom_by_serial(start_serial)
+            if not start_atom or is_water_atom(start_atom):
+                continue  # Skip if not found or is water itself
+
+            # BFS from this protein atom
+            queue: deque = deque([(start_serial, [])])  # (serial, path)
+            visited_atoms: set = {start_serial}
+
+            while queue:
+                current_serial, path = queue.popleft()
+                current_atom = self._get_atom_by_serial(current_serial)
+
+                if not current_atom:
+                    continue
+
+                # Check if this is a valid bridge endpoint (protein atom that's not start)
+                if current_serial != start_serial and not is_water_atom(current_atom):
+                    # Found a bridge: start_atom -> path -> current_atom
+                    if len(path) > 0:  # Only if there's at least one H-bond
+                        # Check if path involves water
+                        path_has_water = any(
+                            is_water_atom(hb.get_donor())
+                            or is_water_atom(hb.get_acceptor())
+                            for hb in path
+                        )
+
+                        if path_has_water:
+                            bridge_key = tuple(sorted([start_serial, current_serial]))
+                            if bridge_key not in visited_bridges:
+                                visited_bridges.add(bridge_key)
+
+                                # Extract unique water residues involved
+                                water_residue_set = set()
+                                for hb in path:
+                                    donor = hb.get_donor()
+                                    acceptor = hb.get_acceptor()
+                                    if is_water_atom(donor):
+                                        res_id = f"{donor.chain_id}:{donor.res_name}:{donor.res_seq}"
+                                        water_residue_set.add(res_id)
+                                    if is_water_atom(acceptor):
+                                        res_id = f"{acceptor.chain_id}:{acceptor.res_name}:{acceptor.res_seq}"
+                                        water_residue_set.add(res_id)
+
+                                water_residue_list = sorted(list(water_residue_set))
+
+                                # Calculate total distance
+                                total_dist = float(
+                                    start_atom.coords.distance_to(
+                                        current_atom.coords
+                                    )
+                                )
+
+                                # Create WaterBridge
+                                bridge = WaterBridge(
+                                    donor_atom=start_atom,
+                                    acceptor_atom=current_atom,
+                                    bridge_path=path,
+                                    water_residues=water_residue_list,
+                                    bridge_length=len(path),
+                                    total_distance=total_dist,
+                                )
+                                self.water_bridges.append(bridge)
+
+                # Continue BFS to find longer paths
+                for neighbor_serial, hb in water_graph.get(current_serial, []):
+                    if neighbor_serial not in visited_atoms:
+                        visited_atoms.add(neighbor_serial)
+                        new_path = path + [hb]
+                        queue.append((neighbor_serial, new_path))
+
+    def _get_atom_by_serial(self, serial: int) -> Optional[Atom]:
+        """Get atom by its serial number.
+
+        :param serial: Atom serial number
+        :type serial: int
+        :returns: Atom object or None if not found
+        :rtype: Optional[Atom]
+        """
+        if hasattr(self, "_serial_to_atom"):
+            return self._serial_to_atom.get(serial)
+
+        # Build mapping if not exists
+        self._serial_to_atom: Dict[int, Atom] = {}
+        for atom in self.parser.atoms:
+            self._serial_to_atom[atom.serial] = atom
+
+        return self._serial_to_atom.get(serial)
+
     def _calculate_chain_angle(self, int1: Any, int2: Any) -> Optional[float]:
         """Calculate angle between two consecutive interactions in a chain."""
         # Get key atoms from interactions
@@ -2125,6 +2284,19 @@ class NPMolecularInteractionAnalyzer:
             "cooperativity_chains": {
                 "count": len(self.cooperativity_chains),
                 "types": [chain.chain_type for chain in self.cooperativity_chains],
+            },
+            "water_bridges": {
+                "count": len(self.water_bridges),
+                "average_bridge_length": (
+                    np.mean([wb.bridge_length for wb in self.water_bridges])
+                    if self.water_bridges
+                    else 0
+                ),
+                "average_distance": (
+                    np.mean([wb.get_donor_acceptor_distance() for wb in self.water_bridges])
+                    if self.water_bridges
+                    else 0
+                ),
             },
             "total_interactions": len(self.hydrogen_bonds)
             + len(self.halogen_bonds)

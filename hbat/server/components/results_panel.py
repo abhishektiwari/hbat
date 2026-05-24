@@ -14,6 +14,7 @@ from nicegui import ui
 from ...core.analysis import NPMolecularInteractionAnalyzer
 from ...visualization.minimal_pdb_extractor import (
     format_minimal_pdb,
+    extract_water_bridge_pdb,
 )
 from ...visualization.chain_graph import render_chain_for_web
 from ...visualization.pymol3d import (
@@ -23,6 +24,7 @@ from ...visualization.pymol3d import (
     generate_n_pi_interaction_viewer_js,
     generate_pi_interaction_viewer_js,
     generate_pi_pi_stacking_viewer_js,
+    generate_water_bridge_viewer_js,
     generate_png_export_js,
 )
 
@@ -53,6 +55,7 @@ class WebResultsPanel:
         self.pi_pi_panel = None
         self.carbonyl_panel = None
         self.n_pi_panel = None
+        self.water_bridges_panel = None
         self.cooperativity_panel = None
 
     def _get_pdb_basename(self) -> str:
@@ -152,6 +155,14 @@ class WebResultsPanel:
                 "attr": "n_pi_interactions",
                 "panel_attr": "n_pi_panel",
                 "update_method": "_update_n_pi_interactions_panel",
+            },
+            {
+                "id": "water_bridges",
+                "label": "Water Bridges",
+                "icon": "opacity",
+                "attr": "water_bridges",
+                "panel_attr": "water_bridges_panel",
+                "update_method": "_update_water_bridges_panel",
             },
             {
                 "id": "cooperativity",
@@ -274,6 +285,12 @@ class WebResultsPanel:
                 with ui.card().classes("flex-1"):
                     ui.label("Hydrogen Added").classes("text-h6")
                     ui.label(str(f"{added_h}")).classes("text-h4 text-blue")
+
+                with ui.card().classes("flex-1"):
+                    ui.label("Water Bridges").classes("text-h6")
+                    ui.label(str(summary["water_bridges"]["count"])).classes(
+                        "text-h4 text-cyan"
+                    )
 
             # Bond Detection Information
             if "bond_detection" in summary:
@@ -461,6 +478,9 @@ class WebResultsPanel:
 
         viewer_id = f"hb_viewer_{random.randint(1000, 9999)}"
 
+        # Extract minimal PDB early so it can be used for download
+        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [hb])
+
         def export_png():
             """Export viewer as PNG."""
             pdb_base = self._get_pdb_basename()
@@ -469,12 +489,23 @@ class WebResultsPanel:
             )
             ui.run_javascript(generate_png_export_js(viewer_id, filename))
 
+        def download_pdb():
+            """Download extracted PDB file."""
+            pdb_base = self._get_pdb_basename()
+            filename = f"{pdb_base}_{hb.get_donor_residue()}_to_{hb.get_acceptor_residue()}_hbond.pdb".replace(
+                ":", "_"
+            )
+            ui.download(minimal_pdb.encode(), filename=filename)
+
         with (
             ui.dialog().props("persistent") as dialog,
             ui.card().style("width: 900px; max-width: 90vw;"),
         ):
             with ui.card_actions().classes("justify-end"):
                 ui.button("Export PNG", icon="download", on_click=export_png).props(
+                    "outline color=secondary"
+                )
+                ui.button("Download PDB", icon="download", on_click=download_pdb).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -494,17 +525,16 @@ class WebResultsPanel:
 
         # Initialize viewer after dialog is opened and rendered
         ui.timer(
-            0.1, lambda: self._initialize_hydrogen_bond_viewer(viewer_id, hb), once=True
+            0.1, lambda: self._initialize_hydrogen_bond_viewer(viewer_id, hb, minimal_pdb), once=True
         )
 
-    def _initialize_hydrogen_bond_viewer(self, viewer_id: str, hb):
+    def _initialize_hydrogen_bond_viewer(self, viewer_id: str, hb, minimal_pdb: str):
         """Initialize py3Dmol viewer for hydrogen bond visualization.
 
         :param viewer_id: Unique ID for the viewer div
         :param hb: Hydrogen bond interaction
+        :param minimal_pdb: Pre-extracted minimal PDB content
         """
-        # Extract minimal PDB with only interacting residues using in-memory parser
-        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [hb])
         javascript = generate_hydrogen_bond_viewer_js(hb, minimal_pdb, viewer_id)
         ui.run_javascript(javascript)
 
@@ -639,6 +669,9 @@ class WebResultsPanel:
 
         viewer_id = f"xb_viewer_{random.randint(1000, 9999)}"
 
+        # Extract minimal PDB early so it can be used for download
+        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [xb])
+
         def export_png():
             """Export viewer as PNG."""
             pdb_base = self._get_pdb_basename()
@@ -647,12 +680,23 @@ class WebResultsPanel:
             )
             ui.run_javascript(generate_png_export_js(viewer_id, filename))
 
+        def download_pdb():
+            """Download extracted PDB file."""
+            pdb_base = self._get_pdb_basename()
+            filename = f"{pdb_base}_{xb.get_donor_residue()}_to_{xb.get_acceptor_residue()}_xbond.pdb".replace(
+                ":", "_"
+            )
+            ui.download(minimal_pdb.encode(), filename=filename)
+
         with (
             ui.dialog().props("persistent") as dialog,
             ui.card().style("width: 900px; max-width: 90vw;"),
         ):
             with ui.card_actions().classes("justify-end"):
                 ui.button("Export PNG", icon="download", on_click=export_png).props(
+                    "outline color=secondary"
+                )
+                ui.button("Download PDB", icon="download", on_click=download_pdb).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -672,17 +716,16 @@ class WebResultsPanel:
 
         # Initialize viewer after dialog is opened and rendered
         ui.timer(
-            0.1, lambda: self._initialize_halogen_bond_viewer(viewer_id, xb), once=True
+            0.1, lambda: self._initialize_halogen_bond_viewer(viewer_id, xb, minimal_pdb), once=True
         )
 
-    def _initialize_halogen_bond_viewer(self, viewer_id: str, xb):
+    def _initialize_halogen_bond_viewer(self, viewer_id: str, xb, minimal_pdb: str):
         """Initialize py3Dmol viewer for halogen bond visualization.
 
         :param viewer_id: Unique ID for the viewer div
         :param xb: Halogen bond interaction
+        :param minimal_pdb: Pre-extracted minimal PDB content
         """
-        # Extract minimal PDB with only interacting residues using in-memory parser
-        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [xb])
         javascript = generate_halogen_bond_viewer_js(xb, minimal_pdb, viewer_id)
         ui.run_javascript(javascript)
 
@@ -692,6 +735,9 @@ class WebResultsPanel:
 
         viewer_id = f"pi_viewer_{random.randint(1000, 9999)}"
 
+        # Extract minimal PDB early so it can be used for download
+        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [pi])
+
         def export_png():
             """Export viewer as PNG."""
             pdb_base = self._get_pdb_basename()
@@ -700,12 +746,23 @@ class WebResultsPanel:
             )
             ui.run_javascript(generate_png_export_js(viewer_id, filename))
 
+        def download_pdb():
+            """Download extracted PDB file."""
+            pdb_base = self._get_pdb_basename()
+            filename = f"{pdb_base}_{pi.get_donor_residue()}_to_{pi.get_acceptor_residue()}_pi.pdb".replace(
+                ":", "_"
+            )
+            ui.download(minimal_pdb.encode(), filename=filename)
+
         with (
             ui.dialog().props("persistent") as dialog,
             ui.card().style("width: 900px; max-width: 90vw;"),
         ):
             with ui.card_actions().classes("justify-end"):
                 ui.button("Export PNG", icon="download", on_click=export_png).props(
+                    "outline color=secondary"
+                )
+                ui.button("Download PDB", icon="download", on_click=download_pdb).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -723,18 +780,17 @@ class WebResultsPanel:
         dialog.open()
         ui.timer(
             0.1,
-            lambda: self._initialize_pi_interaction_viewer(viewer_id, pi),
+            lambda: self._initialize_pi_interaction_viewer(viewer_id, pi, minimal_pdb),
             once=True,
         )
 
-    def _initialize_pi_interaction_viewer(self, viewer_id: str, pi):
+    def _initialize_pi_interaction_viewer(self, viewer_id: str, pi, minimal_pdb: str):
         """Initialize py3Dmol viewer for π interaction visualization.
 
         :param viewer_id: Unique ID for the viewer div
         :param pi: Pi interaction
+        :param minimal_pdb: Pre-extracted minimal PDB content
         """
-        # Extract minimal PDB with only interacting residues using in-memory parser
-        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [pi])
         javascript = generate_pi_interaction_viewer_js(pi, minimal_pdb, viewer_id)
         ui.run_javascript(javascript)
 
@@ -1231,6 +1287,176 @@ class WebResultsPanel:
 
             table.on("visualize", show_n_pi)
 
+    def _update_water_bridges_panel(self):
+        """Update water bridges panel."""
+        with self.water_bridges_panel:
+            ui.label(
+                f"Water Bridges ({len(self.analyzer.water_bridges)})"
+            ).classes("text-h5")
+
+            # Create table
+            columns = [
+                {
+                    "name": "visualize",
+                    "label": "3D View",
+                    "field": "visualize",
+                    "align": "center",
+                },
+                {
+                    "name": "donor_res",
+                    "label": "Donor Residue",
+                    "field": "donor_res",
+                    "align": "left",
+                },
+                {
+                    "name": "acceptor_res",
+                    "label": "Acceptor Residue",
+                    "field": "acceptor_res",
+                    "align": "left",
+                },
+                {
+                    "name": "bridge_length",
+                    "label": "Hops",
+                    "field": "bridge_length",
+                    "align": "center",
+                },
+                {
+                    "name": "water_residues",
+                    "label": "Water Residues",
+                    "field": "water_residues",
+                    "align": "left",
+                },
+                {
+                    "name": "distance",
+                    "label": "Distance (Å)",
+                    "field": "distance",
+                    "align": "right",
+                },
+            ]
+
+            rows = []
+            for idx, wb in enumerate(self.analyzer.water_bridges):
+                water_residues_str = "; ".join(wb.water_residues)
+                rows.append(
+                    {
+                        "id": idx,
+                        "donor_res": wb.get_donor_residue(),
+                        "acceptor_res": wb.get_acceptor_residue(),
+                        "bridge_length": wb.bridge_length,
+                        "water_residues": water_residues_str,
+                        "distance": f"{wb.get_donor_acceptor_distance():.2f}",
+                    }
+                )
+
+            # Add filter input
+            filter_input = (
+                ui.input(placeholder="Filter water bridges (residue, chain, etc.)")
+                .props("clearable outlined dense")
+                .classes("w-full mb-2")
+            )
+
+            table = (
+                ui.table(columns=columns, rows=rows, row_key="id")
+                .classes("w-full")
+                .props("dense")
+            )
+            filter_input.bind_value(table, "filter")
+
+            # Add custom slot for visualize column to show button
+            table.add_slot(
+                "body-cell-visualize",
+                """
+                <q-td :props="props">
+                    <q-btn size="sm" color="cyan" round dense icon="visibility"
+                           @click="$parent.$emit('visualize', props.row)" />
+                </q-td>
+            """,
+            )
+
+            def show_water_bridge(e):
+                idx = e.args["id"]
+                wb = self.analyzer.water_bridges[idx]
+                self._show_water_bridge_visualization(wb)
+
+            table.on("visualize", show_water_bridge)
+
+    def _show_water_bridge_visualization(self, wb):
+        """Show 3D visualization of a water bridge in a dialog.
+
+        :param wb: Water bridge interaction
+        """
+        import random
+
+        viewer_id = f"wb_viewer_{random.randint(1000, 9999)}"
+
+        # Extract minimal PDB with only water bridge residues (donor, water, acceptor)
+        minimal_pdb = extract_water_bridge_pdb(self.analyzer.parser, wb)
+
+        def export_png():
+            """Export viewer as PNG."""
+            pdb_base = self._get_pdb_basename()
+            filename = f"{pdb_base}_{wb.get_donor_residue()}_to_{wb.get_acceptor_residue()}_wbridge.png".replace(
+                ":", "_"
+            )
+            ui.run_javascript(generate_png_export_js(viewer_id, filename))
+
+        def download_pdb():
+            """Download extracted PDB file."""
+            pdb_base = self._get_pdb_basename()
+            filename = f"{pdb_base}_{wb.get_donor_residue()}_to_{wb.get_acceptor_residue()}_wbridge.pdb".replace(
+                ":", "_"
+            )
+            ui.download(minimal_pdb.encode(), filename=filename)
+
+        with (
+            ui.dialog().props("persistent") as dialog,
+            ui.card().style("width: 1000px; max-width: 95vw;"),
+        ):
+            with ui.card_actions().classes("justify-end"):
+                ui.button("Export PNG", icon="download", on_click=export_png).props(
+                    "outline color=secondary"
+                )
+                ui.button("Download PDB", icon="download", on_click=download_pdb).props(
+                    "outline color=secondary"
+                )
+                ui.button("Close", on_click=dialog.close).props("color=primary")
+
+            with ui.card_section().classes("q-pa-md"):
+                water_residues_display = ", ".join(wb.water_residues)
+                ui.label(
+                    f"{wb.get_donor_residue()} → "
+                    f"({water_residues_display}) → "
+                    f"{wb.get_acceptor_residue()}"
+                ).classes("text-subtitle1 q-mb-md")
+
+                ui.label(
+                    f"Bridge Length: {wb.bridge_length} hop(s) | "
+                    f"Distance: {wb.get_donor_acceptor_distance():.2f}Å"
+                ).classes("text-caption text-grey q-mb-md")
+
+                # Create div for viewer - container must have actual width
+                ui.html(
+                    f'<div id="{viewer_id}" style="width: 100%; height: 600px; min-width: 800px; position: relative;"></div>',
+                    sanitize=False,
+                )
+
+        dialog.open()
+
+        # Initialize viewer after dialog is opened and rendered
+        ui.timer(
+            0.1, lambda: self._initialize_water_bridge_viewer(viewer_id, wb, minimal_pdb), once=True
+        )
+
+    def _initialize_water_bridge_viewer(self, viewer_id: str, wb, minimal_pdb: str):
+        """Initialize py3Dmol viewer for water bridge visualization.
+
+        :param viewer_id: Unique ID for the viewer div
+        :param wb: Water bridge interaction
+        :param minimal_pdb: Extracted PDB content as string
+        """
+        javascript = generate_water_bridge_viewer_js(wb, minimal_pdb, viewer_id)
+        ui.run_javascript(javascript)
+
     def _update_cooperativity_chains_panel(self):
         """Update cooperativity chains panel."""
         with self.cooperativity_panel:
@@ -1331,6 +1557,9 @@ class WebResultsPanel:
 
         viewer_id = f"pipi_viewer_{random.randint(1000, 9999)}"
 
+        # Extract minimal PDB early so it can be used for download
+        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [pi_pi])
+
         def export_png():
             """Export viewer as PNG."""
             pdb_base = self._get_pdb_basename()
@@ -1341,12 +1570,25 @@ class WebResultsPanel:
             )
             ui.run_javascript(generate_png_export_js(viewer_id, filename))
 
+        def download_pdb():
+            """Download extracted PDB file."""
+            pdb_base = self._get_pdb_basename()
+            filename = (
+                f"{pdb_base}_{pi_pi.ring1_residue}_to_{pi_pi.ring2_residue}_pipi.pdb".replace(
+                    ":", "_"
+                )
+            )
+            ui.download(minimal_pdb.encode(), filename=filename)
+
         with (
             ui.dialog().props("persistent") as dialog,
             ui.card().style("width: 900px; max-width: 90vw;"),
         ):
             with ui.card_actions().classes("justify-end"):
                 ui.button("Export PNG", icon="download", on_click=export_png).props(
+                    "outline color=secondary"
+                )
+                ui.button("Download PDB", icon="download", on_click=download_pdb).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -1364,18 +1606,17 @@ class WebResultsPanel:
         dialog.open()
         ui.timer(
             0.1,
-            lambda: self._initialize_pi_pi_stacking_viewer(viewer_id, pi_pi),
+            lambda: self._initialize_pi_pi_stacking_viewer(viewer_id, pi_pi, minimal_pdb),
             once=True,
         )
 
-    def _initialize_pi_pi_stacking_viewer(self, viewer_id: str, pi_pi):
+    def _initialize_pi_pi_stacking_viewer(self, viewer_id: str, pi_pi, minimal_pdb: str):
         """Initialize py3Dmol viewer for π-π stacking visualization.
 
         :param viewer_id: Unique ID for the viewer div
         :param pi_pi: Pi-pi stacking interaction
+        :param minimal_pdb: Pre-extracted minimal PDB content
         """
-        # Extract minimal PDB with only interacting residues using in-memory parser
-        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [pi_pi])
         javascript = generate_pi_pi_stacking_viewer_js(
             pi_pi, minimal_pdb, viewer_id
         )
@@ -1387,6 +1628,9 @@ class WebResultsPanel:
 
         viewer_id = f"carbonyl_viewer_{random.randint(1000, 9999)}"
 
+        # Extract minimal PDB early so it can be used for download
+        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [carbonyl])
+
         def export_png():
             """Export viewer as PNG."""
             pdb_base = self._get_pdb_basename()
@@ -1395,12 +1639,23 @@ class WebResultsPanel:
             )
             ui.run_javascript(generate_png_export_js(viewer_id, filename))
 
+        def download_pdb():
+            """Download extracted PDB file."""
+            pdb_base = self._get_pdb_basename()
+            filename = f"{pdb_base}_{carbonyl.get_donor_residue()}_to_{carbonyl.get_acceptor_residue()}_carbonyl.pdb".replace(
+                ":", "_"
+            )
+            ui.download(minimal_pdb.encode(), filename=filename)
+
         with (
             ui.dialog().props("persistent") as dialog,
             ui.card().style("width: 900px; max-width: 90vw;"),
         ):
             with ui.card_actions().classes("justify-end"):
                 ui.button("Export PNG", icon="download", on_click=export_png).props(
+                    "outline color=secondary"
+                )
+                ui.button("Download PDB", icon="download", on_click=download_pdb).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -1418,18 +1673,17 @@ class WebResultsPanel:
         dialog.open()
         ui.timer(
             0.1,
-            lambda: self._initialize_carbonyl_interaction_viewer(viewer_id, carbonyl),
+            lambda: self._initialize_carbonyl_interaction_viewer(viewer_id, carbonyl, minimal_pdb),
             once=True,
         )
 
-    def _initialize_carbonyl_interaction_viewer(self, viewer_id: str, carbonyl):
+    def _initialize_carbonyl_interaction_viewer(self, viewer_id: str, carbonyl, minimal_pdb: str):
         """Initialize py3Dmol viewer for carbonyl n→π* visualization.
 
         :param viewer_id: Unique ID for the viewer div
         :param carbonyl: Carbonyl interaction
+        :param minimal_pdb: Pre-extracted minimal PDB content
         """
-        # Extract minimal PDB with only interacting residues using in-memory parser
-        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [carbonyl])
         javascript = generate_carbonyl_interaction_viewer_js(
             carbonyl, minimal_pdb, viewer_id
         )
@@ -1441,6 +1695,9 @@ class WebResultsPanel:
 
         viewer_id = f"npi_viewer_{random.randint(1000, 9999)}"
 
+        # Extract minimal PDB early so it can be used for download
+        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [n_pi])
+
         def export_png():
             """Export viewer as PNG."""
             pdb_base = self._get_pdb_basename()
@@ -1449,12 +1706,23 @@ class WebResultsPanel:
             )
             ui.run_javascript(generate_png_export_js(viewer_id, filename))
 
+        def download_pdb():
+            """Download extracted PDB file."""
+            pdb_base = self._get_pdb_basename()
+            filename = f"{pdb_base}_{n_pi.get_donor_residue()}_to_{n_pi.get_acceptor_residue()}_npi.pdb".replace(
+                ":", "_"
+            )
+            ui.download(minimal_pdb.encode(), filename=filename)
+
         with (
             ui.dialog().props("persistent") as dialog,
             ui.card().style("width: 900px; max-width: 90vw;"),
         ):
             with ui.card_actions().classes("justify-end"):
                 ui.button("Export PNG", icon="download", on_click=export_png).props(
+                    "outline color=secondary"
+                )
+                ui.button("Download PDB", icon="download", on_click=download_pdb).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -1472,18 +1740,17 @@ class WebResultsPanel:
         dialog.open()
         ui.timer(
             0.1,
-            lambda: self._initialize_n_pi_interaction_viewer(viewer_id, n_pi),
+            lambda: self._initialize_n_pi_interaction_viewer(viewer_id, n_pi, minimal_pdb),
             once=True,
         )
 
-    def _initialize_n_pi_interaction_viewer(self, viewer_id: str, n_pi):
+    def _initialize_n_pi_interaction_viewer(self, viewer_id: str, n_pi, minimal_pdb: str):
         """Initialize py3Dmol viewer for n→π* interaction visualization.
 
         :param viewer_id: Unique ID for the viewer div
         :param n_pi: N-pi interaction
+        :param minimal_pdb: Pre-extracted minimal PDB content
         """
-        # Extract minimal PDB with only interacting residues using in-memory parser
-        minimal_pdb = format_minimal_pdb(self.analyzer.parser, [n_pi])
         javascript = generate_n_pi_interaction_viewer_js(
             n_pi, minimal_pdb, viewer_id
         )

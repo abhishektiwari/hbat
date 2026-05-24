@@ -92,6 +92,13 @@ class PDBParser:
         self._atom_serial_map: Dict[int, int] = {}  # serial -> index mapping
         # Use sets for O(1) membership checks in 1-3/1-4 neighbor detection
         self._bond_adjacency: Dict[int, Set[int]] = {}  # Fast bond lookups
+        # Store original raw records from PDB files (for extraction)
+        self.atom_records: Optional[Any] = None  # DataFrame from pdbreader
+        self.hetatm_records: Optional[Any] = None  # DataFrame from pdbreader
+        self.conect_records: Optional[Any] = None  # DataFrame from pdbreader
+        # Store original raw records from CIF files (for extraction)
+        self.atom_site_obj: Optional[Any] = None  # DataCategory from mmCIF
+        self.struct_conn_obj: Optional[Any] = None  # DataCategory from mmCIF
 
     def parse_file(self, filename: str) -> bool:
         """Parse a PDB or CIF file based on file extension.
@@ -131,6 +138,11 @@ class PDBParser:
             self.residues = {}
             self.bonds = []
             self._bond_adjacency = {}
+
+            # Store original raw records from PDB (for extraction)
+            self.atom_records = structure.get("ATOM")
+            self.hetatm_records = structure.get("HETATM")
+            self.conect_records = structure.get("CONECT")
 
             # Process ATOM records
             if "ATOM" in structure and len(structure["ATOM"]) > 0:
@@ -195,6 +207,11 @@ class PDBParser:
             self.residues = {}
             self.bonds = []
             self._bond_adjacency = {}
+
+            # Store original raw records from PDB (for extraction)
+            self.atom_records = structure.get("ATOM")
+            self.hetatm_records = structure.get("HETATM")
+            self.conect_records = structure.get("CONECT")
 
             # Process ATOM records
             if "ATOM" in structure and len(structure["ATOM"]) > 0:
@@ -274,6 +291,9 @@ class PDBParser:
                 atom_site_obj = container.get_object('atom_site')
                 if not atom_site_obj:
                     continue
+
+                # Store original atom_site_obj for extraction
+                self.atom_site_obj = atom_site_obj
 
                 # Iterate through all atom rows
                 for i in range(atom_site_obj.row_count):
@@ -737,6 +757,9 @@ class PDBParser:
                 struct_conn_obj = container.get_object('struct_conn')
                 if not struct_conn_obj:
                     continue
+
+                # Store original struct_conn_obj for extraction
+                self.struct_conn_obj = struct_conn_obj
 
                 # Get attribute indices for required fields
                 try:

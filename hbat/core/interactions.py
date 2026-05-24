@@ -10,6 +10,7 @@ import math
 from abc import ABC, abstractmethod
 from typing import List, Optional, Union
 
+from ..constants.pdb_constants import WATER_MOLECULES
 from .np_vector import NPVec3D
 from .structure import Atom
 
@@ -1949,3 +1950,191 @@ class CooperativityChain(MolecularInteraction):
             "π–Inter": "~π~>",
         }
         return symbols.get(interaction_type, "->")
+
+
+class WaterBridge(MolecularInteraction):
+    """Represents a water-mediated interaction between two atoms.
+
+    This class represents a bridge where water molecules mediate interactions
+    between protein atoms, using the shortest path through water molecules.
+    Water bridges can be direct (protein-water-protein) or multi-hop
+    (protein-water-water-...-water-protein).
+
+    :param donor_atom: The initial donor atom (protein)
+    :type donor_atom: Atom
+    :param acceptor_atom: The final acceptor atom (protein)
+    :type acceptor_atom: Atom
+    :param bridge_path: Ordered list of hydrogen bonds forming the bridge
+    :type bridge_path: List[HydrogenBond]
+    :param water_residues: List of water residues involved in the bridge
+    :type water_residues: List[str]
+    :param bridge_length: Number of hops (water molecules) in the bridge
+    :type bridge_length: int
+    :param total_distance: Total distance along the bridge (optional)
+    :type total_distance: float
+    """
+
+    def __init__(
+        self,
+        donor_atom: Atom,
+        acceptor_atom: Atom,
+        bridge_path: List[HydrogenBond],
+        water_residues: List[str],
+        bridge_length: int,
+        total_distance: float = 0.0,
+    ):
+        """Initialize a WaterBridge object.
+
+        :param donor_atom: The initial donor atom (protein)
+        :type donor_atom: Atom
+        :param acceptor_atom: The final acceptor atom (protein)
+        :type acceptor_atom: Atom
+        :param bridge_path: Ordered list of hydrogen bonds forming the bridge
+        :type bridge_path: List[HydrogenBond]
+        :param water_residues: List of water residues involved in the bridge (formatted as "chain-resi-name")
+        :type water_residues: List[str]
+        :param bridge_length: Number of hops (water molecules) in the bridge
+        :type bridge_length: int
+        :param total_distance: Total distance along the bridge (optional)
+        :type total_distance: float
+        """
+        self.donor_atom = donor_atom
+        self.acceptor_atom = acceptor_atom
+        self.bridge_path = bridge_path
+        self.water_residues = water_residues
+        self.bridge_length = bridge_length
+        self._total_distance = total_distance
+
+    # MolecularInteraction interface implementation
+    def get_donor(self) -> Atom:
+        """Get the donor atom (first protein atom in the bridge).
+
+        :returns: The donor atom
+        :rtype: Atom
+        """
+        return self.donor_atom
+
+    def get_acceptor(self) -> Atom:
+        """Get the acceptor atom (final protein atom in the bridge).
+
+        :returns: The acceptor atom
+        :rtype: Atom
+        """
+        return self.acceptor_atom
+
+    def get_interaction(self) -> Atom:
+        """Get the first water molecule in the bridge.
+
+        :returns: The first water oxygen involved in the bridge
+        :rtype: Atom
+        """
+        if self.bridge_path:
+            # Get the water molecule from the first H-bond in the path
+            first_hb = self.bridge_path[0]
+            # Find which participant is water (acceptor or donor based on bridge structure)
+            acceptor = first_hb.get_acceptor()
+            if isinstance(acceptor, Atom) and acceptor.res_name in WATER_MOLECULES:
+                return acceptor
+            donor = first_hb.get_donor()
+            if isinstance(donor, Atom) and donor.res_name in WATER_MOLECULES:
+                return donor
+        return NPVec3D(0, 0, 0)
+
+    def get_donor_residue(self) -> str:
+        """Get the donor residue identifier.
+
+        :returns: Formatted residue identifier for donor
+        :rtype: str
+        """
+        return (
+            f"{self.donor_atom.chain_id}:{self.donor_atom.res_name}:"
+            f"{self.donor_atom.res_seq}"
+        )
+
+    def get_acceptor_residue(self) -> str:
+        """Get the acceptor residue identifier.
+
+        :returns: Formatted residue identifier for acceptor
+        :rtype: str
+        """
+        return (
+            f"{self.acceptor_atom.chain_id}:{self.acceptor_atom.res_name}:"
+            f"{self.acceptor_atom.res_seq}"
+        )
+
+    def get_interaction_type(self) -> str:
+        """Get the interaction type.
+
+        :returns: Always returns "water_bridge"
+        :rtype: str
+        """
+        return "water_bridge"
+
+    def get_donor_atom(self) -> Atom:
+        """Get the donor atom.
+
+        :returns: The donor atom
+        :rtype: Atom
+        """
+        return self.donor_atom
+
+    def get_acceptor_atom(self) -> Atom:
+        """Get the acceptor atom.
+
+        :returns: The acceptor atom
+        :rtype: Atom
+        """
+        return self.acceptor_atom
+
+    def get_donor_interaction_distance(self) -> float:
+        """Get the distance between donor and first water.
+
+        :returns: Distance in angstroms
+        :rtype: float
+        """
+        if self.bridge_path:
+            first_hb = self.bridge_path[0]
+            return first_hb.get_donor_interaction_distance()
+        return 0.0
+
+    def get_donor_acceptor_distance(self) -> float:
+        """Get the distance between donor and acceptor atoms.
+
+        :returns: Distance in angstroms
+        :rtype: float
+        """
+        return float(
+            self.donor_atom.coords.distance_to(self.acceptor_atom.coords)
+        )
+
+    def get_donor_interaction_acceptor_angle(self) -> float:
+        """Get the angle between donor-water-acceptor (approximate).
+
+        :returns: Angle in radians
+        :rtype: float
+        """
+        if self.bridge_path:
+            first_hb = self.bridge_path[0]
+            return first_hb.get_donor_interaction_acceptor_angle()
+        return 0.0
+
+    def is_donor_interaction_bonded(self) -> bool:
+        """Check if all hydrogen bonds in path are properly bonded.
+
+        :returns: True if all bonds are properly bonded
+        :rtype: bool
+        """
+        return all(hb.is_donor_interaction_bonded() for hb in self.bridge_path)
+
+    def __str__(self) -> str:
+        """String representation of the water bridge.
+
+        :returns: Human-readable description of the water bridge
+        :rtype: str
+        """
+        water_str = " → ".join(self.water_residues)
+        return (
+            f"Water Bridge: {self.get_donor_residue()} → "
+            f"{water_str} → {self.get_acceptor_residue()} "
+            f"[{self.bridge_length} hop(s), {self.get_donor_acceptor_distance():.2f}Å]"
+        )

@@ -71,11 +71,21 @@ docs = [
     "sphinx-autodoc-typehints>=1.10.0",
 ]
 gui = [
-    "tkinter; python_version>='3.10'",
+    # tkinter is built-in with Python 3.10+ - no pip installation required
+    # It comes automatically with Python, so we don't list it as a dependency
+    # "tkinter>=0; python_version>='3.10'"
+    # On MacOS, tkinter requires installation via Homebrew or similar
+    # brew install python-tk
+]
+server = [
+    "nicegui>=1.4.0",
+    "flask>=2.3.0",
+    "flask-cors>=4.0.0",
+    "aiofiles>=23.0.0",
 ]
 
 all = [
-    "hbat[gui]",
+    "hbat[gui,server]",
 ]
 
 [project.scripts]

@@ -117,11 +117,11 @@ def generate_hydrogen_bond_viewer_js(
 
                 // Show donor residue with hydrogens
                 viewer.addStyle({{chain: '{donor_chain}', resi: {donor_resi}}},
-                               {{stick: {{colorscheme: 'cyanCarbon', radius: 0.25, showNonBonded: false}}}});
+                               {{stick: {{colorscheme: 'cyanCarbon', radius: 0.20, showNonBonded: false}}}});
 
                 // Show acceptor residue with hydrogens
                 viewer.addStyle({{chain: '{acceptor_chain}', resi: {acceptor_resi}}},
-                               {{stick: {{colorscheme: 'orangeCarbon', radius: 0.25, showNonBonded: false}}}});
+                               {{stick: {{colorscheme: 'orangeCarbon', radius: 0.20, showNonBonded: false}}}});
 
                 // Add dashed line for hydrogen bond (shortened to avoid overlapping atoms)
                 const hx = {hb.hydrogen.coords.x}, hy = {hb.hydrogen.coords.y}, hz = {hb.hydrogen.coords.z};
@@ -686,6 +686,221 @@ def generate_n_pi_interaction_viewer_js(
                 setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 500);
             }} catch (error) {{
                 console.error("Error creating viewer:", error);
+            }}
+        }}
+
+        setTimeout(init3Dmol, 400);
+    }})();
+    """
+    return javascript
+
+def generate_water_bridge_viewer_js(
+    water_bridge: "WaterBridge", pdb_content: str, viewer_id: str
+) -> str:
+    """Generate JavaScript code for water bridge 3D visualization.
+
+    Visualizes water-mediated hydrogen bond networks with donor and acceptor
+    residues highlighted and water molecules shown as stick models with all atoms.
+
+    :param water_bridge: Water bridge interaction
+    :type water_bridge: WaterBridge
+    :param pdb_content: PDB file content
+    :type pdb_content: str
+    :param viewer_id: Unique ID for the viewer div
+    :type viewer_id: str
+    :returns: JavaScript code to initialize the viewer
+    :rtype: str
+    """
+    donor = water_bridge.get_donor()
+    acceptor = water_bridge.get_acceptor()
+    donor_chain = donor.chain_id
+    donor_resi = donor.res_seq
+    acceptor_chain = acceptor.chain_id
+    acceptor_resi = acceptor.res_seq
+
+    # Get donor atom coordinates
+    donor_x = donor.coords.x
+    donor_y = donor.coords.y
+    donor_z = donor.coords.z
+
+    # Get acceptor atom coordinates
+    acceptor_x = acceptor.coords.x
+    acceptor_y = acceptor.coords.y
+    acceptor_z = acceptor.coords.z
+
+    # Extract water residue data (resi, oxygen coordinates)
+    water_resi_list = []
+    water_coords = []
+
+    # Get bridge path to find water oxygen atoms
+    for hbond in water_bridge.bridge_path:
+        donor_hb = hbond.get_donor()
+        acceptor_hb = hbond.get_acceptor()
+
+        # Check if either side is water
+        if hasattr(donor_hb, 'res_name') and donor_hb.res_name in ['HOH', 'WAT', 'DOD', 'TIP3', 'TIP4', 'TIP5', 'W']:
+            if donor_hb.res_seq not in water_resi_list:
+                water_resi_list.append(donor_hb.res_seq)
+                water_coords.append({
+                    'resi': donor_hb.res_seq,
+                    'x': donor_hb.coords.x,
+                    'y': donor_hb.coords.y,
+                    'z': donor_hb.coords.z
+                })
+        if hasattr(acceptor_hb, 'res_name') and acceptor_hb.res_name in ['HOH', 'WAT', 'DOD', 'TIP3', 'TIP4', 'TIP5', 'W']:
+            if acceptor_hb.res_seq not in water_resi_list:
+                water_resi_list.append(acceptor_hb.res_seq)
+                water_coords.append({
+                    'resi': acceptor_hb.res_seq,
+                    'x': acceptor_hb.coords.x,
+                    'y': acceptor_hb.coords.y,
+                    'z': acceptor_hb.coords.z
+                })
+
+    pdb_escaped = _escape_pdb_content(pdb_content)
+    water_resi_json = "[" + ", ".join(str(r) for r in water_resi_list) + "]"
+
+    # Create JavaScript water coordinate data and labels
+    water_coords_js = "{"
+    water_labels_js = "{"
+    for i, wc in enumerate(water_coords):
+        water_coords_js += f"{wc['resi']}: {{x: {wc['x']}, y: {wc['y']}, z: {wc['z']}}}, "
+        # Get water residue label from water_residues list
+        if i < len(water_bridge.water_residues):
+            water_label = water_bridge.water_residues[i]
+        else:
+            water_label = f"W{wc['resi']}"
+        water_labels_js += f"{wc['resi']}: '{water_label}', "
+    water_coords_js = water_coords_js.rstrip(", ") + "}"
+    water_labels_js = water_labels_js.rstrip(", ") + "}"
+
+    javascript = f"""
+    (function() {{
+        // Wait for both 3Dmol to load and div to be ready
+        function init3Dmol() {{
+            if (typeof $3Dmol === 'undefined') {{
+                setTimeout(init3Dmol, 100);
+                return;
+            }}
+
+            let element = document.getElementById("{viewer_id}");
+            if (!element) {{
+                setTimeout(init3Dmol, 100);
+                return;
+            }}
+
+            try {{
+                let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
+                window.{viewer_id}_instance = viewer;  // Store for PNG export
+                let pdbData = `{pdb_escaped}`;
+
+                viewer.addModel(pdbData, "pdb", {{keepH: true}});
+                viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.2}}}});
+
+                // Show donor residue in cyan with stick representation
+                viewer.addStyle({{chain: '{donor_chain}', resi: {donor_resi}}},
+                               {{stick: {{colorscheme: 'cyanCarbon', radius: 0.25}},
+                                 cartoon: {{color: 'cyan', opacity: 0.7}}}});
+
+                // Show acceptor residue in orange with stick representation
+                viewer.addStyle({{chain: '{acceptor_chain}', resi: {acceptor_resi}}},
+                               {{stick: {{colorscheme: 'orangeCarbon', radius: 0.25}},
+                                 cartoon: {{color: 'orange', opacity: 0.7}}}});
+
+                // Show water molecules as sticks with all atoms visible
+                // Use opacity 0.5 to match PDB occupancy visualization
+                let waterResis = {water_resi_json};
+                waterResis.forEach(function(resi) {{
+                    viewer.addStyle({{resi: resi}},
+                                   {{stick: {{colorscheme: 'lightblueCarbon', radius: 0.25, opacity: 0.5}}}});
+                }});
+
+                // Draw dashed lines connecting donor → water → acceptor
+                // Use embedded coordinates (same approach as hydrogen bond viewer)
+                const dx = {donor_x}, dy = {donor_y}, dz = {donor_z};
+                const ax = {acceptor_x}, ay = {acceptor_y}, az = {acceptor_z};
+
+                let waterCoords = {water_coords_js};
+
+                // Draw connections from donor to each water
+                for (let waterResi in waterCoords) {{
+                    let waterO = waterCoords[waterResi];
+                    const wdx = waterO.x - dx;
+                    const wdy = waterO.y - dy;
+                    const wdz = waterO.z - dz;
+                    const wdist = Math.sqrt(wdx*wdx + wdy*wdy + wdz*wdz);
+                    if (wdist > 0) {{
+                        const offset = 0.4;
+                        const ratio_start = offset / wdist;
+                        const ratio_end = (wdist - offset) / wdist;
+                        viewer.addCylinder({{
+                            start: {{x: dx + wdx*ratio_start, y: dy + wdy*ratio_start, z: dz + wdz*ratio_start}},
+                            end: {{x: dx + wdx*ratio_end, y: dy + wdy*ratio_end, z: dz + wdz*ratio_end}},
+                            radius: 0.15,
+                            color: 'yellow',
+                            dashed: true
+                        }});
+                    }}
+                }}
+
+                // Draw connections from each water to acceptor
+                for (let waterResi in waterCoords) {{
+                    let waterO = waterCoords[waterResi];
+                    const wadx = ax - waterO.x;
+                    const wady = ay - waterO.y;
+                    const wadz = az - waterO.z;
+                    const wadist = Math.sqrt(wadx*wadx + wady*wady + wadz*wadz);
+                    if (wadist > 0) {{
+                        const offset = 0.4;
+                        const ratio_start = offset / wadist;
+                        const ratio_end = (wadist - offset) / wadist;
+                        viewer.addCylinder({{
+                            start: {{x: waterO.x + wadx*ratio_start, y: waterO.y + wady*ratio_start, z: waterO.z + wadz*ratio_start}},
+                            end: {{x: waterO.x + wadx*ratio_end, y: waterO.y + wady*ratio_end, z: waterO.z + wadz*ratio_end}},
+                            radius: 0.15,
+                            color: 'yellow',
+                            dashed: true
+                        }});
+                    }}
+                }}
+
+                // Add labels for donor, water molecules, and acceptor
+                viewer.addLabel("{water_bridge.get_donor_residue()}",
+                               {{position: {{x: {donor_x}, y: {donor_y}, z: {donor_z}}},
+                                 backgroundColor: 'cyan', fontColor: 'black', fontSize: 12}});
+                viewer.addLabel("{water_bridge.get_acceptor_residue()}",
+                               {{position: {{x: {acceptor_x}, y: {acceptor_y}, z: {acceptor_z}}},
+                                 backgroundColor: 'orange', fontColor: 'white', fontSize: 12}});
+
+                // Add labels for water molecules
+                let waterLabels = {water_labels_js};
+                for (let waterResi in waterCoords) {{
+                    let waterO = waterCoords[waterResi];
+                    let waterLabel = waterLabels[waterResi] || ('W' + waterResi);
+                    viewer.addLabel(waterLabel,
+                                   {{position: {{x: waterO.x, y: waterO.y, z: waterO.z}},
+                                     backgroundColor: 'lightblue', fontColor: 'black', fontSize: 11}});
+                }}
+
+                viewer.zoomTo();
+                viewer.render();
+                viewer.zoom(1.2);
+
+                // Force multiple resizes to ensure proper rendering
+                setTimeout(function() {{
+                    viewer.resize();
+                    viewer.render();
+                }}, 100);
+                setTimeout(function() {{
+                    viewer.resize();
+                    viewer.render();
+                }}, 300);
+                setTimeout(function() {{
+                    viewer.resize();
+                    viewer.render();
+                }}, 500);
+            }} catch(error) {{
+                console.error('Error initializing water bridge viewer:', error);
             }}
         }}
 
