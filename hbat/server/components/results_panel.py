@@ -16,6 +16,8 @@ import zipfile
 from nicegui import ui
 
 from ...core.analysis import NPMolecularInteractionAnalyzer
+from ...core.atom_classifier import classify_residue_type
+from ...constants import WATER_MOLECULES, COMMON_SOLVENTS
 from ...visualization.minimal_pdb_extractor import (
     format_minimal_pdb,
     extract_water_bridge_pdb,
@@ -62,6 +64,7 @@ class WebResultsPanel:
         self.n_pi_panel = None
         self.water_bridges_panel = None
         self.cooperativity_panel = None
+        self.ligands_panel = None
 
     def _get_pdb_basename(self) -> str:
         """Get the base name of the current PDB file (without extension).
@@ -72,6 +75,85 @@ class WebResultsPanel:
         if self.current_file:
             return Path(self.current_file).stem
         return "structure"
+
+    def _is_excluded_residue(self, res_name: str) -> bool:
+        """Check if residue should be excluded (water or common solvent).
+
+        :param res_name: Residue name to check
+        :type res_name: str
+        :returns: True if residue is water or common solvent
+        :rtype: bool
+        """
+        res_name_upper = res_name.strip().upper()
+        return res_name_upper in WATER_MOLECULES or res_name_upper in COMMON_SOLVENTS
+
+    def _get_ligand_interactions(self, interaction_list):
+        """Filter interactions to only those involving true ligands (exclude water/solvents).
+
+        :param interaction_list: List of interaction objects
+        :returns: Filtered list of ligand interactions
+        :rtype: list
+        """
+        ligand_interactions = []
+        for interaction in interaction_list:
+            # Handle different interaction types that may store residue info differently
+            if hasattr(interaction, 'donor_res_name'):
+                donor_res_name = interaction.donor_res_name
+                acceptor_res_name = interaction.acceptor_res_name
+            else:
+                # For interactions like WaterBridge that use atoms directly
+                donor = interaction.get_donor()
+                acceptor = interaction.get_acceptor()
+                donor_res_name = donor.res_name if hasattr(donor, 'res_name') else ""
+                acceptor_res_name = acceptor.res_name if hasattr(acceptor, 'res_name') else ""
+
+            donor_type = classify_residue_type(donor_res_name)
+            acceptor_type = classify_residue_type(acceptor_res_name)
+
+            has_ligand = donor_type == 'L' or acceptor_type == 'L'
+            if not has_ligand:
+                continue
+
+            # Exclude if both are water/solvents
+            if (self._is_excluded_residue(donor_res_name) and
+                self._is_excluded_residue(acceptor_res_name)):
+                continue
+
+            ligand_interactions.append(interaction)
+
+        return ligand_interactions
+
+    def _extract_unique_ligands(self, interaction_list):
+        """Extract unique ligand residue identifiers from interaction list with counts.
+
+        :param interaction_list: List of interaction objects
+        :returns: Dictionary with residue IDs as keys and interaction counts as values
+        :rtype: dict
+        """
+        ligand_counts = {}
+        for interaction in interaction_list:
+            # Handle different interaction types
+            if hasattr(interaction, 'donor_res_name'):
+                donor_res_name = interaction.donor_res_name
+                acceptor_res_name = interaction.acceptor_res_name
+            else:
+                donor = interaction.get_donor()
+                acceptor = interaction.get_acceptor()
+                donor_res_name = donor.res_name if hasattr(donor, 'res_name') else ""
+                acceptor_res_name = acceptor.res_name if hasattr(acceptor, 'res_name') else ""
+
+            # Check donor
+            if (classify_residue_type(donor_res_name) == 'L' and
+                not self._is_excluded_residue(donor_res_name)):
+                donor_res = interaction.get_donor_residue()
+                ligand_counts[donor_res] = ligand_counts.get(donor_res, 0) + 1
+            # Check acceptor
+            if (classify_residue_type(acceptor_res_name) == 'L' and
+                not self._is_excluded_residue(acceptor_res_name)):
+                acceptor_res = interaction.get_acceptor_residue()
+                ligand_counts[acceptor_res] = ligand_counts.get(acceptor_res, 0) + 1
+
+        return ligand_counts
 
     def _download_pymol_visualization(self, interaction_label: str, **interaction_kwargs):
         """Generic helper to download PyMOL visualization for any interaction type.
@@ -193,12 +275,28 @@ class WebResultsPanel:
                 "update_method": "_update_summary_panel",
             },
             {
+                "id": "ligands",
+                "label": "Ligand Interactions",
+                "icon": "donut_large",
+                "attr": None,
+                "panel_attr": "ligands_panel",
+                "update_method": "_update_ligand_interactions_panel",
+            },
+            {
                 "id": "hydrogen",
                 "label": "Hydrogen Bonds",
                 "icon": "link",
                 "attr": "hydrogen_bonds",
                 "panel_attr": "hydrogen_panel",
                 "update_method": "_update_hydrogen_bonds_panel",
+            },
+            {
+                "id": "water_bridges",
+                "label": "Water Bridges",
+                "icon": "opacity",
+                "attr": "water_bridges",
+                "panel_attr": "water_bridges_panel",
+                "update_method": "_update_water_bridges_panel",
             },
             {
                 "id": "halogen",
@@ -241,14 +339,6 @@ class WebResultsPanel:
                 "update_method": "_update_n_pi_interactions_panel",
             },
             {
-                "id": "water_bridges",
-                "label": "Water Bridges",
-                "icon": "opacity",
-                "attr": "water_bridges",
-                "panel_attr": "water_bridges_panel",
-                "update_method": "_update_water_bridges_panel",
-            },
-            {
                 "id": "cooperativity",
                 "label": "Cooperativity",
                 "icon": "account_tree",
@@ -267,6 +357,22 @@ class WebResultsPanel:
         """
         if config.get("always_show"):
             return True
+
+        # Special case for ligand interactions
+        if config.get("id") == "ligands":
+            # Collect all interactions
+            all_interactions = (
+                self.analyzer.hydrogen_bonds +
+                self.analyzer.halogen_bonds +
+                self.analyzer.pi_interactions +
+                self.analyzer.pi_pi_interactions +
+                self.analyzer.carbonyl_interactions +
+                self.analyzer.n_pi_interactions +
+                self.analyzer.water_bridges
+            )
+            # Check if any ligand interactions exist
+            has_ligands = bool(self._get_ligand_interactions(all_interactions))
+            return has_ligands
 
         attr = config.get("attr")
         if not attr:
@@ -350,6 +456,22 @@ class WebResultsPanel:
                     ui.label(
                         str(summary.get("n_pi_interactions", {}).get("count", 0))
                     ).classes("text-h4 text-green")
+
+                # Ligand Interactions count
+                with ui.card().classes("flex-1"):
+                    ui.label("Ligand Interactions").classes("text-h6")
+                    # Calculate ligand interactions count
+                    all_interactions = (
+                        self.analyzer.hydrogen_bonds +
+                        self.analyzer.halogen_bonds +
+                        self.analyzer.pi_interactions +
+                        self.analyzer.pi_pi_interactions +
+                        self.analyzer.carbonyl_interactions +
+                        self.analyzer.n_pi_interactions +
+                        self.analyzer.water_bridges
+                    )
+                    ligand_interactions = self._get_ligand_interactions(all_interactions)
+                    ui.label(str(len(ligand_interactions))).classes("text-h4 text-amber")
 
             with ui.row().classes("w-full gap-2"):
                 with ui.card().classes("flex-1"):
@@ -1989,6 +2111,305 @@ class WebResultsPanel:
                 type="negative",
                 position="top-left",
             )
+
+    def _update_ligand_interactions_panel(self):
+        """Update ligand interactions panel with unified table view."""
+        import random
+
+        # Collect all interactions from all types
+        all_interactions = (
+            self.analyzer.hydrogen_bonds +
+            self.analyzer.halogen_bonds +
+            self.analyzer.pi_interactions +
+            self.analyzer.pi_pi_interactions +
+            self.analyzer.carbonyl_interactions +
+            self.analyzer.n_pi_interactions +
+            self.analyzer.water_bridges
+        )
+
+        # Filter to only ligand interactions
+        ligand_interactions = self._get_ligand_interactions(all_interactions)
+
+        if not ligand_interactions:
+            with self.ligands_panel:
+                ui.label("No ligand interactions found").classes("text-subtitle1 q-pa-lg")
+            return
+
+        # Extract unique ligands with counts
+        ligand_counts = self._extract_unique_ligands(ligand_interactions)
+
+        with self.ligands_panel:
+            # Title
+            ui.label(f"Ligand Interactions ({len(ligand_interactions)})").classes("text-h5")
+
+            # Dropdown selector - show each ligand with interaction count
+            # NiceGUI expects {value: label} format
+            ligand_options = {}
+            first_ligand = None
+            for ligand_res, count in sorted(ligand_counts.items(), key=lambda x: -x[1]):
+                label = f"{ligand_res} ({count})"
+                ligand_options[ligand_res] = label
+                if first_ligand is None:
+                    first_ligand = ligand_res
+
+            # Store interactions in a dict for retrieval (can't serialize to JSON)
+            interaction_store = {}
+
+            # Build table data
+            def build_table_data(selected_value):
+                """Build table data for the selected ligand."""
+                rows = []
+                interaction_index = 0
+
+                for interaction in ligand_interactions:
+                    donor_res = interaction.get_donor_residue()
+                    acceptor_res = interaction.get_acceptor_residue()
+
+                    # Show only interactions involving the selected ligand
+                    if donor_res != selected_value and acceptor_res != selected_value:
+                        continue
+
+                    # Determine interaction type
+                    int_type = interaction.get_interaction_type()
+                    if "hydrogen" in int_type.lower() or "h-bond" in int_type.lower():
+                        type_label = "H-Bond"
+                    elif "halogen" in int_type.lower() or "x-bond" in int_type.lower():
+                        type_label = "Halogen Bond"
+                    elif "pi-pi" in int_type.lower() or "stacking" in int_type.lower():
+                        type_label = "π-π Stacking"
+                    elif "pi" in int_type.lower():
+                        type_label = "π-Interaction"
+                    elif "carbonyl" in int_type.lower():
+                        type_label = "Carbonyl"
+                    elif "n-pi" in int_type.lower():
+                        type_label = "n-π*"
+                    elif "water" in int_type.lower():
+                        type_label = "Water Bridge"
+                    else:
+                        type_label = int_type
+
+                    # Get distance metric
+                    if hasattr(interaction, 'distance'):
+                        distance = f"{interaction.distance:.2f} Å"
+                    elif hasattr(interaction, '_distance'):
+                        distance = f"{interaction._distance:.2f} Å"
+                    else:
+                        distance = "N/A"
+
+                    # Get properties
+                    properties = ""
+                    if hasattr(interaction, 'donor_acceptor_properties'):
+                        properties = interaction.donor_acceptor_properties
+
+                    # Store the interaction object in the dict (not serialized)
+                    interaction_store[interaction_index] = interaction
+
+                    rows.append({
+                        "id": interaction_index,
+                        "type": type_label,
+                        "donor_res": donor_res,
+                        "donor_atom": interaction.get_donor().name if hasattr(interaction.get_donor(), 'name') else "N/A",
+                        "acceptor_res": acceptor_res,
+                        "acceptor_atom": interaction.get_acceptor().name if hasattr(interaction.get_acceptor(), 'name') else "N/A",
+                        "distance": distance,
+                        "properties": properties,
+                        "int_type": int_type,
+                    })
+                    interaction_index += 1
+
+                return rows
+
+            # Table columns
+            columns = [
+                {"name": "visualize", "label": "3D View", "field": "visualize", "align": "center"},
+                {"name": "type", "label": "Type", "field": "type", "align": "left"},
+                {"name": "donor_res", "label": "Donor", "field": "donor_res", "align": "left"},
+                {"name": "donor_atom", "label": "Donor Atom", "field": "donor_atom", "align": "left"},
+                {"name": "acceptor_res", "label": "Acceptor", "field": "acceptor_res", "align": "left"},
+                {"name": "acceptor_atom", "label": "Acceptor Atom", "field": "acceptor_atom", "align": "left"},
+                {"name": "distance", "label": "Distance", "field": "distance", "align": "left"},
+                {"name": "properties", "label": "Properties", "field": "properties", "align": "left"},
+            ]
+
+            # Handle dropdown changes
+            def on_ligand_selected(e):
+                if e.value:
+                    rows = build_table_data(e.value)
+                    table.update_rows(rows, clear_selection=True)
+
+            # Create dropdown selector (above table)
+            selected_ligand = ui.select(
+                ligand_options,
+                label="Select Ligand",
+                value=first_ligand,
+                on_change=on_ligand_selected
+            ).classes("w-full mb-4").props("outlined dense")
+
+            # Filter input for searching (above table)
+            filter_input = ui.input(
+                placeholder="Filter interactions (residue, atom, type, etc.)"
+            ).props("clearable outlined dense").classes("w-full mb-4")
+
+            # Create table with data for the first ligand
+            table = ui.table(columns=columns, rows=build_table_data(first_ligand) if first_ligand else [], row_key="id")
+            table.classes("w-full")
+
+            # Bind filter input to table
+            filter_input.bind_value(table, "filter")
+
+            # Add visualize button slot with color based on interaction type
+            table.add_slot("body-cell-visualize", """
+                <q-td :props="props">
+                    <q-btn
+                        flat dense round
+                        icon="visibility"
+                        :color="
+                            props.row.int_type.toLowerCase().includes('hydrogen') ? 'primary' :
+                            props.row.int_type.toLowerCase().includes('halogen') ? 'orange' :
+                            props.row.int_type.toLowerCase().includes('pi-pi') || props.row.int_type.toLowerCase().includes('stacking') ? 'purple' :
+                            props.row.int_type.toLowerCase().includes('pi') ? 'green' :
+                            props.row.int_type.toLowerCase().includes('carbonyl') ? 'red' :
+                            props.row.int_type.toLowerCase().includes('n-pi') ? 'teal' :
+                            props.row.int_type.toLowerCase().includes('water') ? 'cyan' :
+                            'blue'
+                        "
+                        size="sm"
+                        @click="$parent.$emit('visualize', props.row)"
+                    />
+                </q-td>
+            """)
+
+            # Handle visualization requests
+            def show_interaction_visualization(row_data):
+                # row_data can be either a dict (from event args) or an ID
+                row_id = row_data.get("id") if isinstance(row_data, dict) else row_data
+
+                # Retrieve interaction from store using row ID
+                interaction = interaction_store.get(row_id)
+                if not interaction:
+                    ui.notify("Error: Interaction not found", type="negative")
+                    return
+                int_type = row_data.get("int_type", "").lower() if isinstance(row_data, dict) else interaction.get_interaction_type().lower()
+
+                # Determine which viewer to use based on actual type strings
+                viewer_gen = None
+                # Check for hydrogen bonds
+                if "hydrogen" in int_type or "h-bond" in int_type or "h bond" in int_type:
+                    viewer_id = f"lig_hb_viewer_{random.randint(1000, 9999)}"
+                    viewer_gen = generate_hydrogen_bond_viewer_js
+                # Check for halogen bonds
+                elif "halogen" in int_type or "x-bond" in int_type or "x bond" in int_type:
+                    viewer_id = f"lig_xb_viewer_{random.randint(1000, 9999)}"
+                    viewer_gen = generate_halogen_bond_viewer_js
+                # Check for π-π stacking (with actual π symbol or spelled out)
+                elif ("π" in int_type and "π" in int_type and "stack" in int_type) or "pi-pi" in int_type or "pi pi" in int_type or "stacking" in int_type:
+                    viewer_id = f"lig_pipi_viewer_{random.randint(1000, 9999)}"
+                    viewer_gen = generate_pi_pi_stacking_viewer_js
+                # Check for π-interactions (with actual π symbol or spelled out)
+                elif ("π" in int_type and "inter" in int_type) or "pi inter" in int_type or "pi-inter" in int_type:
+                    viewer_id = f"lig_pi_viewer_{random.randint(1000, 9999)}"
+                    viewer_gen = generate_pi_interaction_viewer_js
+                # Check for carbonyl interactions
+                elif "carbonyl" in int_type or "n→π" in int_type or "npi" in int_type:
+                    viewer_id = f"lig_carbonyl_viewer_{random.randint(1000, 9999)}"
+                    viewer_gen = generate_carbonyl_interaction_viewer_js
+                # Check for n-π* interactions
+                elif "n-pi" in int_type or "n pi" in int_type or ("n" in int_type and "π" in int_type):
+                    viewer_id = f"lig_npi_viewer_{random.randint(1000, 9999)}"
+                    viewer_gen = generate_n_pi_interaction_viewer_js
+                # Check for water bridges
+                elif "water" in int_type or "bridge" in int_type:
+                    viewer_id = f"lig_wbridge_viewer_{random.randint(1000, 9999)}"
+                    viewer_gen = generate_water_bridge_viewer_js
+
+                if not viewer_gen:
+                    ui.notify(f"Error: Unknown interaction type '{int_type}'", type="negative")
+                    return
+
+                # Generate minimal PDB for this interaction
+                minimal_pdb = format_minimal_pdb(self.analyzer.parser, [interaction])
+
+                # Create dialog with proper structure matching other interaction visualizations
+                def export_png():
+                    """Export viewer as PNG."""
+                    pdb_base = self._get_pdb_basename()
+                    donor = row_data.get('donor_res', 'donor').replace(':', '_')
+                    acceptor = row_data.get('acceptor_res', 'acceptor').replace(':', '_')
+                    filename = f"{pdb_base}_{donor}_to_{acceptor}_ligand.png"
+                    ui.run_javascript(generate_png_export_js(viewer_id, filename))
+
+                def download_pdb():
+                    """Download extracted PDB file."""
+                    pdb_base = self._get_pdb_basename()
+                    donor = row_data.get('donor_res', 'donor').replace(':', '_')
+                    acceptor = row_data.get('acceptor_res', 'acceptor').replace(':', '_')
+                    filename = f"{pdb_base}_{donor}_to_{acceptor}_ligand.pdb"
+                    ui.download(minimal_pdb.encode(), filename=filename)
+
+                def download_pymol():
+                    """Download as PyMOL visualization package."""
+                    donor = row_data.get('donor_res', 'donor').replace(':', '_')
+                    acceptor = row_data.get('acceptor_res', 'acceptor').replace(':', '_')
+                    label = f"{donor}_to_{acceptor}"
+                    if "hydrogen" in int_type:
+                        self._download_pymol_visualization(label, hydrogen_bonds=[interaction])
+                    elif "halogen" in int_type:
+                        self._download_pymol_visualization(label, halogen_bonds=[interaction])
+                    elif "pi-pi" in int_type:
+                        self._download_pymol_visualization(label, pi_pi_stacking=[interaction])
+                    elif "pi" in int_type:
+                        self._download_pymol_visualization(label, pi_interactions=[interaction])
+                    elif "carbonyl" in int_type:
+                        self._download_pymol_visualization(label, carbonyl_interactions=[interaction])
+                    elif "n-pi" in int_type:
+                        self._download_pymol_visualization(label, n_pi_interactions=[interaction])
+                    elif "water" in int_type:
+                        self._download_pymol_visualization(label, water_bridges=[interaction])
+
+                with (
+                    ui.dialog().props("persistent") as dialog,
+                    ui.card().style("width: 900px; max-width: 90vw;"),
+                ):
+                    with ui.card_actions().classes("justify-end"):
+                        ui.button("Export PNG", icon="download", on_click=export_png).props(
+                            "outline color=secondary"
+                        )
+                        ui.button("Download PDB", icon="download", on_click=download_pdb).props(
+                            "outline color=secondary"
+                        )
+                        ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
+                            "outline color=secondary"
+                        )
+                        ui.button("Close", on_click=dialog.close).props("color=primary")
+
+                    with ui.card_section().classes("q-pa-md"):
+                        ui.label(
+                            f"{row_data.get('donor_res', '')} → {row_data.get('acceptor_res', '')}"
+                        ).classes("text-subtitle1 q-mb-md")
+
+                        # Create div for viewer - container must have actual width
+                        ui.html(
+                            f'<div id="{viewer_id}" style="width: 100%; height: 600px; min-width: 800px; position: relative;"></div>',
+                            sanitize=False,
+                        )
+
+                dialog.open()
+
+                # Initialize viewer after dialog is opened and rendered
+                ui.timer(0.1, lambda: ui.run_javascript(
+                    viewer_gen(interaction, minimal_pdb, viewer_id)
+                ), once=True)
+
+            # Handle table row visualization
+            def handle_visualize(e):
+                # e.args should contain the row data
+                row_data = e.args if hasattr(e, 'args') else {}
+                if isinstance(row_data, dict) and "id" in row_data:
+                    show_interaction_visualization(row_data)
+                else:
+                    ui.notify("Error: Could not retrieve row data", type="negative")
+
+            table.on("visualize", handle_visualize)
 
     def reset(self):
         """Reset the results panel and clear all analysis results."""
