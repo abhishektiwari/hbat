@@ -168,6 +168,7 @@ clean:
 	rm -rf notebooks/*.json
 	rm -rf notebooks/__pycache__
 	rm -rf notebooks/*.png
+	rm -rf uploads/sessions/*
 	rm -rf "~"
 	rm -f coverage.xml
 	rm -f junit.xml

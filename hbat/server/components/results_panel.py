@@ -9,6 +9,10 @@ import math
 from pathlib import Path
 from typing import Optional
 
+import os
+import tempfile
+import zipfile
+
 from nicegui import ui
 
 from ...core.analysis import NPMolecularInteractionAnalyzer
@@ -17,6 +21,7 @@ from ...visualization.minimal_pdb_extractor import (
     extract_water_bridge_pdb,
 )
 from ...visualization.chain_graph import render_chain_for_web
+from ...visualization import export_interactions_to_pymol
 from ...visualization.pymol3d import (
     generate_carbonyl_interaction_viewer_js,
     generate_halogen_bond_viewer_js,
@@ -1408,6 +1413,83 @@ class WebResultsPanel:
             )
             ui.download(minimal_pdb.encode(), filename=filename)
 
+        def download_pymol():
+            """Download water bridge as PyMOL visualization package."""
+            try:
+                # Determine which PDB file to use
+                pdb_file_path = None
+                if hasattr(
+                    self.analyzer, "_pdb_fixing_info"
+                ) and self.analyzer._pdb_fixing_info.get("applied"):
+                    pdb_file_path = self.analyzer._pdb_fixing_info.get("fixed_file_path")
+                else:
+                    pdb_file_path = self.analyzer._pdb_fixing_info.get("input_file_path")
+
+                if not pdb_file_path or not os.path.exists(pdb_file_path):
+                    ui.notify(
+                        "PDB file not found for visualization",
+                        type="negative",
+                        position="top-left",
+                    )
+                    return
+
+                # Create temporary directory for PyMOL export
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    # Export only this water bridge
+                    success = export_interactions_to_pymol(
+                        pdb_file_path=pdb_file_path,
+                        water_bridges=[wb],
+                        parser=self.analyzer.parser,
+                        output_dir=temp_dir,
+                    )
+
+                    if not success:
+                        ui.notify(
+                            "Failed to generate PyMOL visualization",
+                            type="negative",
+                            position="top-left",
+                        )
+                        return
+
+                    # Create a zip file with visualization files
+                    basename = os.path.splitext(os.path.basename(pdb_file_path))[0]
+                    pdb_base = self._get_pdb_basename()
+                    wbridge_label = f"{wb.get_donor_residue()}_to_{wb.get_acceptor_residue()}".replace(
+                        ":", "_"
+                    )
+                    zip_filename = f"{pdb_base}_{wbridge_label}_pymol.zip"
+
+                    pdb_file = os.path.join(temp_dir, f"{basename}.pdb")
+                    script_file = os.path.join(temp_dir, f"{basename}.pml")
+                    readme_file = os.path.join(temp_dir, "README.txt")
+
+                    # Create zip in temp location then download
+                    zip_path = os.path.join(temp_dir, zip_filename)
+                    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+                        if os.path.exists(pdb_file):
+                            zipf.write(pdb_file, os.path.basename(pdb_file))
+                        if os.path.exists(script_file):
+                            zipf.write(script_file, os.path.basename(script_file))
+                        if os.path.exists(readme_file):
+                            zipf.write(readme_file, os.path.basename(readme_file))
+
+                    # Read and download the zip file
+                    with open(zip_path, "rb") as f:
+                        ui.download(f.read(), filename=zip_filename)
+
+                    ui.notify(
+                        "PyMOL visualization downloaded",
+                        type="positive",
+                        position="top-left",
+                    )
+
+            except Exception as e:
+                ui.notify(
+                    f"PyMOL export failed: {str(e)}",
+                    type="negative",
+                    position="top-left",
+                )
+
         with (
             ui.dialog().props("persistent") as dialog,
             ui.card().style("width: 1000px; max-width: 95vw;"),
@@ -1417,6 +1499,9 @@ class WebResultsPanel:
                     "outline color=secondary"
                 )
                 ui.button("Download PDB", icon="download", on_click=download_pdb).props(
+                    "outline color=secondary"
+                )
+                ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")

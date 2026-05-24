@@ -366,11 +366,12 @@ class HBATWebApp:
                             ).props("color=primary")
                         # Download Structure section
                         ui.separator().classes("q-my-md")
-                        self.download_structure_button = ui.button(
-                            "Download Original Structure",
-                            icon="download",
-                            on_click=self._export_fixed_structure,
-                        ).props("color=primary")
+                        with ui.row().classes("w-full gap-md"):
+                            self.download_structure_button = ui.button(
+                                "Download Original Structure",
+                                icon="download",
+                                on_click=self._export_fixed_structure,
+                            ).props("color=primary").classes("flex-1")
 
                     with ui.stepper_navigation():
                         ui.button(
@@ -749,6 +750,7 @@ class HBATWebApp:
             ui.notify(
                 f"Download failed: {str(e)}", type="negative", position="top-left"
             )
+
 
     def _navigate_to_step(self, step: str):
         """Navigate to a specific step with validation.
