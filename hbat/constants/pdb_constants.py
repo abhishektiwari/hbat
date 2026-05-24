@@ -531,6 +531,58 @@ Used for:
     - Hydration shell analysis
 """
 
+COMMON_SOLVENTS: List[str] = [
+    # Polyols and alcohols
+    "EDO",   # 1,2-Ethanediol (ethylene glycol)
+    "GOL",   # Glycerol
+    "PEG",   # Polyethylene glycol
+    "PGE",   # Triethylene glycol
+    "DMS",   # Dimethyl sulfoxide
+    "MPD",   # 2-Methyl-2,4-pentanediol
+    "IPA",   # Isopropanol
+    "EOH",   # Ethanol
+    "MES",   # 2-(N-morpholino)ethanesulfonic acid
+    # Organic solvents
+    "DMF",   # Dimethylformamide
+    "ACN",   # Acetonitrile
+    "ACO",   # Acetone
+    "THF",   # Tetrahydrofuran
+    "ACT",   # Acetate ion
+    "ACE",   # Acetyl group / acetic acid
+    # Inorganic salts and ions
+    "SO4",   # Sulfate ion
+    "SUL",   # Sulfate (alternate)
+    "PO4",   # Phosphate ion
+    "PO3",   # Phosphonate
+    "CL",    # Chloride ion
+    "NA",    # Sodium ion
+    "K",     # Potassium ion
+    "MG",    # Magnesium ion (when used as cryo-protectant)
+    "CA",    # Calcium ion (when used as cryo-protectant)
+    "ZN",    # Zinc ion
+    "FE",    # Iron ion
+    "MN",    # Manganese ion
+    "NI",    # Nickel ion
+    "CO",    # Cobalt ion
+    "CU",    # Copper ion
+    # Buffers and cryo-protectants
+    "TAU",   # Taurine
+    "TRS",   # Tris buffer
+    "BTC",   # Bicine buffer
+    "BME",   # Beta-mercaptoethanol
+    "DTT",   # Dithiothreitol
+]
+"""List[str]: Common crystallographic solvents and additives to exclude from ligand analysis.
+
+These residues appear as HETATM records but are not true ligands (drugs, cofactors).
+Used to filter out crystallization agents, cryo-protectants, and buffer components
+when identifying genuine protein-ligand interactions.
+
+Used for:
+    - Ligand interaction filtering (exclude solvents/additives)
+    - Distinguishing true ligands from crystallographic artifacts
+"""
+
 RESIDUES: List[str] = PROTEIN_RESIDUES + DNA_RESIDUES + RNA_RESIDUES + WATER_MOLECULES
 """List[str]: Combined list of all standard residue codes for proteins, DNA, and RNA.
 
