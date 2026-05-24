@@ -55,6 +55,9 @@ class ResultsPanel:
         # Summary tab
         self._create_summary_tab()
 
+        # Ligand interactions tab
+        self._create_ligand_interactions_tab()
+
         # Hydrogen bonds tab
         self._create_hydrogen_bonds_tab()
 
@@ -76,9 +79,6 @@ class ResultsPanel:
 
         # Cooperativity chains tab
         self._create_cooperativity_chains_tab()
-
-        # Ligand interactions tab
-        self._create_ligand_interactions_tab()
 
     def _create_summary_tab(self):
         """Create summary results tab."""

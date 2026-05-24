@@ -6,12 +6,14 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 
 **Supported Interaction Types:**
 
-- **Hydrogen Bonds**: Classical` N-H···O`, `O-H···O`, and weak `C-H···O` interactions
+- **Hydrogen Bonds**: Classical `N-H···O`, `O-H···O`, and weak `C-H···O` interactions
 - **Halogen Bonds**: `C-X···A` interactions (`X = Cl, Br, I`)
 - **π Interactions**: X-H···π and `C-X···π` interactions with aromatic rings (`Phe`, `Tyr`, `Trp`, `His`, etc.)
 - **π-π Stacking**: Aromatic ring-ring interactions (parallel, T-shaped, offset)
 - **Carbonyl Interactions**: `n→π*` interactions between carbonyl groups
 - **n-π Interactions**: Lone pair interactions with aromatic `π` systems
+- **Water Bridges**: Water-mediated hydrogen bond networks connecting protein/ligand residues
+- **Ligand Interactions**: Comprehensive detection of all interaction types between ligands and protein/nucleic acid residues
  
 > **HBAT 2 Web Interface** is Live! Try it out at [hbat-web.abhishek-tiwari.com](https://hbat-web.abhishek-tiwari.com)
 
@@ -57,12 +59,16 @@ HBAT 2 is a modern Python re-implementation of the original Perl-based tool deve
 
 ## Highlights of HBAT 2
 
-- Detect and analyze potential hydrogen bonds, halogen bonds, π interactions, π-π stacking, carbonyl interactions, and n-π interactions
+- Detect and analyze potential hydrogen bonds, halogen bonds, π interactions, π-π stacking, carbonyl interactions, n-π interactions, water bridges, and ligand interactions
 - Automated PDB fixing with OpenBabel and PDBFixer integration
 - Support graphical (tkinter), command-line, and programming API interfaces
 - Use graphical interfaces for interactive analysis, CLI/API for batch processing and automation
+- Ligand interaction analysis with residue-specific visualization and filtering
+- Water bridge detection and analysis with bridge path visualization
 - Hydrogen bond network (potential cooperativity/anticooperativity chains and water-mediated hydrogen bond networks) visualization using NetworkX/matplotlib and GraphViz
 - Export hydrogen bond network visualizations to PNG, SVG, PDF formats
+- 3D visualization of interactions using 3Dmol.js in Jupyter notebooks and HBAT web interface
+- Export and visualize interactions in PyMOL from HBAT web interface
 - Built-in presets for different structure types (high-resolution, NMR, membrane proteins, etc.)
 - Customizable distance cutoffs, angle thresholds, and analysis modes.
 - Multiple Output Formats: Text, CSV, and JSON export options
