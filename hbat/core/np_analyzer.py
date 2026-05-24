@@ -2374,6 +2374,11 @@ class NPMolecularInteractionAnalyzer:
                     else 0
                 ),
             },
+            "ligand_interactions": {
+                "count": len(self.ligand_interactions.interactions) if self.ligand_interactions else 0,
+                "unique_ligands": len(self.ligand_interactions.ligand_info) if self.ligand_interactions else 0,
+                "ligands": {}
+            },
             "total_interactions": len(self.hydrogen_bonds)
             + len(self.halogen_bonds)
             + len(self.pi_interactions)

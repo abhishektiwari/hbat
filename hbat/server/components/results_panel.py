@@ -368,8 +368,9 @@ class WebResultsPanel:
                 # Ligand Interactions count
                 with ui.card().classes("flex-1"):
                     ui.label("Ligand Inter").classes("text-h6")
-                    # Calculate ligand interactions count
-                    ui.label(str(len(self.analyzer.ligand_interactions))).classes("text-h4 text-amber")
+                    ui.label(
+                        str(summary.get("ligand_interactions", {}).get("count", 0))
+                    ).classes("text-h4 text-amber")
 
             with ui.row().classes("w-full gap-2"):
                 with ui.card().classes("flex-1"):

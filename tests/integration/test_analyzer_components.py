@@ -74,8 +74,8 @@ class TestAnalyzerInteractionDetection:
         success = analyzer.analyze_file(sample_pdb_file)
         assert success
 
-        # Get expected values for 6rsa.pdb with default pdbfixer method
-        expected = expected_results["6rsa.pdb"]["pdbfixer"]
+        # Get expected values for 6rsa.pdb with default openbabel method
+        expected = expected_results["6rsa.pdb"]["openbabel"]
         hb_min, hb_max = expected["hydrogen_bonds"]
 
         hbonds = analyzer.hydrogen_bonds

@@ -1046,6 +1046,15 @@ def format_results_text(
     lines.append(f"  Total interactions: {summary['total_interactions']}")
     lines.append("")
 
+    # Ligand interactions summary
+    if "ligand_interactions" in summary:
+        lig_stats = summary["ligand_interactions"]
+        if lig_stats["count"] > 0:
+            lines.append("Ligand Interactions:")
+            lines.append(f"  Total interactions: {lig_stats['count']}")
+            lines.append(f"  Unique ligands: {lig_stats['unique_ligands']}")
+            lines.append("")
+
     # Bond detection statistics
     if "bond_detection" in summary:
         bond_stats = summary["bond_detection"]
