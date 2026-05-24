@@ -76,7 +76,7 @@ class WebResultsPanel:
         return "structure"
 
     def _download_pymol_visualization(self, interaction_label: str, **interaction_kwargs):
-        """Generic helper to download PyMOL visualization for any interaction type.
+        """Generic helper to View in PyMOL visualization for any interaction type.
 
         :param interaction_label: Label for the interaction (e.g., "A:ALA:1_to_B:GLY:2")
         :param interaction_kwargs: Keyword arguments to pass to export_interactions_to_pymol
@@ -619,7 +619,7 @@ class WebResultsPanel:
                 ui.button("Download PDB", icon="download", on_click=download_pdb).props(
                     "outline color=secondary"
                 )
-                ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
+                ui.button("View in PyMOL", icon="movie", on_click=download_pymol).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -820,7 +820,7 @@ class WebResultsPanel:
                 ui.button("Download PDB", icon="download", on_click=download_pdb).props(
                     "outline color=secondary"
                 )
-                ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
+                ui.button("View in PyMOL", icon="movie", on_click=download_pymol).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -896,7 +896,7 @@ class WebResultsPanel:
                 ui.button("Download PDB", icon="download", on_click=download_pdb).props(
                     "outline color=secondary"
                 )
-                ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
+                ui.button("View in PyMOL", icon="movie", on_click=download_pymol).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -1560,7 +1560,7 @@ class WebResultsPanel:
                 ui.button("Download PDB", icon="download", on_click=download_pdb).props(
                     "outline color=secondary"
                 )
-                ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
+                ui.button("View in PyMOL", icon="movie", on_click=download_pymol).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -1742,7 +1742,7 @@ class WebResultsPanel:
                 ui.button("Download PDB", icon="download", on_click=download_pdb).props(
                     "outline color=secondary"
                 )
-                ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
+                ui.button("View in PyMOL", icon="movie", on_click=download_pymol).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -1819,7 +1819,7 @@ class WebResultsPanel:
                 ui.button("Download PDB", icon="download", on_click=download_pdb).props(
                     "outline color=secondary"
                 )
-                ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
+                ui.button("View in PyMOL", icon="movie", on_click=download_pymol).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -1896,7 +1896,7 @@ class WebResultsPanel:
                 ui.button("Download PDB", icon="download", on_click=download_pdb).props(
                     "outline color=secondary"
                 )
-                ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
+                ui.button("View in PyMOL", icon="movie", on_click=download_pymol).props(
                     "outline color=secondary"
                 )
                 ui.button("Close", on_click=dialog.close).props("color=primary")
@@ -2128,8 +2128,8 @@ class WebResultsPanel:
                     if donor_res != selected_value and acceptor_res != selected_value:
                         continue
 
-                    # Water bridges have unique structure
-                    water_residues_str = " → ".join(interaction.water_residues)
+                    # Water bridges have unique structure (use semicolon separator like main Water Bridges tab)
+                    water_residues_str = "; ".join(interaction.water_residues)
 
                     # Store the interaction object in water bridge store (separate from regular interactions)
                     water_bridge_store[interaction_index] = interaction
@@ -2159,14 +2159,14 @@ class WebResultsPanel:
                 {"name": "properties", "label": "Properties", "field": "properties", "align": "left"},
             ]
 
-            # Table columns for water bridges
+            # Table columns for water bridges (consistent with main Water Bridges tab)
             water_bridge_columns = [
                 {"name": "visualize", "label": "3D View", "field": "visualize", "align": "center"},
-                {"name": "donor_res", "label": "Start", "field": "donor_res", "align": "left"},
-                {"name": "water_residues", "label": "Water Molecules", "field": "water_residues", "align": "left"},
-                {"name": "acceptor_res", "label": "End", "field": "acceptor_res", "align": "left"},
+                {"name": "donor_res", "label": "Start Residue", "field": "donor_res", "align": "left"},
+                {"name": "acceptor_res", "label": "End Residue", "field": "acceptor_res", "align": "left"},
                 {"name": "bridge_length", "label": "Hops", "field": "bridge_length", "align": "center"},
-                {"name": "distance", "label": "Distance (Å)", "field": "distance", "align": "left"},
+                {"name": "water_residues", "label": "Water Residues", "field": "water_residues", "align": "left"},
+                {"name": "distance", "label": "Distance (Å)", "field": "distance", "align": "right"},
             ]
             columns = [
                 {"name": "visualize", "label": "3D View", "field": "visualize", "align": "center"},
@@ -2259,7 +2259,7 @@ class WebResultsPanel:
                             minimal_pdb.encode(),
                             filename=f"{self._get_pdb_basename()}_{selected_ligand_res.replace(':', '_')}_all.pdb"
                         )).props("outline color=secondary")
-                        ui.button("Download PyMOL", icon="movie", on_click=lambda: self._download_pymol_visualization(
+                        ui.button("View in PyMOL", icon="movie", on_click=lambda: self._download_pymol_visualization(
                             selected_ligand_res.replace(':', '_') + "_all",
                             hydrogen_bonds=[i for i in selected_interactions if "h-bond" in i.get_interaction_type().lower()],
                             halogen_bonds=[i for i in selected_interactions if "x-bond" in i.get_interaction_type().lower()],
@@ -2317,20 +2317,40 @@ class WebResultsPanel:
                 )
 
             def download_csv(selected_ligand_res):
-                """Download interactions as CSV for selected ligand."""
-                from ...export.results import write_ligand_interactions_csv
+                """Download interactions as ZIP containing CSV files for selected ligand."""
+                import io
+                import zipfile
+                from ...export.results import write_ligand_interactions_csv, write_ligand_water_bridges_csv
 
-                csv_content = write_ligand_interactions_csv(self.analyzer, filename=None, ligand_residue=selected_ligand_res)
+                # Create zip file in memory
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                    # Add regular interactions CSV
+                    csv_content = write_ligand_interactions_csv(self.analyzer, filename=None, ligand_residue=selected_ligand_res)
+                    if csv_content and csv_content.strip():  # Only add if there are interactions
+                        zip_file.writestr(
+                            f"{self._get_pdb_basename()}_{selected_ligand_res.replace(':', '_')}_interactions.csv",
+                            csv_content
+                        )
+
+                    # Add water bridges CSV
+                    wb_content = write_ligand_water_bridges_csv(self.analyzer, filename=None, ligand_residue=selected_ligand_res)
+                    if wb_content and wb_content.strip():  # Only add if there are water bridges
+                        zip_file.writestr(
+                            f"{self._get_pdb_basename()}_{selected_ligand_res.replace(':', '_')}_water_bridges.csv",
+                            wb_content
+                        )
+
                 ui.download(
-                    csv_content.encode(),
-                    filename=f"{self._get_pdb_basename()}_{selected_ligand_res.replace(':', '_')}_interactions.csv"
+                    zip_buffer.getvalue(),
+                    filename=f"{self._get_pdb_basename()}_{selected_ligand_res.replace(':', '_')}_interactions.zip"
                 )
 
             # Action buttons container
             with ui.row().classes("w-full gap-2 q-mb-4"):
                 ui.button("3D View All Interactions", icon="visibility", on_click=lambda: show_all_interactions_viewer(selected_ligand.value)).props("color=primary")
-                ui.button("Download PyMOL All", icon="movie", on_click=lambda: download_all_pymol(selected_ligand.value)).props("color=secondary")
-                ui.button("Download CSV", icon="download", on_click=lambda: download_csv(selected_ligand.value)).props("color=info")
+                ui.button("View All Interactions in PyMOL", icon="movie", on_click=lambda: download_all_pymol(selected_ligand.value)).props("color=secondary")
+                ui.button("Download Interactions as CSV", icon="download", on_click=lambda: download_csv(selected_ligand.value)).props("color=info")
 
             # Handle ligand selection changes
             def on_ligand_selected(e):
@@ -2401,7 +2421,7 @@ class WebResultsPanel:
                     """Show 3D visualization for water bridge from ligand interactions."""
                     row_data = e.args if hasattr(e, 'args') else {}
                     row_id = row_data.get("id")
-                    if not row_id:
+                    if row_id is None:
                         ui.notify("Error: Water bridge ID not found", type="negative")
                         return
 
@@ -2441,7 +2461,7 @@ class WebResultsPanel:
                         with ui.card_actions().classes("justify-end"):
                             ui.button("Export PNG", icon="download", on_click=export_png).props("outline color=secondary")
                             ui.button("Download PDB", icon="download", on_click=download_pdb).props("outline color=secondary")
-                            ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props("outline color=secondary")
+                            ui.button("View in PyMOL", icon="movie", on_click=download_pymol).props("outline color=secondary")
                             ui.button("Close", on_click=dialog.close).props("color=primary")
 
                         with ui.card_section().classes("q-pa-md"):
@@ -2557,7 +2577,7 @@ class WebResultsPanel:
                         ui.button("Download PDB", icon="download", on_click=download_pdb).props(
                             "outline color=secondary"
                         )
-                        ui.button("Download PyMOL", icon="movie", on_click=download_pymol).props(
+                        ui.button("View in PyMOL", icon="movie", on_click=download_pymol).props(
                             "outline color=secondary"
                         )
                         ui.button("Close", on_click=dialog.close).props("color=primary")

@@ -117,11 +117,33 @@ def export_to_txt_single_file(
             f.write("=" * 50 + "\n\n")
             for ligand_res in sorted(analyzer.ligand_interactions.ligand_info.keys()):
                 ligand_info = analyzer.ligand_interactions.ligand_info[ligand_res]
+                all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_res)
+
+                # Separate regular interactions and water bridges
+                regular_interactions = [i for i in all_interactions if not _is_water_bridge(i)]
+                water_bridges = [i for i in all_interactions if _is_water_bridge(i)]
+
                 f.write(f"{ligand_res} ({ligand_info['count']} interactions):\n")
                 f.write("-" * 40 + "\n")
-                interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_res)
-                for interaction in interactions:
-                    f.write(f"  {interaction}\n")
+
+                # Write regular interactions
+                if regular_interactions:
+                    f.write("Regular Interactions:\n")
+                    for interaction in regular_interactions:
+                        f.write(f"  {interaction}\n")
+
+                # Write water bridges
+                if water_bridges:
+                    if regular_interactions:
+                        f.write("\n")
+                    f.write("Water Bridges:\n")
+                    for bridge in water_bridges:
+                        f.write(f"  Start: {bridge.get_donor_residue()}\n")
+                        f.write(f"  Water: {' → '.join(bridge.water_residues)}\n")
+                        f.write(f"  End: {bridge.get_acceptor_residue()}\n")
+                        f.write(f"  Hops: {bridge.bridge_length}\n")
+                        f.write(f"  Distance: {bridge.get_donor_acceptor_distance():.2f} Å\n\n")
+
                 f.write("\n")
 
 
@@ -180,11 +202,17 @@ def export_to_csv_files(
         wb_file = directory / f"{base_name}_water_bridges.csv"
         write_water_bridges_csv(analyzer, wb_file)
 
-    # Export ligand interactions - one CSV per ligand
+    # Export ligand interactions - one CSV per ligand (regular interactions only)
+    # and one CSV per ligand for water bridges
     if hasattr(analyzer, "ligand_interactions") and analyzer.ligand_interactions:
         for ligand_residue in analyzer.ligand_interactions.ligand_info.keys():
+            # Regular interactions
             ligand_file = directory / f"{base_name}_ligand_{ligand_residue.replace(':', '_')}.csv"
             write_ligand_interactions_csv(analyzer, ligand_file, ligand_residue)
+
+            # Water bridges
+            wb_file = directory / f"{base_name}_ligand_{ligand_residue.replace(':', '_')}_water_bridges.csv"
+            write_ligand_water_bridges_csv(analyzer, wb_file, ligand_residue)
 
 
 def export_to_json_files(
@@ -246,11 +274,17 @@ def export_to_json_files(
         wb_file = directory / f"{base_name}_water_bridges.json"
         write_water_bridges_json(analyzer, wb_file, input_file)
 
-    # Export ligand interactions - one JSON per ligand
+    # Export ligand interactions - one JSON per ligand (regular interactions only)
+    # and one JSON per ligand for water bridges
     if hasattr(analyzer, "ligand_interactions") and analyzer.ligand_interactions:
         for ligand_residue in analyzer.ligand_interactions.ligand_info.keys():
+            # Regular interactions
             ligand_file = directory / f"{base_name}_ligand_{ligand_residue.replace(':', '_')}.json"
             write_ligand_interactions_json(analyzer, ligand_file, ligand_residue, input_file)
+
+            # Water bridges
+            wb_file = directory / f"{base_name}_ligand_{ligand_residue.replace(':', '_')}_water_bridges.json"
+            write_ligand_water_bridges_json(analyzer, wb_file, ligand_residue, input_file)
 
 
 def export_to_json_single_file(
@@ -430,15 +464,21 @@ def export_to_json_single_file(
     if hasattr(analyzer, "ligand_interactions") and analyzer.ligand_interactions:
         for ligand_res in sorted(analyzer.ligand_interactions.ligand_info.keys()):
             ligand_info = analyzer.ligand_interactions.ligand_info[ligand_res]
-            interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_res)
+            all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_res)
+
+            # Separate regular interactions and water bridges
+            regular_interactions = [i for i in all_interactions if not _is_water_bridge(i)]
+            water_bridges = [i for i in all_interactions if _is_water_bridge(i)]
 
             ligand_data = {
                 "ligand_residue": ligand_res,
                 "ligand_info": ligand_info,
                 "interactions": [],
+                "water_bridges": [],
             }
 
-            for interaction in interactions:
+            # Add regular interactions
+            for interaction in regular_interactions:
                 try:
                     row = _format_ligand_interaction_row(interaction)
                     interaction_data = {
@@ -457,6 +497,24 @@ def export_to_json_single_file(
                         interaction_data["properties"] = row["properties"]
 
                     ligand_data["interactions"].append(interaction_data)
+                except Exception:
+                    continue
+
+            # Add water bridges
+            for wb in water_bridges:
+                try:
+                    water_bridge_data = {
+                        "start_residue": wb.get_donor_residue(),
+                        "water_molecules": wb.water_residues,
+                        "end_residue": wb.get_acceptor_residue(),
+                        "bridge_length": wb.bridge_length,
+                        "distance_angstrom": float(f"{wb.get_donor_acceptor_distance():.2f}"),
+                    }
+
+                    if hasattr(wb, 'donor_acceptor_properties'):
+                        water_bridge_data["properties"] = wb.donor_acceptor_properties
+
+                    ligand_data["water_bridges"].append(water_bridge_data)
                 except Exception:
                     continue
 
@@ -1096,25 +1154,29 @@ def write_water_bridges_csv(
         writer = csv.writer(f)
         writer.writerow(
             [
-                "Donor Residue",
-                "Acceptor Residue",
-                "Bridge Length (hops)",
-                "Water Residues",
-                "Donor-Acceptor Distance (Å)",
+                "Donor_Residue",
+                "Water_Molecules",
+                "Acceptor_Residue",
+                "Hops",
+                "Distance_Angstrom",
             ]
         )
 
         for wb in analyzer.water_bridges:
-            water_residues_str = "; ".join(wb.water_residues)
-            writer.writerow(
-                [
-                    wb.get_donor_residue(),
-                    wb.get_acceptor_residue(),
-                    wb.bridge_length,
-                    water_residues_str,
-                    f"{wb.get_donor_acceptor_distance():.2f}",
-                ]
-            )
+            try:
+                row = _format_water_bridge_row(wb)
+                writer.writerow(
+                    [
+                        row["donor_res"],
+                        row["water_residues"],
+                        row["acceptor_res"],
+                        row["bridge_length"],
+                        row["distance"],
+                    ]
+                )
+            except Exception:
+                # Skip water bridges that can't be processed
+                continue
 
 
 def write_water_bridges_json(
@@ -1182,7 +1244,10 @@ def write_ligand_interactions_json(
     :rtype: None
     """
     ligand_info = analyzer.ligand_interactions.ligand_info.get(ligand_residue, {})
-    interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_residue)
+    all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_residue)
+
+    # Filter out water bridges (they go in separate files)
+    interactions = [i for i in all_interactions if not _is_water_bridge(i)]
 
     data = {
         "metadata": {
@@ -1219,6 +1284,36 @@ def write_ligand_interactions_json(
 
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def _is_water_bridge(interaction) -> bool:
+    """Check if an interaction is a water bridge.
+
+    Water bridges have the water_residues attribute from the WaterBridge class.
+
+    :param interaction: MolecularInteraction object
+    :returns: True if interaction is a water bridge
+    :rtype: bool
+    """
+    return hasattr(interaction, 'water_residues')
+
+
+def _format_water_bridge_row(water_bridge) -> dict:
+    """Format a single water bridge for CSV/JSON output.
+
+    Helper function to avoid duplication between export formats.
+
+    :param water_bridge: WaterBridge object
+    :returns: Dictionary with formatted water bridge data
+    :rtype: dict
+    """
+    return {
+        "donor_res": water_bridge.get_donor_residue(),
+        "acceptor_res": water_bridge.get_acceptor_residue(),
+        "bridge_length": water_bridge.bridge_length,
+        "water_residues": "; ".join(water_bridge.water_residues),
+        "distance": f"{water_bridge.get_donor_acceptor_distance():.2f}",
+    }
 
 
 def _format_ligand_interaction_row(interaction) -> dict:
@@ -1339,9 +1434,12 @@ def write_ligand_interactions_csv(
 
         # Get interactions from analyzer's ligand_interactions container
         if ligand_residue:
-            interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_residue)
+            all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_residue)
         else:
-            interactions = analyzer.ligand_interactions.interactions
+            all_interactions = analyzer.ligand_interactions.interactions
+
+        # Filter out water bridges (they go in separate files)
+        interactions = [i for i in all_interactions if not _is_water_bridge(i)]
 
         # Write interactions
         for interaction in interactions:
@@ -1370,5 +1468,138 @@ def write_ligand_interactions_csv(
             output.close()
         else:
             output.close()
+
+
+def write_ligand_water_bridges_csv(
+    analyzer: NPMolecularInteractionAnalyzer,
+    filename: Optional[Path] = None,
+    ligand_residue: Optional[str] = None,
+) -> Optional[str]:
+    """Write ligand water bridges to CSV file or return as string.
+
+    If filename is provided, writes to file and returns None.
+    If filename is None, returns CSV content as string.
+    If ligand_residue is specified, filters to only that ligand.
+    If ligand_residue is None, includes all ligands.
+
+    :param analyzer: Analyzer with ligand interaction results
+    :type analyzer: NPMolecularInteractionAnalyzer
+    :param filename: Output CSV file path, or None to return as string
+    :type filename: Optional[Path]
+    :param ligand_residue: Optional ligand residue identifier (e.g., "A:GTP:301") to filter by
+    :type ligand_residue: Optional[str]
+    :returns: CSV content as string (if filename is None), otherwise None
+    :rtype: Optional[str]
+    """
+    # Use StringIO if returning as string, otherwise use file
+    if filename is None:
+        output = io.StringIO()
+        use_string_io = True
+    else:
+        output = open(filename, "w", newline="", encoding="utf-8")
+        use_string_io = False
+
+    try:
+        writer = csv.writer(output)
+
+        # Write header for water bridges (consistent with write_water_bridges_csv)
+        writer.writerow([
+            "Donor_Residue",
+            "Water_Molecules",
+            "Acceptor_Residue",
+            "Hops",
+            "Distance_Angstrom",
+        ])
+
+        # Get interactions from analyzer's ligand_interactions container
+        if ligand_residue:
+            all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_residue)
+        else:
+            all_interactions = analyzer.ligand_interactions.interactions
+
+        # Filter to only water bridges
+        water_bridges = [i for i in all_interactions if _is_water_bridge(i)]
+
+        # Write water bridges using shared formatting function
+        for wb in water_bridges:
+            try:
+                row = _format_water_bridge_row(wb)
+                writer.writerow([
+                    row["donor_res"],
+                    row["water_residues"],
+                    row["acceptor_res"],
+                    row["bridge_length"],
+                    row["distance"],
+                ])
+            except Exception:
+                # Skip water bridges that can't be processed
+                continue
+
+        if use_string_io:
+            return output.getvalue()
+        else:
+            return None
+    finally:
+        if use_string_io:
+            output.close()
+        else:
+            output.close()
+
+
+def write_ligand_water_bridges_json(
+    analyzer: NPMolecularInteractionAnalyzer,
+    filename: Path,
+    ligand_residue: str,
+    input_file: Optional[str] = None,
+) -> None:
+    """Write ligand water bridges to JSON file for a specific ligand.
+
+    :param analyzer: Analyzer with ligand interaction results
+    :type analyzer: NPMolecularInteractionAnalyzer
+    :param filename: Output JSON file path
+    :type filename: Path
+    :param ligand_residue: Ligand residue identifier (e.g., "A:GTP:301")
+    :type ligand_residue: str
+    :param input_file: Original input file path (for metadata)
+    :type input_file: Optional[str]
+    :returns: None
+    :rtype: None
+    """
+    ligand_info = analyzer.ligand_interactions.ligand_info.get(ligand_residue, {})
+    all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_residue)
+
+    # Filter to only water bridges
+    water_bridges = [i for i in all_interactions if _is_water_bridge(i)]
+
+    data = {
+        "metadata": {
+            "input_file": input_file or "",
+            "analysis_engine": "HBAT",
+            "version": __version__,
+            "ligand_residue": ligand_residue,
+            "ligand_info": ligand_info,
+        },
+        "water_bridges": [],
+    }
+
+    for wb in water_bridges:
+        try:
+            water_bridge_data = {
+                "start_residue": wb.get_donor_residue(),
+                "water_molecules": wb.water_residues,
+                "end_residue": wb.get_acceptor_residue(),
+                "bridge_length": wb.bridge_length,
+                "distance_angstrom": float(f"{wb.get_donor_acceptor_distance():.2f}"),
+            }
+
+            if hasattr(wb, 'donor_acceptor_properties'):
+                water_bridge_data["properties"] = wb.donor_acceptor_properties
+
+            data["water_bridges"].append(water_bridge_data)
+        except Exception:
+            continue
+
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
 
 
