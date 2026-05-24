@@ -341,7 +341,7 @@ class WebResultsPanel:
                     )
 
                 with ui.card().classes("flex-1"):
-                    ui.label("π Interactions").classes("text-h6")
+                    ui.label("π Inter").classes("text-h6")
                     ui.label(str(summary["pi_interactions"]["count"])).classes(
                         "text-h4 text-purple"
                     )
@@ -360,14 +360,14 @@ class WebResultsPanel:
                     ).classes("text-h4 text-teal")
 
                 with ui.card().classes("flex-1"):
-                    ui.label("n→π* Interactions").classes("text-h6")
+                    ui.label("n→π* Inter").classes("text-h6")
                     ui.label(
                         str(summary.get("n_pi_interactions", {}).get("count", 0))
                     ).classes("text-h4 text-green")
 
                 # Ligand Interactions count
                 with ui.card().classes("flex-1"):
-                    ui.label("Ligand Interactions").classes("text-h6")
+                    ui.label("Ligand Inter").classes("text-h6")
                     # Calculate ligand interactions count
                     ui.label(str(len(self.analyzer.ligand_interactions))).classes("text-h4 text-amber")
 

@@ -92,8 +92,8 @@ class HBATWebApp:
 
             with ui.card_section():
                 ui.label("Citation").classes("text-h6 q-mb-md")
-                ui.label("If you use HBAT in your research, please cite:").classes(
-                    "text-body2 q-mb-md"
+                ui.label("If you use HBAT 2 in your research, please cite:").classes(
+                    "text-body2 q-mb-md text-bold"
                 )
 
                 # HBAT 2 citation
@@ -105,18 +105,43 @@ class HBATWebApp:
                     ui.markdown(
                         """
 ```bibtex
-@misc{tiwari2026hbat2arxiv,
-   author    = {Tiwari, Abhishek},
-   title     = {HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
-   year      = 2026,
-   publisher = {arXiv},
-   doi       = {10.48550/arXiv.2602.17712},
-   url       = {https://arxiv.org/abs/2602.17712},
+@article{tiwari_2026_hbat_arxiv,
+  author       = {Tiwari, Abhishek},
+  title        = {HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
+  year         = 2026,
+  publisher    = {arXiv},
+  doi          = {10.48550/arXiv.2602.17712},
+  url          = {https://arxiv.org/abs/2602.17712}, 
 }
 ```
                     """
                     )
 
+                # HBAT 2 citation
+                ui.label(
+                    "Tiwari, A. (2026). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. ChemRxiv. https://chemrxiv.org/doi/abs/10.26434/chemrxiv.15000141/v1"
+                ).classes("text-body2 q-mb-sm")
+
+                with ui.expansion("BibTeX", icon="code").classes("w-full q-mb-md"):
+                    ui.markdown(
+                        """
+```bibtex
+@article{tiwari_2026_hbat_chemrxiv,
+  author = {Abhishek Tiwari },
+  title = {HBAT 2: A Python Package to Analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
+  publisher = {ChemRxiv},
+  year = {2026},
+  doi = {10.26434/chemrxiv.15000141/v1},
+  URL = {https://chemrxiv.org/doi/abs/10.26434/chemrxiv.15000141/v1},
+  eprint = {https://chemrxiv.org/doi/pdf/10.26434/chemrxiv.15000141/v1},
+}
+```
+                    """
+                    )
+
+                ui.label("If you use HBAT 1.0 or 1.1 in your research, please cite:").classes(
+                    "text-body2 q-mb-md text-bold"
+                )
                 # Original HBAT citation
                 ui.label(
                     "Tiwari, A., & Panigrahi, S. K. (2007). HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures. In Silico Biology, 7(6). https://doi.org/10.3233/ISI-2007-00337"
@@ -463,7 +488,11 @@ class HBATWebApp:
                             <img src="https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl" alt="Socket Security">
                         </a>
                         <a href="https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC" target="_blank">
-                            <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337" alt="Citations">
+                            <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337" alt="Citations HBAT 1.0 and 1.1">
+                        </a>
+
+                        <a href="https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:3bvyWxjaHKcC" target="_blank">
+                            <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.26434%2Fchemrxiv.15000141%2Fv1&link=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3A3bvyWxjaHKcC" alt="Citations HBAT 2">
                         </a>
                         
                     </div>

@@ -319,7 +319,7 @@ If you use HBAT 2  in your research, please cite:
   year         = 2026,
   publisher    = {arXiv},
   doi          = {10.48550/arXiv.2602.17712},
-  url.         = {https://arxiv.org/abs/2602.17712}, 
+  url          = {https://arxiv.org/abs/2602.17712}, 
 }
 ```
 
