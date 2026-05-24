@@ -8,6 +8,8 @@ can be used in web applications, Jupyter notebooks, and other contexts.
 
 from typing import TYPE_CHECKING
 
+from ..constants.pdb_constants import WATER_MOLECULES
+
 if TYPE_CHECKING:
     from ..core.interactions import (
         CarbonylInteraction,
@@ -550,7 +552,7 @@ def generate_water_bridge_viewer_js(
         acceptor_hb = hbond.get_acceptor()
 
         # Check if either side is water
-        if hasattr(donor_hb, 'res_name') and donor_hb.res_name in ['HOH', 'WAT', 'DOD', 'TIP3', 'TIP4', 'TIP5', 'W']:
+        if hasattr(donor_hb, 'res_name') and donor_hb.res_name in WATER_MOLECULES:
             if donor_hb.res_seq not in water_resi_list:
                 water_resi_list.append(donor_hb.res_seq)
                 water_coords.append({
@@ -559,7 +561,7 @@ def generate_water_bridge_viewer_js(
                     'y': donor_hb.coords.y,
                     'z': donor_hb.coords.z
                 })
-        if hasattr(acceptor_hb, 'res_name') and acceptor_hb.res_name in ['HOH', 'WAT', 'DOD', 'TIP3', 'TIP4', 'TIP5', 'W']:
+        if hasattr(acceptor_hb, 'res_name') and acceptor_hb.res_name in WATER_MOLECULES:
             if acceptor_hb.res_seq not in water_resi_list:
                 water_resi_list.append(acceptor_hb.res_seq)
                 water_coords.append({
