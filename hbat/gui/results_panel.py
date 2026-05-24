@@ -77,6 +77,9 @@ class ResultsPanel:
         # Cooperativity chains tab
         self._create_cooperativity_chains_tab()
 
+        # Ligand interactions tab
+        self._create_ligand_interactions_tab()
+
     def _create_summary_tab(self):
         """Create summary results tab."""
         summary_frame = ttk.Frame(self.notebook)
@@ -544,6 +547,152 @@ class ResultsPanel:
                 command=self._visualize_selected_chain,
             ).pack(side=tk.RIGHT, padx=5)
 
+    def _create_ligand_interactions_tab(self):
+        """Create ligand interactions results tab with selector and dual tables."""
+        lig_frame = ttk.Frame(self.notebook)
+        self.notebook.add(lig_frame, text="Ligand Interactions")
+
+        # Ligand selector at top
+        selector_frame = ttk.Frame(lig_frame)
+        selector_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(selector_frame, text="Select Ligand:").pack(side=tk.LEFT, padx=5)
+        self.lig_selector_var = tk.StringVar()
+        self.lig_selector_combo = ttk.Combobox(
+            selector_frame, textvariable=self.lig_selector_var, width=40, state="readonly"
+        )
+        self.lig_selector_combo.pack(side=tk.LEFT, padx=5)
+        self.lig_selector_combo.bind("<<ComboboxSelected>>", self._on_ligand_selected)
+
+        # Create paned window to hold both tables
+        paned = ttk.PanedWindow(lig_frame, orient=tk.VERTICAL)
+        paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Regular interactions section
+        lig_inter_frame = ttk.LabelFrame(paned, text="Regular Interactions", padding=5)
+        paned.add(lig_inter_frame, weight=1)
+
+        tree_frame1 = ttk.Frame(lig_inter_frame)
+        tree_frame1.pack(fill=tk.BOTH, expand=True)
+
+        lig_inter_columns = (
+            "type",
+            "donor_res",
+            "donor_atom",
+            "acceptor_res",
+            "acceptor_atom",
+            "distance",
+            "properties",
+        )
+
+        self.lig_inter_tree = ttk.Treeview(
+            tree_frame1, columns=lig_inter_columns, show="headings", height=10
+        )
+
+        self.lig_inter_tree.heading("type", text="Type")
+        self.lig_inter_tree.heading("donor_res", text="Donor Residue")
+        self.lig_inter_tree.heading("donor_atom", text="Donor Atom")
+        self.lig_inter_tree.heading("acceptor_res", text="Acceptor Residue")
+        self.lig_inter_tree.heading("acceptor_atom", text="Acceptor Atom")
+        self.lig_inter_tree.heading("distance", text="Distance (Å)")
+        self.lig_inter_tree.heading("properties", text="Properties")
+
+        self.lig_inter_tree.column("type", width=100)
+        self.lig_inter_tree.column("donor_res", width=120)
+        self.lig_inter_tree.column("donor_atom", width=100)
+        self.lig_inter_tree.column("acceptor_res", width=120)
+        self.lig_inter_tree.column("acceptor_atom", width=100)
+        self.lig_inter_tree.column("distance", width=80)
+        self.lig_inter_tree.column("properties", width=80)
+
+        lig_inter_v_scrollbar = ttk.Scrollbar(
+            tree_frame1, orient=tk.VERTICAL, command=self.lig_inter_tree.yview
+        )
+        lig_inter_h_scrollbar = ttk.Scrollbar(
+            tree_frame1, orient=tk.HORIZONTAL, command=self.lig_inter_tree.xview
+        )
+        self.lig_inter_tree.configure(
+            yscrollcommand=lig_inter_v_scrollbar.set,
+            xscrollcommand=lig_inter_h_scrollbar.set,
+        )
+
+        self.lig_inter_tree.grid(row=0, column=0, sticky="nsew")
+        lig_inter_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        lig_inter_h_scrollbar.grid(row=1, column=0, sticky="ew")
+
+        tree_frame1.grid_rowconfigure(0, weight=1)
+        tree_frame1.grid_columnconfigure(0, weight=1)
+
+        # Water bridges section
+        lig_wb_frame = ttk.LabelFrame(paned, text="Water Bridges", padding=5)
+        paned.add(lig_wb_frame, weight=1)
+
+        tree_frame2 = ttk.Frame(lig_wb_frame)
+        tree_frame2.pack(fill=tk.BOTH, expand=True)
+
+        lig_wb_columns = ("start_res", "end_res", "hops", "water_residues", "distance")
+
+        self.lig_wb_tree = ttk.Treeview(
+            tree_frame2, columns=lig_wb_columns, show="headings", height=10
+        )
+
+        self.lig_wb_tree.heading("start_res", text="Start Residue")
+        self.lig_wb_tree.heading("end_res", text="End Residue")
+        self.lig_wb_tree.heading("hops", text="Hops")
+        self.lig_wb_tree.heading("water_residues", text="Water Residues")
+        self.lig_wb_tree.heading("distance", text="Distance (Å)")
+
+        self.lig_wb_tree.column("start_res", width=120)
+        self.lig_wb_tree.column("end_res", width=120)
+        self.lig_wb_tree.column("hops", width=60)
+        self.lig_wb_tree.column("water_residues", width=250)
+        self.lig_wb_tree.column("distance", width=80)
+
+        lig_wb_v_scrollbar = ttk.Scrollbar(
+            tree_frame2, orient=tk.VERTICAL, command=self.lig_wb_tree.yview
+        )
+        lig_wb_h_scrollbar = ttk.Scrollbar(
+            tree_frame2, orient=tk.HORIZONTAL, command=self.lig_wb_tree.xview
+        )
+        self.lig_wb_tree.configure(
+            yscrollcommand=lig_wb_v_scrollbar.set,
+            xscrollcommand=lig_wb_h_scrollbar.set,
+        )
+
+        self.lig_wb_tree.grid(row=0, column=0, sticky="nsew")
+        lig_wb_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        lig_wb_h_scrollbar.grid(row=1, column=0, sticky="ew")
+
+        tree_frame2.grid_rowconfigure(0, weight=1)
+        tree_frame2.grid_columnconfigure(0, weight=1)
+
+        # Store original data for filtering
+        self.lig_inter_data = {}
+        self.lig_wb_data = {}
+
+    def _on_ligand_selected(self, event=None):
+        """Handle ligand selection from dropdown."""
+        selected_ligand = self.lig_selector_var.get()
+        self._update_ligand_tables(selected_ligand)
+
+    def _update_ligand_tables(self, selected_ligand):
+        """Update ligand interactions and water bridges tables for selected ligand."""
+        # Clear tables
+        for item in self.lig_inter_tree.get_children():
+            self.lig_inter_tree.delete(item)
+        for item in self.lig_wb_tree.get_children():
+            self.lig_wb_tree.delete(item)
+
+        # Populate regular interactions
+        if selected_ligand in self.lig_inter_data:
+            for inter_data in self.lig_inter_data[selected_ligand]:
+                self.lig_inter_tree.insert("", tk.END, values=inter_data)
+
+        # Populate water bridges
+        if selected_ligand in self.lig_wb_data:
+            for wb_data in self.lig_wb_data[selected_ligand]:
+                self.lig_wb_tree.insert("", tk.END, values=wb_data)
+
     def _create_pi_pi_stacking_tab(self):
         """Create π-π stacking interactions results tab."""
         pi_pi_frame = ttk.Frame(self.notebook)
@@ -855,6 +1004,7 @@ class ResultsPanel:
         self._update_carbonyl_interactions()
         self._update_n_pi_interactions()
         self._update_cooperativity_chains()
+        self._update_ligand_interactions()
 
     def _update_summary(self):
         """Update the summary tab."""
@@ -1241,6 +1391,132 @@ class ResultsPanel:
 
         return "".join(parts)
 
+    def _update_ligand_interactions(self):
+        """Update the ligand interactions tab with selector and tables."""
+        if not self.analyzer:
+            return
+
+        # Clear stored data
+        self.lig_inter_data = {}
+        self.lig_wb_data = {}
+
+        # Check if ligand interactions exist
+        if not hasattr(self.analyzer, "ligand_interactions") or not self.analyzer.ligand_interactions:
+            # No ligands, clear the selector and tables
+            self.lig_selector_combo["values"] = []
+            self.lig_selector_var.set("")
+            for item in self.lig_inter_tree.get_children():
+                self.lig_inter_tree.delete(item)
+            for item in self.lig_wb_tree.get_children():
+                self.lig_wb_tree.delete(item)
+            return
+
+        # Get ligand info from ligand_interactions
+        ligand_info = self.analyzer.ligand_interactions.ligand_info
+        ligand_set = set(ligand_info.keys()) if ligand_info else set()
+
+        # Get all interactions from all types and filter for ligands
+        inter_types = {
+            "H-Bond": self.analyzer.hydrogen_bonds,
+            "Halogen Bond": self.analyzer.halogen_bonds,
+            "π-Interaction": self.analyzer.pi_interactions,
+            "π-π Stacking": self.analyzer.pi_pi_interactions,
+            "Carbonyl": self.analyzer.carbonyl_interactions,
+            "n→π*": self.analyzer.n_pi_interactions,
+        }
+
+        for inter_type, interactions in inter_types.items():
+            for inter in interactions:
+                donor_res = inter.get_donor_residue()
+                acceptor_res = inter.get_acceptor_residue()
+
+                # Check if this interaction involves any ligand
+                for ligand_res in ligand_set:
+                    if ligand_res in donor_res or ligand_res in acceptor_res:
+                        if ligand_res not in self.lig_inter_data:
+                            self.lig_inter_data[ligand_res] = []
+
+                        # Get atom names safely
+                        donor_atom_name = "?"
+                        if hasattr(inter, 'get_donor_atom'):
+                            donor_atom = inter.get_donor_atom()
+                            if donor_atom and hasattr(donor_atom, 'name'):
+                                donor_atom_name = donor_atom.name
+                        elif hasattr(inter, 'donor') and inter.donor:
+                            donor_atom_name = inter.donor.name
+
+                        acceptor_atom_name = "?"
+                        if hasattr(inter, 'get_acceptor_atom'):
+                            acceptor_atom = inter.get_acceptor_atom()
+                            if acceptor_atom and hasattr(acceptor_atom, 'name'):
+                                acceptor_atom_name = acceptor_atom.name
+                        elif hasattr(inter, 'acceptor') and inter.acceptor:
+                            acceptor_atom_name = inter.acceptor.name
+
+                        # Format distance based on interaction type
+                        distance = ""
+                        try:
+                            if hasattr(inter, 'distance'):
+                                distance = f"{inter.distance:.2f}"
+                            elif hasattr(inter, 'get_donor_interaction_distance'):
+                                distance = f"{inter.get_donor_interaction_distance():.2f}"
+                        except:
+                            pass
+
+                        # Get properties
+                        properties = ""
+                        if hasattr(inter, 'donor_acceptor_properties'):
+                            properties = inter.donor_acceptor_properties
+
+                        inter_data = (
+                            inter_type,
+                            donor_res,
+                            donor_atom_name,
+                            acceptor_res,
+                            acceptor_atom_name,
+                            distance,
+                            properties,
+                        )
+                        if inter_data not in self.lig_inter_data[ligand_res]:
+                            self.lig_inter_data[ligand_res].append(inter_data)
+
+        # Get water bridges
+        if hasattr(self.analyzer, "water_bridges"):
+            for wb in self.analyzer.water_bridges:
+                donor_res = wb.get_donor_residue()
+                acceptor_res = wb.get_acceptor_residue()
+
+                for ligand_res in ligand_set:
+                    if ligand_res in donor_res or ligand_res in acceptor_res:
+                        if ligand_res not in self.lig_wb_data:
+                            self.lig_wb_data[ligand_res] = []
+
+                        water_res = "; ".join(wb.water_residues)
+                        distance = f"{wb.get_donor_acceptor_distance():.2f}"
+
+                        wb_data = (
+                            donor_res,
+                            acceptor_res,
+                            wb.bridge_length,
+                            water_res,
+                            distance,
+                        )
+                        if wb_data not in self.lig_wb_data[ligand_res]:
+                            self.lig_wb_data[ligand_res].append(wb_data)
+
+        # Update selector dropdown
+        ligand_list = sorted(ligand_set)
+        self.lig_selector_combo["values"] = ligand_list
+        if ligand_list:
+            self.lig_selector_combo.current(0)
+            self._update_ligand_tables(ligand_list[0])
+        else:
+            self.lig_selector_var.set("")
+            for item in self.lig_inter_tree.get_children():
+                self.lig_inter_tree.delete(item)
+            for item in self.lig_wb_tree.get_children():
+                self.lig_wb_tree.delete(item)
+
     def _filter_results(self, tree, search_term):
         """Filter tree results based on search term."""
         if not search_term:
@@ -1272,6 +1548,10 @@ class ResultsPanel:
                 self._update_n_pi_interactions()
             elif tree == self.coop_tree:
                 self._update_cooperativity_chains()
+            elif tree == self.wb_tree:
+                self._update_water_bridges()
+            elif tree == self.lig_inter_tree or tree == self.lig_wb_tree:
+                self._update_ligand_interactions()
 
     def clear_results(self) -> None:
         """Clear all results from the panel.
@@ -1310,6 +1590,15 @@ class ResultsPanel:
         for item in self.n_pi_tree.get_children():
             self.n_pi_tree.delete(item)
 
+        for item in self.wb_tree.get_children():
+            self.wb_tree.delete(item)
+
+        for item in self.lig_inter_tree.get_children():
+            self.lig_inter_tree.delete(item)
+
+        for item in self.lig_wb_tree.get_children():
+            self.lig_wb_tree.delete(item)
+
         # Clear all search filters
         self.hb_search_var.set("")
         self.xb_search_var.set("")
@@ -1318,6 +1607,8 @@ class ResultsPanel:
         self.carbonyl_search_var.set("")
         self.n_pi_search_var.set("")
         self.coop_search_var.set("")
+        self.wb_search_var.set("")
+        self.lig_selector_var.set("")
 
         # Add placeholder text
         self.summary_text.insert(tk.END, "No analysis results available.\n\n")
