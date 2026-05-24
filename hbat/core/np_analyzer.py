@@ -34,6 +34,7 @@ from .interactions import (
     CooperativityChain,
     HalogenBond,
     HydrogenBond,
+    LigandInteraction,
     MolecularInteraction,
     NPiInteraction,
     PiInteraction,
@@ -87,7 +88,7 @@ class NPMolecularInteractionAnalyzer:
         self.n_pi_interactions: List[NPiInteraction] = []
         self.cooperativity_chains: List[CooperativityChain] = []
         self.water_bridges: List[WaterBridge] = []
-        self.ligand_interactions: List[MolecularInteraction] = []  # Interactions involving ligands
+        self.ligand_interactions: LigandInteraction = LigandInteraction()  # Interactions involving ligands
 
         # Aromatic residues for π interactions
         self._aromatic_residues = set(RESIDUES_WITH_AROMATIC_RINGS)
@@ -1747,7 +1748,7 @@ class NPMolecularInteractionAnalyzer:
 
         Identifies true ligands by checking for HETATM records in PDB structure.
         Excludes water molecules and common crystallographic solvents.
-        Stores the filtered interactions in self.ligand_interactions.
+        Stores the filtered interactions in self.ligand_interactions as a LigandInteraction object.
 
         A ligand is defined as:
         - A HETATM record (non-protein atom)
@@ -1770,6 +1771,7 @@ class NPMolecularInteractionAnalyzer:
         )
 
         # Filter to only those involving true ligands (HETATM records, excluding water/solvents)
+        ligand_interactions_list = []
         for interaction in all_interactions:
             # Get donor and acceptor atoms
             donor_atom = interaction.get_donor()
@@ -1795,8 +1797,11 @@ class NPMolecularInteractionAnalyzer:
             if not has_ligand:
                 continue
 
-            # Add to ligand interactions
-            self.ligand_interactions.append(interaction)
+            # Add to ligand interactions list
+            ligand_interactions_list.append(interaction)
+
+        # Create LigandInteraction object with the filtered list
+        self.ligand_interactions = LigandInteraction(ligand_interactions_list)
 
     def _find_cooperativity_chains(self) -> None:
         """Find cooperativity chains in interactions.

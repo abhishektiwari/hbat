@@ -2138,3 +2138,117 @@ class WaterBridge(MolecularInteraction):
             f"{water_str} → {self.get_acceptor_residue()} "
             f"[{self.bridge_length} hop(s), {self.get_donor_acceptor_distance():.2f}Å]"
         )
+
+
+class LigandInteraction:
+    """Container for ligand interactions with grouped and indexed access.
+
+    Provides convenient access to ligand interactions organized by unique ligand residues,
+    with pre-computed ligand information including interaction counts.
+
+    Attributes:
+        interactions: List of all MolecularInteraction objects involving ligands
+        ligand_info: Dict mapping residue IDs to info dicts with count, chain, name, seq
+    """
+
+    def __init__(self, interactions: List[MolecularInteraction] = None):
+        """Initialize ligand interaction data.
+
+        :param interactions: List of MolecularInteraction objects
+        :type interactions: List[MolecularInteraction]
+        """
+        self.interactions = interactions or []
+        self.ligand_info = self._compute_ligand_info()
+
+    def _compute_ligand_info(self) -> dict:
+        """Compute unique ligands and their interaction counts.
+
+        Extracts unique ligand residues from all interactions and counts
+        how many interactions each ligand is involved in.
+
+        :returns: Dict mapping residue IDs to info dicts
+        :rtype: dict
+        """
+        from ..constants import WATER_MOLECULES, COMMON_SOLVENTS
+
+        excluded_residues = set(WATER_MOLECULES) | set(COMMON_SOLVENTS)
+        ligand_info = {}
+
+        for interaction in self.interactions:
+            try:
+                donor_atom = interaction.get_donor()
+                acceptor_atom = interaction.get_acceptor()
+                donor_res_id = interaction.get_donor_residue()
+                acceptor_res_id = interaction.get_acceptor_residue()
+
+                donor_res_name = donor_atom.res_name if hasattr(donor_atom, 'res_name') else ""
+                acceptor_res_name = acceptor_atom.res_name if hasattr(acceptor_atom, 'res_name') else ""
+
+                donor_is_hetatm = hasattr(donor_atom, 'record_type') and donor_atom.record_type == 'HETATM'
+                acceptor_is_hetatm = hasattr(acceptor_atom, 'record_type') and acceptor_atom.record_type == 'HETATM'
+
+                donor_name_upper = donor_res_name.strip().upper()
+                acceptor_name_upper = acceptor_res_name.strip().upper()
+
+                # Extract donor ligand if it's HETATM and not water/solvent
+                if donor_is_hetatm and donor_name_upper not in excluded_residues:
+                    if donor_res_id not in ligand_info:
+                        chain = donor_atom.chain_id if hasattr(donor_atom, 'chain_id') else ""
+                        name = donor_atom.res_name if hasattr(donor_atom, 'res_name') else ""
+                        seq = str(donor_atom.res_seq) if hasattr(donor_atom, 'res_seq') else ""
+                        ligand_info[donor_res_id] = {
+                            "count": 0,
+                            "chain": chain,
+                            "name": name,
+                            "seq": seq
+                        }
+                    ligand_info[donor_res_id]["count"] += 1
+
+                # Extract acceptor ligand if it's HETATM and not water/solvent
+                if acceptor_is_hetatm and acceptor_name_upper not in excluded_residues:
+                    if acceptor_res_id not in ligand_info:
+                        chain = acceptor_atom.chain_id if hasattr(acceptor_atom, 'chain_id') else ""
+                        name = acceptor_atom.res_name if hasattr(acceptor_atom, 'res_name') else ""
+                        seq = str(acceptor_atom.res_seq) if hasattr(acceptor_atom, 'res_seq') else ""
+                        ligand_info[acceptor_res_id] = {
+                            "count": 0,
+                            "chain": chain,
+                            "name": name,
+                            "seq": seq
+                        }
+                    ligand_info[acceptor_res_id]["count"] += 1
+            except Exception:
+                # Skip interactions that can't be processed
+                continue
+
+        return ligand_info
+
+    def get_interactions_for_ligand(self, ligand_residue: str) -> List[MolecularInteraction]:
+        """Get all interactions involving a specific ligand.
+
+        :param ligand_residue: Residue identifier (e.g., "A:GTP:301")
+        :type ligand_residue: str
+        :returns: List of interactions involving the ligand
+        :rtype: List[MolecularInteraction]
+        """
+        return [
+            interaction for interaction in self.interactions
+            if interaction.get_donor_residue() == ligand_residue
+            or interaction.get_acceptor_residue() == ligand_residue
+        ]
+
+    def __len__(self) -> int:
+        """Return the number of ligand interactions.
+
+        :returns: Count of interactions
+        :rtype: int
+        """
+        return len(self.interactions)
+
+    def __bool__(self) -> bool:
+        """Return True if there are any ligand interactions.
+
+        :returns: True if interactions exist
+        :rtype: bool
+        """
+        return len(self.interactions) > 0

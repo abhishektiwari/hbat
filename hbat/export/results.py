@@ -7,6 +7,7 @@ CLI and GUI interfaces.
 """
 
 import csv
+import io
 import json
 import math
 from pathlib import Path
@@ -22,7 +23,8 @@ def export_to_txt_single_file(
     """Export all interactions to a single text file with human-readable format.
 
     Creates a text file containing a summary and detailed listing of all
-    interaction types found in the analysis.
+    interaction types found in the analysis, including ligand interactions
+    organized by ligand.
 
     :param analyzer: Analyzer instance with interaction results
     :type analyzer: NPMolecularInteractionAnalyzer
@@ -50,6 +52,9 @@ def export_to_txt_single_file(
         f.write(
             f"  Water bridges: {summary.get('water_bridges', {}).get('count', 0)}\n"
         )
+        if hasattr(analyzer, "ligand_interactions") and analyzer.ligand_interactions:
+            f.write(f"  Ligand interactions: {len(analyzer.ligand_interactions.interactions)}\n")
+            f.write(f"  Unique ligands: {len(analyzer.ligand_interactions.ligand_info)}\n")
         f.write(f"  Total interactions: {summary['total_interactions']}\n\n")
 
         # Write detailed results
@@ -106,6 +111,19 @@ def export_to_txt_single_file(
             for bridge in analyzer.water_bridges:
                 f.write(f"{bridge}\n")
 
+        # Write ligand interactions organized by ligand if available
+        if hasattr(analyzer, "ligand_interactions") and analyzer.ligand_interactions:
+            f.write("\nLigand Interactions:\n")
+            f.write("=" * 50 + "\n\n")
+            for ligand_res in sorted(analyzer.ligand_interactions.ligand_info.keys()):
+                ligand_info = analyzer.ligand_interactions.ligand_info[ligand_res]
+                f.write(f"{ligand_res} ({ligand_info['count']} interactions):\n")
+                f.write("-" * 40 + "\n")
+                interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_res)
+                for interaction in interactions:
+                    f.write(f"  {interaction}\n")
+                f.write("\n")
+
 
 def export_to_csv_files(
     analyzer: NPMolecularInteractionAnalyzer, base_filename: str
@@ -114,6 +132,9 @@ def export_to_csv_files(
 
     Creates one CSV file per interaction type with the naming pattern:
     {base_name}_interaction_type.csv
+
+    Also creates one CSV file per ligand with ligand-specific interactions:
+    {base_name}_ligand_{ligand_residue}.csv
 
     :param analyzer: Analyzer instance with interaction results
     :type analyzer: NPMolecularInteractionAnalyzer
@@ -159,6 +180,12 @@ def export_to_csv_files(
         wb_file = directory / f"{base_name}_water_bridges.csv"
         write_water_bridges_csv(analyzer, wb_file)
 
+    # Export ligand interactions - one CSV per ligand
+    if hasattr(analyzer, "ligand_interactions") and analyzer.ligand_interactions:
+        for ligand_residue in analyzer.ligand_interactions.ligand_info.keys():
+            ligand_file = directory / f"{base_name}_ligand_{ligand_residue.replace(':', '_')}.csv"
+            write_ligand_interactions_csv(analyzer, ligand_file, ligand_residue)
+
 
 def export_to_json_files(
     analyzer: NPMolecularInteractionAnalyzer,
@@ -169,6 +196,9 @@ def export_to_json_files(
 
     Creates one JSON file per interaction type with the naming pattern:
     {base_name}_interaction_type.json
+
+    Also creates one JSON file per ligand with ligand-specific interactions:
+    {base_name}_ligand_{ligand_residue}.json
 
     :param analyzer: Analyzer instance with interaction results
     :type analyzer: NPMolecularInteractionAnalyzer
@@ -216,6 +246,12 @@ def export_to_json_files(
         wb_file = directory / f"{base_name}_water_bridges.json"
         write_water_bridges_json(analyzer, wb_file, input_file)
 
+    # Export ligand interactions - one JSON per ligand
+    if hasattr(analyzer, "ligand_interactions") and analyzer.ligand_interactions:
+        for ligand_residue in analyzer.ligand_interactions.ligand_info.keys():
+            ligand_file = directory / f"{base_name}_ligand_{ligand_residue.replace(':', '_')}.json"
+            write_ligand_interactions_json(analyzer, ligand_file, ligand_residue, input_file)
+
 
 def export_to_json_single_file(
     analyzer: NPMolecularInteractionAnalyzer,
@@ -251,6 +287,7 @@ def export_to_json_single_file(
         "carbonyl_interactions": [],
         "n_pi_interactions": [],
         "cooperativity_chains": [],
+        "ligand_interactions": [],
     }
 
     # Hydrogen bonds
@@ -388,6 +425,42 @@ def export_to_json_single_file(
                 chain_data["interactions"].append(interaction_data)
 
             data["cooperativity_chains"].append(chain_data)
+
+    # Ligand interactions organized by ligand
+    if hasattr(analyzer, "ligand_interactions") and analyzer.ligand_interactions:
+        for ligand_res in sorted(analyzer.ligand_interactions.ligand_info.keys()):
+            ligand_info = analyzer.ligand_interactions.ligand_info[ligand_res]
+            interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_res)
+
+            ligand_data = {
+                "ligand_residue": ligand_res,
+                "ligand_info": ligand_info,
+                "interactions": [],
+            }
+
+            for interaction in interactions:
+                try:
+                    row = _format_ligand_interaction_row(interaction)
+                    interaction_data = {
+                        "interaction_type": row["type_label"],
+                        "donor_residue": row["donor_res"],
+                        "donor_atom": row["donor_atom"],
+                        "acceptor_residue": row["acceptor_res"],
+                        "acceptor_atom": row["acceptor_atom"],
+                    }
+
+                    if row["distance"] != "N/A":
+                        interaction_data["distance_angstrom"] = float(row["distance"])
+                    if row["angle"] != "N/A":
+                        interaction_data["angle_or_metric_degrees"] = float(row["angle"])
+                    if row["properties"]:
+                        interaction_data["properties"] = row["properties"]
+
+                    ligand_data["interactions"].append(interaction_data)
+                except Exception:
+                    continue
+
+            data["ligand_interactions"].append(ligand_data)
 
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
@@ -1087,3 +1160,215 @@ def write_water_bridges_json(
 
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def write_ligand_interactions_json(
+    analyzer: NPMolecularInteractionAnalyzer,
+    filename: Path,
+    ligand_residue: str,
+    input_file: Optional[str] = None,
+) -> None:
+    """Write ligand interactions to JSON file for a specific ligand.
+
+    :param analyzer: Analyzer with ligand interaction results
+    :type analyzer: NPMolecularInteractionAnalyzer
+    :param filename: Output JSON file path
+    :type filename: Path
+    :param ligand_residue: Ligand residue identifier (e.g., "A:GTP:301")
+    :type ligand_residue: str
+    :param input_file: Original input file path (for metadata)
+    :type input_file: Optional[str]
+    :returns: None
+    :rtype: None
+    """
+    ligand_info = analyzer.ligand_interactions.ligand_info.get(ligand_residue, {})
+    interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_residue)
+
+    data = {
+        "metadata": {
+            "input_file": input_file or "",
+            "analysis_engine": "HBAT",
+            "version": __version__,
+            "ligand_residue": ligand_residue,
+            "ligand_info": ligand_info,
+        },
+        "interactions": [],
+    }
+
+    for interaction in interactions:
+        try:
+            row = _format_ligand_interaction_row(interaction)
+            interaction_data = {
+                "interaction_type": row["type_label"],
+                "donor_residue": row["donor_res"],
+                "donor_atom": row["donor_atom"],
+                "acceptor_residue": row["acceptor_res"],
+                "acceptor_atom": row["acceptor_atom"],
+            }
+
+            if row["distance"] != "N/A":
+                interaction_data["distance_angstrom"] = float(row["distance"])
+            if row["angle"] != "N/A":
+                interaction_data["angle_or_metric_degrees"] = float(row["angle"])
+            if row["properties"]:
+                interaction_data["properties"] = row["properties"]
+
+            data["interactions"].append(interaction_data)
+        except Exception:
+            continue
+
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def _format_ligand_interaction_row(interaction) -> dict:
+    """Format a single ligand interaction for CSV/JSON output.
+
+    Helper function to avoid duplication between export formats.
+
+    :param interaction: MolecularInteraction object
+    :returns: Dictionary with formatted interaction data
+    :rtype: dict
+    """
+    donor_res = interaction.get_donor_residue()
+    acceptor_res = interaction.get_acceptor_residue()
+    donor_atom = interaction.get_donor()
+    acceptor_atom = interaction.get_acceptor()
+
+    # Determine interaction type label
+    int_type = interaction.get_interaction_type()
+    if "hydrogen" in int_type.lower() or "h-bond" in int_type.lower():
+        type_label = "H-Bond"
+    elif "halogen" in int_type.lower() or "x-bond" in int_type.lower():
+        type_label = "Halogen Bond"
+    elif "pi-pi" in int_type.lower() or "stacking" in int_type.lower():
+        type_label = "π-π Stacking"
+    elif "pi" in int_type.lower():
+        type_label = "π-Interaction"
+    elif "carbonyl" in int_type.lower():
+        type_label = "Carbonyl"
+    elif "n-pi" in int_type.lower():
+        type_label = "n-π*"
+    elif "water" in int_type.lower():
+        type_label = "Water Bridge"
+    else:
+        type_label = int_type
+
+    # Get distance/angle metric
+    distance_str = "N/A"
+    if hasattr(interaction, 'distance'):
+        distance_str = f"{interaction.distance:.2f}"
+    elif hasattr(interaction, '_distance'):
+        distance_str = f"{interaction._distance:.2f}"
+
+    # Get angle metric if available
+    angle_str = "N/A"
+    if hasattr(interaction, 'angle'):
+        angle_str = f"{math.degrees(interaction.angle):.1f}"
+    elif hasattr(interaction, 'plane_angle'):
+        angle_str = f"{interaction.plane_angle:.1f}"
+    elif hasattr(interaction, 'burgi_dunitz_angle'):
+        angle_str = f"{interaction.burgi_dunitz_angle:.1f}"
+    elif hasattr(interaction, 'angle_to_plane'):
+        angle_str = f"{interaction.angle_to_plane:.1f}"
+
+    # Get properties
+    properties = ""
+    if hasattr(interaction, 'donor_acceptor_properties'):
+        properties = interaction.donor_acceptor_properties
+
+    # Get atom names
+    donor_atom_name = donor_atom.name if hasattr(donor_atom, 'name') else "N/A"
+    acceptor_atom_name = acceptor_atom.name if hasattr(acceptor_atom, 'name') else "N/A"
+
+    return {
+        "type_label": type_label,
+        "donor_res": donor_res,
+        "donor_atom": donor_atom_name,
+        "acceptor_res": acceptor_res,
+        "acceptor_atom": acceptor_atom_name,
+        "distance": distance_str,
+        "angle": angle_str,
+        "properties": properties,
+    }
+
+
+def write_ligand_interactions_csv(
+    analyzer: NPMolecularInteractionAnalyzer,
+    filename: Optional[Path] = None,
+    ligand_residue: Optional[str] = None,
+) -> Optional[str]:
+    """Write ligand interactions to CSV file or return as string.
+
+    If filename is provided, writes to file and returns None.
+    If filename is None, returns CSV content as string.
+    If ligand_residue is specified, filters to only that ligand.
+    If ligand_residue is None, includes all ligands.
+
+    :param analyzer: Analyzer with ligand interaction results
+    :type analyzer: NPMolecularInteractionAnalyzer
+    :param filename: Output CSV file path, or None to return as string
+    :type filename: Optional[Path]
+    :param ligand_residue: Optional ligand residue identifier (e.g., "A:GTP:301") to filter by
+    :type ligand_residue: Optional[str]
+    :returns: CSV content as string (if filename is None), otherwise None
+    :rtype: Optional[str]
+    """
+    # Use StringIO if returning as string, otherwise use file
+    if filename is None:
+        output = io.StringIO()
+        use_string_io = True
+    else:
+        output = open(filename, "w", newline="", encoding="utf-8")
+        use_string_io = False
+
+    try:
+        writer = csv.writer(output)
+
+        # Write header
+        writer.writerow([
+            "Interaction_Type",
+            "Donor_Residue",
+            "Donor_Atom",
+            "Acceptor_Residue",
+            "Acceptor_Atom",
+            "Distance_Angstrom",
+            "Angle_Or_Metric_Degrees",
+            "Properties",
+        ])
+
+        # Get interactions from analyzer's ligand_interactions container
+        if ligand_residue:
+            interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_residue)
+        else:
+            interactions = analyzer.ligand_interactions.interactions
+
+        # Write interactions
+        for interaction in interactions:
+            try:
+                row = _format_ligand_interaction_row(interaction)
+                writer.writerow([
+                    row["type_label"],
+                    row["donor_res"],
+                    row["donor_atom"],
+                    row["acceptor_res"],
+                    row["acceptor_atom"],
+                    row["distance"],
+                    row["angle"],
+                    row["properties"],
+                ])
+            except Exception:
+                # Skip interactions that can't be processed
+                continue
+
+        if use_string_io:
+            return output.getvalue()
+        else:
+            return None
+    finally:
+        if use_string_io:
+            output.close()
+        else:
+            output.close()
+
+
