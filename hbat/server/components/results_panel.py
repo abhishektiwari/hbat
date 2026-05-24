@@ -2236,7 +2236,7 @@ class WebResultsPanel:
                         }
 
                         # For π-interactions, include the ring center coordinates
-                        if "pi" in int_type and hasattr(interaction, 'pi_center'):
+                        if ("π" in int_type or "pi" in int_type) and hasattr(interaction, 'pi_center'):
                             interaction_dict["pi_center"] = {
                                 "x": interaction.pi_center.x,
                                 "y": interaction.pi_center.y,

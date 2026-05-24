@@ -30,6 +30,206 @@ def _escape_pdb_content(pdb_content: str) -> str:
     return pdb_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
 
 
+def _create_viewer_init_wrapper(viewer_id: str, pdb_escaped: str, viewer_init_code: str) -> str:
+    """Create standard viewer initialization wrapper JavaScript.
+
+    Common pattern for all interaction viewers: initialize 3Dmol, add PDB model,
+    execute viewer-specific code, render, and resize.
+
+    :param viewer_id: Unique ID for the viewer instance
+    :param pdb_escaped: Escaped PDB content
+    :param viewer_init_code: The viewer-specific JavaScript code to execute inside try block
+    :returns: Complete wrapped JavaScript with init, render, and resize logic
+    :rtype: str
+    """
+    return f"""
+    (function() {{
+        function init3Dmol() {{
+            if (typeof $3Dmol === 'undefined') {{
+                setTimeout(init3Dmol, 100);
+                return;
+            }}
+
+            let element = document.getElementById("{viewer_id}");
+            if (!element) {{
+                setTimeout(init3Dmol, 100);
+                return;
+            }}
+
+            try {{
+                let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
+                window.{viewer_id}_instance = viewer;
+                let pdbData = `{pdb_escaped}`;
+                viewer.addModel(pdbData, "pdb", {{keepH: true}});
+
+                // Viewer-specific code
+                {viewer_init_code}
+
+                viewer.zoomTo();
+                viewer.render();
+
+                // Force multiple resizes to ensure canvas is sized correctly
+                setTimeout(function() {{
+                    viewer.resize();
+                    viewer.render();
+                }}, 100);
+                setTimeout(function() {{
+                    viewer.resize();
+                    viewer.render();
+                }}, 300);
+                setTimeout(function() {{
+                    viewer.resize();
+                    viewer.render();
+                }}, 500);
+            }} catch (error) {{
+                console.error("Error creating viewer:", error);
+            }}
+        }}
+
+        setTimeout(init3Dmol, 400);
+    }})();
+    """
+
+
+def _create_cartoon_style() -> str:
+    """Generate JavaScript for protein/RNA cartoon style (gray, low opacity).
+
+    :returns: JavaScript style code
+    :rtype: str
+    """
+    return "viewer.setStyle({}, {cartoon: {color: 'lightgray', opacity: 0.3}});"
+
+
+def _create_residue_stick_style(chain: str, resi: int, color: str = "cyanCarbon") -> str:
+    """Generate JavaScript for residue stick style.
+
+    :param chain: Chain identifier
+    :param resi: Residue sequence number
+    :param color: Color scheme (e.g., 'cyanCarbon', 'orangeCarbon')
+    :returns: JavaScript style code
+    :rtype: str
+    """
+    return f"viewer.addStyle({{chain: '{chain}', resi: {resi}}}, {{stick: {{colorscheme: '{color}'}}}}); "
+
+
+def _create_dashed_line(start_x: float, start_y: float, start_z: float,
+                       end_x: float, end_y: float, end_z: float) -> str:
+    """Generate JavaScript for dashed cylinder line between atoms.
+
+    Shortens line by 0.4 Å on each end to avoid overlapping with atom spheres.
+
+    :param start_x, start_y, start_z: Starting atom coordinates
+    :param end_x, end_y, end_z: Ending atom coordinates
+    :returns: JavaScript code to draw dashed line
+    :rtype: str
+    """
+    return f"""
+                const dx = {end_x} - {start_x}, dy = {end_y} - {start_y}, dz = {end_z} - {start_z};
+                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                const offset = 0.4;
+                const ratio_start = offset / dist;
+                const ratio_end = (dist - offset) / dist;
+
+                viewer.addCylinder({{
+                    start: {{x: {start_x} + dx*ratio_start, y: {start_y} + dy*ratio_start, z: {start_z} + dz*ratio_start}},
+                    end: {{x: {start_x} + dx*ratio_end, y: {start_y} + dy*ratio_end, z: {start_z} + dz*ratio_end}},
+                    radius: 0.15,
+                    color: 'yellow',
+                    dashed: true
+                }});
+    """
+
+
+def _create_label(text: str, x: float, y: float, z: float,
+                  bg_color: str = "cyan", font_color: str = "black", font_size: int = 14) -> str:
+    """Generate JavaScript for residue label.
+
+    :param text: Label text
+    :param x, y, z: Label position coordinates
+    :param bg_color: Background color
+    :param font_color: Font color
+    :param font_size: Font size in pixels
+    :returns: JavaScript code to add label
+    :rtype: str
+    """
+    return f"""
+                viewer.addLabel('{text}',
+                               {{position: {{x: {x}, y: {y}, z: {z}}},
+                                backgroundColor: '{bg_color}', fontColor: '{font_color}', fontSize: {font_size}}});
+    """
+
+
+def _create_pi_center_sphere(x: float, y: float, z: float, color: str = "green") -> str:
+    """Generate JavaScript for aromatic ring center sphere.
+
+    Used for π-interactions and π-π stacking to visualize ring centers.
+
+    :param x, y, z: Sphere center coordinates
+    :param color: Sphere color
+    :returns: JavaScript code to add sphere
+    :rtype: str
+    """
+    return f"""
+                viewer.addSphere({{
+                    center: {{x: {x}, y: {y}, z: {z}}},
+                    radius: 0.3,
+                    color: '{color}',
+                    alpha: 0.7
+                }});
+    """
+
+
+def _create_dashed_line_to_center(start_x: float, start_y: float, start_z: float,
+                                  center_x: float, center_y: float, center_z: float) -> str:
+    """Generate JavaScript for dashed cylinder from atom to ring center.
+
+    Special handling for π-interactions: shortens line to avoid overlapping with spheres.
+
+    :param start_x, start_y, start_z: Starting atom coordinates
+    :param center_x, center_y, center_z: Ring center coordinates
+    :returns: JavaScript code to draw dashed line to center
+    :rtype: str
+    """
+    return f"""
+                const pix = {start_x}, piy = {start_y}, piz = {start_z};
+                const pcx = {center_x}, pcy = {center_y}, pcz = {center_z};
+                const dpix = pcx - pix, dpiy = pcy - piy, dpiz = pcz - piz;
+                const dist_pi = Math.sqrt(dpix*dpix + dpiy*dpiy + dpiz*dpiz);
+                const offset_pi = 0.4;
+                const ratio_start_pi = offset_pi / dist_pi;
+                const ratio_end_pi = (dist_pi - offset_pi) / dist_pi;
+
+                viewer.addCylinder({{
+                    start: {{x: pix + dpix*ratio_start_pi, y: piy + dpiy*ratio_start_pi, z: piz + dpiz*ratio_start_pi}},
+                    end: {{x: pix + dpix*ratio_end_pi, y: piy + dpiy*ratio_end_pi, z: piz + dpiz*ratio_end_pi}},
+                    radius: 0.1,
+                    color: 'yellow',
+                    dashed: true
+                }});
+    """
+
+
+def _create_distance_label(text: str, x1: float, y1: float, z1: float,
+                          x2: float, y2: float, z2: float) -> str:
+    """Generate JavaScript for distance label at midpoint between two positions.
+
+    Used for π-interactions and π-π stacking to show distance at midpoint.
+
+    :param text: Label text (e.g., "3.50 Å")
+    :param x1, y1, z1: First position coordinates
+    :param x2, y2, z2: Second position coordinates
+    :returns: JavaScript code to add distance label at midpoint
+    :rtype: str
+    """
+    return f"""
+                viewer.addLabel('{text}',
+                              {{position: {{x: ({x1} + {x2}) / 2,
+                                          y: ({y1} + {y2}) / 2,
+                                          z: ({z1} + {z2}) / 2}},
+                               backgroundColor: 'black', fontColor: 'white', fontSize: 12}});
+    """
+
+
 def generate_png_export_js(viewer_id: str, filename: str) -> str:
     """Generate JavaScript code to export viewer as PNG.
 
@@ -92,90 +292,21 @@ def generate_hydrogen_bond_viewer_js(
 
     pdb_escaped = _escape_pdb_content(pdb_content)
 
-    javascript = f"""
-    (function() {{
-        // Wait for both 3Dmol to load and div to be ready
-        function init3Dmol() {{
-            if (typeof $3Dmol === 'undefined') {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
+    # Build viewer-specific code using helpers
+    viewer_code = (
+        _create_cartoon_style() +
+        _create_residue_stick_style(donor_chain, donor_resi, "cyanCarbon") +
+        _create_residue_stick_style(acceptor_chain, acceptor_resi, "orangeCarbon") +
+        _create_dashed_line(hb.hydrogen.coords.x, hb.hydrogen.coords.y, hb.hydrogen.coords.z,
+                           hb.acceptor.coords.x, hb.acceptor.coords.y, hb.acceptor.coords.z) +
+        _create_label(hb.get_donor_residue(), hb.donor.coords.x, hb.donor.coords.y, hb.donor.coords.z,
+                     "cyan", "black", 14) +
+        _create_label(hb.get_acceptor_residue(), hb.acceptor.coords.x, hb.acceptor.coords.y, hb.acceptor.coords.z,
+                     "orange", "white", 14) +
+        f"viewer.zoomTo({{chain: ['{donor_chain}', '{acceptor_chain}'], resi: [{donor_resi}, {acceptor_resi}]}});"
+    )
 
-            let element = document.getElementById("{viewer_id}");
-            if (!element) {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
-
-            try {{
-                let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
-                window.{viewer_id}_instance = viewer;  // Store for PNG export
-                let pdbData = `{pdb_escaped}`;
-
-                viewer.addModel(pdbData, "pdb", {{keepH: true}});
-                viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
-
-                // Show donor residue with hydrogens
-                viewer.addStyle({{chain: '{donor_chain}', resi: {donor_resi}}},
-                               {{stick: {{colorscheme: 'cyanCarbon', radius: 0.20, showNonBonded: false}}}});
-
-                // Show acceptor residue with hydrogens
-                viewer.addStyle({{chain: '{acceptor_chain}', resi: {acceptor_resi}}},
-                               {{stick: {{colorscheme: 'orangeCarbon', radius: 0.20, showNonBonded: false}}}});
-
-                // Add dashed line for hydrogen bond (shortened to avoid overlapping atoms)
-                const hx = {hb.hydrogen.coords.x}, hy = {hb.hydrogen.coords.y}, hz = {hb.hydrogen.coords.z};
-                const ax = {hb.acceptor.coords.x}, ay = {hb.acceptor.coords.y}, az = {hb.acceptor.coords.z};
-                const dx = ax - hx, dy = ay - hy, dz = az - hz;
-                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-                const offset = 0.4; // Shorten by 0.4 Å on each end
-                const ratio_start = offset / dist;
-                const ratio_end = (dist - offset) / dist;
-
-                viewer.addCylinder({{
-                    start: {{x: hx + dx*ratio_start, y: hy + dy*ratio_start, z: hz + dz*ratio_start}},
-                    end: {{x: hx + dx*ratio_end, y: hy + dy*ratio_end, z: hz + dz*ratio_end}},
-                    radius: 0.15,
-                    color: 'yellow',
-                    dashed: true
-                }});
-
-                // Add labels
-                viewer.addLabel("{hb.get_donor_residue()}",
-                               {{position: {{x: {hb.donor.coords.x}, y: {hb.donor.coords.y}, z: {hb.donor.coords.z}}},
-                                backgroundColor: 'cyan', fontColor: 'black', fontSize: 14}});
-
-                viewer.addLabel("{hb.get_acceptor_residue()}",
-                               {{position: {{x: {hb.acceptor.coords.x}, y: {hb.acceptor.coords.y}, z: {hb.acceptor.coords.z}}},
-                                backgroundColor: 'orange', fontColor: 'white', fontSize: 14}});
-
-                viewer.zoomTo({{chain: ['{donor_chain}', '{acceptor_chain}'], resi: [{donor_resi}, {acceptor_resi}]}});
-                viewer.render();
-                viewer.zoom(1.2);
-
-                // Force multiple resizes to ensure canvas is sized correctly
-                setTimeout(function() {{
-                    viewer.resize();
-                    viewer.render();
-                }}, 100);
-                setTimeout(function() {{
-                    viewer.resize();
-                    viewer.render();
-                }}, 300);
-                setTimeout(function() {{
-                    viewer.resize();
-                    viewer.render();
-                }}, 500);
-            }} catch (error) {{
-                console.error("Error creating viewer:", error);
-            }}
-        }}
-
-        // Start with a delay to ensure div is in DOM and sized
-        setTimeout(init3Dmol, 400);
-    }})();
-    """
-    return javascript
+    return _create_viewer_init_wrapper(viewer_id, pdb_escaped, viewer_code)
 
 
 def generate_halogen_bond_viewer_js(
@@ -199,88 +330,21 @@ def generate_halogen_bond_viewer_js(
 
     pdb_escaped = _escape_pdb_content(pdb_content)
 
-    javascript = f"""
-    (function() {{
-        // Wait for both 3Dmol to load and div to be ready
-        function init3Dmol() {{
-            if (typeof $3Dmol === 'undefined') {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
+    # Build viewer-specific code using helpers
+    viewer_code = (
+        _create_cartoon_style() +
+        _create_residue_stick_style(donor_chain, donor_resi, "purpleCarbon") +
+        _create_residue_stick_style(acceptor_chain, acceptor_resi, "orangeCarbon") +
+        _create_dashed_line(xb.halogen.coords.x, xb.halogen.coords.y, xb.halogen.coords.z,
+                           xb.acceptor.coords.x, xb.acceptor.coords.y, xb.acceptor.coords.z) +
+        _create_label(xb.get_donor_residue(), xb.donor_atom.coords.x, xb.donor_atom.coords.y, xb.donor_atom.coords.z,
+                     "purple", "white", 14) +
+        _create_label(xb.get_acceptor_residue(), xb.acceptor.coords.x, xb.acceptor.coords.y, xb.acceptor.coords.z,
+                     "orange", "white", 14) +
+        f"viewer.zoomTo({{chain: ['{donor_chain}', '{acceptor_chain}'], resi: [{donor_resi}, {acceptor_resi}]}});"
+    )
 
-            let element = document.getElementById("{viewer_id}");
-            if (!element) {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
-
-            try {{
-                let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
-                window.{viewer_id}_instance = viewer;  // Store for PNG export
-                let pdbData = `{pdb_escaped}`;
-
-                viewer.addModel(pdbData, "pdb", {{keepH: true}});
-                viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
-
-                viewer.addStyle({{chain: '{donor_chain}', resi: {donor_resi}}},
-                               {{stick: {{colorscheme: 'purpleCarbon', radius: 0.25}}}});
-
-                viewer.addStyle({{chain: '{acceptor_chain}', resi: {acceptor_resi}}},
-                               {{stick: {{colorscheme: 'orangeCarbon', radius: 0.25}}}});
-
-                // Add dashed line for halogen bond (shortened to avoid overlapping atoms)
-                const xx = {xb.halogen.coords.x}, xy = {xb.halogen.coords.y}, xz = {xb.halogen.coords.z};
-                const axb = {xb.acceptor.coords.x}, ayb = {xb.acceptor.coords.y}, azb = {xb.acceptor.coords.z};
-                const dxb = axb - xx, dyb = ayb - xy, dzb = azb - xz;
-                const dist_xb = Math.sqrt(dxb*dxb + dyb*dyb + dzb*dzb);
-                const offset_xb = 0.4;
-                const ratio_start_xb = offset_xb / dist_xb;
-                const ratio_end_xb = (dist_xb - offset_xb) / dist_xb;
-
-                viewer.addCylinder({{
-                    start: {{x: xx + dxb*ratio_start_xb, y: xy + dyb*ratio_start_xb, z: xz + dzb*ratio_start_xb}},
-                    end: {{x: xx + dxb*ratio_end_xb, y: xy + dyb*ratio_end_xb, z: xz + dzb*ratio_end_xb}},
-                    radius: 0.15,
-                    color: 'orange',
-                    dashed: true
-                }});
-
-                // Add labels
-                viewer.addLabel("{xb.get_donor_residue()}",
-                               {{position: {{x: {xb.donor_atom.coords.x}, y: {xb.donor_atom.coords.y}, z: {xb.donor_atom.coords.z}}},
-                                backgroundColor: 'purple', fontColor: 'white', fontSize: 14}});
-
-                viewer.addLabel("{xb.get_acceptor_residue()}",
-                               {{position: {{x: {xb.acceptor.coords.x}, y: {xb.acceptor.coords.y}, z: {xb.acceptor.coords.z}}},
-                                backgroundColor: 'orange', fontColor: 'white', fontSize: 14}});
-
-                viewer.zoomTo({{chain: ['{donor_chain}', '{acceptor_chain}'], resi: [{donor_resi}, {acceptor_resi}]}});
-                viewer.render();
-                viewer.zoom(1.2);
-
-                // Force multiple resizes to ensure canvas is sized correctly
-                setTimeout(function() {{
-                    viewer.resize();
-                    viewer.render();
-                }}, 100);
-                setTimeout(function() {{
-                    viewer.resize();
-                    viewer.render();
-                }}, 300);
-                setTimeout(function() {{
-                    viewer.resize();
-                    viewer.render();
-                }}, 500);
-            }} catch (error) {{
-                console.error("Error creating viewer:", error);
-            }}
-        }}
-
-        // Start with a delay to ensure div is in DOM and sized
-        setTimeout(init3Dmol, 400);
-    }})();
-    """
-    return javascript
+    return _create_viewer_init_wrapper(viewer_id, pdb_escaped, viewer_code)
 
 
 def generate_pi_interaction_viewer_js(
@@ -299,101 +363,29 @@ def generate_pi_interaction_viewer_js(
     """
     donor_chain = pi.donor.chain_id
     donor_resi = pi.donor.res_seq
-
-    # Get pi system residue
     pi_res_seq = pi.pi_atoms[0].res_seq if pi.pi_atoms else ""
     pi_chain_id = pi.pi_atoms[0].chain_id if pi.pi_atoms else ""
 
     pdb_escaped = _escape_pdb_content(pdb_content)
 
-    javascript = f"""
-    (function() {{
-        function init3Dmol() {{
-            if (typeof $3Dmol === 'undefined') {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
+    # Build viewer-specific code using helpers
+    viewer_code = (
+        _create_cartoon_style() +
+        _create_residue_stick_style(donor_chain, donor_resi, "cyanCarbon") +
+        _create_residue_stick_style(pi_chain_id, pi_res_seq, "greenCarbon") +
+        _create_pi_center_sphere(pi.pi_center.x, pi.pi_center.y, pi.pi_center.z, "green") +
+        _create_dashed_line_to_center(pi.hydrogen.coords.x, pi.hydrogen.coords.y, pi.hydrogen.coords.z,
+                                      pi.pi_center.x, pi.pi_center.y, pi.pi_center.z) +
+        _create_label(pi.get_donor_residue(), pi.donor.coords.x, pi.donor.coords.y, pi.donor.coords.z,
+                     "cyan", "black", 14) +
+        _create_label(pi.get_acceptor_residue(), pi.pi_center.x, pi.pi_center.y, pi.pi_center.z,
+                     "green", "white", 14) +
+        _create_distance_label(f"{pi.distance:.2f} Å", pi.hydrogen.coords.x, pi.hydrogen.coords.y, pi.hydrogen.coords.z,
+                              pi.pi_center.x, pi.pi_center.y, pi.pi_center.z) +
+        f"viewer.zoomTo({{chain: ['{donor_chain}', '{pi_chain_id}'], resi: [{donor_resi}, {pi_res_seq}]}});"
+    )
 
-            let element = document.getElementById("{viewer_id}");
-            if (!element) {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
-
-            try {{
-                let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
-                window.{viewer_id}_instance = viewer;  // Store for PNG export
-                let pdb_data = `{pdb_escaped}`;
-                viewer.addModel(pdb_data, "pdb", {{keepH: true}});
-
-                viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
-
-                // Highlight donor
-                viewer.setStyle({{resi: '{donor_resi}', chain: '{donor_chain}'}}, {{stick: {{colorscheme: 'cyanCarbon'}}}});
-
-                // Highlight π system
-                viewer.setStyle({{resi: '{pi_res_seq}', chain: '{pi_chain_id}'}}, {{stick: {{colorscheme: 'greenCarbon'}}}});
-
-                // Add sphere at π center to show the interaction point
-                viewer.addSphere({{
-                    center: {{x: {pi.pi_center.x}, y: {pi.pi_center.y}, z: {pi.pi_center.z}}},
-                    radius: 0.3,
-                    color: 'green',
-                    alpha: 0.7
-                }});
-
-                // Highlight the hydrogen/X-atom as a sphere
-                viewer.addStyle({{serial: {pi.hydrogen.serial}}},
-                               {{sphere: {{color: 'yellow', radius: 0.5}}}});
-
-                // Add dashed line from X-atom to π center (shortened to avoid overlapping)
-                const pix = {pi.hydrogen.coords.x}, piy = {pi.hydrogen.coords.y}, piz = {pi.hydrogen.coords.z};
-                const pcx = {pi.pi_center.x}, pcy = {pi.pi_center.y}, pcz = {pi.pi_center.z};
-                const dpix = pcx - pix, dpiy = pcy - piy, dpiz = pcz - piz;
-                const dist_pi = Math.sqrt(dpix*dpix + dpiy*dpiy + dpiz*dpiz);
-                const offset_pi = 0.4;
-                const ratio_start_pi = offset_pi / dist_pi;
-                const ratio_end_pi = (dist_pi - offset_pi) / dist_pi;
-
-                viewer.addCylinder({{
-                    start: {{x: pix + dpix*ratio_start_pi, y: piy + dpiy*ratio_start_pi, z: piz + dpiz*ratio_start_pi}},
-                    end: {{x: pix + dpix*ratio_end_pi, y: piy + dpiy*ratio_end_pi, z: piz + dpiz*ratio_end_pi}},
-                    radius: 0.1,
-                    color: 'yellow',
-                    dashed: true
-                }});
-
-                // Add labels
-                viewer.addLabel('{pi.get_donor_residue()}',
-                              {{position: {{x: {pi.donor.coords.x}, y: {pi.donor.coords.y}, z: {pi.donor.coords.z}}},
-                               backgroundColor: 'cyan', fontColor: 'black', fontSize: 14}});
-
-                viewer.addLabel('{pi.get_acceptor_residue()}',
-                              {{position: {{x: {pi.pi_center.x}, y: {pi.pi_center.y}, z: {pi.pi_center.z}}},
-                               backgroundColor: 'green', fontColor: 'white', fontSize: 14}});
-
-                // Distance label (at midpoint between hydrogen and pi center)
-                viewer.addLabel('{pi.distance:.2f} Å',
-                              {{position: {{x: ({pi.hydrogen.coords.x} + {pi.pi_center.x}) / 2,
-                                          y: ({pi.hydrogen.coords.y} + {pi.pi_center.y}) / 2,
-                                          z: ({pi.hydrogen.coords.z} + {pi.pi_center.z}) / 2}},
-                               backgroundColor: 'black', fontColor: 'white', fontSize: 12}});
-
-                viewer.zoomTo({{chain: ['{donor_chain}', '{pi_chain_id}'], resi: ['{donor_resi}', '{pi_res_seq}']}});
-                viewer.render();
-
-                setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 100);
-                setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 300);
-                setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 500);
-            }} catch (error) {{
-                console.error("Error creating viewer:", error);
-            }}
-        }}
-
-        setTimeout(init3Dmol, 400);
-    }})();
-    """
-    return javascript
+    return _create_viewer_init_wrapper(viewer_id, pdb_escaped, viewer_code)
 
 
 def generate_pi_pi_stacking_viewer_js(
@@ -410,7 +402,6 @@ def generate_pi_pi_stacking_viewer_js(
     :returns: JavaScript code to initialize the viewer
     :rtype: str
     """
-    # Get residue info from ring atoms
     ring1_res = pi_pi.ring1_atoms[0].res_seq if pi_pi.ring1_atoms else ""
     ring1_chain = pi_pi.ring1_atoms[0].chain_id if pi_pi.ring1_atoms else ""
     ring2_res = pi_pi.ring2_atoms[0].res_seq if pi_pi.ring2_atoms else ""
@@ -418,79 +409,26 @@ def generate_pi_pi_stacking_viewer_js(
 
     pdb_escaped = _escape_pdb_content(pdb_content)
 
-    javascript = f"""
-    (function() {{
-        function init3Dmol() {{
-            if (typeof $3Dmol === 'undefined') {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
+    # Build viewer-specific code using helpers
+    viewer_code = (
+        _create_cartoon_style() +
+        _create_residue_stick_style(ring1_chain, ring1_res, "cyanCarbon") +
+        _create_residue_stick_style(ring2_chain, ring2_res, "magentaCarbon") +
+        _create_pi_center_sphere(pi_pi.ring1_center.x, pi_pi.ring1_center.y, pi_pi.ring1_center.z, "cyan") +
+        _create_pi_center_sphere(pi_pi.ring2_center.x, pi_pi.ring2_center.y, pi_pi.ring2_center.z, "magenta") +
+        _create_dashed_line(pi_pi.ring1_center.x, pi_pi.ring1_center.y, pi_pi.ring1_center.z,
+                           pi_pi.ring2_center.x, pi_pi.ring2_center.y, pi_pi.ring2_center.z) +
+        _create_label(pi_pi.ring1_residue, pi_pi.ring1_center.x, pi_pi.ring1_center.y, pi_pi.ring1_center.z,
+                     "cyan", "black", 14) +
+        _create_label(pi_pi.ring2_residue, pi_pi.ring2_center.x, pi_pi.ring2_center.y, pi_pi.ring2_center.z,
+                     "magenta", "white", 14) +
+        _create_distance_label(f"{pi_pi._distance:.2f} Å ({pi_pi.stacking_type})",
+                              pi_pi.ring1_center.x, pi_pi.ring1_center.y, pi_pi.ring1_center.z,
+                              pi_pi.ring2_center.x, pi_pi.ring2_center.y, pi_pi.ring2_center.z) +
+        f"viewer.zoomTo({{chain: ['{ring1_chain}', '{ring2_chain}'], resi: [{ring1_res}, {ring2_res}]}});"
+    )
 
-            let element = document.getElementById("{viewer_id}");
-            if (!element) {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
-
-            try {{
-                let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
-                window.{viewer_id}_instance = viewer;  // Store for PNG export
-
-                let pdb_data = `{pdb_escaped}`;
-                viewer.addModel(pdb_data, "pdb", {{keepH: true}});
-
-                viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
-
-                // Highlight both aromatic rings
-                viewer.setStyle({{resi: '{ring1_res}', chain: '{ring1_chain}'}}, {{stick: {{colorscheme: 'cyanCarbon'}}}});
-                viewer.setStyle({{resi: '{ring2_res}', chain: '{ring2_chain}'}}, {{stick: {{colorscheme: 'magentaCarbon'}}}});
-
-                // Add residue labels
-                viewer.addLabel('{pi_pi.ring1_residue}',
-                              {{position: {{x: {pi_pi.ring1_center.x}, y: {pi_pi.ring1_center.y}, z: {pi_pi.ring1_center.z}}},
-                               backgroundColor: 'cyan', fontColor: 'black', fontSize: 14}});
-
-                viewer.addLabel('{pi_pi.ring2_residue}',
-                              {{position: {{x: {pi_pi.ring2_center.x}, y: {pi_pi.ring2_center.y}, z: {pi_pi.ring2_center.z}}},
-                               backgroundColor: 'magenta', fontColor: 'white', fontSize: 14}});
-
-                // Add distance label
-                viewer.addLabel('{pi_pi._distance:.2f} Å ({pi_pi.stacking_type})',
-                              {{position: {{x: {pi_pi.midpoint.x}, y: {pi_pi.midpoint.y}, z: {pi_pi.midpoint.z}}},
-                               backgroundColor: 'black', fontColor: 'white', fontSize: 12}});
-
-                // Add line between ring centers (shortened to avoid overlapping)
-                const r1x = {pi_pi.ring1_center.x}, r1y = {pi_pi.ring1_center.y}, r1z = {pi_pi.ring1_center.z};
-                const r2x = {pi_pi.ring2_center.x}, r2y = {pi_pi.ring2_center.y}, r2z = {pi_pi.ring2_center.z};
-                const drx = r2x - r1x, dry = r2y - r1y, drz = r2z - r1z;
-                const dist_pipi = Math.sqrt(drx*drx + dry*dry + drz*drz);
-                const offset_pipi = 0.3; // Smaller offset for ring centers
-                const ratio_start_pipi = offset_pipi / dist_pipi;
-                const ratio_end_pipi = (dist_pipi - offset_pipi) / dist_pipi;
-
-                viewer.addCylinder({{
-                    start: {{x: r1x + drx*ratio_start_pipi, y: r1y + dry*ratio_start_pipi, z: r1z + drz*ratio_start_pipi}},
-                    end: {{x: r1x + drx*ratio_end_pipi, y: r1y + dry*ratio_end_pipi, z: r1z + drz*ratio_end_pipi}},
-                    radius: 0.1,
-                    color: 'purple',
-                    dashed: true
-                }});
-
-                viewer.zoomTo({{chain: ['{ring1_chain}', '{ring2_chain}'], resi: ['{ring1_res}', '{ring2_res}']}});
-                viewer.render();
-
-                setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 100);
-                setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 300);
-                setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 500);
-            }} catch (error) {{
-                console.error("Error creating viewer:", error);
-            }}
-        }}
-
-        setTimeout(init3Dmol, 400);
-    }})();
-    """
-    return javascript
+    return _create_viewer_init_wrapper(viewer_id, pdb_escaped, viewer_code)
 
 
 def generate_carbonyl_interaction_viewer_js(
@@ -509,86 +447,24 @@ def generate_carbonyl_interaction_viewer_js(
     """
     pdb_escaped = _escape_pdb_content(pdb_content)
 
-    javascript = f"""
-    (function() {{
-        function init3Dmol() {{
-            if (typeof $3Dmol === 'undefined') {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
+    # Build viewer-specific code using helpers
+    viewer_code = (
+        _create_cartoon_style() +
+        _create_residue_stick_style(carbonyl.donor_oxygen.chain_id, carbonyl.donor_oxygen.res_seq, "redCarbon") +
+        _create_residue_stick_style(carbonyl.acceptor_carbon.chain_id, carbonyl.acceptor_carbon.res_seq, "blueCarbon") +
+        _create_dashed_line(carbonyl.donor_oxygen.coords.x, carbonyl.donor_oxygen.coords.y, carbonyl.donor_oxygen.coords.z,
+                           carbonyl.acceptor_carbon.coords.x, carbonyl.acceptor_carbon.coords.y, carbonyl.acceptor_carbon.coords.z) +
+        _create_label(carbonyl.get_donor_residue(), carbonyl.donor_oxygen.coords.x, carbonyl.donor_oxygen.coords.y, carbonyl.donor_oxygen.coords.z,
+                     "red", "white", 14) +
+        _create_label(carbonyl.get_acceptor_residue(), carbonyl.acceptor_carbon.coords.x, carbonyl.acceptor_carbon.coords.y, carbonyl.acceptor_carbon.coords.z,
+                     "blue", "white", 14) +
+        _create_distance_label(f"{carbonyl.distance:.2f} Å",
+                              carbonyl.donor_oxygen.coords.x, carbonyl.donor_oxygen.coords.y, carbonyl.donor_oxygen.coords.z,
+                              carbonyl.acceptor_carbon.coords.x, carbonyl.acceptor_carbon.coords.y, carbonyl.acceptor_carbon.coords.z) +
+        f"viewer.zoomTo({{chain: ['{carbonyl.donor_oxygen.chain_id}', '{carbonyl.acceptor_carbon.chain_id}'], resi: [{carbonyl.donor_oxygen.res_seq}, {carbonyl.acceptor_carbon.res_seq}]}});"
+    )
 
-            let element = document.getElementById("{viewer_id}");
-            if (!element) {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
-
-            try {{
-                let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
-                window.{viewer_id}_instance = viewer;  // Store for PNG export
-
-                let pdb_data = `{pdb_escaped}`;
-                viewer.addModel(pdb_data, "pdb", {{keepH: true}});
-
-                viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
-
-                // Highlight donor and acceptor residues
-                viewer.setStyle({{resi: '{carbonyl.donor_oxygen.res_seq}', chain: '{carbonyl.donor_oxygen.chain_id}'}},
-                              {{stick: {{colorscheme: 'redCarbon'}}}});
-                viewer.setStyle({{resi: '{carbonyl.acceptor_carbon.res_seq}', chain: '{carbonyl.acceptor_carbon.chain_id}'}},
-                              {{stick: {{colorscheme: 'blueCarbon'}}}});
-
-                // Add residue labels
-                viewer.addLabel('{carbonyl.get_donor_residue()}',
-                              {{position: {{x: {carbonyl.donor_oxygen.coords.x}, y: {carbonyl.donor_oxygen.coords.y}, z: {carbonyl.donor_oxygen.coords.z}}},
-                               backgroundColor: 'red', fontColor: 'white', fontSize: 14}});
-
-                viewer.addLabel('{carbonyl.get_acceptor_residue()}',
-                              {{position: {{x: {carbonyl.acceptor_carbon.coords.x}, y: {carbonyl.acceptor_carbon.coords.y}, z: {carbonyl.acceptor_carbon.coords.z}}},
-                               backgroundColor: 'blue', fontColor: 'white', fontSize: 14}});
-
-                // Add distance label (at midpoint)
-                let carbonyl_midpoint = {{
-                    x: ({carbonyl.donor_oxygen.coords.x} + {carbonyl.acceptor_carbon.coords.x}) / 2,
-                    y: ({carbonyl.donor_oxygen.coords.y} + {carbonyl.acceptor_carbon.coords.y}) / 2,
-                    z: ({carbonyl.donor_oxygen.coords.z} + {carbonyl.acceptor_carbon.coords.z}) / 2
-                }};
-                viewer.addLabel('{carbonyl.distance:.2f} Å',
-                              {{position: carbonyl_midpoint,
-                               backgroundColor: 'black', fontColor: 'white', fontSize: 12}});
-
-                // Add line from donor O to acceptor C (shortened to avoid overlapping)
-                const cox = {carbonyl.donor_oxygen.coords.x}, coy = {carbonyl.donor_oxygen.coords.y}, coz = {carbonyl.donor_oxygen.coords.z};
-                const cax = {carbonyl.acceptor_carbon.coords.x}, cay = {carbonyl.acceptor_carbon.coords.y}, caz = {carbonyl.acceptor_carbon.coords.z};
-                const dcx = cax - cox, dcy = cay - coy, dcz = caz - coz;
-                const dist_co = Math.sqrt(dcx*dcx + dcy*dcy + dcz*dcz);
-                const offset_co = 0.4;
-                const ratio_start_co = offset_co / dist_co;
-                const ratio_end_co = (dist_co - offset_co) / dist_co;
-
-                viewer.addCylinder({{
-                    start: {{x: cox + dcx*ratio_start_co, y: coy + dcy*ratio_start_co, z: coz + dcz*ratio_start_co}},
-                    end: {{x: cox + dcx*ratio_end_co, y: coy + dcy*ratio_end_co, z: coz + dcz*ratio_end_co}},
-                    radius: 0.1,
-                    color: 'orange',
-                    dashed: true
-                }});
-
-                viewer.zoomTo({{chain: ['{carbonyl.donor_oxygen.chain_id}', '{carbonyl.acceptor_carbon.chain_id}'], resi: ['{carbonyl.donor_oxygen.res_seq}', '{carbonyl.acceptor_carbon.res_seq}']}});
-                viewer.render();
-
-                setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 100);
-                setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 300);
-                setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 500);
-            }} catch (error) {{
-                console.error("Error creating viewer:", error);
-            }}
-        }}
-
-        setTimeout(init3Dmol, 400);
-    }})();
-    """
-    return javascript
+    return _create_viewer_init_wrapper(viewer_id, pdb_escaped, viewer_code)
 
 
 def generate_n_pi_interaction_viewer_js(
@@ -605,94 +481,30 @@ def generate_n_pi_interaction_viewer_js(
     :returns: JavaScript code to initialize the viewer
     :rtype: str
     """
-    # Get the π system residue sequence number from the first pi atom
     pi_res_seq = n_pi.pi_atoms[0].res_seq if n_pi.pi_atoms else ""
     pi_chain_id = n_pi.pi_atoms[0].chain_id if n_pi.pi_atoms else ""
 
     pdb_escaped = _escape_pdb_content(pdb_content)
 
-    javascript = f"""
-    (function() {{
-        function init3Dmol() {{
-            if (typeof $3Dmol === 'undefined') {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
+    # Build viewer-specific code using helpers
+    viewer_code = (
+        _create_cartoon_style() +
+        _create_residue_stick_style(n_pi.lone_pair_atom.chain_id, n_pi.lone_pair_atom.res_seq, "orangeCarbon") +
+        _create_residue_stick_style(pi_chain_id, pi_res_seq, "tealCarbon") +
+        _create_pi_center_sphere(n_pi.pi_center.x, n_pi.pi_center.y, n_pi.pi_center.z, "teal") +
+        _create_dashed_line_to_center(n_pi.lone_pair_atom.coords.x, n_pi.lone_pair_atom.coords.y, n_pi.lone_pair_atom.coords.z,
+                                      n_pi.pi_center.x, n_pi.pi_center.y, n_pi.pi_center.z) +
+        _create_label(n_pi.get_donor_residue(), n_pi.lone_pair_atom.coords.x, n_pi.lone_pair_atom.coords.y, n_pi.lone_pair_atom.coords.z,
+                     "orange", "white", 14) +
+        _create_label(n_pi.get_acceptor_residue(), n_pi.pi_center.x, n_pi.pi_center.y, n_pi.pi_center.z,
+                     "teal", "white", 14) +
+        _create_distance_label(f"{n_pi.distance:.2f} Å",
+                              n_pi.lone_pair_atom.coords.x, n_pi.lone_pair_atom.coords.y, n_pi.lone_pair_atom.coords.z,
+                              n_pi.pi_center.x, n_pi.pi_center.y, n_pi.pi_center.z) +
+        f"viewer.zoomTo({{chain: ['{n_pi.lone_pair_atom.chain_id}', '{pi_chain_id}'], resi: [{n_pi.lone_pair_atom.res_seq}, {pi_res_seq}]}});"
+    )
 
-            let element = document.getElementById("{viewer_id}");
-            if (!element) {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
-
-            try {{
-                let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
-                window.{viewer_id}_instance = viewer;  // Store for PNG export
-
-                let pdb_data = `{pdb_escaped}`;
-                viewer.addModel(pdb_data, "pdb", {{keepH: true}});
-
-                viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.3}}}});
-
-                // Highlight lone pair atom residue
-                viewer.setStyle({{resi: '{n_pi.lone_pair_atom.res_seq}', chain: '{n_pi.lone_pair_atom.chain_id}'}},
-                              {{stick: {{colorscheme: 'orangeCarbon'}}}});
-
-                // Highlight π system residue
-                viewer.setStyle({{resi: '{pi_res_seq}', chain: '{pi_chain_id}'}},
-                              {{stick: {{colorscheme: 'tealCarbon'}}}});
-
-                // Add residue labels
-                viewer.addLabel('{n_pi.get_donor_residue()}',
-                              {{position: {{x: {n_pi.lone_pair_atom.coords.x}, y: {n_pi.lone_pair_atom.coords.y}, z: {n_pi.lone_pair_atom.coords.z}}},
-                               backgroundColor: 'orange', fontColor: 'white', fontSize: 14}});
-
-                viewer.addLabel('{n_pi.get_acceptor_residue()}',
-                              {{position: {{x: {n_pi.pi_center.x}, y: {n_pi.pi_center.y}, z: {n_pi.pi_center.z}}},
-                               backgroundColor: 'teal', fontColor: 'white', fontSize: 14}});
-
-                // Add distance label (at midpoint)
-                let npi_midpoint = {{
-                    x: ({n_pi.lone_pair_atom.coords.x} + {n_pi.pi_center.x}) / 2,
-                    y: ({n_pi.lone_pair_atom.coords.y} + {n_pi.pi_center.y}) / 2,
-                    z: ({n_pi.lone_pair_atom.coords.z} + {n_pi.pi_center.z}) / 2
-                }};
-                viewer.addLabel('{n_pi.distance:.2f} Å',
-                              {{position: npi_midpoint,
-                               backgroundColor: 'black', fontColor: 'white', fontSize: 12}});
-
-                // Add line from lone pair atom to π center (shortened to avoid overlapping)
-                const npx = {n_pi.lone_pair_atom.coords.x}, npy = {n_pi.lone_pair_atom.coords.y}, npz = {n_pi.lone_pair_atom.coords.z};
-                const npcx = {n_pi.pi_center.x}, npcy = {n_pi.pi_center.y}, npcz = {n_pi.pi_center.z};
-                const dnpx = npcx - npx, dnpy = npcy - npy, dnpz = npcz - npz;
-                const dist_npi = Math.sqrt(dnpx*dnpx + dnpy*dnpy + dnpz*dnpz);
-                const offset_npi = 0.4;
-                const ratio_start_npi = offset_npi / dist_npi;
-                const ratio_end_npi = (dist_npi - offset_npi) / dist_npi;
-
-                viewer.addCylinder({{
-                    start: {{x: npx + dnpx*ratio_start_npi, y: npy + dnpy*ratio_start_npi, z: npz + dnpz*ratio_start_npi}},
-                    end: {{x: npx + dnpx*ratio_end_npi, y: npy + dnpy*ratio_end_npi, z: npz + dnpz*ratio_end_npi}},
-                    radius: 0.1,
-                    color: 'green',
-                    dashed: true
-                }});
-
-                viewer.zoomTo({{chain: ['{n_pi.lone_pair_atom.chain_id}', '{pi_chain_id}'], resi: ['{n_pi.lone_pair_atom.res_seq}', '{pi_res_seq}']}});
-                viewer.render();
-
-                setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 100);
-                setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 300);
-                setTimeout(function() {{ viewer.resize(); viewer.render(); }}, 500);
-            }} catch (error) {{
-                console.error("Error creating viewer:", error);
-            }}
-        }}
-
-        setTimeout(init3Dmol, 400);
-    }})();
-    """
-    return javascript
+    return _create_viewer_init_wrapper(viewer_id, pdb_escaped, viewer_code)
 
 def generate_water_bridge_viewer_js(
     water_bridge: "WaterBridge", pdb_content: str, viewer_id: str
@@ -774,41 +586,13 @@ def generate_water_bridge_viewer_js(
     water_coords_js = water_coords_js.rstrip(", ") + "}"
     water_labels_js = water_labels_js.rstrip(", ") + "}"
 
-    javascript = f"""
-    (function() {{
-        // Wait for both 3Dmol to load and div to be ready
-        function init3Dmol() {{
-            if (typeof $3Dmol === 'undefined') {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
-
-            let element = document.getElementById("{viewer_id}");
-            if (!element) {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
-
-            try {{
-                let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
-                window.{viewer_id}_instance = viewer;  // Store for PNG export
-                let pdbData = `{pdb_escaped}`;
-
-                viewer.addModel(pdbData, "pdb", {{keepH: true}});
-                viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.2}}}});
-
-                // Show donor residue in cyan with stick representation
-                viewer.addStyle({{chain: '{donor_chain}', resi: {donor_resi}}},
-                               {{stick: {{colorscheme: 'cyanCarbon', radius: 0.25}},
-                                 cartoon: {{color: 'cyan', opacity: 0.7}}}});
-
-                // Show acceptor residue in orange with stick representation
-                viewer.addStyle({{chain: '{acceptor_chain}', resi: {acceptor_resi}}},
-                               {{stick: {{colorscheme: 'orangeCarbon', radius: 0.25}},
-                                 cartoon: {{color: 'orange', opacity: 0.7}}}});
-
-                // Show water molecules as sticks with all atoms visible
-                // Use opacity 0.5 to match PDB occupancy visualization
+    # Build viewer-specific code (inline water-specific logic with helpers)
+    viewer_code = (
+        _create_cartoon_style() +
+        _create_residue_stick_style(donor_chain, donor_resi, "cyanCarbon") +
+        _create_residue_stick_style(acceptor_chain, acceptor_resi, "orangeCarbon") +
+        f"""
+                // Show water molecules as sticks
                 let waterResis = {water_resi_json};
                 waterResis.forEach(function(resi) {{
                     viewer.addStyle({{resi: resi}},
@@ -816,18 +600,14 @@ def generate_water_bridge_viewer_js(
                 }});
 
                 // Draw dashed lines connecting donor → water → acceptor
-                // Use embedded coordinates (same approach as hydrogen bond viewer)
                 const dx = {donor_x}, dy = {donor_y}, dz = {donor_z};
                 const ax = {acceptor_x}, ay = {acceptor_y}, az = {acceptor_z};
-
                 let waterCoords = {water_coords_js};
 
                 // Draw connections from donor to each water
                 for (let waterResi in waterCoords) {{
                     let waterO = waterCoords[waterResi];
-                    const wdx = waterO.x - dx;
-                    const wdy = waterO.y - dy;
-                    const wdz = waterO.z - dz;
+                    const wdx = waterO.x - dx, wdy = waterO.y - dy, wdz = waterO.z - dz;
                     const wdist = Math.sqrt(wdx*wdx + wdy*wdy + wdz*wdz);
                     if (wdist > 0) {{
                         const offset = 0.4;
@@ -836,9 +616,7 @@ def generate_water_bridge_viewer_js(
                         viewer.addCylinder({{
                             start: {{x: dx + wdx*ratio_start, y: dy + wdy*ratio_start, z: dz + wdz*ratio_start}},
                             end: {{x: dx + wdx*ratio_end, y: dy + wdy*ratio_end, z: dz + wdz*ratio_end}},
-                            radius: 0.15,
-                            color: 'yellow',
-                            dashed: true
+                            radius: 0.15, color: 'yellow', dashed: true
                         }});
                     }}
                 }}
@@ -846,9 +624,7 @@ def generate_water_bridge_viewer_js(
                 // Draw connections from each water to acceptor
                 for (let waterResi in waterCoords) {{
                     let waterO = waterCoords[waterResi];
-                    const wadx = ax - waterO.x;
-                    const wady = ay - waterO.y;
-                    const wadz = az - waterO.z;
+                    const wadx = ax - waterO.x, wady = ay - waterO.y, wadz = az - waterO.z;
                     const wadist = Math.sqrt(wadx*wadx + wady*wady + wadz*wadz);
                     if (wadist > 0) {{
                         const offset = 0.4;
@@ -857,21 +633,16 @@ def generate_water_bridge_viewer_js(
                         viewer.addCylinder({{
                             start: {{x: waterO.x + wadx*ratio_start, y: waterO.y + wady*ratio_start, z: waterO.z + wadz*ratio_start}},
                             end: {{x: waterO.x + wadx*ratio_end, y: waterO.y + wady*ratio_end, z: waterO.z + wadz*ratio_end}},
-                            radius: 0.15,
-                            color: 'yellow',
-                            dashed: true
+                            radius: 0.15, color: 'yellow', dashed: true
                         }});
                     }}
                 }}
-
-                // Add labels for donor, water molecules, and acceptor
-                viewer.addLabel("{water_bridge.get_donor_residue()}",
-                               {{position: {{x: {donor_x}, y: {donor_y}, z: {donor_z}}},
-                                 backgroundColor: 'cyan', fontColor: 'black', fontSize: 12}});
-                viewer.addLabel("{water_bridge.get_acceptor_residue()}",
-                               {{position: {{x: {acceptor_x}, y: {acceptor_y}, z: {acceptor_z}}},
-                                 backgroundColor: 'orange', fontColor: 'white', fontSize: 12}});
-
+        """ +
+        _create_label(water_bridge.get_donor_residue(), donor_x, donor_y, donor_z,
+                     "cyan", "black", 12) +
+        _create_label(water_bridge.get_acceptor_residue(), acceptor_x, acceptor_y, acceptor_z,
+                     "orange", "white", 12) +
+        f"""
                 // Add labels for water molecules
                 let waterLabels = {water_labels_js};
                 for (let waterResi in waterCoords) {{
@@ -881,33 +652,11 @@ def generate_water_bridge_viewer_js(
                                    {{position: {{x: waterO.x, y: waterO.y, z: waterO.z}},
                                      backgroundColor: 'lightblue', fontColor: 'black', fontSize: 11}});
                 }}
-
                 viewer.zoomTo();
-                viewer.render();
-                viewer.zoom(1.2);
+        """
+    )
 
-                // Force multiple resizes to ensure proper rendering
-                setTimeout(function() {{
-                    viewer.resize();
-                    viewer.render();
-                }}, 100);
-                setTimeout(function() {{
-                    viewer.resize();
-                    viewer.render();
-                }}, 300);
-                setTimeout(function() {{
-                    viewer.resize();
-                    viewer.render();
-                }}, 500);
-            }} catch(error) {{
-                console.error('Error initializing water bridge viewer:', error);
-            }}
-        }}
-
-        setTimeout(init3Dmol, 400);
-    }})();
-    """
-    return javascript
+    return _create_viewer_init_wrapper(viewer_id, pdb_escaped, viewer_code)
 
 
 def generate_ligand_interactions_viewer_js(
@@ -928,32 +677,11 @@ def generate_ligand_interactions_viewer_js(
     """
     import json
     pdb_escaped = _escape_pdb_content(pdb_content)
-    ligand_name = ligand_res or ""  # Use residue name if provided
-
-    # Convert interactions_data to JSON for embedding in JavaScript
+    ligand_name = ligand_res or ""
     interactions_json = json.dumps(interactions_data or [])
 
-    javascript = f"""
-    (function() {{
-        function init3Dmol() {{
-            if (typeof $3Dmol === 'undefined') {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
-
-            let element = document.getElementById("{viewer_id}");
-            if (!element) {{
-                setTimeout(init3Dmol, 100);
-                return;
-            }}
-
-            try {{
-                let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
-                window.{viewer_id}_instance = viewer;
-                let pdbData = `{pdb_escaped}`;
-
-                let model = viewer.addModel(pdbData, "pdb", {{keepH: true}});
-
+    # Build viewer-specific code for dynamic interaction drawing
+    viewer_code = f"""
                 // Show protein/RNA as cartoon
                 viewer.setStyle({{}}, {{cartoon: {{color: 'lightgray', opacity: 0.4}}}});
 
@@ -1001,7 +729,7 @@ def generate_ligand_interactions_viewer_js(
                             let endLabel = interaction.acceptor_res;
                             let endColor = 'orange';
 
-                            if (interaction.type && interaction.type.includes('pi') && interaction.pi_center) {{
+                            if (interaction.type && (interaction.type.includes('π') || interaction.type.includes('pi')) && interaction.pi_center) {{
                                 // π-interaction: draw to ring center
                                 endPoint = interaction.pi_center;
                                 endLabel = interaction.acceptor_res + ' (π)';
@@ -1053,14 +781,48 @@ def generate_ligand_interactions_viewer_js(
                 }});
 
                 viewer.zoomTo();
+    """
+
+    # Create custom wrapper that uses model for atom access
+    javascript = f"""
+    (function() {{
+        function init3Dmol() {{
+            if (typeof $3Dmol === 'undefined') {{
+                setTimeout(init3Dmol, 100);
+                return;
+            }}
+
+            let element = document.getElementById("{viewer_id}");
+            if (!element) {{
+                setTimeout(init3Dmol, 100);
+                return;
+            }}
+
+            try {{
+                let viewer = $3Dmol.createViewer("{viewer_id}", {{backgroundColor: 'white'}});
+                window.{viewer_id}_instance = viewer;
+                let pdbData = `{pdb_escaped}`;
+
+                let model = viewer.addModel(pdbData, "pdb", {{keepH: true}});
+
+                // Viewer-specific code
+                {viewer_code}
+
                 viewer.render();
 
-                // Force resize to ensure proper rendering
+                // Force multiple resizes to ensure proper rendering
                 setTimeout(function() {{
                     viewer.resize();
                     viewer.render();
                 }}, 100);
-
+                setTimeout(function() {{
+                    viewer.resize();
+                    viewer.render();
+                }}, 300);
+                setTimeout(function() {{
+                    viewer.resize();
+                    viewer.render();
+                }}, 500);
             }} catch(error) {{
                 console.error('Error initializing ligand interactions viewer:', error);
                 console.error(error.stack);
