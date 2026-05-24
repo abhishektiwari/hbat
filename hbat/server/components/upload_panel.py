@@ -22,6 +22,7 @@ class UploadPanel:
         self.upload_label: Optional[ui.label] = None
         self.pdb_id_input: Optional[ui.input] = None
         self.format_select: Optional[ui.select] = None
+        self.upload_widget: Optional[ui.upload] = None
         self.file_uploaded: bool = False
         self._download_pdb_func: Optional[Callable] = None
 
@@ -174,7 +175,7 @@ class UploadPanel:
         # Option 1: Upload file
         with ui.card().classes("w-full q-pa-md mt-5"):
             ui.label("Option 1: Upload Structure File").classes("text-h6")
-            ui.upload(
+            self.upload_widget = ui.upload(
                 label="Choose PDB or CIF File",
                 on_upload=handle_upload,
                 auto_upload=True,
@@ -254,9 +255,18 @@ Maximum file size: 1 MB
 
     def reset(self):
         """Reset the upload panel to initial state."""
+        # Clear PDB ID input
         if self.pdb_id_input:
             self.pdb_id_input.value = ""
+
+        # Clear upload widget queue/selection using NiceGUI's reset() method
+        if self.upload_widget:
+            self.upload_widget.reset()
+
+        # Reset upload label
         if self.upload_label:
             self.upload_label.text = "No file loaded"
             self.upload_label.classes(replace="text-caption text-grey q-mt-md")
+
+        # Reset file uploaded flag
         self.file_uploaded = False

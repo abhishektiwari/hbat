@@ -106,6 +106,7 @@ class NPMolecularInteractionAnalyzer:
         self._analysis_start_time: Optional[float] = None
         self._analysis_end_time: Optional[float] = None
         self._pdb_fixing_info: Dict[str, Any] = {}
+        self._pdb_original_info: Dict[str, Any] = {}
 
         # Progress callback for GUI updates
         self.progress_callback: Optional[Callable[[str], None]] = None
@@ -131,7 +132,15 @@ class NPMolecularInteractionAnalyzer:
         :raises Exception: If PDB fixing fails when enabled
         """
         self._analysis_start_time = time.time()
-        self._pdb_fixing_info = {}
+
+        # Store original file path for download
+        import os
+        base_dir = os.path.dirname(pdb_file)
+        base_name = os.path.basename(pdb_file)
+        name, ext = os.path.splitext(base_name)
+        original_file_path = os.path.join(base_dir, f"{name}{ext}")
+        print(f"Original PDB file: {original_file_path} {pdb_file}")
+        self._pdb_original_info = {"input_file_path": original_file_path if os.path.exists(original_file_path) else pdb_file}
 
         # Progress update helper
         def update_progress(message: str) -> None:

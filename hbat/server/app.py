@@ -60,6 +60,7 @@ class HBATWebApp:
         # Status tracking
         self.status_label: Optional[ui.label] = None
         self.analyze_button: Optional[ui.button] = None
+        self.download_structure_button: Optional[ui.button] = None
 
         # Stepper
         self.stepper: Optional[ui.stepper] = None
@@ -363,10 +364,10 @@ class HBATWebApp:
                                 icon="description",
                                 on_click=self._export_txt,
                             ).props("color=primary")
-                        # Download Fixed Structure section
+                        # Download Structure section
                         ui.separator().classes("q-my-md")
-                        ui.button(
-                            "Download Fixed Structure",
+                        self.download_structure_button = ui.button(
+                            "Download Original Structure",
                             icon="download",
                             on_click=self._export_fixed_structure,
                         ).props("color=primary")
@@ -555,6 +556,18 @@ class HBATWebApp:
                 self.status_label.classes(replace="text-caption q-mt-sm text-positive")
                 ui.notify("Analysis completed!", type="positive", position="top-left")
 
+                # Update download button label based on whether fixing was applied
+                if (
+                    hasattr(self.analyzer, "_pdb_fixing_info")
+                    and self.analyzer._pdb_fixing_info.get("applied")
+                ):
+                    button_label = "Download Fixed Structure"
+                else:
+                    button_label = "Download Original Structure"
+
+                if self.download_structure_button:
+                    self.download_structure_button.text = button_label
+
                 # Update results display
                 await self.results_panel.update_results(
                     self.analyzer, self.current_file
@@ -687,7 +700,7 @@ class HBATWebApp:
         )
 
     def _export_fixed_structure(self):
-        """Download the fixed structure in selected format (PDB or CIF)."""
+        """Download the fixed structure (or original if no fixing was applied)."""
         if not self.analyzer:
             ui.notify(
                 "No analysis results to export", type="warning", position="top-left"
@@ -695,31 +708,39 @@ class HBATWebApp:
             return
 
         # Check if PDB fixing was applied
-        if not hasattr(
+        if hasattr(
             self.analyzer, "_pdb_fixing_info"
-        ) or not self.analyzer._pdb_fixing_info.get("applied"):
-            ui.notify(
-                "No structure fixing was applied during analysis",
-                type="warning",
-                position="top-left",
-            )
-            return
-
-        fixed_file_path = self.analyzer._pdb_fixing_info.get("fixed_file_path")
+        ) and self.analyzer._pdb_fixing_info.get("applied"):
+            # Download fixed structure
+            fixed_file_path = self.analyzer._pdb_fixing_info.get("fixed_file_path")
+            file_type = "fixed structure"
+        else:
+            # No fixing applied, download original structure
+            if not hasattr(
+                self.analyzer, "_pdb_fixing_info"
+            ) or not self.analyzer._pdb_original_info.get("input_file_path"):
+                ui.notify(
+                    "Original structure file not found",
+                    type="negative",
+                    position="top-left",
+                )
+                return
+            fixed_file_path = self.analyzer._pdb_original_info.get("input_file_path")
+            file_type = "original structure"
 
         try:
             if not os.path.exists(fixed_file_path):
                 ui.notify(
-                    "Fixed structure file not found",
+                    f"{file_type.capitalize()} file not found",
                     type="negative",
                     position="top-left",
                 )
                 return
 
-            # Download the fixed file directly
+            # Download the file directly
             ui.download(fixed_file_path)
             ui.notify(
-                "Downloaded fixed structure",
+                f"Downloaded {file_type}",
                 type="positive",
                 position="top-left",
             )
