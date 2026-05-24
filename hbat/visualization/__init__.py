@@ -24,6 +24,10 @@ from .pymol3d import (
     generate_pi_pi_stacking_viewer_js,
     generate_png_export_js,
 )
+from .pymol_exporter import (
+    PyMOLExporter,
+    export_interactions_to_pymol,
+)
 
 __all__ = [
     # Chain graph visualization
@@ -45,4 +49,7 @@ __all__ = [
     "display_carbonyl_interaction",
     "display_n_pi_interaction",
     "load_3dmol_library",
+    # PyMOL export functionality
+    "PyMOLExporter",
+    "export_interactions_to_pymol",
 ]
