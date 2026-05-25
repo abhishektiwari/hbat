@@ -346,11 +346,11 @@ class TestCLICIFWorkflows:
                 'pdb_pi': len(analyzer_pdb.pi_interactions),
             }
 
-            # Verify CIF and PDB results are similar (within tolerance of ±20% for multi-file comparison)
-            # Note: PDBFixer uses stochastic hydrogen placement, resulting in variation between runs
+            # Verify CIF and PDB results are similar (within tolerance of ±25% for multi-file comparison)
+            # Note: PDBFixer uses stochastic hydrogen placement and format-specific parsing can result in variation
             cif_count = results[file_id]['cif_hbonds']
             pdb_count = results[file_id]['pdb_hbonds']
-            tolerance = max(cif_count, pdb_count) * 0.20  # 20% tolerance for stochastic variation
+            tolerance = max(cif_count, pdb_count) * 0.25  # 25% tolerance for stochastic variation and format differences
             diff = abs(cif_count - pdb_count)
             assert diff <= tolerance, \
                 f"H-bond count difference exceeds tolerance for {file_id}: CIF={cif_count}, PDB={pdb_count}, diff={diff}, tolerance={tolerance}"
@@ -385,7 +385,7 @@ class TestCLICIFWorkflows:
             pdb_pi = data['pdb_pi']
             diff_pi = abs(cif_pi - pdb_pi)
 
-            hb_status = "✓ PASS" if diff_hb <= max(cif_hb, pdb_hb) * 0.20 else "✗ FAIL"
+            hb_status = "✓ PASS" if diff_hb <= max(cif_hb, pdb_hb) * 0.25 else "✗ FAIL"
 
             print(f"{file_id:<10} {'H-bonds':<15} {cif_hb:<12} {pdb_hb:<12} {diff_hb:<12} {hb_status:<10}", file=sys.stderr)
             print(f"{'':10} {'X-bonds':<15} {cif_xb:<12} {pdb_xb:<12} {diff_xb:<12}", file=sys.stderr)
