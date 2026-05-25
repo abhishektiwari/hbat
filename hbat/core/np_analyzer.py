@@ -2186,12 +2186,20 @@ class NPMolecularInteractionAnalyzer:
                 else 0,
                 "ligands": {},
             },
-            "total_interactions": len(self.hydrogen_bonds)
-            + len(self.halogen_bonds)
-            + len(self.pi_interactions)
-            + len(self.pi_pi_interactions)
-            + len(self.carbonyl_interactions)
-            + len(self.n_pi_interactions),
+            "total_interactions": (
+                len(self.hydrogen_bonds)
+                + len(self.halogen_bonds)
+                + len(self.pi_interactions)
+                + len(self.pi_pi_interactions)
+                + len(self.carbonyl_interactions)
+                + len(self.n_pi_interactions)
+                + len(self.water_bridges)
+                + (
+                    len(self.ligand_interactions.interactions)
+                    if self.ligand_interactions
+                    else 0
+                )
+            ),
         }
 
         # Add detailed statistics from original get_statistics method
