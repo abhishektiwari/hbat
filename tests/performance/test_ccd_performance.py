@@ -250,6 +250,10 @@ def test_phe_component_summary():
     )
 
 
+@pytest.mark.integration
+@pytest.mark.slow
+@pytest.mark.ccd
+@pytest.mark.performance
 def test_ccd_performance_comprehensive():
     """
     Comprehensive CCD performance test (for manual execution).
@@ -443,7 +447,6 @@ def test_ccd_performance_comprehensive():
         print("   ❌ Slow: Atom lookup > 5ms")
 
     print("\n🎉 Test completed successfully!")
-    return phe_summary
 
 
 def main():
