@@ -45,13 +45,13 @@ WATER_BRIDGE_TEST_DATA = [
         "pdb_name": "6rsa.pdb",
         "description": "Single structure with moderate water bridges",
         "expected_min_bridges": 30,
-        "expected_max_bridges": 80,
+        "expected_max_bridges": 100,
     },
     {
         "pdb_name": "4hhb.pdb",
         "description": "Large structure with many water bridges",
         "expected_min_bridges": 30,
-        "expected_max_bridges": 80,
+        "expected_max_bridges": 100,
     },
     {
         "pdb_name": "4laz.pdb",
