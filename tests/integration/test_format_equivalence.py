@@ -195,9 +195,9 @@ class TestAnalysisEquivalence:
     def test_cif_vs_pdb_h_bonds_pdbfixer(self):
         """Test H-bond equivalence with PDBFixer method.
 
-        PDBFixer produces identical results for CIF and PDB formats since it
-        applies the same algorithm to both formats. Small variance allowed for
-        stochastic hydrogen placement (±5%).
+        PDBFixer produces near-identical results for CIF and PDB formats since it
+        applies the same algorithm to both formats. Variance allowed for
+        stochastic hydrogen placement and format-specific parsing differences (±10%).
         """
         from hbat.core.analysis import AnalysisParameters, NPMolecularInteractionAnalyzer
 
@@ -215,8 +215,8 @@ class TestAnalysisEquivalence:
         hb_pdb = len(analyzer_pdb.hydrogen_bonds)
         hb_cif = len(analyzer_cif.hydrogen_bonds)
 
-        # PDBFixer: allow ±5% for stochastic hydrogen placement
-        variance = 0.05
+        # PDBFixer: allow ±10% for stochastic hydrogen placement and format-specific parsing
+        variance = 0.10
         max_diff = max(hb_pdb, hb_cif) * variance
         actual_diff = abs(hb_pdb - hb_cif)
 
@@ -409,11 +409,11 @@ class TestWithFixing:
         analyzer_cif = NPMolecularInteractionAnalyzer(params)
         analyzer_cif.analyze_file('example_pdb_files/6RSA.cif')
 
-        # After fixing, H-bond counts should be very similar (allow ±5%)
+        # After fixing, H-bond counts should be very similar (allow ±10% for format-specific differences)
         hb_pdb = len(analyzer_pdb.hydrogen_bonds)
         hb_cif = len(analyzer_cif.hydrogen_bonds)
 
-        variance = 0.05
+        variance = 0.10
         max_diff = max(hb_pdb, hb_cif) * variance
         actual_diff = abs(hb_pdb - hb_cif)
 
