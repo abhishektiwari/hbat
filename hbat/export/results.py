@@ -53,8 +53,12 @@ def export_to_txt_single_file(
             f"  Water bridges: {summary.get('water_bridges', {}).get('count', 0)}\n"
         )
         if hasattr(analyzer, "ligand_interactions") and analyzer.ligand_interactions:
-            f.write(f"  Ligand interactions: {len(analyzer.ligand_interactions.interactions)}\n")
-            f.write(f"  Unique ligands: {len(analyzer.ligand_interactions.ligand_info)}\n")
+            f.write(
+                f"  Ligand interactions: {len(analyzer.ligand_interactions.interactions)}\n"
+            )
+            f.write(
+                f"  Unique ligands: {len(analyzer.ligand_interactions.ligand_info)}\n"
+            )
         f.write(f"  Total interactions: {summary['total_interactions']}\n\n")
 
         # Write detailed results
@@ -117,10 +121,14 @@ def export_to_txt_single_file(
             f.write("=" * 50 + "\n\n")
             for ligand_res in sorted(analyzer.ligand_interactions.ligand_info.keys()):
                 ligand_info = analyzer.ligand_interactions.ligand_info[ligand_res]
-                all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_res)
+                all_interactions = (
+                    analyzer.ligand_interactions.get_interactions_for_ligand(ligand_res)
+                )
 
                 # Separate regular interactions and water bridges
-                regular_interactions = [i for i in all_interactions if not _is_water_bridge(i)]
+                regular_interactions = [
+                    i for i in all_interactions if not _is_water_bridge(i)
+                ]
                 water_bridges = [i for i in all_interactions if _is_water_bridge(i)]
 
                 f.write(f"{ligand_res} ({ligand_info['count']} interactions):\n")
@@ -142,7 +150,9 @@ def export_to_txt_single_file(
                         f.write(f"  Water: {' → '.join(bridge.water_residues)}\n")
                         f.write(f"  End: {bridge.get_acceptor_residue()}\n")
                         f.write(f"  Hops: {bridge.bridge_length}\n")
-                        f.write(f"  Distance: {bridge.get_donor_acceptor_distance():.2f} Å\n\n")
+                        f.write(
+                            f"  Distance: {bridge.get_donor_acceptor_distance():.2f} Å\n\n"
+                        )
 
                 f.write("\n")
 
@@ -207,11 +217,16 @@ def export_to_csv_files(
     if hasattr(analyzer, "ligand_interactions") and analyzer.ligand_interactions:
         for ligand_residue in analyzer.ligand_interactions.ligand_info.keys():
             # Regular interactions
-            ligand_file = directory / f"{base_name}_ligand_{ligand_residue.replace(':', '_')}.csv"
+            ligand_file = (
+                directory / f"{base_name}_ligand_{ligand_residue.replace(':', '_')}.csv"
+            )
             write_ligand_interactions_csv(analyzer, ligand_file, ligand_residue)
 
             # Water bridges
-            wb_file = directory / f"{base_name}_ligand_{ligand_residue.replace(':', '_')}_water_bridges.csv"
+            wb_file = (
+                directory
+                / f"{base_name}_ligand_{ligand_residue.replace(':', '_')}_water_bridges.csv"
+            )
             write_ligand_water_bridges_csv(analyzer, wb_file, ligand_residue)
 
 
@@ -279,12 +294,22 @@ def export_to_json_files(
     if hasattr(analyzer, "ligand_interactions") and analyzer.ligand_interactions:
         for ligand_residue in analyzer.ligand_interactions.ligand_info.keys():
             # Regular interactions
-            ligand_file = directory / f"{base_name}_ligand_{ligand_residue.replace(':', '_')}.json"
-            write_ligand_interactions_json(analyzer, ligand_file, ligand_residue, input_file)
+            ligand_file = (
+                directory
+                / f"{base_name}_ligand_{ligand_residue.replace(':', '_')}.json"
+            )
+            write_ligand_interactions_json(
+                analyzer, ligand_file, ligand_residue, input_file
+            )
 
             # Water bridges
-            wb_file = directory / f"{base_name}_ligand_{ligand_residue.replace(':', '_')}_water_bridges.json"
-            write_ligand_water_bridges_json(analyzer, wb_file, ligand_residue, input_file)
+            wb_file = (
+                directory
+                / f"{base_name}_ligand_{ligand_residue.replace(':', '_')}_water_bridges.json"
+            )
+            write_ligand_water_bridges_json(
+                analyzer, wb_file, ligand_residue, input_file
+            )
 
 
 def export_to_json_single_file(
@@ -464,10 +489,14 @@ def export_to_json_single_file(
     if hasattr(analyzer, "ligand_interactions") and analyzer.ligand_interactions:
         for ligand_res in sorted(analyzer.ligand_interactions.ligand_info.keys()):
             ligand_info = analyzer.ligand_interactions.ligand_info[ligand_res]
-            all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_res)
+            all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(
+                ligand_res
+            )
 
             # Separate regular interactions and water bridges
-            regular_interactions = [i for i in all_interactions if not _is_water_bridge(i)]
+            regular_interactions = [
+                i for i in all_interactions if not _is_water_bridge(i)
+            ]
             water_bridges = [i for i in all_interactions if _is_water_bridge(i)]
 
             ligand_data = {
@@ -492,7 +521,9 @@ def export_to_json_single_file(
                     if row["distance"] != "N/A":
                         interaction_data["distance_angstrom"] = float(row["distance"])
                     if row["angle"] != "N/A":
-                        interaction_data["angle_or_metric_degrees"] = float(row["angle"])
+                        interaction_data["angle_or_metric_degrees"] = float(
+                            row["angle"]
+                        )
                     if row["properties"]:
                         interaction_data["properties"] = row["properties"]
 
@@ -508,10 +539,12 @@ def export_to_json_single_file(
                         "water_molecules": wb.water_residues,
                         "end_residue": wb.get_acceptor_residue(),
                         "bridge_length": wb.bridge_length,
-                        "distance_angstrom": float(f"{wb.get_donor_acceptor_distance():.2f}"),
+                        "distance_angstrom": float(
+                            f"{wb.get_donor_acceptor_distance():.2f}"
+                        ),
                     }
 
-                    if hasattr(wb, 'donor_acceptor_properties'):
+                    if hasattr(wb, "donor_acceptor_properties"):
                         water_bridge_data["properties"] = wb.donor_acceptor_properties
 
                     ligand_data["water_bridges"].append(water_bridge_data)
@@ -1244,7 +1277,9 @@ def write_ligand_interactions_json(
     :rtype: None
     """
     ligand_info = analyzer.ligand_interactions.ligand_info.get(ligand_residue, {})
-    all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_residue)
+    all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(
+        ligand_residue
+    )
 
     # Filter out water bridges (they go in separate files)
     interactions = [i for i in all_interactions if not _is_water_bridge(i)]
@@ -1295,7 +1330,7 @@ def _is_water_bridge(interaction) -> bool:
     :returns: True if interaction is a water bridge
     :rtype: bool
     """
-    return hasattr(interaction, 'water_residues')
+    return hasattr(interaction, "water_residues")
 
 
 def _format_water_bridge_row(water_bridge) -> dict:
@@ -1351,30 +1386,30 @@ def _format_ligand_interaction_row(interaction) -> dict:
 
     # Get distance/angle metric
     distance_str = "N/A"
-    if hasattr(interaction, 'distance'):
+    if hasattr(interaction, "distance"):
         distance_str = f"{interaction.distance:.2f}"
-    elif hasattr(interaction, '_distance'):
+    elif hasattr(interaction, "_distance"):
         distance_str = f"{interaction._distance:.2f}"
 
     # Get angle metric if available
     angle_str = "N/A"
-    if hasattr(interaction, 'angle'):
+    if hasattr(interaction, "angle"):
         angle_str = f"{math.degrees(interaction.angle):.1f}"
-    elif hasattr(interaction, 'plane_angle'):
+    elif hasattr(interaction, "plane_angle"):
         angle_str = f"{interaction.plane_angle:.1f}"
-    elif hasattr(interaction, 'burgi_dunitz_angle'):
+    elif hasattr(interaction, "burgi_dunitz_angle"):
         angle_str = f"{interaction.burgi_dunitz_angle:.1f}"
-    elif hasattr(interaction, 'angle_to_plane'):
+    elif hasattr(interaction, "angle_to_plane"):
         angle_str = f"{interaction.angle_to_plane:.1f}"
 
     # Get properties
     properties = ""
-    if hasattr(interaction, 'donor_acceptor_properties'):
+    if hasattr(interaction, "donor_acceptor_properties"):
         properties = interaction.donor_acceptor_properties
 
     # Get atom names
-    donor_atom_name = donor_atom.name if hasattr(donor_atom, 'name') else "N/A"
-    acceptor_atom_name = acceptor_atom.name if hasattr(acceptor_atom, 'name') else "N/A"
+    donor_atom_name = donor_atom.name if hasattr(donor_atom, "name") else "N/A"
+    acceptor_atom_name = acceptor_atom.name if hasattr(acceptor_atom, "name") else "N/A"
 
     return {
         "type_label": type_label,
@@ -1421,20 +1456,24 @@ def write_ligand_interactions_csv(
         writer = csv.writer(output)
 
         # Write header
-        writer.writerow([
-            "Interaction_Type",
-            "Donor_Residue",
-            "Donor_Atom",
-            "Acceptor_Residue",
-            "Acceptor_Atom",
-            "Distance_Angstrom",
-            "Angle_Or_Metric_Degrees",
-            "Properties",
-        ])
+        writer.writerow(
+            [
+                "Interaction_Type",
+                "Donor_Residue",
+                "Donor_Atom",
+                "Acceptor_Residue",
+                "Acceptor_Atom",
+                "Distance_Angstrom",
+                "Angle_Or_Metric_Degrees",
+                "Properties",
+            ]
+        )
 
         # Get interactions from analyzer's ligand_interactions container
         if ligand_residue:
-            all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_residue)
+            all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(
+                ligand_residue
+            )
         else:
             all_interactions = analyzer.ligand_interactions.interactions
 
@@ -1445,16 +1484,18 @@ def write_ligand_interactions_csv(
         for interaction in interactions:
             try:
                 row = _format_ligand_interaction_row(interaction)
-                writer.writerow([
-                    row["type_label"],
-                    row["donor_res"],
-                    row["donor_atom"],
-                    row["acceptor_res"],
-                    row["acceptor_atom"],
-                    row["distance"],
-                    row["angle"],
-                    row["properties"],
-                ])
+                writer.writerow(
+                    [
+                        row["type_label"],
+                        row["donor_res"],
+                        row["donor_atom"],
+                        row["acceptor_res"],
+                        row["acceptor_atom"],
+                        row["distance"],
+                        row["angle"],
+                        row["properties"],
+                    ]
+                )
             except Exception:
                 # Skip interactions that can't be processed
                 continue
@@ -1503,17 +1544,21 @@ def write_ligand_water_bridges_csv(
         writer = csv.writer(output)
 
         # Write header for water bridges (consistent with write_water_bridges_csv)
-        writer.writerow([
-            "Donor_Residue",
-            "Water_Molecules",
-            "Acceptor_Residue",
-            "Hops",
-            "Distance_Angstrom",
-        ])
+        writer.writerow(
+            [
+                "Donor_Residue",
+                "Water_Molecules",
+                "Acceptor_Residue",
+                "Hops",
+                "Distance_Angstrom",
+            ]
+        )
 
         # Get interactions from analyzer's ligand_interactions container
         if ligand_residue:
-            all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_residue)
+            all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(
+                ligand_residue
+            )
         else:
             all_interactions = analyzer.ligand_interactions.interactions
 
@@ -1524,13 +1569,15 @@ def write_ligand_water_bridges_csv(
         for wb in water_bridges:
             try:
                 row = _format_water_bridge_row(wb)
-                writer.writerow([
-                    row["donor_res"],
-                    row["water_residues"],
-                    row["acceptor_res"],
-                    row["bridge_length"],
-                    row["distance"],
-                ])
+                writer.writerow(
+                    [
+                        row["donor_res"],
+                        row["water_residues"],
+                        row["acceptor_res"],
+                        row["bridge_length"],
+                        row["distance"],
+                    ]
+                )
             except Exception:
                 # Skip water bridges that can't be processed
                 continue
@@ -1566,7 +1613,9 @@ def write_ligand_water_bridges_json(
     :rtype: None
     """
     ligand_info = analyzer.ligand_interactions.ligand_info.get(ligand_residue, {})
-    all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(ligand_residue)
+    all_interactions = analyzer.ligand_interactions.get_interactions_for_ligand(
+        ligand_residue
+    )
 
     # Filter to only water bridges
     water_bridges = [i for i in all_interactions if _is_water_bridge(i)]
@@ -1592,7 +1641,7 @@ def write_ligand_water_bridges_json(
                 "distance_angstrom": float(f"{wb.get_donor_acceptor_distance():.2f}"),
             }
 
-            if hasattr(wb, 'donor_acceptor_properties'):
+            if hasattr(wb, "donor_acceptor_properties"):
                 water_bridge_data["properties"] = wb.donor_acceptor_properties
 
             data["water_bridges"].append(water_bridge_data)
@@ -1601,5 +1650,3 @@ def write_ligand_water_bridges_json(
 
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-
-

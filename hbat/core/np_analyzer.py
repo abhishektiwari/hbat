@@ -88,7 +88,9 @@ class NPMolecularInteractionAnalyzer:
         self.n_pi_interactions: List[NPiInteraction] = []
         self.cooperativity_chains: List[CooperativityChain] = []
         self.water_bridges: List[WaterBridge] = []
-        self.ligand_interactions: LigandInteraction = LigandInteraction()  # Interactions involving ligands
+        self.ligand_interactions: LigandInteraction = (
+            LigandInteraction()
+        )  # Interactions involving ligands
 
         # Aromatic residues for π interactions
         self._aromatic_residues = set(RESIDUES_WITH_AROMATIC_RINGS)
@@ -138,12 +140,17 @@ class NPMolecularInteractionAnalyzer:
 
         # Store original file path for download
         import os
+
         base_dir = os.path.dirname(pdb_file)
         base_name = os.path.basename(pdb_file)
         name, ext = os.path.splitext(base_name)
         original_file_path = os.path.join(base_dir, f"{name}{ext}")
         print(f"Original PDB file: {original_file_path} {pdb_file}")
-        self._pdb_original_info = {"input_file_path": original_file_path if os.path.exists(original_file_path) else pdb_file}
+        self._pdb_original_info = {
+            "input_file_path": original_file_path
+            if os.path.exists(original_file_path)
+            else pdb_file
+        }
 
         # Progress update helper
         def update_progress(message: str) -> None:
@@ -1761,13 +1768,13 @@ class NPMolecularInteractionAnalyzer:
 
         # Collect all interactions from all types
         all_interactions = (
-            self.hydrogen_bonds +
-            self.halogen_bonds +
-            self.pi_interactions +
-            self.pi_pi_interactions +
-            self.carbonyl_interactions +
-            self.n_pi_interactions +
-            self.water_bridges
+            self.hydrogen_bonds
+            + self.halogen_bonds
+            + self.pi_interactions
+            + self.pi_pi_interactions
+            + self.carbonyl_interactions
+            + self.n_pi_interactions
+            + self.water_bridges
         )
 
         # Filter to only those involving true ligands (HETATM records, excluding water/solvents)
@@ -1778,19 +1785,33 @@ class NPMolecularInteractionAnalyzer:
             acceptor_atom = interaction.get_acceptor()
 
             # Get residue names
-            donor_res_name = donor_atom.res_name if hasattr(donor_atom, 'res_name') else ""
-            acceptor_res_name = acceptor_atom.res_name if hasattr(acceptor_atom, 'res_name') else ""
+            donor_res_name = (
+                donor_atom.res_name if hasattr(donor_atom, "res_name") else ""
+            )
+            acceptor_res_name = (
+                acceptor_atom.res_name if hasattr(acceptor_atom, "res_name") else ""
+            )
 
             # Normalize residue names for comparison
             donor_name_upper = donor_res_name.strip().upper()
             acceptor_name_upper = acceptor_res_name.strip().upper()
 
             # Check if at least one atom is a true ligand (HETATM and not water/solvent)
-            donor_is_hetatm = hasattr(donor_atom, 'record_type') and donor_atom.record_type == 'HETATM'
-            acceptor_is_hetatm = hasattr(acceptor_atom, 'record_type') and acceptor_atom.record_type == 'HETATM'
+            donor_is_hetatm = (
+                hasattr(donor_atom, "record_type")
+                and donor_atom.record_type == "HETATM"
+            )
+            acceptor_is_hetatm = (
+                hasattr(acceptor_atom, "record_type")
+                and acceptor_atom.record_type == "HETATM"
+            )
 
-            donor_is_ligand = donor_is_hetatm and donor_name_upper not in excluded_residues
-            acceptor_is_ligand = acceptor_is_hetatm and acceptor_name_upper not in excluded_residues
+            donor_is_ligand = (
+                donor_is_hetatm and donor_name_upper not in excluded_residues
+            )
+            acceptor_is_ligand = (
+                acceptor_is_hetatm and acceptor_name_upper not in excluded_residues
+            )
 
             # Include only if at least one is a true ligand (HETATM but not water/solvent)
             has_ligand = donor_is_ligand or acceptor_is_ligand
@@ -2070,9 +2091,7 @@ class NPMolecularInteractionAnalyzer:
 
                                 # Calculate total distance
                                 total_dist = float(
-                                    start_atom.coords.distance_to(
-                                        current_atom.coords
-                                    )
+                                    start_atom.coords.distance_to(current_atom.coords)
                                 )
 
                                 # Create WaterBridge
@@ -2235,7 +2254,7 @@ class NPMolecularInteractionAnalyzer:
 
         # Detect file format
         _, ext = os.path.splitext(pdb_file_path)
-        is_cif_file = ext.lower() == '.cif'
+        is_cif_file = ext.lower() == ".cif"
 
         # Generate output filename based on fixing method
         base_dir = os.path.dirname(pdb_file_path)
@@ -2243,7 +2262,7 @@ class NPMolecularInteractionAnalyzer:
         name, ext = os.path.splitext(base_name)
 
         # OpenBabel always outputs PDB; PDBFixer preserves format
-        if self.parameters.fix_pdb_method == 'openbabel' and is_cif_file:
+        if self.parameters.fix_pdb_method == "openbabel" and is_cif_file:
             # OpenBabel CIF input → PDB output
             fixed_file_path = os.path.join(base_dir, f"{name}_fixed.pdb")
         else:
@@ -2369,15 +2388,21 @@ class NPMolecularInteractionAnalyzer:
                     else 0
                 ),
                 "average_distance": (
-                    np.mean([wb.get_donor_acceptor_distance() for wb in self.water_bridges])
+                    np.mean(
+                        [wb.get_donor_acceptor_distance() for wb in self.water_bridges]
+                    )
                     if self.water_bridges
                     else 0
                 ),
             },
             "ligand_interactions": {
-                "count": len(self.ligand_interactions.interactions) if self.ligand_interactions else 0,
-                "unique_ligands": len(self.ligand_interactions.ligand_info) if self.ligand_interactions else 0,
-                "ligands": {}
+                "count": len(self.ligand_interactions.interactions)
+                if self.ligand_interactions
+                else 0,
+                "unique_ligands": len(self.ligand_interactions.ligand_info)
+                if self.ligand_interactions
+                else 0,
+                "ligands": {},
             },
             "total_interactions": len(self.hydrogen_bonds)
             + len(self.halogen_bonds)

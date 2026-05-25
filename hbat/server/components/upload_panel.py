@@ -169,11 +169,15 @@ class UploadPanel:
         # Option 1: Upload file
         with ui.card().classes("w-full q-pa-md mt-5"):
             ui.label("Option 1: Upload Structure File").classes("text-h6")
-            self.upload_widget = ui.upload(
-                label="Choose PDB or CIF File",
-                on_upload=handle_upload,
-                auto_upload=True,
-            ).props('accept=".pdb,.cif"').classes("w-full")
+            self.upload_widget = (
+                ui.upload(
+                    label="Choose PDB or CIF File",
+                    on_upload=handle_upload,
+                    auto_upload=True,
+                )
+                .props('accept=".pdb,.cif"')
+                .classes("w-full")
+            )
 
         ui.label("OR").classes("text-center text-bold q-my-md")
 
@@ -182,11 +186,15 @@ class UploadPanel:
             ui.label("Option 2: Download from RCSB PDB").classes("text-h6")
 
             # Format selector
-            self.format_select = ui.select(
-                label="Format",
-                value="pdb",
-                options={"pdb": "PDB (.pdb)", "mmcif": "mmCIF (.cif)"},
-            ).props("outlined").classes("w-full")
+            self.format_select = (
+                ui.select(
+                    label="Format",
+                    value="pdb",
+                    options={"pdb": "PDB (.pdb)", "mmcif": "mmCIF (.cif)"},
+                )
+                .props("outlined")
+                .classes("w-full")
+            )
 
             # PDB ID input
             self.pdb_id_input = (

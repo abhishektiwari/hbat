@@ -139,9 +139,9 @@ class HBATWebApp:
                     """
                     )
 
-                ui.label("If you use HBAT 1.0 or 1.1 in your research, please cite:").classes(
-                    "text-body2 q-mb-md text-bold"
-                )
+                ui.label(
+                    "If you use HBAT 1.0 or 1.1 in your research, please cite:"
+                ).classes("text-body2 q-mb-md text-bold")
                 # Original HBAT citation
                 ui.label(
                     "Tiwari, A., & Panigrahi, S. K. (2007). HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures. In Silico Biology, 7(6). https://doi.org/10.3233/ISI-2007-00337"
@@ -352,8 +352,7 @@ class HBATWebApp:
                     # Container for dynamically created results
                     results_container = ui.column().classes("w-full")
                     self.results_panel = WebResultsPanel(
-                        results_container,
-                        session_dir_callback=lambda: self.session_dir
+                        results_container, session_dir_callback=lambda: self.session_dir
                     )
 
                     with ui.stepper_navigation():
@@ -596,10 +595,9 @@ class HBATWebApp:
                 notification.dismiss()
 
                 # Update download button label based on whether fixing was applied
-                if (
-                    hasattr(self.analyzer, "_pdb_fixing_info")
-                    and self.analyzer._pdb_fixing_info.get("applied")
-                ):
+                if hasattr(
+                    self.analyzer, "_pdb_fixing_info"
+                ) and self.analyzer._pdb_fixing_info.get("applied"):
                     button_label = "Download Fixed Structure"
                 else:
                     button_label = "Download Original Structure"
@@ -788,7 +786,6 @@ class HBATWebApp:
             ui.notify(
                 f"Download failed: {str(e)}", type="negative", position="top-left"
             )
-
 
     def _navigate_to_step(self, step: str):
         """Navigate to a specific step with validation.

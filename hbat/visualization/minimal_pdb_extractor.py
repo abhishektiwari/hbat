@@ -42,8 +42,11 @@ def format_minimal_pdb(parser, interactions: List) -> str:
                 lines.append(pdb_line)
 
     # Add only CONECT records from original file for atoms we included (both atoms must be present)
-    kept_serials = {atom.serial for atom in parser.atoms
-                   if _is_atom_in_residues(atom, interacting_residues)}
+    kept_serials = {
+        atom.serial
+        for atom in parser.atoms
+        if _is_atom_in_residues(atom, interacting_residues)
+    }
 
     if parser.conect_records is not None:
         # PDB format: CONECT records as DataFrame
@@ -63,14 +66,14 @@ def format_minimal_pdb(parser, interactions: List) -> str:
             ptnr2_serial_idx = None
 
             # Try to find serial number attributes
-            for attr_name in ['ptnr1_atom_id', 'ptnr1_label_atom_id']:
+            for attr_name in ["ptnr1_atom_id", "ptnr1_label_atom_id"]:
                 try:
                     ptnr1_serial_idx = struct_conn.get_attribute_index(attr_name)
                     break
                 except:
                     pass
 
-            for attr_name in ['ptnr2_atom_id', 'ptnr2_label_atom_id']:
+            for attr_name in ["ptnr2_atom_id", "ptnr2_label_atom_id"]:
                 try:
                     ptnr2_serial_idx = struct_conn.get_attribute_index(attr_name)
                     break
@@ -149,8 +152,16 @@ def _format_atom_as_pdb(atom) -> Optional[str]:
         x = f"{atom.coords.x:8.3f}"
         y = f"{atom.coords.y:8.3f}"
         z = f"{atom.coords.z:8.3f}"
-        occupancy = f"{atom.occupancy:6.2f}" if hasattr(atom, "occupancy") and atom.occupancy else "  1.00"
-        temp_factor = f"{atom.temp_factor:6.2f}" if hasattr(atom, "temp_factor") and atom.temp_factor else "  0.00"
+        occupancy = (
+            f"{atom.occupancy:6.2f}"
+            if hasattr(atom, "occupancy") and atom.occupancy
+            else "  1.00"
+        )
+        temp_factor = (
+            f"{atom.temp_factor:6.2f}"
+            if hasattr(atom, "temp_factor") and atom.temp_factor
+            else "  0.00"
+        )
         element = atom.element.rjust(2) if atom.element else "  "
         charge = f"{atom.charge:2}" if atom.charge else "  "
 
@@ -310,14 +321,14 @@ def extract_water_bridge_pdb(parser, water_bridge) -> str:
             ptnr2_serial_idx = None
 
             # Try to find serial number attributes
-            for attr_name in ['ptnr1_atom_id', 'ptnr1_label_atom_id']:
+            for attr_name in ["ptnr1_atom_id", "ptnr1_label_atom_id"]:
                 try:
                     ptnr1_serial_idx = struct_conn.get_attribute_index(attr_name)
                     break
                 except:
                     pass
 
-            for attr_name in ['ptnr2_atom_id', 'ptnr2_label_atom_id']:
+            for attr_name in ["ptnr2_atom_id", "ptnr2_label_atom_id"]:
                 try:
                     ptnr2_serial_idx = struct_conn.get_attribute_index(attr_name)
                     break

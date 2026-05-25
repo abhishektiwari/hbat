@@ -53,12 +53,36 @@ VISUALIZATION_TEST_DATA = [
 
 # Test data: interaction type specific tests
 INTERACTION_TYPE_TEST_DATA = [
-    {"interaction_type": "hydrogen_bonds", "method_name": "add_hydrogen_bonds", "expected_section": "Hydrogen Bond"},
-    {"interaction_type": "halogen_bonds", "method_name": "add_halogen_bonds", "expected_section": "Halogen Bond"},
-    {"interaction_type": "pi_interactions", "method_name": "add_pi_interactions", "expected_section": "Pi-Interactions"},
-    {"interaction_type": "pi_pi_interactions", "method_name": "add_pi_pi_stacking", "expected_section": "Pi-Pi Stacking"},
-    {"interaction_type": "carbonyl_interactions", "method_name": "add_carbonyl_interactions", "expected_section": "Carbonyl"},
-    {"interaction_type": "n_pi_interactions", "method_name": "add_n_pi_interactions", "expected_section": "N-Pi Interactions"},
+    {
+        "interaction_type": "hydrogen_bonds",
+        "method_name": "add_hydrogen_bonds",
+        "expected_section": "Hydrogen Bond",
+    },
+    {
+        "interaction_type": "halogen_bonds",
+        "method_name": "add_halogen_bonds",
+        "expected_section": "Halogen Bond",
+    },
+    {
+        "interaction_type": "pi_interactions",
+        "method_name": "add_pi_interactions",
+        "expected_section": "Pi-Interactions",
+    },
+    {
+        "interaction_type": "pi_pi_interactions",
+        "method_name": "add_pi_pi_stacking",
+        "expected_section": "Pi-Pi Stacking",
+    },
+    {
+        "interaction_type": "carbonyl_interactions",
+        "method_name": "add_carbonyl_interactions",
+        "expected_section": "Carbonyl",
+    },
+    {
+        "interaction_type": "n_pi_interactions",
+        "method_name": "add_n_pi_interactions",
+        "expected_section": "N-Pi Interactions",
+    },
 ]
 
 
@@ -67,7 +91,9 @@ INTERACTION_TYPE_TEST_DATA = [
 class TestMinimalPdbExtraction:
     """Test minimal PDB extraction functionality with parameterized data."""
 
-    @pytest.mark.parametrize("test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"])
+    @pytest.mark.parametrize(
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+    )
     def test_minimal_pdb_format_validity(self, test_data, expected_results):
         """Test that minimal PDB extraction produces valid PDB format.
 
@@ -115,15 +141,21 @@ class TestMinimalPdbExtraction:
 
         # Verify minimal size reduction
         full_pdb = format_structure_as_pdb(analyzer.parser)
-        minimal_atom_count = len([l for l in minimal_pdb.split('\n') if l.startswith(('ATOM', 'HETATM'))])
-        full_atom_count = len([l for l in full_pdb.split('\n') if l.startswith(('ATOM', 'HETATM'))])
+        minimal_atom_count = len(
+            [l for l in minimal_pdb.split("\n") if l.startswith(("ATOM", "HETATM"))]
+        )
+        full_atom_count = len(
+            [l for l in full_pdb.split("\n") if l.startswith(("ATOM", "HETATM"))]
+        )
 
         assert minimal_atom_count <= full_atom_count, (
             f"{pdb_name}: Minimal ({minimal_atom_count} atoms) should have "
             f"<= full ({full_atom_count} atoms)"
         )
 
-    @pytest.mark.parametrize("test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"])
+    @pytest.mark.parametrize(
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+    )
     def test_minimal_pdb_empty_interactions(self, test_data, expected_results):
         """Test minimal PDB with empty interaction list returns full structure.
 
@@ -145,11 +177,15 @@ class TestMinimalPdbExtraction:
 
         # Extract minimal PDB with no interactions
         minimal_pdb = format_minimal_pdb(analyzer.parser, [])
-        assert minimal_pdb, f"{pdb_name}: Should return structure even with no interactions"
+        assert minimal_pdb, (
+            f"{pdb_name}: Should return structure even with no interactions"
+        )
         assert "HEADER" in minimal_pdb, f"{pdb_name}: Should have HEADER"
         assert "END" in minimal_pdb, f"{pdb_name}: Should have END"
 
-    @pytest.mark.parametrize("test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"])
+    @pytest.mark.parametrize(
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+    )
     def test_minimal_pdb_atom_records_valid(self, test_data, expected_results):
         """Test that all extracted atoms have valid PDB record format.
 
@@ -176,14 +212,16 @@ class TestMinimalPdbExtraction:
 
         # Validate each atom record
         atom_count = 0
-        for line in minimal_pdb.split('\n'):
-            if line.startswith(('ATOM', 'HETATM')):
+        for line in minimal_pdb.split("\n"):
+            if line.startswith(("ATOM", "HETATM")):
                 atom_count += 1
                 # Verify minimum length for PDB record
                 assert len(line) >= 66, f"{pdb_name}: Record too short: {line}"
                 # Verify record type
                 record_type = line[0:6].strip()
-                assert record_type in ['ATOM', 'HETATM'], f"{pdb_name}: Invalid record: {record_type}"
+                assert record_type in ["ATOM", "HETATM"], (
+                    f"{pdb_name}: Invalid record: {record_type}"
+                )
                 # Verify serial number is numeric
                 try:
                     serial = int(line[6:11])
@@ -199,7 +237,9 @@ class TestMinimalPdbExtraction:
 class TestPyMOLExporter:
     """Test PyMOL exporter functionality with parameterized data."""
 
-    @pytest.mark.parametrize("test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"])
+    @pytest.mark.parametrize(
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+    )
     def test_pymol_script_basic_structure(self, test_data, expected_results):
         """Test PyMOL script generation with correct structure.
 
@@ -234,7 +274,9 @@ class TestPyMOLExporter:
         assert "HBAT" in script, f"{pdb_name}: Should reference HBAT"
         assert len(script) > 100, f"{pdb_name}: Script too short"
 
-    @pytest.mark.parametrize("test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"])
+    @pytest.mark.parametrize(
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+    )
     def test_pymol_hydrogen_bonds(self, test_data, expected_results):
         """Test PyMOL hydrogen bond visualization command generation.
 
@@ -270,7 +312,11 @@ class TestPyMOLExporter:
         assert "distance" in script.lower(), f"{pdb_name}: Should use distance command"
         assert "hb_dist_" in script, f"{pdb_name}: Should create distance objects"
 
-    @pytest.mark.parametrize("interaction_data", INTERACTION_TYPE_TEST_DATA, ids=lambda x: x["interaction_type"])
+    @pytest.mark.parametrize(
+        "interaction_data",
+        INTERACTION_TYPE_TEST_DATA,
+        ids=lambda x: x["interaction_type"],
+    )
     def test_pymol_interaction_type_support(self, interaction_data, expected_results):
         """Test PyMOL export for all supported interaction types.
 
@@ -310,7 +356,9 @@ class TestPyMOLExporter:
             f"{inter_type}: Should contain {interaction_data['expected_section']}"
         )
 
-    @pytest.mark.parametrize("test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"])
+    @pytest.mark.parametrize(
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+    )
     def test_pymol_script_file_export(self, test_data, expected_results):
         """Test exporting PyMOL script to file system.
 
@@ -340,17 +388,19 @@ class TestPyMOLExporter:
         if analyzer.hydrogen_bonds:
             exporter.add_hydrogen_bonds(analyzer.hydrogen_bonds)
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pml", delete=False) as f:
             temp_file = f.name
             f.write(exporter.get_script())
 
         try:
             # Verify file exists and has content
             assert os.path.exists(temp_file), f"{pdb_name}: File should exist"
-            assert os.path.getsize(temp_file) > 0, f"{pdb_name}: File should not be empty"
+            assert os.path.getsize(temp_file) > 0, (
+                f"{pdb_name}: File should not be empty"
+            )
 
             # Verify file content
-            with open(temp_file, 'r') as f:
+            with open(temp_file, "r") as f:
                 content = f.read()
             assert "#!/usr/bin/env pymol" in content, f"{pdb_name}: Should have shebang"
             assert len(content) > 100, f"{pdb_name}: Content too short"
@@ -358,7 +408,9 @@ class TestPyMOLExporter:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
 
-    @pytest.mark.parametrize("test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"])
+    @pytest.mark.parametrize(
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+    )
     def test_pymol_all_interactions_combined(self, test_data, expected_results):
         """Test PyMOL script generation with all available interactions.
 
@@ -407,9 +459,13 @@ class TestPyMOLExporter:
         script = exporter.get_script()
         assert script, f"{pdb_name}: Script should be generated"
         assert len(script) > 200, f"{pdb_name}: Script should have substantial content"
-        assert interactions_added > 0, f"{pdb_name}: Should have added at least one interaction type"
+        assert interactions_added > 0, (
+            f"{pdb_name}: Should have added at least one interaction type"
+        )
 
-    @pytest.mark.parametrize("test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"])
+    @pytest.mark.parametrize(
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+    )
     def test_pymol_residue_tracking(self, test_data, expected_results):
         """Test PyMOL exporter residue tracking for visualization.
 

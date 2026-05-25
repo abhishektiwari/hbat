@@ -559,7 +559,10 @@ class ResultsPanel:
         ttk.Label(selector_frame, text="Select Ligand:").pack(side=tk.LEFT, padx=5)
         self.lig_selector_var = tk.StringVar()
         self.lig_selector_combo = ttk.Combobox(
-            selector_frame, textvariable=self.lig_selector_var, width=40, state="readonly"
+            selector_frame,
+            textvariable=self.lig_selector_var,
+            width=40,
+            state="readonly",
         )
         self.lig_selector_combo.pack(side=tk.LEFT, padx=5)
         self.lig_selector_combo.bind("<<ComboboxSelected>>", self._on_ligand_selected)
@@ -1401,7 +1404,10 @@ class ResultsPanel:
         self.lig_wb_data = {}
 
         # Check if ligand interactions exist
-        if not hasattr(self.analyzer, "ligand_interactions") or not self.analyzer.ligand_interactions:
+        if (
+            not hasattr(self.analyzer, "ligand_interactions")
+            or not self.analyzer.ligand_interactions
+        ):
             # No ligands, clear the selector and tables
             self.lig_selector_combo["values"] = []
             self.lig_selector_var.set("")
@@ -1438,34 +1444,36 @@ class ResultsPanel:
 
                         # Get atom names safely
                         donor_atom_name = "N/A"
-                        if hasattr(inter, 'get_donor_atom'):
+                        if hasattr(inter, "get_donor_atom"):
                             donor_atom = inter.get_donor_atom()
-                            if donor_atom and hasattr(donor_atom, 'name'):
+                            if donor_atom and hasattr(donor_atom, "name"):
                                 donor_atom_name = donor_atom.name
-                        elif hasattr(inter, 'donor') and inter.donor:
+                        elif hasattr(inter, "donor") and inter.donor:
                             donor_atom_name = inter.donor.name
 
                         acceptor_atom_name = "N/A"
-                        if hasattr(inter, 'get_acceptor_atom'):
+                        if hasattr(inter, "get_acceptor_atom"):
                             acceptor_atom = inter.get_acceptor_atom()
-                            if acceptor_atom and hasattr(acceptor_atom, 'name'):
+                            if acceptor_atom and hasattr(acceptor_atom, "name"):
                                 acceptor_atom_name = acceptor_atom.name
-                        elif hasattr(inter, 'acceptor') and inter.acceptor:
+                        elif hasattr(inter, "acceptor") and inter.acceptor:
                             acceptor_atom_name = inter.acceptor.name
 
                         # Format distance based on interaction type
                         distance = ""
                         try:
-                            if hasattr(inter, 'distance'):
+                            if hasattr(inter, "distance"):
                                 distance = f"{inter.distance:.2f}"
-                            elif hasattr(inter, 'get_donor_interaction_distance'):
-                                distance = f"{inter.get_donor_interaction_distance():.2f}"
+                            elif hasattr(inter, "get_donor_interaction_distance"):
+                                distance = (
+                                    f"{inter.get_donor_interaction_distance():.2f}"
+                                )
                         except:
                             pass
 
                         # Get properties
                         properties = ""
-                        if hasattr(inter, 'donor_acceptor_properties'):
+                        if hasattr(inter, "donor_acceptor_properties"):
                             properties = inter.donor_acceptor_properties
 
                         inter_data = (
@@ -1613,7 +1621,8 @@ class ResultsPanel:
         # Add placeholder text
         self.summary_text.insert(tk.END, "No analysis results available.\n\n")
         self.summary_text.insert(
-            tk.END, "Please load a structure file (PDB or CIF) and run analysis to see results."
+            tk.END,
+            "Please load a structure file (PDB or CIF) and run analysis to see results.",
         )
 
     def _visualize_selected_chain(self):

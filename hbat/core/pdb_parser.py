@@ -113,7 +113,7 @@ class PDBParser:
         :raises: IOError if file cannot be read
         """
         # Auto-detect format from file extension
-        if filename.lower().endswith('.cif'):
+        if filename.lower().endswith(".cif"):
             return self.parse_cif_file(filename)
         else:
             return self._parse_pdb_file(filename)
@@ -252,7 +252,6 @@ class PDBParser:
             print(f"Error parsing PDB lines: {e}")
             return False
 
-
     def parse_cif_file(self, filename: str) -> bool:
         """Parse an mmCIF (PDBx) format file.
 
@@ -270,14 +269,14 @@ class PDBParser:
             from pdbx import PdbxReader
 
             # Check if this is actually a PDB file (e.g., OpenBabel output saved as .cif)
-            with open(filename, 'r') as f:
+            with open(filename, "r") as f:
                 first_line = f.readline().strip()
-                if first_line.startswith(('HEADER', 'TITLE', 'ATOM', 'HETATM')):
+                if first_line.startswith(("HEADER", "TITLE", "ATOM", "HETATM")):
                     # This is actually a PDB file despite .cif extension
                     return self.parse_file(filename)
 
             # Read CIF file as standard mmCIF
-            reader = PdbxReader(open(filename, 'r'))
+            reader = PdbxReader(open(filename, "r"))
             containers = []
             reader.read(containers)
 
@@ -288,7 +287,7 @@ class PDBParser:
 
             # Process atom_site records
             for container in containers:
-                atom_site_obj = container.get_object('atom_site')
+                atom_site_obj = container.get_object("atom_site")
                 if not atom_site_obj:
                     continue
 
@@ -330,10 +329,13 @@ class PDBParser:
         except Exception as e:
             print(f"Error parsing CIF file '{filename}': {e}")
             import traceback
+
             traceback.print_exc()
             return False
 
-    def _convert_cif_atom_row(self, atom_site_obj: Any, row: List[str], serial: int) -> Optional[Atom]:
+    def _convert_cif_atom_row(
+        self, atom_site_obj: Any, row: List[str], serial: int
+    ) -> Optional[Atom]:
         """Convert mmCIF atom_site row to HBAT Atom object.
 
         Maps mmCIF atom_site table columns to HBAT Atom attributes using the
@@ -351,18 +353,18 @@ class PDBParser:
         try:
             # Get attribute indices for key fields
             try:
-                group_pdb_idx = atom_site_obj.get_attribute_index('group_PDB')
-                label_atom_id_idx = atom_site_obj.get_attribute_index('label_atom_id')
-                label_comp_id_idx = atom_site_obj.get_attribute_index('label_comp_id')
-                label_asym_id_idx = atom_site_obj.get_attribute_index('label_asym_id')
-                label_seq_id_idx = atom_site_obj.get_attribute_index('label_seq_id')
-                auth_seq_id_idx = atom_site_obj.get_attribute_index('auth_seq_id')
-                type_symbol_idx = atom_site_obj.get_attribute_index('type_symbol')
-                cartn_x_idx = atom_site_obj.get_attribute_index('Cartn_x')
-                cartn_y_idx = atom_site_obj.get_attribute_index('Cartn_y')
-                cartn_z_idx = atom_site_obj.get_attribute_index('Cartn_z')
-                occupancy_idx = atom_site_obj.get_attribute_index('occupancy')
-                b_iso_idx = atom_site_obj.get_attribute_index('B_iso_or_equiv')
+                group_pdb_idx = atom_site_obj.get_attribute_index("group_PDB")
+                label_atom_id_idx = atom_site_obj.get_attribute_index("label_atom_id")
+                label_comp_id_idx = atom_site_obj.get_attribute_index("label_comp_id")
+                label_asym_id_idx = atom_site_obj.get_attribute_index("label_asym_id")
+                label_seq_id_idx = atom_site_obj.get_attribute_index("label_seq_id")
+                auth_seq_id_idx = atom_site_obj.get_attribute_index("auth_seq_id")
+                type_symbol_idx = atom_site_obj.get_attribute_index("type_symbol")
+                cartn_x_idx = atom_site_obj.get_attribute_index("Cartn_x")
+                cartn_y_idx = atom_site_obj.get_attribute_index("Cartn_y")
+                cartn_z_idx = atom_site_obj.get_attribute_index("Cartn_z")
+                occupancy_idx = atom_site_obj.get_attribute_index("occupancy")
+                b_iso_idx = atom_site_obj.get_attribute_index("B_iso_or_equiv")
             except Exception:
                 # If any required attribute is missing, skip this row
                 return None
@@ -375,14 +377,14 @@ class PDBParser:
 
             # Get record type from group_PDB field (ATOM or HETATM) before processing res_seq
             record_type = str(row[group_pdb_idx]).strip().upper()
-            if record_type not in ('ATOM', 'HETATM'):
-                record_type = 'ATOM'  # Default to ATOM if invalid
+            if record_type not in ("ATOM", "HETATM"):
+                record_type = "ATOM"  # Default to ATOM if invalid
 
             # Handle residue sequence number
             # For ATOM records: use label_seq_id (protein sequence numbering)
             # For HETATM records: use auth_seq_id (PDB-style residue numbers for waters, ligands, etc.)
             try:
-                if record_type == 'HETATM':
+                if record_type == "HETATM":
                     # For heteroatoms, use auth_seq_id (PDB residue numbering)
                     res_seq = int(row[auth_seq_id_idx])
                 else:
@@ -434,8 +436,8 @@ class PDBParser:
         except Exception as e:
             row_info = ""
             try:
-                label_atom_id_idx = atom_site_obj.get_attribute_index('label_atom_id')
-                label_comp_id_idx = atom_site_obj.get_attribute_index('label_comp_id')
+                label_atom_id_idx = atom_site_obj.get_attribute_index("label_atom_id")
+                label_comp_id_idx = atom_site_obj.get_attribute_index("label_comp_id")
                 atom_name = row[label_atom_id_idx]
                 res_name = row[label_comp_id_idx]
                 row_info = f" (atom={atom_name}, res={res_name})"
@@ -754,7 +756,7 @@ class PDBParser:
         try:
             for container in containers:
                 # Get struct_conn table using DataCategory API
-                struct_conn_obj = container.get_object('struct_conn')
+                struct_conn_obj = container.get_object("struct_conn")
                 if not struct_conn_obj:
                     continue
 
@@ -763,17 +765,31 @@ class PDBParser:
 
                 # Get attribute indices for required fields
                 try:
-                    ptnr1_asym_idx = struct_conn_obj.get_attribute_index('ptnr1_label_asym_id')
-                    ptnr1_seq_idx = struct_conn_obj.get_attribute_index('ptnr1_label_seq_id')
-                    ptnr1_atom_idx = struct_conn_obj.get_attribute_index('ptnr1_label_atom_id')
-                    ptnr2_asym_idx = struct_conn_obj.get_attribute_index('ptnr2_label_asym_id')
-                    ptnr2_seq_idx = struct_conn_obj.get_attribute_index('ptnr2_label_seq_id')
-                    ptnr2_atom_idx = struct_conn_obj.get_attribute_index('ptnr2_label_atom_id')
-                    conn_type_idx = struct_conn_obj.get_attribute_index('conn_type_id')
+                    ptnr1_asym_idx = struct_conn_obj.get_attribute_index(
+                        "ptnr1_label_asym_id"
+                    )
+                    ptnr1_seq_idx = struct_conn_obj.get_attribute_index(
+                        "ptnr1_label_seq_id"
+                    )
+                    ptnr1_atom_idx = struct_conn_obj.get_attribute_index(
+                        "ptnr1_label_atom_id"
+                    )
+                    ptnr2_asym_idx = struct_conn_obj.get_attribute_index(
+                        "ptnr2_label_asym_id"
+                    )
+                    ptnr2_seq_idx = struct_conn_obj.get_attribute_index(
+                        "ptnr2_label_seq_id"
+                    )
+                    ptnr2_atom_idx = struct_conn_obj.get_attribute_index(
+                        "ptnr2_label_atom_id"
+                    )
+                    conn_type_idx = struct_conn_obj.get_attribute_index("conn_type_id")
 
                     # Optional attributes (may not exist)
                     try:
-                        distance_idx = struct_conn_obj.get_attribute_index('value_distance')
+                        distance_idx = struct_conn_obj.get_attribute_index(
+                            "value_distance"
+                        )
                     except Exception:
                         distance_idx = None
                 except Exception:
@@ -800,7 +816,11 @@ class PDBParser:
                     except (ValueError, TypeError):
                         continue
 
-                    conn_type = str(row[conn_type_idx]).strip() if conn_type_idx is not None else ''
+                    conn_type = (
+                        str(row[conn_type_idx]).strip()
+                        if conn_type_idx is not None
+                        else ""
+                    )
 
                     # Get distance if available
                     distance_val = None
@@ -813,14 +833,19 @@ class PDBParser:
                     # ===== FILTER 1: Skip standard intra-residue bonds =====
                     # These are handled by CCD residue lookup, no need to duplicate
                     if chain1 == chain2 and resid1 == resid2:
-                        if self._is_standard_intra_residue_bond(resid1, chain1, atom1_name, atom2_name):
+                        if self._is_standard_intra_residue_bond(
+                            resid1, chain1, atom1_name, atom2_name
+                        ):
                             continue
 
                     # ===== FILTER 2: Skip sequential peptide bonds =====
                     # These are implicit (C-N linkages) and handled by CCD
-                    if (chain1 == chain2 and abs(resid1 - resid2) == 1 and
-                        atom1_name in ['C', 'O', 'OXT'] and
-                        atom2_name in ['N', 'CA']):
+                    if (
+                        chain1 == chain2
+                        and abs(resid1 - resid2) == 1
+                        and atom1_name in ["C", "O", "OXT"]
+                        and atom2_name in ["N", "CA"]
+                    ):
                         continue
 
                     # ===== KEEP: Everything else (heteroatoms, disulfides, inter-chain) =====
@@ -871,9 +896,11 @@ class PDBParser:
         atom_name = atom_name.strip()
 
         for atom in self.atoms:
-            if (atom.chain_id == chain_id and
-                atom.res_seq == res_seq and
-                atom.name == atom_name):
+            if (
+                atom.chain_id == chain_id
+                and atom.res_seq == res_seq
+                and atom.name == atom_name
+            ):
                 return atom
 
         return None
@@ -921,11 +948,12 @@ class PDBParser:
 
         # Check if this bond is in CCD data
         for bond_info in residue_bonds:
-            bond_atom1 = str(bond_info.get('atom1', '')).strip()
-            bond_atom2 = str(bond_info.get('atom2', '')).strip()
+            bond_atom1 = str(bond_info.get("atom1", "")).strip()
+            bond_atom2 = str(bond_info.get("atom2", "")).strip()
 
-            if ((bond_atom1 == atom1_name and bond_atom2 == atom2_name) or
-                (bond_atom1 == atom2_name and bond_atom2 == atom1_name)):
+            if (bond_atom1 == atom1_name and bond_atom2 == atom2_name) or (
+                bond_atom1 == atom2_name and bond_atom2 == atom1_name
+            ):
                 return True
 
         return False

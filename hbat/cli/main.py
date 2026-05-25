@@ -969,9 +969,12 @@ def validate_input_file(filename: str) -> bool:
             if ext_lower == ".cif":
                 # CIF files should contain data_ blocks at line start
                 import re
-                has_cif_content = bool(re.search(r'^\s*data_', content, re.MULTILINE))
+
+                has_cif_content = bool(re.search(r"^\s*data_", content, re.MULTILINE))
                 if not has_cif_content:
-                    print_error(f"'{filename}' does not appear to be a valid CIF file (missing 'data_' block)")
+                    print_error(
+                        f"'{filename}' does not appear to be a valid CIF file (missing 'data_' block)"
+                    )
                     return False
                 return True
 
@@ -1053,7 +1056,9 @@ def format_results_text(
             lines.append("Water Bridges:")
             lines.append(f"  Total bridges: {wb_stats['count']}")
             if "average_bridge_length" in wb_stats:
-                lines.append(f"  Average bridge length: {wb_stats['average_bridge_length']:.2f} hops")
+                lines.append(
+                    f"  Average bridge length: {wb_stats['average_bridge_length']:.2f} hops"
+                )
             lines.append("")
 
     # Ligand interactions summary

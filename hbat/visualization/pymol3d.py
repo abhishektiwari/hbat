@@ -32,7 +32,9 @@ def _escape_pdb_content(pdb_content: str) -> str:
     return pdb_content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
 
 
-def _create_viewer_init_wrapper(viewer_id: str, pdb_escaped: str, viewer_init_code: str) -> str:
+def _create_viewer_init_wrapper(
+    viewer_id: str, pdb_escaped: str, viewer_init_code: str
+) -> str:
     """Create standard viewer initialization wrapper JavaScript.
 
     Common pattern for all interaction viewers: initialize 3Dmol, add PDB model,
@@ -102,7 +104,9 @@ def _create_cartoon_style() -> str:
     return "viewer.setStyle({}, {cartoon: {color: 'lightgray', opacity: 0.3}});"
 
 
-def _create_residue_stick_style(chain: str, resi: int, color: str = "cyanCarbon") -> str:
+def _create_residue_stick_style(
+    chain: str, resi: int, color: str = "cyanCarbon"
+) -> str:
     """Generate JavaScript for residue stick style.
 
     :param chain: Chain identifier
@@ -114,8 +118,14 @@ def _create_residue_stick_style(chain: str, resi: int, color: str = "cyanCarbon"
     return f"viewer.addStyle({{chain: '{chain}', resi: {resi}}}, {{stick: {{colorscheme: '{color}'}}}}); "
 
 
-def _create_dashed_line(start_x: float, start_y: float, start_z: float,
-                       end_x: float, end_y: float, end_z: float) -> str:
+def _create_dashed_line(
+    start_x: float,
+    start_y: float,
+    start_z: float,
+    end_x: float,
+    end_y: float,
+    end_z: float,
+) -> str:
     """Generate JavaScript for dashed cylinder line between atoms.
 
     Shortens line by 0.4 Å on each end to avoid overlapping with atom spheres.
@@ -142,8 +152,15 @@ def _create_dashed_line(start_x: float, start_y: float, start_z: float,
     """
 
 
-def _create_label(text: str, x: float, y: float, z: float,
-                  bg_color: str = "cyan", font_color: str = "black", font_size: int = 14) -> str:
+def _create_label(
+    text: str,
+    x: float,
+    y: float,
+    z: float,
+    bg_color: str = "cyan",
+    font_color: str = "black",
+    font_size: int = 14,
+) -> str:
     """Generate JavaScript for residue label.
 
     :param text: Label text
@@ -181,8 +198,14 @@ def _create_pi_center_sphere(x: float, y: float, z: float, color: str = "green")
     """
 
 
-def _create_dashed_line_to_center(start_x: float, start_y: float, start_z: float,
-                                  center_x: float, center_y: float, center_z: float) -> str:
+def _create_dashed_line_to_center(
+    start_x: float,
+    start_y: float,
+    start_z: float,
+    center_x: float,
+    center_y: float,
+    center_z: float,
+) -> str:
     """Generate JavaScript for dashed cylinder from atom to ring center.
 
     Special handling for π-interactions: shortens line to avoid overlapping with spheres.
@@ -211,8 +234,9 @@ def _create_dashed_line_to_center(start_x: float, start_y: float, start_z: float
     """
 
 
-def _create_distance_label(text: str, x1: float, y1: float, z1: float,
-                          x2: float, y2: float, z2: float) -> str:
+def _create_distance_label(
+    text: str, x1: float, y1: float, z1: float, x2: float, y2: float, z2: float
+) -> str:
     """Generate JavaScript for distance label at midpoint between two positions.
 
     Used for π-interactions and π-π stacking to show distance at midpoint.
@@ -296,16 +320,36 @@ def generate_hydrogen_bond_viewer_js(
 
     # Build viewer-specific code using helpers
     viewer_code = (
-        _create_cartoon_style() +
-        _create_residue_stick_style(donor_chain, donor_resi, "cyanCarbon") +
-        _create_residue_stick_style(acceptor_chain, acceptor_resi, "orangeCarbon") +
-        _create_dashed_line(hb.hydrogen.coords.x, hb.hydrogen.coords.y, hb.hydrogen.coords.z,
-                           hb.acceptor.coords.x, hb.acceptor.coords.y, hb.acceptor.coords.z) +
-        _create_label(hb.get_donor_residue(), hb.donor.coords.x, hb.donor.coords.y, hb.donor.coords.z,
-                     "cyan", "black", 14) +
-        _create_label(hb.get_acceptor_residue(), hb.acceptor.coords.x, hb.acceptor.coords.y, hb.acceptor.coords.z,
-                     "orange", "white", 14) +
-        f"viewer.zoomTo({{chain: ['{donor_chain}', '{acceptor_chain}'], resi: [{donor_resi}, {acceptor_resi}]}});"
+        _create_cartoon_style()
+        + _create_residue_stick_style(donor_chain, donor_resi, "cyanCarbon")
+        + _create_residue_stick_style(acceptor_chain, acceptor_resi, "orangeCarbon")
+        + _create_dashed_line(
+            hb.hydrogen.coords.x,
+            hb.hydrogen.coords.y,
+            hb.hydrogen.coords.z,
+            hb.acceptor.coords.x,
+            hb.acceptor.coords.y,
+            hb.acceptor.coords.z,
+        )
+        + _create_label(
+            hb.get_donor_residue(),
+            hb.donor.coords.x,
+            hb.donor.coords.y,
+            hb.donor.coords.z,
+            "cyan",
+            "black",
+            14,
+        )
+        + _create_label(
+            hb.get_acceptor_residue(),
+            hb.acceptor.coords.x,
+            hb.acceptor.coords.y,
+            hb.acceptor.coords.z,
+            "orange",
+            "white",
+            14,
+        )
+        + f"viewer.zoomTo({{chain: ['{donor_chain}', '{acceptor_chain}'], resi: [{donor_resi}, {acceptor_resi}]}});"
     )
 
     return _create_viewer_init_wrapper(viewer_id, pdb_escaped, viewer_code)
@@ -334,16 +378,36 @@ def generate_halogen_bond_viewer_js(
 
     # Build viewer-specific code using helpers
     viewer_code = (
-        _create_cartoon_style() +
-        _create_residue_stick_style(donor_chain, donor_resi, "purpleCarbon") +
-        _create_residue_stick_style(acceptor_chain, acceptor_resi, "orangeCarbon") +
-        _create_dashed_line(xb.halogen.coords.x, xb.halogen.coords.y, xb.halogen.coords.z,
-                           xb.acceptor.coords.x, xb.acceptor.coords.y, xb.acceptor.coords.z) +
-        _create_label(xb.get_donor_residue(), xb.donor_atom.coords.x, xb.donor_atom.coords.y, xb.donor_atom.coords.z,
-                     "purple", "white", 14) +
-        _create_label(xb.get_acceptor_residue(), xb.acceptor.coords.x, xb.acceptor.coords.y, xb.acceptor.coords.z,
-                     "orange", "white", 14) +
-        f"viewer.zoomTo({{chain: ['{donor_chain}', '{acceptor_chain}'], resi: [{donor_resi}, {acceptor_resi}]}});"
+        _create_cartoon_style()
+        + _create_residue_stick_style(donor_chain, donor_resi, "purpleCarbon")
+        + _create_residue_stick_style(acceptor_chain, acceptor_resi, "orangeCarbon")
+        + _create_dashed_line(
+            xb.halogen.coords.x,
+            xb.halogen.coords.y,
+            xb.halogen.coords.z,
+            xb.acceptor.coords.x,
+            xb.acceptor.coords.y,
+            xb.acceptor.coords.z,
+        )
+        + _create_label(
+            xb.get_donor_residue(),
+            xb.donor_atom.coords.x,
+            xb.donor_atom.coords.y,
+            xb.donor_atom.coords.z,
+            "purple",
+            "white",
+            14,
+        )
+        + _create_label(
+            xb.get_acceptor_residue(),
+            xb.acceptor.coords.x,
+            xb.acceptor.coords.y,
+            xb.acceptor.coords.z,
+            "orange",
+            "white",
+            14,
+        )
+        + f"viewer.zoomTo({{chain: ['{donor_chain}', '{acceptor_chain}'], resi: [{donor_resi}, {acceptor_resi}]}});"
     )
 
     return _create_viewer_init_wrapper(viewer_id, pdb_escaped, viewer_code)
@@ -372,19 +436,48 @@ def generate_pi_interaction_viewer_js(
 
     # Build viewer-specific code using helpers
     viewer_code = (
-        _create_cartoon_style() +
-        _create_residue_stick_style(donor_chain, donor_resi, "cyanCarbon") +
-        _create_residue_stick_style(pi_chain_id, pi_res_seq, "greenCarbon") +
-        _create_pi_center_sphere(pi.pi_center.x, pi.pi_center.y, pi.pi_center.z, "green") +
-        _create_dashed_line_to_center(pi.hydrogen.coords.x, pi.hydrogen.coords.y, pi.hydrogen.coords.z,
-                                      pi.pi_center.x, pi.pi_center.y, pi.pi_center.z) +
-        _create_label(pi.get_donor_residue(), pi.donor.coords.x, pi.donor.coords.y, pi.donor.coords.z,
-                     "cyan", "black", 14) +
-        _create_label(pi.get_acceptor_residue(), pi.pi_center.x, pi.pi_center.y, pi.pi_center.z,
-                     "green", "white", 14) +
-        _create_distance_label(f"{pi.distance:.2f} Å", pi.hydrogen.coords.x, pi.hydrogen.coords.y, pi.hydrogen.coords.z,
-                              pi.pi_center.x, pi.pi_center.y, pi.pi_center.z) +
-        f"viewer.zoomTo({{chain: ['{donor_chain}', '{pi_chain_id}'], resi: [{donor_resi}, {pi_res_seq}]}});"
+        _create_cartoon_style()
+        + _create_residue_stick_style(donor_chain, donor_resi, "cyanCarbon")
+        + _create_residue_stick_style(pi_chain_id, pi_res_seq, "greenCarbon")
+        + _create_pi_center_sphere(
+            pi.pi_center.x, pi.pi_center.y, pi.pi_center.z, "green"
+        )
+        + _create_dashed_line_to_center(
+            pi.hydrogen.coords.x,
+            pi.hydrogen.coords.y,
+            pi.hydrogen.coords.z,
+            pi.pi_center.x,
+            pi.pi_center.y,
+            pi.pi_center.z,
+        )
+        + _create_label(
+            pi.get_donor_residue(),
+            pi.donor.coords.x,
+            pi.donor.coords.y,
+            pi.donor.coords.z,
+            "cyan",
+            "black",
+            14,
+        )
+        + _create_label(
+            pi.get_acceptor_residue(),
+            pi.pi_center.x,
+            pi.pi_center.y,
+            pi.pi_center.z,
+            "green",
+            "white",
+            14,
+        )
+        + _create_distance_label(
+            f"{pi.distance:.2f} Å",
+            pi.hydrogen.coords.x,
+            pi.hydrogen.coords.y,
+            pi.hydrogen.coords.z,
+            pi.pi_center.x,
+            pi.pi_center.y,
+            pi.pi_center.z,
+        )
+        + f"viewer.zoomTo({{chain: ['{donor_chain}', '{pi_chain_id}'], resi: [{donor_resi}, {pi_res_seq}]}});"
     )
 
     return _create_viewer_init_wrapper(viewer_id, pdb_escaped, viewer_code)
@@ -413,21 +506,51 @@ def generate_pi_pi_stacking_viewer_js(
 
     # Build viewer-specific code using helpers
     viewer_code = (
-        _create_cartoon_style() +
-        _create_residue_stick_style(ring1_chain, ring1_res, "cyanCarbon") +
-        _create_residue_stick_style(ring2_chain, ring2_res, "magentaCarbon") +
-        _create_pi_center_sphere(pi_pi.ring1_center.x, pi_pi.ring1_center.y, pi_pi.ring1_center.z, "cyan") +
-        _create_pi_center_sphere(pi_pi.ring2_center.x, pi_pi.ring2_center.y, pi_pi.ring2_center.z, "magenta") +
-        _create_dashed_line(pi_pi.ring1_center.x, pi_pi.ring1_center.y, pi_pi.ring1_center.z,
-                           pi_pi.ring2_center.x, pi_pi.ring2_center.y, pi_pi.ring2_center.z) +
-        _create_label(pi_pi.ring1_residue, pi_pi.ring1_center.x, pi_pi.ring1_center.y, pi_pi.ring1_center.z,
-                     "cyan", "black", 14) +
-        _create_label(pi_pi.ring2_residue, pi_pi.ring2_center.x, pi_pi.ring2_center.y, pi_pi.ring2_center.z,
-                     "magenta", "white", 14) +
-        _create_distance_label(f"{pi_pi._distance:.2f} Å ({pi_pi.stacking_type})",
-                              pi_pi.ring1_center.x, pi_pi.ring1_center.y, pi_pi.ring1_center.z,
-                              pi_pi.ring2_center.x, pi_pi.ring2_center.y, pi_pi.ring2_center.z) +
-        f"viewer.zoomTo({{chain: ['{ring1_chain}', '{ring2_chain}'], resi: [{ring1_res}, {ring2_res}]}});"
+        _create_cartoon_style()
+        + _create_residue_stick_style(ring1_chain, ring1_res, "cyanCarbon")
+        + _create_residue_stick_style(ring2_chain, ring2_res, "magentaCarbon")
+        + _create_pi_center_sphere(
+            pi_pi.ring1_center.x, pi_pi.ring1_center.y, pi_pi.ring1_center.z, "cyan"
+        )
+        + _create_pi_center_sphere(
+            pi_pi.ring2_center.x, pi_pi.ring2_center.y, pi_pi.ring2_center.z, "magenta"
+        )
+        + _create_dashed_line(
+            pi_pi.ring1_center.x,
+            pi_pi.ring1_center.y,
+            pi_pi.ring1_center.z,
+            pi_pi.ring2_center.x,
+            pi_pi.ring2_center.y,
+            pi_pi.ring2_center.z,
+        )
+        + _create_label(
+            pi_pi.ring1_residue,
+            pi_pi.ring1_center.x,
+            pi_pi.ring1_center.y,
+            pi_pi.ring1_center.z,
+            "cyan",
+            "black",
+            14,
+        )
+        + _create_label(
+            pi_pi.ring2_residue,
+            pi_pi.ring2_center.x,
+            pi_pi.ring2_center.y,
+            pi_pi.ring2_center.z,
+            "magenta",
+            "white",
+            14,
+        )
+        + _create_distance_label(
+            f"{pi_pi._distance:.2f} Å ({pi_pi.stacking_type})",
+            pi_pi.ring1_center.x,
+            pi_pi.ring1_center.y,
+            pi_pi.ring1_center.z,
+            pi_pi.ring2_center.x,
+            pi_pi.ring2_center.y,
+            pi_pi.ring2_center.z,
+        )
+        + f"viewer.zoomTo({{chain: ['{ring1_chain}', '{ring2_chain}'], resi: [{ring1_res}, {ring2_res}]}});"
     )
 
     return _create_viewer_init_wrapper(viewer_id, pdb_escaped, viewer_code)
@@ -451,19 +574,51 @@ def generate_carbonyl_interaction_viewer_js(
 
     # Build viewer-specific code using helpers
     viewer_code = (
-        _create_cartoon_style() +
-        _create_residue_stick_style(carbonyl.donor_oxygen.chain_id, carbonyl.donor_oxygen.res_seq, "redCarbon") +
-        _create_residue_stick_style(carbonyl.acceptor_carbon.chain_id, carbonyl.acceptor_carbon.res_seq, "blueCarbon") +
-        _create_dashed_line(carbonyl.donor_oxygen.coords.x, carbonyl.donor_oxygen.coords.y, carbonyl.donor_oxygen.coords.z,
-                           carbonyl.acceptor_carbon.coords.x, carbonyl.acceptor_carbon.coords.y, carbonyl.acceptor_carbon.coords.z) +
-        _create_label(carbonyl.get_donor_residue(), carbonyl.donor_oxygen.coords.x, carbonyl.donor_oxygen.coords.y, carbonyl.donor_oxygen.coords.z,
-                     "red", "white", 14) +
-        _create_label(carbonyl.get_acceptor_residue(), carbonyl.acceptor_carbon.coords.x, carbonyl.acceptor_carbon.coords.y, carbonyl.acceptor_carbon.coords.z,
-                     "blue", "white", 14) +
-        _create_distance_label(f"{carbonyl.distance:.2f} Å",
-                              carbonyl.donor_oxygen.coords.x, carbonyl.donor_oxygen.coords.y, carbonyl.donor_oxygen.coords.z,
-                              carbonyl.acceptor_carbon.coords.x, carbonyl.acceptor_carbon.coords.y, carbonyl.acceptor_carbon.coords.z) +
-        f"viewer.zoomTo({{chain: ['{carbonyl.donor_oxygen.chain_id}', '{carbonyl.acceptor_carbon.chain_id}'], resi: [{carbonyl.donor_oxygen.res_seq}, {carbonyl.acceptor_carbon.res_seq}]}});"
+        _create_cartoon_style()
+        + _create_residue_stick_style(
+            carbonyl.donor_oxygen.chain_id, carbonyl.donor_oxygen.res_seq, "redCarbon"
+        )
+        + _create_residue_stick_style(
+            carbonyl.acceptor_carbon.chain_id,
+            carbonyl.acceptor_carbon.res_seq,
+            "blueCarbon",
+        )
+        + _create_dashed_line(
+            carbonyl.donor_oxygen.coords.x,
+            carbonyl.donor_oxygen.coords.y,
+            carbonyl.donor_oxygen.coords.z,
+            carbonyl.acceptor_carbon.coords.x,
+            carbonyl.acceptor_carbon.coords.y,
+            carbonyl.acceptor_carbon.coords.z,
+        )
+        + _create_label(
+            carbonyl.get_donor_residue(),
+            carbonyl.donor_oxygen.coords.x,
+            carbonyl.donor_oxygen.coords.y,
+            carbonyl.donor_oxygen.coords.z,
+            "red",
+            "white",
+            14,
+        )
+        + _create_label(
+            carbonyl.get_acceptor_residue(),
+            carbonyl.acceptor_carbon.coords.x,
+            carbonyl.acceptor_carbon.coords.y,
+            carbonyl.acceptor_carbon.coords.z,
+            "blue",
+            "white",
+            14,
+        )
+        + _create_distance_label(
+            f"{carbonyl.distance:.2f} Å",
+            carbonyl.donor_oxygen.coords.x,
+            carbonyl.donor_oxygen.coords.y,
+            carbonyl.donor_oxygen.coords.z,
+            carbonyl.acceptor_carbon.coords.x,
+            carbonyl.acceptor_carbon.coords.y,
+            carbonyl.acceptor_carbon.coords.z,
+        )
+        + f"viewer.zoomTo({{chain: ['{carbonyl.donor_oxygen.chain_id}', '{carbonyl.acceptor_carbon.chain_id}'], resi: [{carbonyl.donor_oxygen.res_seq}, {carbonyl.acceptor_carbon.res_seq}]}});"
     )
 
     return _create_viewer_init_wrapper(viewer_id, pdb_escaped, viewer_code)
@@ -490,23 +645,54 @@ def generate_n_pi_interaction_viewer_js(
 
     # Build viewer-specific code using helpers
     viewer_code = (
-        _create_cartoon_style() +
-        _create_residue_stick_style(n_pi.lone_pair_atom.chain_id, n_pi.lone_pair_atom.res_seq, "orangeCarbon") +
-        _create_residue_stick_style(pi_chain_id, pi_res_seq, "tealCarbon") +
-        _create_pi_center_sphere(n_pi.pi_center.x, n_pi.pi_center.y, n_pi.pi_center.z, "teal") +
-        _create_dashed_line_to_center(n_pi.lone_pair_atom.coords.x, n_pi.lone_pair_atom.coords.y, n_pi.lone_pair_atom.coords.z,
-                                      n_pi.pi_center.x, n_pi.pi_center.y, n_pi.pi_center.z) +
-        _create_label(n_pi.get_donor_residue(), n_pi.lone_pair_atom.coords.x, n_pi.lone_pair_atom.coords.y, n_pi.lone_pair_atom.coords.z,
-                     "orange", "white", 14) +
-        _create_label(n_pi.get_acceptor_residue(), n_pi.pi_center.x, n_pi.pi_center.y, n_pi.pi_center.z,
-                     "teal", "white", 14) +
-        _create_distance_label(f"{n_pi.distance:.2f} Å",
-                              n_pi.lone_pair_atom.coords.x, n_pi.lone_pair_atom.coords.y, n_pi.lone_pair_atom.coords.z,
-                              n_pi.pi_center.x, n_pi.pi_center.y, n_pi.pi_center.z) +
-        f"viewer.zoomTo({{chain: ['{n_pi.lone_pair_atom.chain_id}', '{pi_chain_id}'], resi: [{n_pi.lone_pair_atom.res_seq}, {pi_res_seq}]}});"
+        _create_cartoon_style()
+        + _create_residue_stick_style(
+            n_pi.lone_pair_atom.chain_id, n_pi.lone_pair_atom.res_seq, "orangeCarbon"
+        )
+        + _create_residue_stick_style(pi_chain_id, pi_res_seq, "tealCarbon")
+        + _create_pi_center_sphere(
+            n_pi.pi_center.x, n_pi.pi_center.y, n_pi.pi_center.z, "teal"
+        )
+        + _create_dashed_line_to_center(
+            n_pi.lone_pair_atom.coords.x,
+            n_pi.lone_pair_atom.coords.y,
+            n_pi.lone_pair_atom.coords.z,
+            n_pi.pi_center.x,
+            n_pi.pi_center.y,
+            n_pi.pi_center.z,
+        )
+        + _create_label(
+            n_pi.get_donor_residue(),
+            n_pi.lone_pair_atom.coords.x,
+            n_pi.lone_pair_atom.coords.y,
+            n_pi.lone_pair_atom.coords.z,
+            "orange",
+            "white",
+            14,
+        )
+        + _create_label(
+            n_pi.get_acceptor_residue(),
+            n_pi.pi_center.x,
+            n_pi.pi_center.y,
+            n_pi.pi_center.z,
+            "teal",
+            "white",
+            14,
+        )
+        + _create_distance_label(
+            f"{n_pi.distance:.2f} Å",
+            n_pi.lone_pair_atom.coords.x,
+            n_pi.lone_pair_atom.coords.y,
+            n_pi.lone_pair_atom.coords.z,
+            n_pi.pi_center.x,
+            n_pi.pi_center.y,
+            n_pi.pi_center.z,
+        )
+        + f"viewer.zoomTo({{chain: ['{n_pi.lone_pair_atom.chain_id}', '{pi_chain_id}'], resi: [{n_pi.lone_pair_atom.res_seq}, {pi_res_seq}]}});"
     )
 
     return _create_viewer_init_wrapper(viewer_id, pdb_escaped, viewer_code)
+
 
 def generate_water_bridge_viewer_js(
     water_bridge: "WaterBridge", pdb_content: str, viewer_id: str
@@ -552,24 +738,28 @@ def generate_water_bridge_viewer_js(
         acceptor_hb = hbond.get_acceptor()
 
         # Check if either side is water
-        if hasattr(donor_hb, 'res_name') and donor_hb.res_name in WATER_MOLECULES:
+        if hasattr(donor_hb, "res_name") and donor_hb.res_name in WATER_MOLECULES:
             if donor_hb.res_seq not in water_resi_list:
                 water_resi_list.append(donor_hb.res_seq)
-                water_coords.append({
-                    'resi': donor_hb.res_seq,
-                    'x': donor_hb.coords.x,
-                    'y': donor_hb.coords.y,
-                    'z': donor_hb.coords.z
-                })
-        if hasattr(acceptor_hb, 'res_name') and acceptor_hb.res_name in WATER_MOLECULES:
+                water_coords.append(
+                    {
+                        "resi": donor_hb.res_seq,
+                        "x": donor_hb.coords.x,
+                        "y": donor_hb.coords.y,
+                        "z": donor_hb.coords.z,
+                    }
+                )
+        if hasattr(acceptor_hb, "res_name") and acceptor_hb.res_name in WATER_MOLECULES:
             if acceptor_hb.res_seq not in water_resi_list:
                 water_resi_list.append(acceptor_hb.res_seq)
-                water_coords.append({
-                    'resi': acceptor_hb.res_seq,
-                    'x': acceptor_hb.coords.x,
-                    'y': acceptor_hb.coords.y,
-                    'z': acceptor_hb.coords.z
-                })
+                water_coords.append(
+                    {
+                        "resi": acceptor_hb.res_seq,
+                        "x": acceptor_hb.coords.x,
+                        "y": acceptor_hb.coords.y,
+                        "z": acceptor_hb.coords.z,
+                    }
+                )
 
     pdb_escaped = _escape_pdb_content(pdb_content)
     water_resi_json = "[" + ", ".join(str(r) for r in water_resi_list) + "]"
@@ -578,7 +768,9 @@ def generate_water_bridge_viewer_js(
     water_coords_js = "{"
     water_labels_js = "{"
     for i, wc in enumerate(water_coords):
-        water_coords_js += f"{wc['resi']}: {{x: {wc['x']}, y: {wc['y']}, z: {wc['z']}}}, "
+        water_coords_js += (
+            f"{wc['resi']}: {{x: {wc['x']}, y: {wc['y']}, z: {wc['z']}}}, "
+        )
         # Get water residue label from water_residues list
         if i < len(water_bridge.water_residues):
             water_label = water_bridge.water_residues[i]
@@ -590,10 +782,10 @@ def generate_water_bridge_viewer_js(
 
     # Build viewer-specific code (inline water-specific logic with helpers)
     viewer_code = (
-        _create_cartoon_style() +
-        _create_residue_stick_style(donor_chain, donor_resi, "cyanCarbon") +
-        _create_residue_stick_style(acceptor_chain, acceptor_resi, "orangeCarbon") +
-        f"""
+        _create_cartoon_style()
+        + _create_residue_stick_style(donor_chain, donor_resi, "cyanCarbon")
+        + _create_residue_stick_style(acceptor_chain, acceptor_resi, "orangeCarbon")
+        + f"""
                 // Show water molecules as sticks
                 let waterResis = {water_resi_json};
                 waterResis.forEach(function(resi) {{
@@ -639,12 +831,26 @@ def generate_water_bridge_viewer_js(
                         }});
                     }}
                 }}
-        """ +
-        _create_label(water_bridge.get_donor_residue(), donor_x, donor_y, donor_z,
-                     "cyan", "black", 12) +
-        _create_label(water_bridge.get_acceptor_residue(), acceptor_x, acceptor_y, acceptor_z,
-                     "orange", "white", 12) +
-        f"""
+        """
+        + _create_label(
+            water_bridge.get_donor_residue(),
+            donor_x,
+            donor_y,
+            donor_z,
+            "cyan",
+            "black",
+            12,
+        )
+        + _create_label(
+            water_bridge.get_acceptor_residue(),
+            acceptor_x,
+            acceptor_y,
+            acceptor_z,
+            "orange",
+            "white",
+            12,
+        )
+        + f"""
                 // Add labels for water molecules
                 let waterLabels = {water_labels_js};
                 for (let waterResi in waterCoords) {{
@@ -678,6 +884,7 @@ def generate_ligand_interactions_viewer_js(
     :rtype: str
     """
     import json
+
     pdb_escaped = _escape_pdb_content(pdb_content)
     ligand_name = ligand_res or ""
     interactions_json = json.dumps(interactions_data or [])

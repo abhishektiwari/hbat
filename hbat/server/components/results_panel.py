@@ -75,7 +75,9 @@ class WebResultsPanel:
             return Path(self.current_file).stem
         return "structure"
 
-    def _download_pymol_visualization(self, interaction_label: str, **interaction_kwargs):
+    def _download_pymol_visualization(
+        self, interaction_label: str, **interaction_kwargs
+    ):
         """Generic helper to View in PyMOL visualization for any interaction type.
 
         :param interaction_label: Label for the interaction (e.g., "A:ALA:1_to_B:GLY:2")
@@ -604,8 +606,10 @@ class WebResultsPanel:
 
         def download_pymol():
             """Download hydrogen bond as PyMOL visualization package."""
-            hbond_label = f"{hb.get_donor_residue()}_to_{hb.get_acceptor_residue()}".replace(
-                ":", "_"
+            hbond_label = (
+                f"{hb.get_donor_residue()}_to_{hb.get_acceptor_residue()}".replace(
+                    ":", "_"
+                )
             )
             self._download_pymol_visualization(hbond_label, hydrogen_bonds=[hb])
 
@@ -640,7 +644,9 @@ class WebResultsPanel:
 
         # Initialize viewer after dialog is opened and rendered
         ui.timer(
-            0.1, lambda: self._initialize_hydrogen_bond_viewer(viewer_id, hb, minimal_pdb), once=True
+            0.1,
+            lambda: self._initialize_hydrogen_bond_viewer(viewer_id, hb, minimal_pdb),
+            once=True,
         )
 
     def _initialize_hydrogen_bond_viewer(self, viewer_id: str, hb, minimal_pdb: str):
@@ -805,8 +811,10 @@ class WebResultsPanel:
 
         def download_pymol():
             """Download halogen bond as PyMOL visualization package."""
-            xbond_label = f"{xb.get_donor_residue()}_to_{xb.get_acceptor_residue()}".replace(
-                ":", "_"
+            xbond_label = (
+                f"{xb.get_donor_residue()}_to_{xb.get_acceptor_residue()}".replace(
+                    ":", "_"
+                )
             )
             self._download_pymol_visualization(xbond_label, halogen_bonds=[xb])
 
@@ -841,7 +849,9 @@ class WebResultsPanel:
 
         # Initialize viewer after dialog is opened and rendered
         ui.timer(
-            0.1, lambda: self._initialize_halogen_bond_viewer(viewer_id, xb, minimal_pdb), once=True
+            0.1,
+            lambda: self._initialize_halogen_bond_viewer(viewer_id, xb, minimal_pdb),
+            once=True,
         )
 
     def _initialize_halogen_bond_viewer(self, viewer_id: str, xb, minimal_pdb: str):
@@ -881,8 +891,10 @@ class WebResultsPanel:
 
         def download_pymol():
             """Download pi interaction as PyMOL visualization package."""
-            pi_label = f"{pi.get_donor_residue()}_to_{pi.get_acceptor_residue()}".replace(
-                ":", "_"
+            pi_label = (
+                f"{pi.get_donor_residue()}_to_{pi.get_acceptor_residue()}".replace(
+                    ":", "_"
+                )
             )
             self._download_pymol_visualization(pi_label, pi_interactions=[pi])
 
@@ -1425,9 +1437,9 @@ class WebResultsPanel:
     def _update_water_bridges_panel(self):
         """Update water bridges panel."""
         with self.water_bridges_panel:
-            ui.label(
-                f"Water Bridges ({len(self.analyzer.water_bridges)})"
-            ).classes("text-h5")
+            ui.label(f"Water Bridges ({len(self.analyzer.water_bridges)})").classes(
+                "text-h5"
+            )
 
             # Create table
             columns = [
@@ -1545,8 +1557,10 @@ class WebResultsPanel:
 
         def download_pymol():
             """Download water bridge as PyMOL visualization package."""
-            wbridge_label = f"{wb.get_donor_residue()}_to_{wb.get_acceptor_residue()}".replace(
-                ":", "_"
+            wbridge_label = (
+                f"{wb.get_donor_residue()}_to_{wb.get_acceptor_residue()}".replace(
+                    ":", "_"
+                )
             )
             self._download_pymol_visualization(wbridge_label, water_bridges=[wb])
 
@@ -1589,7 +1603,9 @@ class WebResultsPanel:
 
         # Initialize viewer after dialog is opened and rendered
         ui.timer(
-            0.1, lambda: self._initialize_water_bridge_viewer(viewer_id, wb, minimal_pdb), once=True
+            0.1,
+            lambda: self._initialize_water_bridge_viewer(viewer_id, wb, minimal_pdb),
+            once=True,
         )
 
     def _initialize_water_bridge_viewer(self, viewer_id: str, wb, minimal_pdb: str):
@@ -1623,8 +1639,8 @@ class WebResultsPanel:
                             ui.button(
                                 "View Graph",
                                 icon="account_tree",
-                                on_click=lambda c=chain: self._show_cooperativity_chain_visualization(
-                                    c
+                                on_click=lambda c=chain: (
+                                    self._show_cooperativity_chain_visualization(c)
                                 ),
                             ).props("outline color=primary")
 
@@ -1708,20 +1724,16 @@ class WebResultsPanel:
         def export_png():
             """Export viewer as PNG."""
             pdb_base = self._get_pdb_basename()
-            filename = (
-                f"{pdb_base}_{pi_pi.ring1_residue}_to_{pi_pi.ring2_residue}_pipi.png".replace(
-                    ":", "_"
-                )
+            filename = f"{pdb_base}_{pi_pi.ring1_residue}_to_{pi_pi.ring2_residue}_pipi.png".replace(
+                ":", "_"
             )
             ui.run_javascript(generate_png_export_js(viewer_id, filename))
 
         def download_pdb():
             """Download extracted PDB file."""
             pdb_base = self._get_pdb_basename()
-            filename = (
-                f"{pdb_base}_{pi_pi.ring1_residue}_to_{pi_pi.ring2_residue}_pipi.pdb".replace(
-                    ":", "_"
-                )
+            filename = f"{pdb_base}_{pi_pi.ring1_residue}_to_{pi_pi.ring2_residue}_pipi.pdb".replace(
+                ":", "_"
             )
             ui.download(minimal_pdb.encode(), filename=filename)
 
@@ -1761,20 +1773,22 @@ class WebResultsPanel:
         dialog.open()
         ui.timer(
             0.1,
-            lambda: self._initialize_pi_pi_stacking_viewer(viewer_id, pi_pi, minimal_pdb),
+            lambda: self._initialize_pi_pi_stacking_viewer(
+                viewer_id, pi_pi, minimal_pdb
+            ),
             once=True,
         )
 
-    def _initialize_pi_pi_stacking_viewer(self, viewer_id: str, pi_pi, minimal_pdb: str):
+    def _initialize_pi_pi_stacking_viewer(
+        self, viewer_id: str, pi_pi, minimal_pdb: str
+    ):
         """Initialize py3Dmol viewer for π-π stacking visualization.
 
         :param viewer_id: Unique ID for the viewer div
         :param pi_pi: Pi-pi stacking interaction
         :param minimal_pdb: Pre-extracted minimal PDB content
         """
-        javascript = generate_pi_pi_stacking_viewer_js(
-            pi_pi, minimal_pdb, viewer_id
-        )
+        javascript = generate_pi_pi_stacking_viewer_js(pi_pi, minimal_pdb, viewer_id)
         ui.run_javascript(javascript)
 
     def _show_carbonyl_interaction_visualization(self, carbonyl):
@@ -1807,7 +1821,9 @@ class WebResultsPanel:
             carbonyl_label = f"{carbonyl.get_donor_residue()}_to_{carbonyl.get_acceptor_residue()}".replace(
                 ":", "_"
             )
-            self._download_pymol_visualization(carbonyl_label, carbonyl_interactions=[carbonyl])
+            self._download_pymol_visualization(
+                carbonyl_label, carbonyl_interactions=[carbonyl]
+            )
 
         with (
             ui.dialog().props("persistent") as dialog,
@@ -1838,11 +1854,15 @@ class WebResultsPanel:
         dialog.open()
         ui.timer(
             0.1,
-            lambda: self._initialize_carbonyl_interaction_viewer(viewer_id, carbonyl, minimal_pdb),
+            lambda: self._initialize_carbonyl_interaction_viewer(
+                viewer_id, carbonyl, minimal_pdb
+            ),
             once=True,
         )
 
-    def _initialize_carbonyl_interaction_viewer(self, viewer_id: str, carbonyl, minimal_pdb: str):
+    def _initialize_carbonyl_interaction_viewer(
+        self, viewer_id: str, carbonyl, minimal_pdb: str
+    ):
         """Initialize py3Dmol viewer for carbonyl n→π* visualization.
 
         :param viewer_id: Unique ID for the viewer div
@@ -1881,8 +1901,10 @@ class WebResultsPanel:
 
         def download_pymol():
             """Download N-pi interaction as PyMOL visualization package."""
-            npi_label = f"{n_pi.get_donor_residue()}_to_{n_pi.get_acceptor_residue()}".replace(
-                ":", "_"
+            npi_label = (
+                f"{n_pi.get_donor_residue()}_to_{n_pi.get_acceptor_residue()}".replace(
+                    ":", "_"
+                )
             )
             self._download_pymol_visualization(npi_label, n_pi_interactions=[n_pi])
 
@@ -1915,20 +1937,22 @@ class WebResultsPanel:
         dialog.open()
         ui.timer(
             0.1,
-            lambda: self._initialize_n_pi_interaction_viewer(viewer_id, n_pi, minimal_pdb),
+            lambda: self._initialize_n_pi_interaction_viewer(
+                viewer_id, n_pi, minimal_pdb
+            ),
             once=True,
         )
 
-    def _initialize_n_pi_interaction_viewer(self, viewer_id: str, n_pi, minimal_pdb: str):
+    def _initialize_n_pi_interaction_viewer(
+        self, viewer_id: str, n_pi, minimal_pdb: str
+    ):
         """Initialize py3Dmol viewer for n→π* interaction visualization.
 
         :param viewer_id: Unique ID for the viewer div
         :param n_pi: N-pi interaction
         :param minimal_pdb: Pre-extracted minimal PDB content
         """
-        javascript = generate_n_pi_interaction_viewer_js(
-            n_pi, minimal_pdb, viewer_id
-        )
+        javascript = generate_n_pi_interaction_viewer_js(n_pi, minimal_pdb, viewer_id)
         ui.run_javascript(javascript)
 
     def _show_cooperativity_chain_visualization(self, chain):
@@ -1939,6 +1963,7 @@ class WebResultsPanel:
                 session_dir = self.session_dir_callback()
             else:
                 from ...server.app import SESSIONS_BASE_DIR
+
                 session_dir = SESSIONS_BASE_DIR
 
             # Generate both SVG (for display) and PNG (for export) using reusable function
@@ -2020,7 +2045,9 @@ class WebResultsPanel:
 
         if not ligand_container:
             with self.ligands_panel:
-                ui.label("No ligand interactions found").classes("text-subtitle1 q-pa-lg")
+                ui.label("No ligand interactions found").classes(
+                    "text-subtitle1 q-pa-lg"
+                )
             return
 
         # Get ligand interactions and info from the container
@@ -2028,19 +2055,27 @@ class WebResultsPanel:
         ligand_info = ligand_container.ligand_info
 
         # Separate regular interactions from water bridges
-        regular_interactions = [i for i in ligand_interactions if not hasattr(i, 'water_residues')]
-        water_bridge_interactions = [i for i in ligand_interactions if hasattr(i, 'water_residues')]
+        regular_interactions = [
+            i for i in ligand_interactions if not hasattr(i, "water_residues")
+        ]
+        water_bridge_interactions = [
+            i for i in ligand_interactions if hasattr(i, "water_residues")
+        ]
 
         with self.ligands_panel:
             # Title
-            ui.label(f"Ligand Interactions ({len(ligand_interactions)})").classes("text-h5")
+            ui.label(f"Ligand Interactions ({len(ligand_interactions)})").classes(
+                "text-h5"
+            )
 
             # Dropdown selector - show each ligand with interaction count
             # NiceGUI expects {value: label} format
             ligand_options = {}
             first_ligand = None
             # Sort by count (descending)
-            for ligand_res, info in sorted(ligand_info.items(), key=lambda x: -x[1]["count"]):
+            for ligand_res, info in sorted(
+                ligand_info.items(), key=lambda x: -x[1]["count"]
+            ):
                 label = f"{ligand_res} ({info['count']})"
                 ligand_options[ligand_res] = label
                 if first_ligand is None:
@@ -2085,32 +2120,38 @@ class WebResultsPanel:
                         type_label = int_type
 
                     # Get distance metric
-                    if hasattr(interaction, 'distance'):
+                    if hasattr(interaction, "distance"):
                         distance = f"{interaction.distance:.2f} Å"
-                    elif hasattr(interaction, '_distance'):
+                    elif hasattr(interaction, "_distance"):
                         distance = f"{interaction._distance:.2f} Å"
                     else:
                         distance = "N/A"
 
                     # Get properties
                     properties = ""
-                    if hasattr(interaction, 'donor_acceptor_properties'):
+                    if hasattr(interaction, "donor_acceptor_properties"):
                         properties = interaction.donor_acceptor_properties
 
                     # Store the interaction object in the dict (not serialized)
                     interaction_store[interaction_index] = interaction
 
-                    rows.append({
-                        "id": interaction_index,
-                        "type": type_label,
-                        "donor_res": donor_res,
-                        "donor_atom": interaction.get_donor().name if hasattr(interaction.get_donor(), 'name') else "N/A",
-                        "acceptor_res": acceptor_res,
-                        "acceptor_atom": interaction.get_acceptor().name if hasattr(interaction.get_acceptor(), 'name') else "N/A",
-                        "distance": distance,
-                        "properties": properties,
-                        "int_type": int_type,
-                    })
+                    rows.append(
+                        {
+                            "id": interaction_index,
+                            "type": type_label,
+                            "donor_res": donor_res,
+                            "donor_atom": interaction.get_donor().name
+                            if hasattr(interaction.get_donor(), "name")
+                            else "N/A",
+                            "acceptor_res": acceptor_res,
+                            "acceptor_atom": interaction.get_acceptor().name
+                            if hasattr(interaction.get_acceptor(), "name")
+                            else "N/A",
+                            "distance": distance,
+                            "properties": properties,
+                            "int_type": int_type,
+                        }
+                    )
                     interaction_index += 1
 
                 return rows
@@ -2135,62 +2176,166 @@ class WebResultsPanel:
                     # Store the interaction object in water bridge store (separate from regular interactions)
                     water_bridge_store[interaction_index] = interaction
 
-                    rows.append({
-                        "id": interaction_index,
-                        "donor_res": donor_res,
-                        "acceptor_res": acceptor_res,
-                        "water_residues": water_residues_str,
-                        "bridge_length": interaction.bridge_length,
-                        "distance": f"{interaction.get_donor_acceptor_distance():.2f} Å",
-                        "int_type": interaction.get_interaction_type(),
-                    })
+                    rows.append(
+                        {
+                            "id": interaction_index,
+                            "donor_res": donor_res,
+                            "acceptor_res": acceptor_res,
+                            "water_residues": water_residues_str,
+                            "bridge_length": interaction.bridge_length,
+                            "distance": f"{interaction.get_donor_acceptor_distance():.2f} Å",
+                            "int_type": interaction.get_interaction_type(),
+                        }
+                    )
                     interaction_index += 1
 
                 return rows
 
             # Table columns for regular interactions
             columns = [
-                {"name": "visualize", "label": "3D View", "field": "visualize", "align": "center"},
+                {
+                    "name": "visualize",
+                    "label": "3D View",
+                    "field": "visualize",
+                    "align": "center",
+                },
                 {"name": "type", "label": "Type", "field": "type", "align": "left"},
-                {"name": "donor_res", "label": "Donor", "field": "donor_res", "align": "left"},
-                {"name": "donor_atom", "label": "Donor Atom", "field": "donor_atom", "align": "left"},
-                {"name": "acceptor_res", "label": "Acceptor", "field": "acceptor_res", "align": "left"},
-                {"name": "acceptor_atom", "label": "Acceptor Atom", "field": "acceptor_atom", "align": "left"},
-                {"name": "distance", "label": "Distance", "field": "distance", "align": "left"},
-                {"name": "properties", "label": "Properties", "field": "properties", "align": "left"},
+                {
+                    "name": "donor_res",
+                    "label": "Donor",
+                    "field": "donor_res",
+                    "align": "left",
+                },
+                {
+                    "name": "donor_atom",
+                    "label": "Donor Atom",
+                    "field": "donor_atom",
+                    "align": "left",
+                },
+                {
+                    "name": "acceptor_res",
+                    "label": "Acceptor",
+                    "field": "acceptor_res",
+                    "align": "left",
+                },
+                {
+                    "name": "acceptor_atom",
+                    "label": "Acceptor Atom",
+                    "field": "acceptor_atom",
+                    "align": "left",
+                },
+                {
+                    "name": "distance",
+                    "label": "Distance",
+                    "field": "distance",
+                    "align": "left",
+                },
+                {
+                    "name": "properties",
+                    "label": "Properties",
+                    "field": "properties",
+                    "align": "left",
+                },
             ]
 
             # Table columns for water bridges (consistent with main Water Bridges tab)
             water_bridge_columns = [
-                {"name": "visualize", "label": "3D View", "field": "visualize", "align": "center"},
-                {"name": "donor_res", "label": "Start Residue", "field": "donor_res", "align": "left"},
-                {"name": "acceptor_res", "label": "End Residue", "field": "acceptor_res", "align": "left"},
-                {"name": "bridge_length", "label": "Hops", "field": "bridge_length", "align": "center"},
-                {"name": "water_residues", "label": "Water Residues", "field": "water_residues", "align": "left"},
-                {"name": "distance", "label": "Distance (Å)", "field": "distance", "align": "right"},
+                {
+                    "name": "visualize",
+                    "label": "3D View",
+                    "field": "visualize",
+                    "align": "center",
+                },
+                {
+                    "name": "donor_res",
+                    "label": "Start Residue",
+                    "field": "donor_res",
+                    "align": "left",
+                },
+                {
+                    "name": "acceptor_res",
+                    "label": "End Residue",
+                    "field": "acceptor_res",
+                    "align": "left",
+                },
+                {
+                    "name": "bridge_length",
+                    "label": "Hops",
+                    "field": "bridge_length",
+                    "align": "center",
+                },
+                {
+                    "name": "water_residues",
+                    "label": "Water Residues",
+                    "field": "water_residues",
+                    "align": "left",
+                },
+                {
+                    "name": "distance",
+                    "label": "Distance (Å)",
+                    "field": "distance",
+                    "align": "right",
+                },
             ]
             columns = [
-                {"name": "visualize", "label": "3D View", "field": "visualize", "align": "center"},
+                {
+                    "name": "visualize",
+                    "label": "3D View",
+                    "field": "visualize",
+                    "align": "center",
+                },
                 {"name": "type", "label": "Type", "field": "type", "align": "left"},
-                {"name": "donor_res", "label": "Donor", "field": "donor_res", "align": "left"},
-                {"name": "donor_atom", "label": "Donor Atom", "field": "donor_atom", "align": "left"},
-                {"name": "acceptor_res", "label": "Acceptor", "field": "acceptor_res", "align": "left"},
-                {"name": "acceptor_atom", "label": "Acceptor Atom", "field": "acceptor_atom", "align": "left"},
-                {"name": "distance", "label": "Distance", "field": "distance", "align": "left"},
-                {"name": "properties", "label": "Properties", "field": "properties", "align": "left"},
+                {
+                    "name": "donor_res",
+                    "label": "Donor",
+                    "field": "donor_res",
+                    "align": "left",
+                },
+                {
+                    "name": "donor_atom",
+                    "label": "Donor Atom",
+                    "field": "donor_atom",
+                    "align": "left",
+                },
+                {
+                    "name": "acceptor_res",
+                    "label": "Acceptor",
+                    "field": "acceptor_res",
+                    "align": "left",
+                },
+                {
+                    "name": "acceptor_atom",
+                    "label": "Acceptor Atom",
+                    "field": "acceptor_atom",
+                    "align": "left",
+                },
+                {
+                    "name": "distance",
+                    "label": "Distance",
+                    "field": "distance",
+                    "align": "left",
+                },
+                {
+                    "name": "properties",
+                    "label": "Properties",
+                    "field": "properties",
+                    "align": "left",
+                },
             ]
 
             # Create dropdown selector (above table)
-            selected_ligand = ui.select(
-                ligand_options,
-                label="Select Ligand",
-                value=first_ligand
-            ).classes("w-full mb-4").props("outlined dense")
+            selected_ligand = (
+                ui.select(ligand_options, label="Select Ligand", value=first_ligand)
+                .classes("w-full mb-4")
+                .props("outlined dense")
+            )
 
             # Filter input for searching (above table)
-            filter_input = ui.input(
-                placeholder="Filter interactions (residue, atom, type, etc.)"
-            ).props("clearable outlined dense").classes("w-full mb-4")
+            filter_input = (
+                ui.input(placeholder="Filter interactions (residue, atom, type, etc.)")
+                .props("clearable outlined dense")
+                .classes("w-full mb-4")
+            )
 
             # Action buttons for regular interactions
             def show_all_interactions_viewer(selected_ligand_res):
@@ -2206,7 +2351,10 @@ class WebResultsPanel:
                 for interaction in regular_interactions:
                     donor_res = interaction.get_donor_residue()
                     acceptor_res = interaction.get_acceptor_residue()
-                    if donor_res == selected_ligand_res or acceptor_res == selected_ligand_res:
+                    if (
+                        donor_res == selected_ligand_res
+                        or acceptor_res == selected_ligand_res
+                    ):
                         selected_interactions.append(interaction)
 
                 if not selected_interactions:
@@ -2224,19 +2372,25 @@ class WebResultsPanel:
                         int_type = interaction.get_interaction_type().lower()
 
                         interaction_dict = {
-                            "donor_atom": donor_atom.name if hasattr(donor_atom, 'name') else "",
+                            "donor_atom": donor_atom.name
+                            if hasattr(donor_atom, "name")
+                            else "",
                             "donor_res": donor_res,
-                            "acceptor_atom": acceptor_atom.name if hasattr(acceptor_atom, 'name') else "",
+                            "acceptor_atom": acceptor_atom.name
+                            if hasattr(acceptor_atom, "name")
+                            else "",
                             "acceptor_res": acceptor_res,
                             "type": int_type,
                         }
 
                         # For π-interactions, include the ring center coordinates
-                        if ("π" in int_type or "pi" in int_type) and hasattr(interaction, 'pi_center'):
+                        if ("π" in int_type or "pi" in int_type) and hasattr(
+                            interaction, "pi_center"
+                        ):
                             interaction_dict["pi_center"] = {
                                 "x": interaction.pi_center.x,
                                 "y": interaction.pi_center.y,
-                                "z": interaction.pi_center.z
+                                "z": interaction.pi_center.z,
                             }
 
                         interactions_data.append(interaction_dict)
@@ -2245,7 +2399,9 @@ class WebResultsPanel:
                         continue
 
                 # Generate minimal PDB with all interactions
-                minimal_pdb = format_minimal_pdb(self.analyzer.parser, selected_interactions)
+                minimal_pdb = format_minimal_pdb(
+                    self.analyzer.parser, selected_interactions
+                )
                 viewer_id = f"lig_all_viewer_{random.randint(1000, 9999)}"
 
                 with (
@@ -2253,29 +2409,78 @@ class WebResultsPanel:
                     ui.card().style("width: 900px; max-width: 90vw;"),
                 ):
                     with ui.card_actions().classes("justify-end"):
-                        ui.button("Export PNG", icon="download", on_click=lambda: ui.run_javascript(
-                            generate_png_export_js(viewer_id, f"{self._get_pdb_basename()}_{selected_ligand_res.replace(':', '_')}_all.png")
-                        )).props("outline color=secondary")
-                        ui.button("Download PDB", icon="download", on_click=lambda: ui.download(
-                            minimal_pdb.encode(),
-                            filename=f"{self._get_pdb_basename()}_{selected_ligand_res.replace(':', '_')}_all.pdb"
-                        )).props("outline color=secondary")
-                        ui.button("View in PyMOL", icon="movie", on_click=lambda: self._download_pymol_visualization(
-                            selected_ligand_res.replace(':', '_') + "_all",
-                            hydrogen_bonds=[i for i in selected_interactions if "h-bond" in i.get_interaction_type().lower()],
-                            halogen_bonds=[i for i in selected_interactions if "x-bond" in i.get_interaction_type().lower()],
-                            pi_interactions=[i for i in selected_interactions if ("π" in i.get_interaction_type().lower() or "pi" in i.get_interaction_type().lower()) and "pi-pi" not in i.get_interaction_type().lower() and "n-pi" not in i.get_interaction_type().lower()],
-                            pi_pi_stacking=[i for i in selected_interactions if "pi-pi" in i.get_interaction_type().lower()],
-                            carbonyl_interactions=[i for i in selected_interactions if "carbonyl" in i.get_interaction_type().lower()],
-                            n_pi_interactions=[i for i in selected_interactions if "n-pi" in i.get_interaction_type().lower()],
-                            water_bridges=[i for i in selected_interactions if "water_bridge" in i.get_interaction_type().lower()],
-                        )).props("outline color=secondary")
+                        ui.button(
+                            "Export PNG",
+                            icon="download",
+                            on_click=lambda: ui.run_javascript(
+                                generate_png_export_js(
+                                    viewer_id,
+                                    f"{self._get_pdb_basename()}_{selected_ligand_res.replace(':', '_')}_all.png",
+                                )
+                            ),
+                        ).props("outline color=secondary")
+                        ui.button(
+                            "Download PDB",
+                            icon="download",
+                            on_click=lambda: ui.download(
+                                minimal_pdb.encode(),
+                                filename=f"{self._get_pdb_basename()}_{selected_ligand_res.replace(':', '_')}_all.pdb",
+                            ),
+                        ).props("outline color=secondary")
+                        ui.button(
+                            "View in PyMOL",
+                            icon="movie",
+                            on_click=lambda: self._download_pymol_visualization(
+                                selected_ligand_res.replace(":", "_") + "_all",
+                                hydrogen_bonds=[
+                                    i
+                                    for i in selected_interactions
+                                    if "h-bond" in i.get_interaction_type().lower()
+                                ],
+                                halogen_bonds=[
+                                    i
+                                    for i in selected_interactions
+                                    if "x-bond" in i.get_interaction_type().lower()
+                                ],
+                                pi_interactions=[
+                                    i
+                                    for i in selected_interactions
+                                    if (
+                                        "π" in i.get_interaction_type().lower()
+                                        or "pi" in i.get_interaction_type().lower()
+                                    )
+                                    and "pi-pi" not in i.get_interaction_type().lower()
+                                    and "n-pi" not in i.get_interaction_type().lower()
+                                ],
+                                pi_pi_stacking=[
+                                    i
+                                    for i in selected_interactions
+                                    if "pi-pi" in i.get_interaction_type().lower()
+                                ],
+                                carbonyl_interactions=[
+                                    i
+                                    for i in selected_interactions
+                                    if "carbonyl" in i.get_interaction_type().lower()
+                                ],
+                                n_pi_interactions=[
+                                    i
+                                    for i in selected_interactions
+                                    if "n-pi" in i.get_interaction_type().lower()
+                                ],
+                                water_bridges=[
+                                    i
+                                    for i in selected_interactions
+                                    if "water_bridge"
+                                    in i.get_interaction_type().lower()
+                                ],
+                            ),
+                        ).props("outline color=secondary")
                         ui.button("Close", on_click=dialog.close).props("color=primary")
 
                     with ui.card_section().classes("q-pa-md"):
-                        ui.label(
-                            f"All Interactions - {selected_ligand_res}"
-                        ).classes("text-subtitle1 q-mb-md")
+                        ui.label(f"All Interactions - {selected_ligand_res}").classes(
+                            "text-subtitle1 q-mb-md"
+                        )
 
                         # Create div for viewer
                         ui.html(
@@ -2287,9 +2492,15 @@ class WebResultsPanel:
 
                 # Initialize viewer after dialog is opened and rendered
                 # Pass interaction data, PDB content, viewer ID, and ligand residue name (following standard convention)
-                ui.timer(0.1, lambda: ui.run_javascript(
-                    generate_ligand_interactions_viewer_js(interactions_data, minimal_pdb, viewer_id, lig_info["name"])
-                ), once=True)
+                ui.timer(
+                    0.1,
+                    lambda: ui.run_javascript(
+                        generate_ligand_interactions_viewer_js(
+                            interactions_data, minimal_pdb, viewer_id, lig_info["name"]
+                        )
+                    ),
+                    once=True,
+                )
 
             def download_all_pymol(selected_ligand_res):
                 """Download all interactions as PyMOL visualization package."""
@@ -2298,7 +2509,10 @@ class WebResultsPanel:
                 for interaction in ligand_interactions:
                     donor_res = interaction.get_donor_residue()
                     acceptor_res = interaction.get_acceptor_residue()
-                    if donor_res == selected_ligand_res or acceptor_res == selected_ligand_res:
+                    if (
+                        donor_res == selected_ligand_res
+                        or acceptor_res == selected_ligand_res
+                    ):
                         selected_interactions.append(interaction)
 
                 if not selected_interactions:
@@ -2307,51 +2521,109 @@ class WebResultsPanel:
 
                 # Organize interactions by type
                 self._download_pymol_visualization(
-                    selected_ligand_res.replace(':', '_') + "_all",
-                    hydrogen_bonds=[i for i in selected_interactions if "h-bond" in i.get_interaction_type().lower()],
-                    halogen_bonds=[i for i in selected_interactions if "x-bond" in i.get_interaction_type().lower()],
-                    pi_interactions=[i for i in selected_interactions if ("π" in i.get_interaction_type().lower() or "pi" in i.get_interaction_type().lower()) and "pi-pi" not in i.get_interaction_type().lower() and "n-pi" not in i.get_interaction_type().lower()],
-                    pi_pi_stacking=[i for i in selected_interactions if "pi-pi" in i.get_interaction_type().lower()],
-                    carbonyl_interactions=[i for i in selected_interactions if "carbonyl" in i.get_interaction_type().lower()],
-                    n_pi_interactions=[i for i in selected_interactions if "n-pi" in i.get_interaction_type().lower()],
-                    water_bridges=[i for i in selected_interactions if "water_bridge" in i.get_interaction_type().lower()],
+                    selected_ligand_res.replace(":", "_") + "_all",
+                    hydrogen_bonds=[
+                        i
+                        for i in selected_interactions
+                        if "h-bond" in i.get_interaction_type().lower()
+                    ],
+                    halogen_bonds=[
+                        i
+                        for i in selected_interactions
+                        if "x-bond" in i.get_interaction_type().lower()
+                    ],
+                    pi_interactions=[
+                        i
+                        for i in selected_interactions
+                        if (
+                            "π" in i.get_interaction_type().lower()
+                            or "pi" in i.get_interaction_type().lower()
+                        )
+                        and "pi-pi" not in i.get_interaction_type().lower()
+                        and "n-pi" not in i.get_interaction_type().lower()
+                    ],
+                    pi_pi_stacking=[
+                        i
+                        for i in selected_interactions
+                        if "pi-pi" in i.get_interaction_type().lower()
+                    ],
+                    carbonyl_interactions=[
+                        i
+                        for i in selected_interactions
+                        if "carbonyl" in i.get_interaction_type().lower()
+                    ],
+                    n_pi_interactions=[
+                        i
+                        for i in selected_interactions
+                        if "n-pi" in i.get_interaction_type().lower()
+                    ],
+                    water_bridges=[
+                        i
+                        for i in selected_interactions
+                        if "water_bridge" in i.get_interaction_type().lower()
+                    ],
                 )
 
             def download_csv(selected_ligand_res):
                 """Download interactions as ZIP containing CSV files for selected ligand."""
                 import io
                 import zipfile
-                from ...export.results import write_ligand_interactions_csv, write_ligand_water_bridges_csv
+                from ...export.results import (
+                    write_ligand_interactions_csv,
+                    write_ligand_water_bridges_csv,
+                )
 
                 # Create zip file in memory
                 zip_buffer = io.BytesIO()
-                with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
                     # Add regular interactions CSV
-                    csv_content = write_ligand_interactions_csv(self.analyzer, filename=None, ligand_residue=selected_ligand_res)
-                    if csv_content and csv_content.strip():  # Only add if there are interactions
+                    csv_content = write_ligand_interactions_csv(
+                        self.analyzer, filename=None, ligand_residue=selected_ligand_res
+                    )
+                    if (
+                        csv_content and csv_content.strip()
+                    ):  # Only add if there are interactions
                         zip_file.writestr(
                             f"{self._get_pdb_basename()}_{selected_ligand_res.replace(':', '_')}_interactions.csv",
-                            csv_content
+                            csv_content,
                         )
 
                     # Add water bridges CSV
-                    wb_content = write_ligand_water_bridges_csv(self.analyzer, filename=None, ligand_residue=selected_ligand_res)
-                    if wb_content and wb_content.strip():  # Only add if there are water bridges
+                    wb_content = write_ligand_water_bridges_csv(
+                        self.analyzer, filename=None, ligand_residue=selected_ligand_res
+                    )
+                    if (
+                        wb_content and wb_content.strip()
+                    ):  # Only add if there are water bridges
                         zip_file.writestr(
                             f"{self._get_pdb_basename()}_{selected_ligand_res.replace(':', '_')}_water_bridges.csv",
-                            wb_content
+                            wb_content,
                         )
 
                 ui.download(
                     zip_buffer.getvalue(),
-                    filename=f"{self._get_pdb_basename()}_{selected_ligand_res.replace(':', '_')}_interactions.zip"
+                    filename=f"{self._get_pdb_basename()}_{selected_ligand_res.replace(':', '_')}_interactions.zip",
                 )
 
             # Action buttons container
             with ui.row().classes("w-full gap-2 q-mb-4"):
-                ui.button("3D View All Interactions", icon="visibility", on_click=lambda: show_all_interactions_viewer(selected_ligand.value)).props("color=primary")
-                ui.button("View All Interactions in PyMOL", icon="movie", on_click=lambda: download_all_pymol(selected_ligand.value)).props("color=secondary")
-                ui.button("Download Interactions as CSV", icon="download", on_click=lambda: download_csv(selected_ligand.value)).props("color=info")
+                ui.button(
+                    "3D View All Interactions",
+                    icon="visibility",
+                    on_click=lambda: show_all_interactions_viewer(
+                        selected_ligand.value
+                    ),
+                ).props("color=primary")
+                ui.button(
+                    "View All Interactions in PyMOL",
+                    icon="movie",
+                    on_click=lambda: download_all_pymol(selected_ligand.value),
+                ).props("color=secondary")
+                ui.button(
+                    "Download Interactions as CSV",
+                    icon="download",
+                    on_click=lambda: download_csv(selected_ligand.value),
+                ).props("color=info")
 
             # Handle ligand selection changes
             def on_ligand_selected(e):
@@ -2362,12 +2634,20 @@ class WebResultsPanel:
 
                     if water_bridges_enabled:
                         water_bridge_rows = build_water_bridges_data(e.value)
-                        water_bridge_table.update_rows(water_bridge_rows, clear_selection=True)
+                        water_bridge_table.update_rows(
+                            water_bridge_rows, clear_selection=True
+                        )
 
             selected_ligand.on_value_change(on_ligand_selected)
 
             # Create table for regular interactions
-            table = ui.table(columns=columns, rows=build_regular_interactions_data(first_ligand) if first_ligand else [], row_key="id")
+            table = ui.table(
+                columns=columns,
+                rows=build_regular_interactions_data(first_ligand)
+                if first_ligand
+                else [],
+                row_key="id",
+            )
             table.classes("w-full")
 
             # Flag to track if water bridges section is shown
@@ -2377,7 +2657,9 @@ class WebResultsPanel:
             filter_input.bind_value(table, "filter")
 
             # Add visualize button slot with color based on interaction type
-            table.add_slot("body-cell-visualize", """
+            table.add_slot(
+                "body-cell-visualize",
+                """
                 <q-td :props="props">
                     <q-btn
                         flat dense round
@@ -2396,16 +2678,23 @@ class WebResultsPanel:
                         @click="$parent.$emit('visualize', props.row)"
                     />
                 </q-td>
-            """)
+            """,
+            )
 
             # Create water bridges section if there are any
             if water_bridges_enabled:
                 ui.label("Water Bridges").classes("text-h6 q-mt-lg")
-                water_bridge_table = ui.table(columns=water_bridge_columns, rows=build_water_bridges_data(first_ligand) if first_ligand else [], row_key="id")
+                water_bridge_table = ui.table(
+                    columns=water_bridge_columns,
+                    rows=build_water_bridges_data(first_ligand) if first_ligand else [],
+                    row_key="id",
+                )
                 water_bridge_table.classes("w-full")
 
                 # Add visualize button slot for water bridges
-                water_bridge_table.add_slot("body-cell-visualize", """
+                water_bridge_table.add_slot(
+                    "body-cell-visualize",
+                    """
                     <q-td :props="props">
                         <q-btn
                             flat dense round
@@ -2415,12 +2704,13 @@ class WebResultsPanel:
                             @click="$parent.$emit('visualize', props.row)"
                         />
                     </q-td>
-                """)
+                """,
+                )
 
                 # Handle water bridge visualization
                 def show_water_bridge_visualization(e):
                     """Show 3D visualization for water bridge from ligand interactions."""
-                    row_data = e.args if hasattr(e, 'args') else {}
+                    row_data = e.args if hasattr(e, "args") else {}
                     row_id = row_data.get("id")
                     if row_id is None:
                         ui.notify("Error: Water bridge ID not found", type="negative")
@@ -2432,47 +2722,71 @@ class WebResultsPanel:
                         return
 
                     # Use extract_water_bridge_pdb for water bridges to include water molecules
-                    minimal_pdb = extract_water_bridge_pdb(self.analyzer.parser, interaction)
+                    minimal_pdb = extract_water_bridge_pdb(
+                        self.analyzer.parser, interaction
+                    )
                     viewer_id = f"lig_wbridge_viewer_{random.randint(1000, 9999)}"
 
                     def export_png():
                         pdb_base = self._get_pdb_basename()
-                        donor = row_data.get('donor_res', 'donor').replace(':', '_')
-                        acceptor = row_data.get('acceptor_res', 'acceptor').replace(':', '_')
+                        donor = row_data.get("donor_res", "donor").replace(":", "_")
+                        acceptor = row_data.get("acceptor_res", "acceptor").replace(
+                            ":", "_"
+                        )
                         filename = f"{pdb_base}_{donor}_to_{acceptor}_wbridge.png"
                         ui.run_javascript(generate_png_export_js(viewer_id, filename))
 
                     def download_pdb():
                         pdb_base = self._get_pdb_basename()
-                        donor = row_data.get('donor_res', 'donor').replace(':', '_')
-                        acceptor = row_data.get('acceptor_res', 'acceptor').replace(':', '_')
+                        donor = row_data.get("donor_res", "donor").replace(":", "_")
+                        acceptor = row_data.get("acceptor_res", "acceptor").replace(
+                            ":", "_"
+                        )
                         filename = f"{pdb_base}_{donor}_to_{acceptor}_wbridge.pdb"
                         ui.download(minimal_pdb.encode(), filename=filename)
 
                     def download_pymol():
-                        donor = row_data.get('donor_res', 'donor').replace(':', '_')
-                        acceptor = row_data.get('acceptor_res', 'acceptor').replace(':', '_')
+                        donor = row_data.get("donor_res", "donor").replace(":", "_")
+                        acceptor = row_data.get("acceptor_res", "acceptor").replace(
+                            ":", "_"
+                        )
                         label = f"{donor}_to_{acceptor}_wbridge"
-                        self._download_pymol_visualization(label, water_bridges=[interaction])
+                        self._download_pymol_visualization(
+                            label, water_bridges=[interaction]
+                        )
 
                     with (
                         ui.dialog().props("persistent") as dialog,
                         ui.card().style("width: 900px; max-width: 90vw;"),
                     ):
                         with ui.card_actions().classes("justify-end"):
-                            ui.button("Export PNG", icon="download", on_click=export_png).props("outline color=secondary")
-                            ui.button("Download PDB", icon="download", on_click=download_pdb).props("outline color=secondary")
-                            ui.button("View in PyMOL", icon="movie", on_click=download_pymol).props("outline color=secondary")
-                            ui.button("Close", on_click=dialog.close).props("color=primary")
+                            ui.button(
+                                "Export PNG", icon="download", on_click=export_png
+                            ).props("outline color=secondary")
+                            ui.button(
+                                "Download PDB", icon="download", on_click=download_pdb
+                            ).props("outline color=secondary")
+                            ui.button(
+                                "View in PyMOL", icon="movie", on_click=download_pymol
+                            ).props("outline color=secondary")
+                            ui.button("Close", on_click=dialog.close).props(
+                                "color=primary"
+                            )
 
                         with ui.card_section().classes("q-pa-md"):
                             viewer_id_div = f'<div id="{viewer_id}" style="width: 100%; height: 600px; min-width: 800px; position: relative;"></div>'
                             ui.html(viewer_id_div, sanitize=False)
 
                     dialog.open()
-                    ui.timer(0.1, lambda: ui.run_javascript(
-                        generate_water_bridge_viewer_js(interaction, minimal_pdb, viewer_id)
-                    ), once=True)
+                    ui.timer(
+                        0.1,
+                        lambda: ui.run_javascript(
+                            generate_water_bridge_viewer_js(
+                                interaction, minimal_pdb, viewer_id
+                            )
+                        ),
+                        once=True,
+                    )
 
                 water_bridge_table.on("visualize", show_water_bridge_visualization)
 
@@ -2486,24 +2800,45 @@ class WebResultsPanel:
                 if not interaction:
                     ui.notify("Error: Interaction not found", type="negative")
                     return
-                int_type = row_data.get("int_type", "").lower() if isinstance(row_data, dict) else interaction.get_interaction_type().lower()
+                int_type = (
+                    row_data.get("int_type", "").lower()
+                    if isinstance(row_data, dict)
+                    else interaction.get_interaction_type().lower()
+                )
 
                 # Determine which viewer to use based on actual type strings
                 viewer_gen = None
                 # Check for hydrogen bonds
-                if "hydrogen" in int_type or "h-bond" in int_type or "h bond" in int_type:
+                if (
+                    "hydrogen" in int_type
+                    or "h-bond" in int_type
+                    or "h bond" in int_type
+                ):
                     viewer_id = f"lig_hb_viewer_{random.randint(1000, 9999)}"
                     viewer_gen = generate_hydrogen_bond_viewer_js
                 # Check for halogen bonds
-                elif "halogen" in int_type or "x-bond" in int_type or "x bond" in int_type:
+                elif (
+                    "halogen" in int_type
+                    or "x-bond" in int_type
+                    or "x bond" in int_type
+                ):
                     viewer_id = f"lig_xb_viewer_{random.randint(1000, 9999)}"
                     viewer_gen = generate_halogen_bond_viewer_js
                 # Check for π-π stacking (with actual π symbol or spelled out)
-                elif ("π" in int_type and "π" in int_type and "stack" in int_type) or "pi-pi" in int_type or "pi pi" in int_type or "stacking" in int_type:
+                elif (
+                    ("π" in int_type and "π" in int_type and "stack" in int_type)
+                    or "pi-pi" in int_type
+                    or "pi pi" in int_type
+                    or "stacking" in int_type
+                ):
                     viewer_id = f"lig_pipi_viewer_{random.randint(1000, 9999)}"
                     viewer_gen = generate_pi_pi_stacking_viewer_js
                 # Check for π-interactions (with actual π symbol or spelled out)
-                elif ("π" in int_type and "inter" in int_type) or "pi inter" in int_type or "pi-inter" in int_type:
+                elif (
+                    ("π" in int_type and "inter" in int_type)
+                    or "pi inter" in int_type
+                    or "pi-inter" in int_type
+                ):
                     viewer_id = f"lig_pi_viewer_{random.randint(1000, 9999)}"
                     viewer_gen = generate_pi_interaction_viewer_js
                 # Check for carbonyl interactions
@@ -2511,7 +2846,11 @@ class WebResultsPanel:
                     viewer_id = f"lig_carbonyl_viewer_{random.randint(1000, 9999)}"
                     viewer_gen = generate_carbonyl_interaction_viewer_js
                 # Check for n-π* interactions
-                elif "n-pi" in int_type or "n pi" in int_type or ("n" in int_type and "π" in int_type):
+                elif (
+                    "n-pi" in int_type
+                    or "n pi" in int_type
+                    or ("n" in int_type and "π" in int_type)
+                ):
                     viewer_id = f"lig_npi_viewer_{random.randint(1000, 9999)}"
                     viewer_gen = generate_n_pi_interaction_viewer_js
                 # Check for water bridges
@@ -2520,67 +2859,93 @@ class WebResultsPanel:
                     viewer_gen = generate_water_bridge_viewer_js
 
                 if not viewer_gen:
-                    ui.notify(f"Error: Unknown interaction type '{int_type}'", type="negative")
+                    ui.notify(
+                        f"Error: Unknown interaction type '{int_type}'", type="negative"
+                    )
                     return
 
                 # Generate minimal PDB for this interaction
                 # Water bridges need special handling to include water molecules
-                if hasattr(interaction, 'water_residues'):
-                    minimal_pdb = extract_water_bridge_pdb(self.analyzer.parser, interaction)
+                if hasattr(interaction, "water_residues"):
+                    minimal_pdb = extract_water_bridge_pdb(
+                        self.analyzer.parser, interaction
+                    )
                 else:
-                    minimal_pdb = format_minimal_pdb(self.analyzer.parser, [interaction])
+                    minimal_pdb = format_minimal_pdb(
+                        self.analyzer.parser, [interaction]
+                    )
 
                 # Create dialog with proper structure matching other interaction visualizations
                 def export_png():
                     """Export viewer as PNG."""
                     pdb_base = self._get_pdb_basename()
-                    donor = row_data.get('donor_res', 'donor').replace(':', '_')
-                    acceptor = row_data.get('acceptor_res', 'acceptor').replace(':', '_')
+                    donor = row_data.get("donor_res", "donor").replace(":", "_")
+                    acceptor = row_data.get("acceptor_res", "acceptor").replace(
+                        ":", "_"
+                    )
                     filename = f"{pdb_base}_{donor}_to_{acceptor}_ligand.png"
                     ui.run_javascript(generate_png_export_js(viewer_id, filename))
 
                 def download_pdb():
                     """Download extracted PDB file."""
                     pdb_base = self._get_pdb_basename()
-                    donor = row_data.get('donor_res', 'donor').replace(':', '_')
-                    acceptor = row_data.get('acceptor_res', 'acceptor').replace(':', '_')
+                    donor = row_data.get("donor_res", "donor").replace(":", "_")
+                    acceptor = row_data.get("acceptor_res", "acceptor").replace(
+                        ":", "_"
+                    )
                     filename = f"{pdb_base}_{donor}_to_{acceptor}_ligand.pdb"
                     ui.download(minimal_pdb.encode(), filename=filename)
 
                 def download_pymol():
                     """Download as PyMOL visualization package."""
-                    donor = row_data.get('donor_res', 'donor').replace(':', '_')
-                    acceptor = row_data.get('acceptor_res', 'acceptor').replace(':', '_')
+                    donor = row_data.get("donor_res", "donor").replace(":", "_")
+                    acceptor = row_data.get("acceptor_res", "acceptor").replace(
+                        ":", "_"
+                    )
                     label = f"{donor}_to_{acceptor}"
                     if "hydrogen" in int_type:
-                        self._download_pymol_visualization(label, hydrogen_bonds=[interaction])
+                        self._download_pymol_visualization(
+                            label, hydrogen_bonds=[interaction]
+                        )
                     elif "halogen" in int_type:
-                        self._download_pymol_visualization(label, halogen_bonds=[interaction])
+                        self._download_pymol_visualization(
+                            label, halogen_bonds=[interaction]
+                        )
                     elif "pi-pi" in int_type:
-                        self._download_pymol_visualization(label, pi_pi_stacking=[interaction])
+                        self._download_pymol_visualization(
+                            label, pi_pi_stacking=[interaction]
+                        )
                     elif "pi" in int_type:
-                        self._download_pymol_visualization(label, pi_interactions=[interaction])
+                        self._download_pymol_visualization(
+                            label, pi_interactions=[interaction]
+                        )
                     elif "carbonyl" in int_type:
-                        self._download_pymol_visualization(label, carbonyl_interactions=[interaction])
+                        self._download_pymol_visualization(
+                            label, carbonyl_interactions=[interaction]
+                        )
                     elif "n-pi" in int_type:
-                        self._download_pymol_visualization(label, n_pi_interactions=[interaction])
+                        self._download_pymol_visualization(
+                            label, n_pi_interactions=[interaction]
+                        )
                     elif "water" in int_type:
-                        self._download_pymol_visualization(label, water_bridges=[interaction])
+                        self._download_pymol_visualization(
+                            label, water_bridges=[interaction]
+                        )
 
                 with (
                     ui.dialog().props("persistent") as dialog,
                     ui.card().style("width: 900px; max-width: 90vw;"),
                 ):
                     with ui.card_actions().classes("justify-end"):
-                        ui.button("Export PNG", icon="download", on_click=export_png).props(
-                            "outline color=secondary"
-                        )
-                        ui.button("Download PDB", icon="download", on_click=download_pdb).props(
-                            "outline color=secondary"
-                        )
-                        ui.button("View in PyMOL", icon="movie", on_click=download_pymol).props(
-                            "outline color=secondary"
-                        )
+                        ui.button(
+                            "Export PNG", icon="download", on_click=export_png
+                        ).props("outline color=secondary")
+                        ui.button(
+                            "Download PDB", icon="download", on_click=download_pdb
+                        ).props("outline color=secondary")
+                        ui.button(
+                            "View in PyMOL", icon="movie", on_click=download_pymol
+                        ).props("outline color=secondary")
                         ui.button("Close", on_click=dialog.close).props("color=primary")
 
                     with ui.card_section().classes("q-pa-md"):
@@ -2597,14 +2962,18 @@ class WebResultsPanel:
                 dialog.open()
 
                 # Initialize viewer after dialog is opened and rendered
-                ui.timer(0.1, lambda: ui.run_javascript(
-                    viewer_gen(interaction, minimal_pdb, viewer_id)
-                ), once=True)
+                ui.timer(
+                    0.1,
+                    lambda: ui.run_javascript(
+                        viewer_gen(interaction, minimal_pdb, viewer_id)
+                    ),
+                    once=True,
+                )
 
             # Handle table row visualization
             def handle_visualize(e):
                 # e.args should contain the row data
-                row_data = e.args if hasattr(e, 'args') else {}
+                row_data = e.args if hasattr(e, "args") else {}
                 if isinstance(row_data, dict) and "id" in row_data:
                     show_interaction_visualization(row_data)
                 else:

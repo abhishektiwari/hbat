@@ -39,8 +39,12 @@ class PyMOLExporter:
         self.parser = parser
         self.script_lines: List[str] = []
         # Track residues for visualization
-        self.residues_for_sticks: Set[Tuple[str, int]] = set()  # (chain, resi) tuples for show sticks
-        self.residues_for_spheres: Set[Tuple[str, int]] = set()  # (chain, resi) tuples for show spheres
+        self.residues_for_sticks: Set[Tuple[str, int]] = (
+            set()
+        )  # (chain, resi) tuples for show sticks
+        self.residues_for_spheres: Set[Tuple[str, int]] = (
+            set()
+        )  # (chain, resi) tuples for show spheres
 
     def add_header(self, title: str = "HBAT Interaction Analysis") -> None:
         """Add PyMOL script header.
@@ -73,7 +77,7 @@ class PyMOLExporter:
             donor = hb.get_donor()
             acceptor = hb.get_acceptor()
 
-            if not (hasattr(donor, 'res_seq') and hasattr(acceptor, 'res_seq')):
+            if not (hasattr(donor, "res_seq") and hasattr(acceptor, "res_seq")):
                 continue
 
             # Track residues for visualization
@@ -117,7 +121,7 @@ class PyMOLExporter:
             donor = xb.get_donor()
             acceptor = xb.get_acceptor()
 
-            if not (hasattr(donor, 'res_seq') and hasattr(acceptor, 'res_seq')):
+            if not (hasattr(donor, "res_seq") and hasattr(acceptor, "res_seq")):
                 continue
 
             # Track residues for visualization
@@ -135,7 +139,9 @@ class PyMOLExporter:
                 f"select {acceptor_sel}, chain {acceptor.chain_id} and resi {acceptor.res_seq} and name {acceptor.name}"
             )
 
-            self.script_lines.append(f"distance {xb_dist_sel}, {donor_sel}, {acceptor_sel}")
+            self.script_lines.append(
+                f"distance {xb_dist_sel}, {donor_sel}, {acceptor_sel}"
+            )
             self.script_lines.append(f"hide labels, {xb_dist_sel}")
             self.script_lines.append(f"color xb_color, {xb_dist_sel}")
             self.script_lines.append("")
@@ -156,7 +162,7 @@ class PyMOLExporter:
         for i, pi in enumerate(pi_interactions):
             donor = pi.get_donor()
 
-            if not hasattr(donor, 'res_seq'):
+            if not hasattr(donor, "res_seq"):
                 continue
 
             # Track residues for visualization
@@ -164,7 +170,9 @@ class PyMOLExporter:
 
             # Track pi system residue (use structured acceptor info from PiInteraction)
             if pi.acceptor_chain_id is not None and pi.acceptor_res_seq is not None:
-                self.residues_for_sticks.add((pi.acceptor_chain_id, pi.acceptor_res_seq))
+                self.residues_for_sticks.add(
+                    (pi.acceptor_chain_id, pi.acceptor_res_seq)
+                )
 
             donor_sel = f"pi_donor_{i}"
             pi_center_pseudo = f"pi_center_{i}"
@@ -211,7 +219,7 @@ class PyMOLExporter:
             ring1_atom = stack.ring1_atoms[0]
             ring2_atom = stack.ring2_atoms[0]
 
-            if not (hasattr(ring1_atom, 'res_seq') and hasattr(ring2_atom, 'res_seq')):
+            if not (hasattr(ring1_atom, "res_seq") and hasattr(ring2_atom, "res_seq")):
                 continue
 
             # Track residues for visualization
@@ -278,8 +286,10 @@ class PyMOLExporter:
             self.residues_for_sticks.add((acceptor_chain, acceptor_resi))
 
             # Get atom names if available
-            donor_atom_name = donor_atom.name if hasattr(donor_atom, 'name') else "*"
-            acceptor_atom_name = acceptor_atom.name if hasattr(acceptor_atom, 'name') else "*"
+            donor_atom_name = donor_atom.name if hasattr(donor_atom, "name") else "*"
+            acceptor_atom_name = (
+                acceptor_atom.name if hasattr(acceptor_atom, "name") else "*"
+            )
 
             donor_sel = f"wbridge_donor_{i}"
             acceptor_sel = f"wbridge_acceptor_{i}"
@@ -325,8 +335,8 @@ class PyMOLExporter:
                 hbond_dist_sel = f"wbridge_hbond_dist_{i}_{hbond_idx}"
 
                 # Get atom names if available
-                donor_atom_name = donor.name if hasattr(donor, 'name') else "*"
-                acceptor_atom_name = acceptor.name if hasattr(acceptor, 'name') else "*"
+                donor_atom_name = donor.name if hasattr(donor, "name") else "*"
+                acceptor_atom_name = acceptor.name if hasattr(acceptor, "name") else "*"
 
                 self.script_lines.append(
                     f"select {donor_hbond_sel}, chain {donor.chain_id} and resi {donor.res_seq} and name {donor_atom_name}"
@@ -359,7 +369,9 @@ class PyMOLExporter:
             self.script_lines.append(f"zoom {bridge_all_sel}, 2")
             self.script_lines.append("")
 
-    def add_carbonyl_interactions(self, carbonyl_interactions: List[CarbonylInteraction]) -> None:
+    def add_carbonyl_interactions(
+        self, carbonyl_interactions: List[CarbonylInteraction]
+    ) -> None:
         """Add carbonyl interaction visualization.
 
         :param carbonyl_interactions: List of CarbonylInteraction objects
@@ -375,7 +387,7 @@ class PyMOLExporter:
             donor = carbonyl.get_donor()
             acceptor = carbonyl.get_acceptor()
 
-            if not (hasattr(donor, 'res_seq') and hasattr(acceptor, 'res_seq')):
+            if not (hasattr(donor, "res_seq") and hasattr(acceptor, "res_seq")):
                 continue
 
             # Track residues for visualization
@@ -416,7 +428,7 @@ class PyMOLExporter:
         for i, npi in enumerate(n_pi_interactions):
             donor = npi.get_donor()
 
-            if not hasattr(donor, 'res_seq'):
+            if not hasattr(donor, "res_seq"):
                 continue
 
             # Track residues for visualization
@@ -424,7 +436,9 @@ class PyMOLExporter:
 
             # Track pi system residue (use structured acceptor info from NPiInteraction)
             if npi.acceptor_chain_id is not None and npi.acceptor_res_seq is not None:
-                self.residues_for_sticks.add((npi.acceptor_chain_id, npi.acceptor_res_seq))
+                self.residues_for_sticks.add(
+                    (npi.acceptor_chain_id, npi.acceptor_res_seq)
+                )
 
             donor_sel = f"npi_donor_{i}"
             pi_center_pseudo = f"npi_center_{i}"
@@ -458,13 +472,17 @@ class PyMOLExporter:
         # Build explicit show sticks command with all tracked residues
         if self.residues_for_sticks:
             sticks_list = sorted(self.residues_for_sticks)
-            sticks_sel = " or ".join(f"(chain {chain} and resi {resi})" for chain, resi in sticks_list)
+            sticks_sel = " or ".join(
+                f"(chain {chain} and resi {resi})" for chain, resi in sticks_list
+            )
             self.script_lines.append(f"show sticks, {sticks_sel}")
 
         # Build explicit show spheres command for water/ligands
         if self.residues_for_spheres:
             spheres_list = sorted(self.residues_for_spheres)
-            spheres_sel = " or ".join(f"(chain {chain} and resi {resi})" for chain, resi in spheres_list)
+            spheres_sel = " or ".join(
+                f"(chain {chain} and resi {resi})" for chain, resi in spheres_list
+            )
             self.script_lines.append(f"show spheres, {spheres_sel}")
 
         # Show all distance objects (dashes)
