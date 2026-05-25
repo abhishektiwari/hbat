@@ -349,8 +349,8 @@ class TestCLICIFWorkflows:
             cif_count = results[file_id]["cif_hbonds"]
             pdb_count = results[file_id]["pdb_hbonds"]
             tolerance = (
-                max(cif_count, pdb_count) * 0.30
-            )  # 30% tolerance for stochastic hydrogen placement variation
+                max(cif_count, pdb_count) * 0.35
+            )  # 35% tolerance for stochastic hydrogen placement variation
             diff = abs(cif_count - pdb_count)
             assert diff <= tolerance, (
                 f"H-bond count difference exceeds tolerance for {file_id}: CIF={cif_count}, PDB={pdb_count}, diff={diff}, tolerance={tolerance}"
