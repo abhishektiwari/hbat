@@ -38,7 +38,7 @@ jobs:
     - name: Run type check
       run: make type-check
     
-    - name: Run tests
-      run: xvfb-run -a make test
+    - name: Run fast tests (all Python versions)
+      run: xvfb-run -a make test-fast
       env:
         DISPLAY: :99

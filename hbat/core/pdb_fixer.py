@@ -46,9 +46,9 @@ class PDBFixer:
         """
         _, ext = os.path.splitext(file_path)
         ext = ext.lower()
-        if ext == '.cif':
-            return 'cif'
-        return 'pdb'  # Default to PDB for .pdb or unknown extensions
+        if ext == ".cif":
+            return "cif"
+        return "pdb"  # Default to PDB for .pdb or unknown extensions
 
     def _fix_with_openbabel(
         self, input_path: str, output_path: str, **kwargs: Any
@@ -104,20 +104,24 @@ class PDBFixer:
             # Write output as PDB. Since WriteFile() uses extension to determine format,
             # use temp .pdb file, then rename to desired extension for format preservation
             actual_output_path = output_path
-            if output_path.endswith('.cif'):
+            if output_path.endswith(".cif"):
                 # Use temporary .pdb filename to force PDB output
                 import os
+
                 base, _ = os.path.splitext(output_path)
-                temp_pdb_path = base + '_temp.pdb'
+                temp_pdb_path = base + "_temp.pdb"
                 actual_output_path = temp_pdb_path
 
-            conv.SetOutFormat('pdb')
+            conv.SetOutFormat("pdb")
             if not conv.WriteFile(mol, actual_output_path):
-                raise PDBFixerError(f"Failed to write fixed PDB file: {actual_output_path}")
+                raise PDBFixerError(
+                    f"Failed to write fixed PDB file: {actual_output_path}"
+                )
 
             # Rename temp file back to desired output path if needed
             if actual_output_path != output_path:
                 import os
+
                 os.rename(actual_output_path, output_path)
 
         except PDBFixerError:
@@ -298,15 +302,13 @@ class PDBFixer:
 
             # Read input file - OpenBabel auto-detects format from extension
             if not conv.ReadFile(mol, input_path):
-                raise PDBFixerError(
-                    f"Failed to read input file: {input_path}"
-                )
+                raise PDBFixerError(f"Failed to read input file: {input_path}")
 
             # Add hydrogens
             mol.AddHydrogens()
 
             # Always output as PDB
-            conv.SetOutFormat('pdb')
+            conv.SetOutFormat("pdb")
             if not conv.WriteFile(mol, output_path):
                 raise PDBFixerError(f"Failed to write fixed PDB file: {output_path}")
 
@@ -363,7 +365,7 @@ class PDBFixer:
             output_format = self._get_file_format(output_path)
 
             with open(output_path, "w") as f:
-                if output_format == 'cif':
+                if output_format == "cif":
                     # Write as CIF format using PDBxFile
                     try:
                         from openmm.app import PDBxFile
@@ -416,5 +418,3 @@ class PDBFixer:
             ),
             "has_sufficient_hydrogens": hydrogen_atoms >= (heavy_atoms * 0.5),
         }
-
-

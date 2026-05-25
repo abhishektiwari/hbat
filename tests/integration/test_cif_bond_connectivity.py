@@ -19,21 +19,27 @@ class TestStructConnParsing:
     def test_struct_conn_bonds_detected(self):
         """Test that struct_conn bonds are detected from CIF files."""
         parser = PDBParser()
-        parser.parse_file('example_pdb_files/6RSA.cif')
+        parser.parse_file("example_pdb_files/6RSA.cif")
 
         # Should have struct_conn bonds
-        struct_conn_bonds = [b for b in parser.bonds
-                            if b.detection_method == BondDetectionMethods.STRUCT_CONN]
+        struct_conn_bonds = [
+            b
+            for b in parser.bonds
+            if b.detection_method == BondDetectionMethods.STRUCT_CONN
+        ]
 
         assert len(struct_conn_bonds) > 0
 
     def test_struct_conn_bonds_have_correct_attributes(self):
         """Verify struct_conn bonds have proper attributes."""
         parser = PDBParser()
-        parser.parse_file('example_pdb_files/6RSA.cif')
+        parser.parse_file("example_pdb_files/6RSA.cif")
 
-        struct_conn_bonds = [b for b in parser.bonds
-                            if b.detection_method == BondDetectionMethods.STRUCT_CONN]
+        struct_conn_bonds = [
+            b
+            for b in parser.bonds
+            if b.detection_method == BondDetectionMethods.STRUCT_CONN
+        ]
 
         if struct_conn_bonds:
             bond = struct_conn_bonds[0]
@@ -47,7 +53,7 @@ class TestStructConnParsing:
     def test_no_duplicate_bonds_cif_vs_ccd(self):
         """Verify struct_conn filtering prevents duplicates with CCD data."""
         parser = PDBParser()
-        parser.parse_file('example_pdb_files/6RSA.cif')
+        parser.parse_file("example_pdb_files/6RSA.cif")
 
         # Check for duplicate bonds (same atoms bonded twice)
         bond_set = set()
@@ -65,9 +71,10 @@ class TestStructConnParsing:
     def test_bond_detection_methods_in_cif(self):
         """Verify that CIF parsing uses appropriate detection methods."""
         parser = PDBParser()
-        parser.parse_file('example_pdb_files/6RSA.cif')
+        parser.parse_file("example_pdb_files/6RSA.cif")
 
         from collections import Counter
+
         methods = Counter(b.detection_method for b in parser.bonds)
 
         # Should have residue_lookup bonds (from CCD)
@@ -79,19 +86,24 @@ class TestStructConnParsing:
     def test_helper_methods_work(self):
         """Test the helper methods for CIF bond parsing."""
         parser = PDBParser()
-        parser.parse_file('example_pdb_files/6RSA.cif')
+        parser.parse_file("example_pdb_files/6RSA.cif")
 
         # Test _find_atom_by_location
         if len(parser.atoms) > 0:
             atom = parser.atoms[0]
-            found = parser._find_atom_by_location(atom.chain_id, atom.res_seq, atom.name)
+            found = parser._find_atom_by_location(
+                atom.chain_id, atom.res_seq, atom.name
+            )
             assert found is not None
             assert found.serial == atom.serial
 
         # Test _is_standard_intra_residue_bond
         # For a standard residue like ALA
         is_standard = parser._is_standard_intra_residue_bond(
-            1, 'A', 'CA', 'C'  # C-CA bond in first residue
+            1,
+            "A",
+            "CA",
+            "C",  # C-CA bond in first residue
         )
         assert isinstance(is_standard, bool)
 
@@ -102,10 +114,10 @@ class TestCIFvsPDBBonds:
     def test_bond_count_comparison(self):
         """Compare total bond counts between CIF and PDB."""
         parser_pdb = PDBParser()
-        parser_pdb.parse_file('example_pdb_files/6rsa.pdb')
+        parser_pdb.parse_file("example_pdb_files/6rsa.pdb")
 
         parser_cif = PDBParser()
-        parser_cif.parse_file('example_pdb_files/6RSA.cif')
+        parser_cif.parse_file("example_pdb_files/6RSA.cif")
 
         # Bond counts will differ due to different residue numbering schemes
         # but should be in similar range
@@ -120,16 +132,22 @@ class TestCIFvsPDBBonds:
     def test_residue_lookup_bonds_in_both(self):
         """Verify both formats detect residue_lookup bonds."""
         parser_pdb = PDBParser()
-        parser_pdb.parse_file('example_pdb_files/6rsa.pdb')
+        parser_pdb.parse_file("example_pdb_files/6rsa.pdb")
 
         parser_cif = PDBParser()
-        parser_cif.parse_file('example_pdb_files/6RSA.cif')
+        parser_cif.parse_file("example_pdb_files/6RSA.cif")
 
         # Both should have residue lookup bonds
-        pdb_res_bonds = [b for b in parser_pdb.bonds
-                        if b.detection_method == BondDetectionMethods.RESIDUE_LOOKUP]
-        cif_res_bonds = [b for b in parser_cif.bonds
-                        if b.detection_method == BondDetectionMethods.RESIDUE_LOOKUP]
+        pdb_res_bonds = [
+            b
+            for b in parser_pdb.bonds
+            if b.detection_method == BondDetectionMethods.RESIDUE_LOOKUP
+        ]
+        cif_res_bonds = [
+            b
+            for b in parser_cif.bonds
+            if b.detection_method == BondDetectionMethods.RESIDUE_LOOKUP
+        ]
 
         assert len(pdb_res_bonds) > 0
         assert len(cif_res_bonds) > 0
@@ -140,7 +158,7 @@ class TestBondDetectionMethods:
 
     def test_struct_conn_method_defined(self):
         """Verify STRUCT_CONN is in BondDetectionMethods."""
-        assert hasattr(BondDetectionMethods, 'STRUCT_CONN')
+        assert hasattr(BondDetectionMethods, "STRUCT_CONN")
         assert BondDetectionMethods.STRUCT_CONN == "struct_conn"
 
     def test_struct_conn_in_all_methods(self):
@@ -166,17 +184,13 @@ class TestAtomLocationLookup:
     def test_find_atom_by_location_basic(self):
         """Test finding atoms by chain, residue, and name."""
         parser = PDBParser()
-        parser.parse_file('example_pdb_files/6RSA.cif')
+        parser.parse_file("example_pdb_files/6RSA.cif")
 
         # Get first atom's details
         atom = parser.atoms[0]
 
         # Find it by location
-        found = parser._find_atom_by_location(
-            atom.chain_id,
-            atom.res_seq,
-            atom.name
-        )
+        found = parser._find_atom_by_location(atom.chain_id, atom.res_seq, atom.name)
 
         assert found is not None
         assert found.serial == atom.serial
@@ -184,16 +198,16 @@ class TestAtomLocationLookup:
     def test_find_atom_by_location_not_found(self):
         """Test that non-existent atoms return None."""
         parser = PDBParser()
-        parser.parse_file('example_pdb_files/6RSA.cif')
+        parser.parse_file("example_pdb_files/6RSA.cif")
 
-        found = parser._find_atom_by_location('Z', 999, 'XYZ')
+        found = parser._find_atom_by_location("Z", 999, "XYZ")
 
         assert found is None
 
     def test_find_atom_case_insensitive_names(self):
         """Test that atom names are handled with proper case."""
         parser = PDBParser()
-        parser.parse_file('example_pdb_files/6RSA.cif')
+        parser.parse_file("example_pdb_files/6RSA.cif")
 
         atom = parser.atoms[0]
 
@@ -202,9 +216,11 @@ class TestAtomLocationLookup:
         assert found1 is not None
 
         # Should not find with different case (names are case-sensitive in CIF)
-        found2 = parser._find_atom_by_location(atom.chain_id, atom.res_seq, atom.name.lower())
+        found2 = parser._find_atom_by_location(
+            atom.chain_id, atom.res_seq, atom.name.lower()
+        )
         # This may or may not find depending on actual atom name case
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

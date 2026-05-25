@@ -93,7 +93,7 @@ class ParameterPanel:
 
     def _update_keep_water_state(self):
         """Update the enabled state of Keep Water switch based on method and remove_heterogens."""
-        if hasattr(self, 'keep_water_switch'):
+        if hasattr(self, "keep_water_switch"):
             should_enable = self._should_enable_keep_water()
             self.keep_water_switch.enabled = should_enable
 
@@ -243,8 +243,7 @@ class ParameterPanel:
 
                 # Add Hydrogens - disabled for OpenBabel (always true), enabled for PDBFixer
                 add_hydrogens_switch = ui.switch(
-                    "Add Hydrogens",
-                    value=self.fix_pdb_add_hydrogens
+                    "Add Hydrogens", value=self.fix_pdb_add_hydrogens
                 ).bind_value(self, "fix_pdb_add_hydrogens")
                 add_hydrogens_switch.bind_enabled_from(
                     self, "fix_pdb_method", lambda m: m == "pdbfixer"
@@ -269,7 +268,7 @@ class ParameterPanel:
 
                 self.remove_heterogens_switch = ui.switch(
                     "Remove Heterogens (PDBFixer only)",
-                    value=self.fix_pdb_remove_heterogens
+                    value=self.fix_pdb_remove_heterogens,
                 ).bind_value(self, "fix_pdb_remove_heterogens")
                 self.remove_heterogens_switch.bind_enabled_from(
                     self, "fix_pdb_method", lambda m: m == "pdbfixer"
@@ -277,8 +276,7 @@ class ParameterPanel:
 
                 # Keep Water switch - only enabled when Remove Heterogens is checked AND PDBFixer is selected
                 self.keep_water_switch = ui.switch(
-                    "Keep Water (PDBFixer only)",
-                    value=self.fix_pdb_keep_water
+                    "Keep Water (PDBFixer only)", value=self.fix_pdb_keep_water
                 ).bind_value(self, "fix_pdb_keep_water")
 
                 # Update enable state when method changes
@@ -692,7 +690,7 @@ class ParameterPanel:
 
     def _save_and_close(self):
         """Save parameters and close drawer."""
-        ui.notify("Parameters updated", type="positive", position="top-left")
+        # ui.notify("Parameters updated", type="positive", position="top-left")
         self.param_drawer.hide()
 
     def get_parameters(self) -> AnalysisParameters:

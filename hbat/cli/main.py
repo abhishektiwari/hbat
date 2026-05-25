@@ -969,9 +969,12 @@ def validate_input_file(filename: str) -> bool:
             if ext_lower == ".cif":
                 # CIF files should contain data_ blocks at line start
                 import re
-                has_cif_content = bool(re.search(r'^\s*data_', content, re.MULTILINE))
+
+                has_cif_content = bool(re.search(r"^\s*data_", content, re.MULTILINE))
                 if not has_cif_content:
-                    print_error(f"'{filename}' does not appear to be a valid CIF file (missing 'data_' block)")
+                    print_error(
+                        f"'{filename}' does not appear to be a valid CIF file (missing 'data_' block)"
+                    )
                     return False
                 return True
 
@@ -1045,6 +1048,27 @@ def format_results_text(
     lines.append(f"  Cooperativity chains: {summary['cooperativity_chains']['count']}")
     lines.append(f"  Total interactions: {summary['total_interactions']}")
     lines.append("")
+
+    # Water bridges summary
+    if "water_bridges" in summary:
+        wb_stats = summary["water_bridges"]
+        if wb_stats["count"] > 0:
+            lines.append("Water Bridges:")
+            lines.append(f"  Total bridges: {wb_stats['count']}")
+            if "average_bridge_length" in wb_stats:
+                lines.append(
+                    f"  Average bridge length: {wb_stats['average_bridge_length']:.2f} hops"
+                )
+            lines.append("")
+
+    # Ligand interactions summary
+    if "ligand_interactions" in summary:
+        lig_stats = summary["ligand_interactions"]
+        if lig_stats["count"] > 0:
+            lines.append("Ligand Interactions:")
+            lines.append(f"  Total interactions: {lig_stats['count']}")
+            lines.append(f"  Unique ligands: {lig_stats['unique_ligands']}")
+            lines.append("")
 
     # Bond detection statistics
     if "bond_detection" in summary:

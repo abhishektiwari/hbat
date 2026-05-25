@@ -513,7 +513,6 @@ class TestPDBFixingIntegration:
         assert len(atom_records) == 602, "Should have 602 protein atoms"
         assert len(hetatm_records) == 81, "Should have 81 water molecules"
 
-
     @pytest.mark.skipif(
         not (has_openbabel() or has_pdbfixer()), reason="No PDB fixer available"
     )
@@ -599,7 +598,7 @@ class TestPDBFixingIntegration:
             fixer.fix_pdb_file_to_file(
                 input_pdb_path="/nonexistent/file.pdb",
                 output_pdb_path="/tmp/output.pdb",
-                method="openbabel"
+                method="openbabel",
             )
 
 

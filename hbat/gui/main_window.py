@@ -99,7 +99,9 @@ class MainWindow:
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(
-            label="Open Structure File (PDB/CIF)...", accelerator="Ctrl+O", command=self._open_file
+            label="Open Structure File (PDB/CIF)...",
+            accelerator="Ctrl+O",
+            command=self._open_file,
         )
         file_menu.add_separator()
         file_menu.add_command(
@@ -318,7 +320,7 @@ class MainWindow:
                 ("Structure files", "*.pdb *.cif"),
                 ("PDB files", "*.pdb"),
                 ("CIF files", "*.cif"),
-                ("All files", "*.*")
+                ("All files", "*.*"),
             ],
         )
 
@@ -458,7 +460,9 @@ class MainWindow:
         :rtype: None
         """
         if not self.current_file:
-            messagebox.showwarning("Warning", "Please open a structure file (PDB or CIF) first.")
+            messagebox.showwarning(
+                "Warning", "Please open a structure file (PDB or CIF) first."
+            )
             return
 
         if self.analysis_running:
@@ -1067,8 +1071,10 @@ Author: Abhishek Tiwari
         )
         self.fixed_pdb_context_menu.add_command(
             label="Copy",
-            command=lambda: self.root.clipboard_clear()
-            or self.root.clipboard_append(self.fixed_file_text.selection_get()),
+            command=lambda: (
+                self.root.clipboard_clear()
+                or self.root.clipboard_append(self.fixed_file_text.selection_get())
+            ),
         )
 
         # Bind right-click to show context menu
@@ -1113,11 +1119,13 @@ Author: Abhishek Tiwari
 
         # Get save filename
         # Determine default extension based on input format
-        input_file = self.current_file or 'structure'
+        input_file = self.current_file or "structure"
         input_ext = os.path.splitext(input_file)[1].lower()
-        is_cif_input = input_ext == '.cif'
+        is_cif_input = input_ext == ".cif"
         default_ext = ".cif" if is_cif_input else ".pdb"
-        default_name = f"{os.path.splitext(os.path.basename(input_file))[0]}_fixed{default_ext}"
+        default_name = (
+            f"{os.path.splitext(os.path.basename(input_file))[0]}_fixed{default_ext}"
+        )
 
         filename = filedialog.asksaveasfilename(
             title="Save Fixed Structure",

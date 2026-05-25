@@ -60,6 +60,7 @@ class HBATWebApp:
         # Status tracking
         self.status_label: Optional[ui.label] = None
         self.analyze_button: Optional[ui.button] = None
+        self.download_structure_button: Optional[ui.button] = None
 
         # Stepper
         self.stepper: Optional[ui.stepper] = None
@@ -91,8 +92,8 @@ class HBATWebApp:
 
             with ui.card_section():
                 ui.label("Citation").classes("text-h6 q-mb-md")
-                ui.label("If you use HBAT in your research, please cite:").classes(
-                    "text-body2 q-mb-md"
+                ui.label("If you use HBAT 2 in your research, please cite:").classes(
+                    "text-body2 q-mb-md text-bold"
                 )
 
                 # HBAT 2 citation
@@ -104,18 +105,43 @@ class HBATWebApp:
                     ui.markdown(
                         """
 ```bibtex
-@misc{tiwari2026hbat2arxiv,
-   author    = {Tiwari, Abhishek},
-   title     = {HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
-   year      = 2026,
-   publisher = {arXiv},
-   doi       = {10.48550/arXiv.2602.17712},
-   url       = {https://arxiv.org/abs/2602.17712},
+@article{tiwari_2026_hbat_arxiv,
+  author       = {Tiwari, Abhishek},
+  title        = {HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
+  year         = 2026,
+  publisher    = {arXiv},
+  doi          = {10.48550/arXiv.2602.17712},
+  url          = {https://arxiv.org/abs/2602.17712}, 
 }
 ```
                     """
                     )
 
+                # HBAT 2 citation
+                ui.label(
+                    "Tiwari, A. (2026). HBAT 2: A Python Package to analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures. ChemRxiv. https://chemrxiv.org/doi/abs/10.26434/chemrxiv.15000141/v1"
+                ).classes("text-body2 q-mb-sm")
+
+                with ui.expansion("BibTeX", icon="code").classes("w-full q-mb-md"):
+                    ui.markdown(
+                        """
+```bibtex
+@article{tiwari_2026_hbat_chemrxiv,
+  author = {Abhishek Tiwari },
+  title = {HBAT 2: A Python Package to Analyse Hydrogen Bonds and Other Non-covalent Interactions in Macromolecular Structures},
+  publisher = {ChemRxiv},
+  year = {2026},
+  doi = {10.26434/chemrxiv.15000141/v1},
+  URL = {https://chemrxiv.org/doi/abs/10.26434/chemrxiv.15000141/v1},
+  eprint = {https://chemrxiv.org/doi/pdf/10.26434/chemrxiv.15000141/v1},
+}
+```
+                    """
+                    )
+
+                ui.label(
+                    "If you use HBAT 1.0 or 1.1 in your research, please cite:"
+                ).classes("text-body2 q-mb-md text-bold")
                 # Original HBAT citation
                 ui.label(
                     "Tiwari, A., & Panigrahi, S. K. (2007). HBAT: A Complete Package for Analysing Strong and Weak Hydrogen Bonds in Macromolecular Crystal Structures. In Silico Biology, 7(6). https://doi.org/10.3233/ISI-2007-00337"
@@ -155,7 +181,7 @@ class HBATWebApp:
                 "Cite", icon="format_quote", on_click=self._show_citation_dialog
             ).props("flat color=yellow")
             with ui.link(
-                target="http://hbat.abhishek-tiwari.com", new_tab=True
+                target="http://hbat.abhishek-tiwari.com/web", new_tab=True
             ).classes("text-white no-underline"):
                 ui.button("Docs", icon="description").props("flat color=white")
             with ui.link(
@@ -326,8 +352,7 @@ class HBATWebApp:
                     # Container for dynamically created results
                     results_container = ui.column().classes("w-full")
                     self.results_panel = WebResultsPanel(
-                        results_container,
-                        session_dir_callback=lambda: self.session_dir
+                        results_container, session_dir_callback=lambda: self.session_dir
                     )
 
                     with ui.stepper_navigation():
@@ -363,13 +388,14 @@ class HBATWebApp:
                                 icon="description",
                                 on_click=self._export_txt,
                             ).props("color=primary")
-                        # Download Fixed Structure section
+                        # Download Structure section
                         ui.separator().classes("q-my-md")
-                        ui.button(
-                            "Download Fixed Structure",
-                            icon="download",
-                            on_click=self._export_fixed_structure,
-                        ).props("color=primary")
+                        with ui.row().classes("gap-md"):
+                            self.download_structure_button = ui.button(
+                                "Download Original Structure",
+                                icon="download",
+                                on_click=self._export_fixed_structure,
+                            ).props("color=primary")
 
                     with ui.stepper_navigation():
                         ui.button(
@@ -461,7 +487,11 @@ class HBATWebApp:
                             <img src="https://socket.dev/api/badge/pypi/package/hbat/2.2.11?artifact_id=py3-none-any-whl" alt="Socket Security">
                         </a>
                         <a href="https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:u-x6o8ySG0sC" target="_blank">
-                            <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337" alt="Citations">
+                            <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3233%2FISI-2007-00337" alt="Citations HBAT 1.0 and 1.1">
+                        </a>
+
+                        <a href="https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:3bvyWxjaHKcC" target="_blank">
+                            <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.26434%2Fchemrxiv.15000141%2Fv1&link=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3A3bvyWxjaHKcC" alt="Citations HBAT 2">
                         </a>
                         
                     </div>
@@ -510,7 +540,7 @@ class HBATWebApp:
         with open(self.current_file_path, "w") as f:
             f.write(self.pdb_content)
 
-        ui.notify(f"File loaded: {filename}", type="positive", position="top-left")
+        # ui.notify(f"File loaded: {filename}", type="positive", position="top-left")
 
         # Update status label with filename
         self._update_status_label("Ready")
@@ -535,6 +565,11 @@ class HBATWebApp:
         self.status_label.text = "Running analysis..."
         self.status_label.classes(replace="text-caption q-mt-sm text-warning text-bold")
 
+        # Create notification for progress feedback
+        notification = ui.notification(timeout=None)
+        notification.message = "Analyzing molecular interactions..."
+        notification.spinner = True
+
         try:
             # Get parameters from UI
             params = self.parameter_panel.get_parameters()
@@ -553,7 +588,22 @@ class HBATWebApp:
                     f"Analysis completed! File: {self.current_file}"
                 )
                 self.status_label.classes(replace="text-caption q-mt-sm text-positive")
-                ui.notify("Analysis completed!", type="positive", position="top-left")
+
+                notification.message = "Analysis completed!"
+                notification.spinner = False
+                await asyncio.sleep(1)
+                notification.dismiss()
+
+                # Update download button label based on whether fixing was applied
+                if hasattr(
+                    self.analyzer, "_pdb_fixing_info"
+                ) and self.analyzer._pdb_fixing_info.get("applied"):
+                    button_label = "Download Fixed Structure"
+                else:
+                    button_label = "Download Original Structure"
+
+                if self.download_structure_button:
+                    self.download_structure_button.text = button_label
 
                 # Update results display
                 await self.results_panel.update_results(
@@ -565,16 +615,16 @@ class HBATWebApp:
             else:
                 self.status_label.text = "Analysis failed"
                 self.status_label.classes(replace="text-caption q-mt-sm text-negative")
-                ui.notify(
-                    "Analysis failed. Please check the PDB file.",
-                    type="negative",
-                    position="top-left",
-                )
+
+                notification.message = "Analysis failed. Please check the PDB file."
+                notification.spinner = False
 
         except Exception as e:
             self.status_label.text = f"Error: {str(e)}"
             self.status_label.classes(replace="text-caption q-mt-sm text-negative")
-            ui.notify(f"Error: {str(e)}", type="negative", position="top-left")
+
+            notification.message = f"Error: {str(e)}"
+            notification.spinner = False
 
         finally:
             self.analysis_running = False
@@ -687,7 +737,7 @@ class HBATWebApp:
         )
 
     def _export_fixed_structure(self):
-        """Download the fixed structure in selected format (PDB or CIF)."""
+        """Download the fixed structure (or original if no fixing was applied)."""
         if not self.analyzer:
             ui.notify(
                 "No analysis results to export", type="warning", position="top-left"
@@ -695,31 +745,39 @@ class HBATWebApp:
             return
 
         # Check if PDB fixing was applied
-        if not hasattr(
+        if hasattr(
             self.analyzer, "_pdb_fixing_info"
-        ) or not self.analyzer._pdb_fixing_info.get("applied"):
-            ui.notify(
-                "No structure fixing was applied during analysis",
-                type="warning",
-                position="top-left",
-            )
-            return
-
-        fixed_file_path = self.analyzer._pdb_fixing_info.get("fixed_file_path")
+        ) and self.analyzer._pdb_fixing_info.get("applied"):
+            # Download fixed structure
+            fixed_file_path = self.analyzer._pdb_fixing_info.get("fixed_file_path")
+            file_type = "fixed structure"
+        else:
+            # No fixing applied, download original structure
+            if not hasattr(
+                self.analyzer, "_pdb_fixing_info"
+            ) or not self.analyzer._pdb_original_info.get("input_file_path"):
+                ui.notify(
+                    "Original structure file not found",
+                    type="negative",
+                    position="top-left",
+                )
+                return
+            fixed_file_path = self.analyzer._pdb_original_info.get("input_file_path")
+            file_type = "original structure"
 
         try:
             if not os.path.exists(fixed_file_path):
                 ui.notify(
-                    "Fixed structure file not found",
+                    f"{file_type.capitalize()} file not found",
                     type="negative",
                     position="top-left",
                 )
                 return
 
-            # Download the fixed file directly
+            # Download the file directly
             ui.download(fixed_file_path)
             ui.notify(
-                "Downloaded fixed structure",
+                f"Downloaded {file_type}",
                 type="positive",
                 position="top-left",
             )

@@ -21,7 +21,7 @@ class TestHeteroatomHandling:
         from hbat.core.pdb_parser import PDBParser
 
         parser = PDBParser()
-        result = parser.parse_file('example_pdb_files/6RSA.cif')
+        result = parser.parse_file("example_pdb_files/6RSA.cif")
         assert result is True
 
         # Count heteroatom residues
@@ -32,15 +32,15 @@ class TestHeteroatomHandling:
             heteroatom_residues[residue.name] += 1
 
         # Check for water molecules (DOD - deuterated water)
-        assert 'DOD' in heteroatom_residues, "Water molecules not detected"
-        assert heteroatom_residues['DOD'] > 0, "No water molecules found"
+        assert "DOD" in heteroatom_residues, "Water molecules not detected"
+        assert heteroatom_residues["DOD"] > 0, "No water molecules found"
 
         # Check for ligand (UVC)
-        assert 'UVC' in heteroatom_residues, "Ligand not detected"
-        assert heteroatom_residues['UVC'] > 0, "No ligand found"
+        assert "UVC" in heteroatom_residues, "Ligand not detected"
+        assert heteroatom_residues["UVC"] > 0, "No ligand found"
 
         # Standard amino acids should also be present
-        standard_residues = {'ALA', 'GLY', 'SER', 'THR', 'CYS', 'VAL', 'LEU', 'ILE'}
+        standard_residues = {"ALA", "GLY", "SER", "THR", "CYS", "VAL", "LEU", "ILE"}
         found_standards = set(heteroatom_residues.keys()) & standard_residues
         assert len(found_standards) > 0, "No standard amino acids found"
 
@@ -49,10 +49,10 @@ class TestHeteroatomHandling:
         from hbat.core.pdb_parser import PDBParser
 
         parser = PDBParser()
-        parser.parse_file('example_pdb_files/6RSA.cif')
+        parser.parse_file("example_pdb_files/6RSA.cif")
 
         # Count water molecules
-        water_count = sum(1 for res in parser.residues.values() if res.name == 'DOD')
+        water_count = sum(1 for res in parser.residues.values() if res.name == "DOD")
         assert water_count == 112, f"Expected 112 water molecules, found {water_count}"
 
     def test_cif_vs_pdb_heteroatom_equivalence(self):
@@ -61,17 +61,19 @@ class TestHeteroatomHandling:
 
         # Parse CIF
         parser_cif = PDBParser()
-        parser_cif.parse_file('example_pdb_files/6RSA.cif')
+        parser_cif.parse_file("example_pdb_files/6RSA.cif")
 
         # Parse PDB
         parser_pdb = PDBParser()
-        parser_pdb.parse_file('example_pdb_files/6rsa.pdb')
+        parser_pdb.parse_file("example_pdb_files/6rsa.pdb")
 
         # Count heteroatoms in each
         def count_heteroatoms(parser):
             heteroatom_counts = {}
             for residue in parser.residues.values():
-                heteroatom_counts[residue.name] = heteroatom_counts.get(residue.name, 0) + 1
+                heteroatom_counts[residue.name] = (
+                    heteroatom_counts.get(residue.name, 0) + 1
+                )
             return heteroatom_counts
 
         heteroatoms_cif = count_heteroatoms(parser_cif)
@@ -81,15 +83,16 @@ class TestHeteroatomHandling:
         for res_type in heteroatoms_cif.keys():
             cif_count = heteroatoms_cif.get(res_type, 0)
             pdb_count = heteroatoms_pdb.get(res_type, 0)
-            assert cif_count == pdb_count, \
+            assert cif_count == pdb_count, (
                 f"Heteroatom count mismatch for {res_type}: CIF={cif_count}, PDB={pdb_count}"
+            )
 
     def test_cif_heteroatom_bonds_detected(self):
         """Test that bonds involving heteroatoms are correctly detected."""
         from hbat.core.pdb_parser import PDBParser
 
         parser = PDBParser()
-        parser.parse_file('example_pdb_files/6RSA.cif')
+        parser.parse_file("example_pdb_files/6RSA.cif")
 
         # Count bonds
         total_bonds = len(parser.bonds)
@@ -98,7 +101,7 @@ class TestHeteroatomHandling:
         # Check that water molecules have bonds (O-H bonds)
         water_atoms = set()
         for residue in parser.residues.values():
-            if residue.name == 'DOD':
+            if residue.name == "DOD":
                 for atom in residue.atoms:
                     water_atoms.add(atom.serial)
 
@@ -121,13 +124,13 @@ class TestHeteroatomHandling:
         from hbat.core.pdb_parser import PDBParser
 
         parser = PDBParser()
-        parser.parse_file('example_pdb_files/6RSA.cif')
+        parser.parse_file("example_pdb_files/6RSA.cif")
 
         # Find ligand atoms
         ligand_atoms = set()
         ligand_residue = None
         for residue in parser.residues.values():
-            if residue.name == 'UVC':
+            if residue.name == "UVC":
                 ligand_residue = residue
                 for atom in residue.atoms:
                     ligand_atoms.add(atom.serial)
@@ -136,17 +139,22 @@ class TestHeteroatomHandling:
         assert ligand_residue is not None, "Ligand residue not found"
 
         # Verify ligand atoms are correctly parsed (31 atoms including hydrogen)
-        assert len(ligand_atoms) == 31, f"Expected 31 ligand atoms, found {len(ligand_atoms)}"
+        assert len(ligand_atoms) == 31, (
+            f"Expected 31 ligand atoms, found {len(ligand_atoms)}"
+        )
 
     def test_cif_heteroatom_analysis(self):
         """Test that heteroatoms can be analyzed for interactions."""
-        from hbat.core.analysis import AnalysisParameters, NPMolecularInteractionAnalyzer
+        from hbat.core.analysis import (
+            AnalysisParameters,
+            NPMolecularInteractionAnalyzer,
+        )
 
         params = AnalysisParameters()
         params.fix_pdb_enabled = False
 
         analyzer = NPMolecularInteractionAnalyzer(params)
-        result = analyzer.analyze_file('example_pdb_files/6RSA.cif')
+        result = analyzer.analyze_file("example_pdb_files/6RSA.cif")
 
         assert result is True
         # Analysis should complete without errors despite heteroatoms
@@ -154,41 +162,46 @@ class TestHeteroatomHandling:
 
     def test_cif_vs_pdb_heteroatom_analysis(self):
         """Test that heteroatom analysis produces equivalent results for CIF vs PDB."""
-        from hbat.core.analysis import AnalysisParameters, NPMolecularInteractionAnalyzer
+        from hbat.core.analysis import (
+            AnalysisParameters,
+            NPMolecularInteractionAnalyzer,
+        )
 
         params = AnalysisParameters()
         params.fix_pdb_enabled = False
 
         # Analyze CIF
         analyzer_cif = NPMolecularInteractionAnalyzer(params)
-        analyzer_cif.analyze_file('example_pdb_files/6RSA.cif')
+        analyzer_cif.analyze_file("example_pdb_files/6RSA.cif")
 
         # Analyze PDB
         analyzer_pdb = NPMolecularInteractionAnalyzer(params)
-        analyzer_pdb.analyze_file('example_pdb_files/6rsa.pdb')
+        analyzer_pdb.analyze_file("example_pdb_files/6rsa.pdb")
 
         # H-bond counts should be identical (no fixing)
         hb_cif = len(analyzer_cif.hydrogen_bonds)
         hb_pdb = len(analyzer_pdb.hydrogen_bonds)
 
-        assert hb_cif == hb_pdb, \
-            f"H-bond counts differ: CIF={hb_cif}, PDB={hb_pdb}"
+        assert hb_cif == hb_pdb, f"H-bond counts differ: CIF={hb_cif}, PDB={hb_pdb}"
 
     def test_cif_heteroatom_with_fixing(self):
         """Test that heteroatoms are preserved during PDB fixing."""
-        from hbat.core.analysis import AnalysisParameters, NPMolecularInteractionAnalyzer
+        from hbat.core.analysis import (
+            AnalysisParameters,
+            NPMolecularInteractionAnalyzer,
+        )
         from hbat.core.pdb_parser import PDBParser
 
         params = AnalysisParameters()
         params.fix_pdb_enabled = True
-        params.fix_pdb_method = 'pdbfixer'
+        params.fix_pdb_method = "pdbfixer"
         params.fix_pdb_add_hydrogens = True
 
         analyzer = NPMolecularInteractionAnalyzer(params)
-        analyzer.analyze_file('example_pdb_files/6RSA.cif')
+        analyzer.analyze_file("example_pdb_files/6RSA.cif")
 
         # Parse the fixed file
-        fixed_file = analyzer._pdb_fixing_info.get('fixed_file_path')
+        fixed_file = analyzer._pdb_fixing_info.get("fixed_file_path")
         assert fixed_file is not None
         assert os.path.exists(fixed_file)
 
@@ -197,8 +210,12 @@ class TestHeteroatomHandling:
         result = parser.parse_file(fixed_file)
         assert result is True
 
-        heteroatom_count = sum(1 for res in parser.residues.values() if res.name == 'DOD')
-        assert heteroatom_count == 112, f"Water molecules lost during fixing: {heteroatom_count}/112"
+        heteroatom_count = sum(
+            1 for res in parser.residues.values() if res.name == "DOD"
+        )
+        assert heteroatom_count == 112, (
+            f"Water molecules lost during fixing: {heteroatom_count}/112"
+        )
 
         # Clean up
         if os.path.exists(fixed_file):
@@ -213,13 +230,33 @@ class TestNonStandardResidues:
         from hbat.core.pdb_parser import PDBParser
 
         parser = PDBParser()
-        parser.parse_file('example_pdb_files/6RSA.cif')
+        parser.parse_file("example_pdb_files/6RSA.cif")
 
         # Find non-standard residues
         standard_residues = {
-            'ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLN', 'GLU', 'GLY', 'HIS',
-            'ILE', 'LEU', 'LYS', 'MET', 'PHE', 'PRO', 'SER', 'THR', 'TRP',
-            'TYR', 'VAL', 'HOH', 'DOD', 'WAT'  # Include common water names
+            "ALA",
+            "ARG",
+            "ASN",
+            "ASP",
+            "CYS",
+            "GLN",
+            "GLU",
+            "GLY",
+            "HIS",
+            "ILE",
+            "LEU",
+            "LYS",
+            "MET",
+            "PHE",
+            "PRO",
+            "SER",
+            "THR",
+            "TRP",
+            "TYR",
+            "VAL",
+            "HOH",
+            "DOD",
+            "WAT",  # Include common water names
         }
 
         non_standard = set()
@@ -228,8 +265,8 @@ class TestNonStandardResidues:
                 non_standard.add(residue.name)
 
         # UVC should be detected as non-standard (it's a ligand)
-        assert 'UVC' in non_standard, "Ligand UVC not detected as non-standard residue"
+        assert "UVC" in non_standard, "Ligand UVC not detected as non-standard residue"
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

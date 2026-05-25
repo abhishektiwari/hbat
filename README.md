@@ -6,12 +6,14 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 
 **Supported Interaction Types:**
 
-- **Hydrogen Bonds**: Classical` N-H···O`, `O-H···O`, and weak `C-H···O` interactions
+- **Hydrogen Bonds**: Classical `N-H···O`, `O-H···O`, and weak `C-H···O` interactions
 - **Halogen Bonds**: `C-X···A` interactions (`X = Cl, Br, I`)
 - **π Interactions**: X-H···π and `C-X···π` interactions with aromatic rings (`Phe`, `Tyr`, `Trp`, `His`, etc.)
 - **π-π Stacking**: Aromatic ring-ring interactions (parallel, T-shaped, offset)
 - **Carbonyl Interactions**: `n→π*` interactions between carbonyl groups
 - **n-π Interactions**: Lone pair interactions with aromatic `π` systems
+- **Water Bridges**: Water-mediated hydrogen bond networks connecting protein/ligand residues
+- **Ligand Interactions**: Comprehensive detection of all interaction types between ligands and protein/nucleic acid residues
  
 > **HBAT 2 Web Interface** is Live! Try it out at [hbat-web.abhishek-tiwari.com](https://hbat-web.abhishek-tiwari.com)
 
@@ -38,18 +40,20 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 [![Google Scholar Citation](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.26434%2Fchemrxiv.15000141%2Fv1&link=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3A3bvyWxjaHKcC)](https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:3bvyWxjaHKcC)
 
 **HBAT Desktop (Mac, Windows, Linux):**
-![HBAT Desktop](https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png)
+![HBAT Desktop](https://static.abhishek-tiwari.com/hbat/hbat-window-v3.png)
 
 **HBAT Web:** Try it out at [hbat-web.abhishek-tiwari.com](https://hbat-web.abhishek-tiwari.com)
 
-![HBAT Web](https://static.abhishek-tiwari.com/hbat/hbat-2-web-v1.png)
+![HBAT Web](https://static.abhishek-tiwari.com/hbat/hbat-2-web-v2.png)
 
-**Visualizing interactions using HBAT Web (Halogen Bond in PDB Entry 4x21):**
-![Halogen Bonds in PDB Entry 4x21](https://static.abhishek-tiwari.com/hbat/py3dmol-4x21-v1.png)
+**Visualizing interactions with HBAT Web using D3MOl and PyMOL (PDB Entry 6RSA):**
+![Water Bridge in PDB Entry 6RSA](https://static.abhishek-tiwari.com/hbat/6rsa_A_ARG_10_to_A_ASP_38_pymol.png)
+
+![Pi Interaction in PDB Entry 6RSA](https://static.abhishek-tiwari.com/hbat/6rsa_A_MET_29_to_A_PHE_46_pi.png)
 
 **Cooperativity chain detection and visualization (PDB Entry 6RSA):**
 
-![Cooperativity chain detection and visualization](https://static.abhishek-tiwari.com/hbat/6rsa-pdb-chain-6.png)
+![Cooperativity chain detection and visualization](https://static.abhishek-tiwari.com/hbat/6rsa_chain_H_bond_chain_10.png)
 
 ## Background
 HBAT 2 is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from [SourceForge](https://sourceforge.net/projects/hbat/files/HBAT/) however Perl version is not maintained anymore. 
@@ -57,12 +61,16 @@ HBAT 2 is a modern Python re-implementation of the original Perl-based tool deve
 
 ## Highlights of HBAT 2
 
-- Detect and analyze potential hydrogen bonds, halogen bonds, π interactions, π-π stacking, carbonyl interactions, and n-π interactions
+- Detect and analyze potential hydrogen bonds, halogen bonds, π interactions, π-π stacking, carbonyl interactions, n-π interactions, water bridges, and ligand interactions
 - Automated PDB fixing with OpenBabel and PDBFixer integration
 - Support graphical (tkinter), command-line, and programming API interfaces
 - Use graphical interfaces for interactive analysis, CLI/API for batch processing and automation
+- Ligand interaction analysis with residue-specific visualization and filtering
+- Water bridge detection and analysis with bridge path visualization
 - Hydrogen bond network (potential cooperativity/anticooperativity chains and water-mediated hydrogen bond networks) visualization using NetworkX/matplotlib and GraphViz
 - Export hydrogen bond network visualizations to PNG, SVG, PDF formats
+- 3D visualization of interactions using 3Dmol.js in Jupyter notebooks and HBAT web interface
+- Export and visualize interactions in PyMOL from HBAT web interface
 - Built-in presets for different structure types (high-resolution, NMR, membrane proteins, etc.)
 - Customizable distance cutoffs, angle thresholds, and analysis modes.
 - Multiple Output Formats: Text, CSV, and JSON export options
@@ -319,7 +327,7 @@ If you use HBAT 2  in your research, please cite:
   year         = 2026,
   publisher    = {arXiv},
   doi          = {10.48550/arXiv.2602.17712},
-  url.         = {https://arxiv.org/abs/2602.17712}, 
+  url          = {https://arxiv.org/abs/2602.17712}, 
 }
 ```
 

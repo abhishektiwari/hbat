@@ -55,8 +55,19 @@ install:
 	pip install -e .
 
 install-dev:
-	pip install -r requirements-dev.txt
-	pip install -e .
+	pip install -e ".[dev,docs,server]"
+	@echo ""
+	@echo "✓ Full installation complete with:"
+	@echo "  - Core dependencies"
+	@echo "  - Development tools (pytest, mypy, black, etc.)"
+	@echo "  - Documentation (sphinx, sphinx-autobuild, etc.)"
+	@echo "  - Server dependencies (nicegui, flask, etc.)"
+	@echo ""
+	@echo "Available commands:"
+	@echo "  make docs-watch   - Build docs with auto-reload"
+	@echo "  make run-server   - Start web server"
+	@echo "  make run-gui      - Launch desktop GUI"
+	@echo "  make test         - Run test suite"
 
 # Testing
 test:
@@ -168,6 +179,7 @@ clean:
 	rm -rf notebooks/*.json
 	rm -rf notebooks/__pycache__
 	rm -rf notebooks/*.png
+	rm -rf uploads/sessions/*
 	rm -rf "~"
 	rm -f coverage.xml
 	rm -f junit.xml
