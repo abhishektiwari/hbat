@@ -223,7 +223,7 @@ class WebResultsPanel:
                 "icon": "arrow_forward",
             },
             "cooperativity_chains": {
-                "viz_method": None,  # No visualization for cooperativity chains
+                "viz_method": "_show_cooperativity_chain_visualization",
                 "icon": "account_tree",
             },
         }
