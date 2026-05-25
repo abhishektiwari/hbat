@@ -460,27 +460,6 @@ class Residue:
         """
         return [atom for atom in self.atoms if atom.element.upper() == element.upper()]
 
-    def center_of_mass(self) -> NPVec3D:
-        """Calculate center of mass of residue.
-
-        Computes the mass-weighted centroid of all atoms in the residue.
-
-        :returns: Center of mass coordinates
-        :rtype: NPVec3D
-        """
-        if not self.atoms:
-            return NPVec3D(0, 0, 0)
-
-        total_mass = 0.0
-        weighted_pos = NPVec3D(0, 0, 0)
-
-        for atom in self.atoms:
-            mass = self._get_atomic_mass(atom.element)
-            total_mass += mass
-            weighted_pos = weighted_pos + (atom.coords * mass)
-
-        return weighted_pos / total_mass if total_mass > 0 else NPVec3D(0, 0, 0)
-
     def _get_atomic_mass(self, element: str) -> float:
         """Get approximate atomic mass for element."""
         return AtomicData.ATOMIC_MASSES.get(
