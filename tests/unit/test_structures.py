@@ -698,3 +698,488 @@ class TestAtomChainInfo:
             )
 
             assert atom.i_code == i_code
+
+
+@pytest.mark.unit
+class TestAtomMetalAndVdw:
+    """Test Atom metal and vdW properties."""
+
+    def test_is_metal_true(self):
+        """Test is_metal() returns True for metal elements."""
+        metal_atom = Atom(
+            serial=1,
+            name="FE",
+            alt_loc="",
+            res_name="HEM",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(0, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="FE",
+            charge="",
+            record_type="HETATM",
+        )
+        assert metal_atom.is_metal() is True
+
+    def test_is_metal_false(self):
+        """Test is_metal() returns False for non-metal elements."""
+        carbon_atom = Atom(
+            serial=1,
+            name="C",
+            alt_loc="",
+            res_name="ALA",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(0, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="C",
+            charge="",
+            record_type="ATOM",
+        )
+        assert carbon_atom.is_metal() is False
+
+    def test_get_vdw_radius_known_element(self):
+        """Test get_vdw_radius() for known element."""
+        nitrogen_atom = Atom(
+            serial=1,
+            name="N",
+            alt_loc="",
+            res_name="ALA",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(0, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="N",
+            charge="",
+            record_type="ATOM",
+        )
+        radius = nitrogen_atom.get_vdw_radius()
+        assert isinstance(radius, float)
+        assert radius > 0
+
+    def test_get_vdw_radius_unknown_element(self):
+        """Test get_vdw_radius() for unknown element defaults to 2.0."""
+        unknown_atom = Atom(
+            serial=1,
+            name="Xx",
+            alt_loc="",
+            res_name="XXX",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(0, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="Xx",
+            charge="",
+            record_type="HETATM",
+        )
+        radius = unknown_atom.get_vdw_radius()
+        assert radius == 2.0
+
+    def test_calculate_vdw_distance(self):
+        """Test calculate_vdw_distance() sums two radii."""
+        nitrogen_atom = Atom(
+            serial=1,
+            name="N",
+            alt_loc="",
+            res_name="ALA",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(0, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="N",
+            charge="",
+            record_type="ATOM",
+        )
+        oxygen_atom = Atom(
+            serial=2,
+            name="O",
+            alt_loc="",
+            res_name="GLY",
+            chain_id="A",
+            res_seq=2,
+            i_code="",
+            coords=NPVec3D(1, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="O",
+            charge="",
+            record_type="ATOM",
+        )
+        vdw_dist = nitrogen_atom.calculate_vdw_distance(oxygen_atom)
+        assert isinstance(vdw_dist, float)
+        assert vdw_dist > 0
+
+
+@pytest.mark.unit
+class TestAtomBondedAtoms:
+    """Test Atom bonded atom lookup methods."""
+
+    def test_find_bonded_atom_by_string(self):
+        """Test find_bonded_atom() with element string."""
+        from hbat.core.structure import Bond
+
+        n_atom = Atom(
+            serial=1,
+            name="N",
+            alt_loc="",
+            res_name="ALA",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(0, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="N",
+            charge="",
+            record_type="ATOM",
+        )
+
+        h_atom = Atom(
+            serial=2,
+            name="H",
+            alt_loc="",
+            res_name="ALA",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(1, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="H",
+            charge="",
+            record_type="ATOM",
+        )
+
+        bond = Bond(1, 2)
+        result = n_atom.find_bonded_atom("H", [bond], [n_atom, h_atom])
+        assert result == h_atom
+
+    def test_find_bonded_atom_by_set(self):
+        """Test find_bonded_atom() with set of elements."""
+        from hbat.core.structure import Bond
+
+        n_atom = Atom(
+            serial=1,
+            name="N",
+            alt_loc="",
+            res_name="ALA",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(0, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="N",
+            charge="",
+            record_type="ATOM",
+        )
+
+        h_atom = Atom(
+            serial=2,
+            name="H",
+            alt_loc="",
+            res_name="ALA",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(1, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="H",
+            charge="",
+            record_type="ATOM",
+        )
+
+        bond = Bond(1, 2)
+        result = n_atom.find_bonded_atom({"H"}, [bond], [n_atom, h_atom])
+        assert result == h_atom
+
+    def test_find_bonded_atom_not_found(self):
+        """Test find_bonded_atom() returns None when not found."""
+        from hbat.core.structure import Bond
+
+        n_atom = Atom(
+            serial=1,
+            name="N",
+            alt_loc="",
+            res_name="ALA",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(0, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="N",
+            charge="",
+            record_type="ATOM",
+        )
+
+        h_atom = Atom(
+            serial=2,
+            name="H",
+            alt_loc="",
+            res_name="ALA",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(1, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="H",
+            charge="",
+            record_type="ATOM",
+        )
+
+        bond = Bond(1, 2)
+        result = n_atom.find_bonded_atom("Xe", [bond], [n_atom, h_atom])
+        assert result is None
+
+    def test_get_bonded_hydrogen(self):
+        """Test get_bonded_hydrogen() finds bonded hydrogen."""
+        from hbat.core.structure import Bond
+
+        n_atom = Atom(
+            serial=1,
+            name="N",
+            alt_loc="",
+            res_name="ALA",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(0, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="N",
+            charge="",
+            record_type="ATOM",
+        )
+
+        h_atom = Atom(
+            serial=2,
+            name="H",
+            alt_loc="",
+            res_name="ALA",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(1, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="H",
+            charge="",
+            record_type="ATOM",
+        )
+
+        bond = Bond(1, 2)
+        result = n_atom.get_bonded_hydrogen([bond], [n_atom, h_atom])
+        assert result == h_atom
+
+    def test_get_bonded_carbon(self):
+        """Test get_bonded_carbon() finds bonded carbon."""
+        from hbat.core.structure import Bond
+
+        cl_atom = Atom(
+            serial=1,
+            name="CL",
+            alt_loc="",
+            res_name="CLU",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(0, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="CL",
+            charge="",
+            record_type="ATOM",
+        )
+
+        c_atom = Atom(
+            serial=2,
+            name="C",
+            alt_loc="",
+            res_name="CLU",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(1, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="C",
+            charge="",
+            record_type="ATOM",
+        )
+
+        bond = Bond(1, 2)
+        result = cl_atom.get_bonded_carbon([bond], [cl_atom, c_atom])
+        assert result == c_atom
+
+
+@pytest.mark.unit
+class TestAtomClassifyLonePairSubtype:
+    """Test Atom lone pair subtype classification."""
+
+    def test_classify_backbone_carbonyl_o(self):
+        """Test classification of backbone carbonyl oxygen."""
+        from hbat.core.structure import Residue
+
+        o_atom = Atom(
+            serial=1,
+            name="O",
+            alt_loc="",
+            res_name="ALA",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(0, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="O",
+            charge="",
+            record_type="ATOM",
+        )
+
+        residue = Residue("ALA", "A", 1, "", [o_atom])
+        subtype = o_atom.classify_lone_pair_subtype(residue)
+        assert subtype == "backbone-carbonyl"
+
+    def test_classify_hydroxyl_og(self):
+        """Test classification of hydroxyl oxygen."""
+        from hbat.core.structure import Residue
+
+        og_atom = Atom(
+            serial=1,
+            name="OG",
+            alt_loc="",
+            res_name="SER",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(0, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="O",
+            charge="",
+            record_type="ATOM",
+        )
+
+        residue = Residue("SER", "A", 1, "", [og_atom])
+        subtype = og_atom.classify_lone_pair_subtype(residue)
+        assert subtype == "hydroxyl-oxygen"
+
+    def test_classify_backbone_n(self):
+        """Test classification of backbone amine nitrogen."""
+        from hbat.core.structure import Residue
+
+        n_atom = Atom(
+            serial=1,
+            name="N",
+            alt_loc="",
+            res_name="ALA",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(0, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="N",
+            charge="",
+            record_type="ATOM",
+        )
+
+        residue = Residue("ALA", "A", 1, "", [n_atom])
+        subtype = n_atom.classify_lone_pair_subtype(residue)
+        assert subtype == "backbone-amine"
+
+    def test_classify_cysteine_sg(self):
+        """Test classification of cysteine sulfur."""
+        from hbat.core.structure import Residue
+
+        sg_atom = Atom(
+            serial=1,
+            name="SG",
+            alt_loc="",
+            res_name="CYS",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(0, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="S",
+            charge="",
+            record_type="ATOM",
+        )
+
+        residue = Residue("CYS", "A", 1, "", [sg_atom])
+        subtype = sg_atom.classify_lone_pair_subtype(residue)
+        assert subtype == "cysteine-sulfur"
+
+
+@pytest.mark.unit
+class TestAtomDictAndFields:
+    """Test Atom dictionary and fields methods."""
+
+    def test_to_dict_contains_all_fields(self):
+        """Test to_dict() contains all expected fields."""
+        atom = Atom(
+            serial=1,
+            name="CA",
+            alt_loc="",
+            res_name="ALA",
+            chain_id="A",
+            res_seq=1,
+            i_code="",
+            coords=NPVec3D(0, 0, 0),
+            occupancy=1.0,
+            temp_factor=20.0,
+            element="C",
+            charge="",
+            record_type="ATOM",
+        )
+
+        atom_dict = atom.to_dict()
+        fields = Atom.fields()
+        for field in fields:
+            assert field in atom_dict
+
+    def test_to_dict_values_match_atom(self):
+        """Test to_dict() values match atom attributes."""
+        atom = Atom(
+            serial=42,
+            name="CA",
+            alt_loc="",
+            res_name="ALA",
+            chain_id="A",
+            res_seq=5,
+            i_code="",
+            coords=NPVec3D(1, 2, 3),
+            occupancy=0.5,
+            temp_factor=25.0,
+            element="C",
+            charge="",
+            record_type="ATOM",
+        )
+
+        atom_dict = atom.to_dict()
+        assert atom_dict["serial"] == 42
+        assert atom_dict["name"] == "CA"
+        assert atom_dict["element"] == "C"
+
+    def test_fields_classmethod(self):
+        """Test fields() classmethod returns list of field names."""
+        fields = Atom.fields()
+        assert isinstance(fields, list)
+        assert "serial" in fields
+        assert "name" in fields
+        assert "element" in fields
