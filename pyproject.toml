@@ -55,6 +55,7 @@ dev = [
     "types-requests>=2.0.0",
     "types-Pillow>=8.0.0",
     "pandas-stubs>=1.0.0",
+    "psutil>=7.0.0",
 ]
 build = [
     "build>=0.8.0",
