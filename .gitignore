@@ -277,3 +277,4 @@ example_pdb_files/*_fixed.pdb
 
 # Ignore TODO.md
 TODO.md
+PLAN.md
