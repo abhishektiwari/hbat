@@ -12,8 +12,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import numpy as np
 
 from ..constants import (
-    BACKBONE_CARBONYL_ATOMS,
-    CARBONYL_BOND_LENGTH_RANGE,
     HALOGEN_BOND_ACCEPTOR_ELEMENTS,
     HALOGEN_ELEMENTS,
     HYDROGEN_BOND_ACCEPTOR_ELEMENTS,
@@ -22,12 +20,9 @@ from ..constants import (
     PI_INTERACTION_ATOMS,
     PI_INTERACTION_DONOR,
     RESIDUES_WITH_AROMATIC_RINGS,
-    RESIDUES_WITH_BACKBONE_CARBONYLS,
-    RESIDUES_WITH_SIDECHAIN_CARBONYLS,
     RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS,
     WATER_MOLECULES,
 )
-from ..constants.atomic_data import AtomicData
 from ..constants.parameters import AnalysisParameters
 from .interactions import (
     CarbonylInteraction,
@@ -35,7 +30,6 @@ from .interactions import (
     HalogenBond,
     HydrogenBond,
     LigandInteraction,
-    MolecularInteraction,
     NPiInteraction,
     PiInteraction,
     PiPiInteraction,
@@ -43,7 +37,7 @@ from .interactions import (
 )
 from .np_vector import NPVec3D, batch_angle_between, compute_distance_matrix
 from .pdb_parser import PDBParser
-from .structure import Atom, Residue
+from .structure import Atom
 
 
 class NPMolecularInteractionAnalyzer:
@@ -637,7 +631,7 @@ class NPMolecularInteractionAnalyzer:
 
                 # Check distance criteria: vdW sum OR fixed cutoff
                 distance = float(distances[x_idx, a_idx])
-                vdw_sum = self._get_vdw_sum(x_atom, a_atom)
+                vdw_sum = x_atom.calculate_vdw_distance(a_atom)
                 if not (
                     distance <= vdw_sum
                     or distance <= self.parameters.xb_distance_cutoff
@@ -645,7 +639,7 @@ class NPMolecularInteractionAnalyzer:
                     continue  # Skip this pair - doesn't meet either distance criterion
 
                 # Find carbon atom bonded to halogen
-                carbon_atom = self._find_carbon_for_halogen(x_atom)
+                carbon_atom = x_atom.get_bonded_carbon(self.parser.bonds, self.parser.atoms)
                 if not carbon_atom:
                     continue
 
@@ -907,69 +901,6 @@ class NPMolecularInteractionAnalyzer:
 
         return interactions
 
-    def _find_donor_for_hydrogen(self, hydrogen: Atom) -> Optional[Atom]:
-        """Find donor atom for a hydrogen atom."""
-        for bond in self.parser.bonds:
-            if bond.involves_atom(hydrogen.serial):
-                # Find the other atom in the bond
-                other_serial = bond.get_partner(hydrogen.serial)
-                if other_serial is not None:
-                    # Find the atom object with this serial
-                    for atom in self.parser.atoms:
-                        if (
-                            atom.serial == other_serial
-                            and atom.element in HYDROGEN_BOND_DONOR_ELEMENTS
-                        ):
-                            return atom
-        return None
-
-    def _find_carbon_for_halogen(self, halogen: Atom) -> Optional[Atom]:
-        """Find carbon atom bonded to halogen."""
-        for bond in self.parser.bonds:
-            if bond.involves_atom(halogen.serial):
-                # Find the other atom in the bond
-                other_serial = bond.get_partner(halogen.serial)
-                if other_serial is not None:
-                    # Find the atom object with this serial
-                    for atom in self.parser.atoms:
-                        if atom.serial == other_serial and atom.element == "C":
-                            return atom
-        return None
-
-    def _find_hydrogen_for_donor(self, donor: Atom) -> Optional[Atom]:
-        """Find hydrogen atom bonded to donor."""
-        for bond in self.parser.bonds:
-            if bond.involves_atom(donor.serial):
-                # Find the other atom in the bond
-                other_serial = bond.get_partner(donor.serial)
-                if other_serial is not None:
-                    # Find the atom object with this serial
-                    for atom in self.parser.atoms:
-                        if (
-                            atom.serial == other_serial
-                            and atom.element in HYDROGEN_ELEMENTS
-                        ):
-                            return atom
-        return None
-
-    def _get_vdw_sum(self, atom1: Atom, atom2: Atom) -> float:
-        """Get van der Waals radii sum for two atoms.
-
-        :param atom1: First atom
-        :type atom1: Atom
-        :param atom2: Second atom
-        :type atom2: Atom
-        :returns: Sum of van der Waals radii in Angstroms
-        :rtype: float
-        """
-        radius1 = AtomicData.VDW_RADII.get(
-            atom1.element, 2.0
-        )  # Default 2.0 Å if unknown
-        radius2 = AtomicData.VDW_RADII.get(
-            atom2.element, 2.0
-        )  # Default 2.0 Å if unknown
-        return radius1 + radius2
-
     def _calculate_ring_normal(self, ring_atoms: List[Atom]) -> np.ndarray:
         """Calculate the normal vector of an aromatic ring plane.
 
@@ -1187,77 +1118,12 @@ class NPMolecularInteractionAnalyzer:
                     self.pi_pi_interactions.append(pi_pi_interaction)
 
     def _identify_carbonyl_groups(self) -> List[Tuple[int, int, bool, str]]:
-        """Identify all C=O groups in the structure using constants.
-
-        Detects both backbone and sidechain carbonyl groups by identifying
-        carbon atoms bonded to oxygen with appropriate geometry.
-
-        :returns: List of (C_index, O_index, is_backbone, residue_id) tuples
-        :rtype: List[Tuple[int, int, bool, str]]
-        """
-        carbonyl_groups = []
-
-        # Build atom index mapping
+        """Identify all C=O groups in the structure."""
         atom_to_index = {atom: idx for idx, atom in enumerate(self.parser.atoms)}
-
+        groups = []
         for residue in self.parser.residues.values():
-            residue_id = f"{residue.name}{residue.seq_num}"
-
-            # Look for backbone carbonyl (peptide bond) using constants
-            if residue.name in RESIDUES_WITH_BACKBONE_CARBONYLS:
-                backbone_c = None
-                backbone_o = None
-
-                for atom in residue.atoms:
-                    if (
-                        atom.name in BACKBONE_CARBONYL_ATOMS
-                        and atom.element.upper() == "C"
-                    ):
-                        backbone_c = atom
-                    elif (
-                        atom.name == BACKBONE_CARBONYL_ATOMS.get("C")
-                        and atom.element.upper() == "O"
-                    ):
-                        backbone_o = atom
-
-                # Check if we have a complete backbone carbonyl
-                if backbone_c and backbone_o:
-                    # Verify C-O distance using constants
-                    co_distance = backbone_c.coords.distance_to(backbone_o.coords)
-                    min_dist, max_dist = CARBONYL_BOND_LENGTH_RANGE["amide"]
-                    if min_dist <= co_distance <= max_dist:
-                        c_idx = atom_to_index[backbone_c]
-                        o_idx = atom_to_index[backbone_o]
-                        carbonyl_groups.append((c_idx, o_idx, True, residue_id))
-
-            # Look for sidechain carbonyls using constants
-            if residue.name in RESIDUES_WITH_SIDECHAIN_CARBONYLS:
-                c_name, o_name = RESIDUES_WITH_SIDECHAIN_CARBONYLS[residue.name]
-
-                sidechain_c = None
-                sidechain_o = None
-
-                for atom in residue.atoms:
-                    if atom.name == c_name and atom.element.upper() == "C":
-                        sidechain_c = atom
-                    elif atom.name == o_name and atom.element.upper() == "O":
-                        sidechain_o = atom
-
-                if sidechain_c and sidechain_o:
-                    co_distance = sidechain_c.coords.distance_to(sidechain_o.coords)
-
-                    # Use appropriate bond length range based on residue type
-                    if residue.name in ["ASN", "GLN"]:
-                        min_dist, max_dist = CARBONYL_BOND_LENGTH_RANGE["amide"]
-                    else:  # ASP, GLU
-                        min_dist, max_dist = CARBONYL_BOND_LENGTH_RANGE["carboxylate"]
-
-                    if min_dist <= co_distance <= max_dist:
-                        c_idx = atom_to_index[sidechain_c]
-                        o_idx = atom_to_index[sidechain_o]
-                        carbonyl_groups.append((c_idx, o_idx, False, residue_id))
-
-        return carbonyl_groups
+            groups.extend(residue.get_carbonyl_groups(atom_to_index))
+        return groups
 
     def _find_carbonyl_interactions_vectorized(self) -> None:
         """Find carbonyl-carbonyl n→π* interactions.
@@ -1488,91 +1354,11 @@ class NPMolecularInteractionAnalyzer:
                         self.carbonyl_interactions.append(reverse_interaction)
 
     def _identify_lone_pair_donors(self) -> List[Tuple[Atom, str, str]]:
-        """Identify atoms with lone pairs that can participate in n→π* interactions.
-
-        Identifies oxygen, nitrogen, and sulfur atoms that have lone pair
-        electrons available for interaction with π systems.
-
-        :returns: List of (atom, element, subtype) tuples
-        :rtype: List[Tuple[Atom, str, str]]
-        """
-        lone_pair_donors = []
-
+        """Identify atoms with lone pairs for n→π* interactions."""
+        donors = []
         for residue in self.parser.residues.values():
-            for atom in residue.atoms:
-                element = atom.element.upper()
-
-                if element in ["O", "N", "S"]:
-                    subtype = self._classify_n_pi_donor_subtype(atom, residue)
-                    lone_pair_donors.append((atom, element, subtype))
-
-        return lone_pair_donors
-
-    def _classify_n_pi_donor_subtype(self, atom: Atom, residue: Residue) -> str:
-        """Classify the subtype of an n→π* donor atom.
-
-        :param atom: The donor atom
-        :type atom: Atom
-        :param residue: The residue containing the atom
-        :type residue: Residue
-        :returns: Subtype classification string
-        :rtype: str
-        """
-        element = atom.element.upper()
-        atom_name = atom.name
-
-        if element == "O":
-            # Classify oxygen donors
-            if atom_name == "O":
-                return "backbone-carbonyl"
-            elif atom_name in ["OD1", "OD2"]:
-                return (
-                    "aspartate-carbonyl"
-                    if residue.name == "ASP"
-                    else "asparagine-carbonyl"
-                )
-            elif atom_name in ["OE1", "OE2"]:
-                return (
-                    "glutamate-carbonyl"
-                    if residue.name == "GLU"
-                    else "glutamine-carbonyl"
-                )
-            elif atom_name in ["OG", "OG1"]:
-                return "hydroxyl-oxygen"
-            elif atom_name == "OH":
-                return "tyrosine-hydroxyl"
-            else:
-                return "carbonyl-oxygen"
-
-        elif element == "N":
-            # Classify nitrogen donors
-            if atom_name in ["N"]:
-                return "backbone-amine"
-            elif atom_name in ["ND1", "ND2", "NE1", "NE2"]:
-                return "histidine-nitrogen"
-            elif atom_name in ["NE", "NZ"]:
-                return (
-                    "lysine-nitrogen" if residue.name == "LYS" else "arginine-nitrogen"
-                )
-            elif atom_name in ["NE2", "ND2"]:
-                return (
-                    "asparagine-nitrogen"
-                    if residue.name == "ASN"
-                    else "glutamine-nitrogen"
-                )
-            else:
-                return "amine-nitrogen"
-
-        elif element == "S":
-            # Classify sulfur donors
-            if atom_name in ["SG"]:
-                return "cysteine-sulfur"
-            elif atom_name in ["SD"]:
-                return "methionine-sulfur"
-            else:
-                return "sulfur-donor"
-
-        return f"{element.lower()}-donor"
+            donors.extend(residue.get_lone_pair_donor_atoms())
+        return donors
 
     def _find_n_pi_interactions_vectorized(self) -> None:
         """Find n→π* interactions between lone pairs and π systems.
