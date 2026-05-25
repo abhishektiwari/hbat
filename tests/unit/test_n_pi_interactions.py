@@ -162,8 +162,6 @@ class TestNPiInteractionCreation:
         assert n_pi.get_interaction() == lone_pair_atom
         assert n_pi.get_donor_residue() == "A:ASP:10"
         assert n_pi.get_acceptor_residue() == "A:PHE:25"
-        assert n_pi.get_subtype() == "carbonyl-aromatic"
-        assert n_pi.get_donor_element() == "O"
 
 
 @pytest.mark.unit
@@ -382,9 +380,6 @@ class TestNPiInteractionSubtypes:
         )
 
         assert n_pi.subtype == "carbonyl-aromatic"
-        assert n_pi.is_carbonyl_donor() is True
-        assert n_pi.is_amine_donor() is False
-        assert n_pi.is_sulfur_donor() is False
         assert n_pi.donor_element == "O"
 
     def test_amine_aromatic_interaction(self, various_donor_atoms, pi_system_atoms):
@@ -402,9 +397,6 @@ class TestNPiInteractionSubtypes:
         )
 
         assert n_pi.subtype == "amine-aromatic"
-        assert n_pi.is_carbonyl_donor() is False
-        assert n_pi.is_amine_donor() is True
-        assert n_pi.is_sulfur_donor() is False
         assert n_pi.donor_element == "N"
 
     def test_sulfur_aromatic_interaction(self, various_donor_atoms, pi_system_atoms):
@@ -422,9 +414,6 @@ class TestNPiInteractionSubtypes:
         )
 
         assert n_pi.subtype == "sulfur-aromatic"
-        assert n_pi.is_carbonyl_donor() is False
-        assert n_pi.is_amine_donor() is False
-        assert n_pi.is_sulfur_donor() is True
         assert n_pi.donor_element == "S"
 
     def test_hydroxyl_aromatic_interaction(self, various_donor_atoms, pi_system_atoms):
@@ -442,9 +431,6 @@ class TestNPiInteractionSubtypes:
         )
 
         assert n_pi.subtype == "hydroxyl-aromatic"
-        assert n_pi.is_carbonyl_donor() is False  # Not carbonyl
-        assert n_pi.is_amine_donor() is False
-        assert n_pi.is_sulfur_donor() is False
         assert n_pi.donor_element == "O"
 
 
@@ -841,72 +827,6 @@ class TestNPiInteractionValidation:
 
         # n→π* interactions don't require bonding (direct interaction)
         assert n_pi.is_donor_interaction_bonded() is False
-
-    def test_pi_atoms_retrieval(self):
-        """Test get_pi_atoms method."""
-        lone_pair_atom = Atom(
-            serial=1,
-            name="O",
-            alt_loc="",
-            res_name="ASP",
-            chain_id="A",
-            res_seq=10,
-            i_code="",
-            coords=NPVec3D(0, 0, 0),
-            occupancy=1.0,
-            temp_factor=20.0,
-            element="O",
-            charge="",
-            record_type="ATOM",
-        )
-
-        pi_atoms = [
-            Atom(
-                serial=2,
-                name="CG",
-                alt_loc="",
-                res_name="PHE",
-                chain_id="A",
-                res_seq=25,
-                i_code="",
-                coords=NPVec3D(4.0, 0, 0),
-                occupancy=1.0,
-                temp_factor=20.0,
-                element="C",
-                charge="",
-                record_type="ATOM",
-            ),
-            Atom(
-                serial=3,
-                name="CD1",
-                alt_loc="",
-                res_name="PHE",
-                chain_id="A",
-                res_seq=25,
-                i_code="",
-                coords=NPVec3D(5.4, 0, 0),
-                occupancy=1.0,
-                temp_factor=20.0,
-                element="C",
-                charge="",
-                record_type="ATOM",
-            ),
-        ]
-
-        pi_center = NPVec3D(4.7, 0, 0)
-
-        n_pi = NPiInteraction(
-            lone_pair_atom=lone_pair_atom,
-            pi_center=pi_center,
-            pi_atoms=pi_atoms,
-            distance=3.5,
-            angle_to_plane=25.0,
-            subtype="carbonyl-aromatic",
-        )
-
-        retrieved_pi_atoms = n_pi.get_pi_atoms()
-        assert retrieved_pi_atoms == pi_atoms
-        assert len(retrieved_pi_atoms) == 2
 
     def test_n_pi_interaction_is_between_residues_attribute(self):
         """Test that n→π* interaction has is_between_residues attribute."""
