@@ -100,25 +100,29 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
    :alt: HBAT 2.0 Scholar Citations
    :target: https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:3bvyWxjaHKcC
 
-.. figure:: https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png
+.. figure:: https://static.abhishek-tiwari.com/hbat/hbat-window-v3.png
    :alt: HBAT Desktop
    :align: center
 
    HBAT Desktop (Mac, Windows, Linux).
 
-.. figure:: https://static.abhishek-tiwari.com/hbat/hbat-2-web-v1.png
+.. figure:: https://static.abhishek-tiwari.com/hbat/hbat-2-web-v2.png
    :alt: HBAT Web
    :align: center
 
    HBAT Web (https://hbat-web.abhishek-tiwari.com)
 
-.. figure:: https://static.abhishek-tiwari.com/hbat/py3dmol-4x21-v1.png
-   :alt: Visualizing interactions using Jupyter notebook
+.. figure:: https://static.abhishek-tiwari.com/hbat/6rsa_A_ARG_10_to_A_ASP_38_pymol.png
+   :alt: Visualizing interactions using PyMoL
    :align: center
 
-   Visualizing interactions using HBAT Web (Halogen Bond in PDB Entry 4x21).
+.. figure:: https://static.abhishek-tiwari.com/hbat/6rsa_A_MET_29_to_A_PHE_46_pi.png
+   :alt: Visualizing interactions using PyMoL
+   :align: center
 
-.. figure:: https://static.abhishek-tiwari.com/hbat/6rsa-pdb-chain-6.png
+   Visualizing interactions with HBAT Web using D3MOl and PyMOL (PDB Entry 6RSA)
+
+.. figure:: https://static.abhishek-tiwari.com/hbat/6rsa_chain_H_bond_chain_10.png
    :alt: Cooperativity chain detection and visualization
    :align: center
 
@@ -215,6 +219,7 @@ Cite HBAT 1.0 and 1.1
    installation
    quickstart
    cli
+   web
    parameters
    pdbfixing
    presets

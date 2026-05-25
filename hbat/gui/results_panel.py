@@ -1437,7 +1437,7 @@ class ResultsPanel:
                             self.lig_inter_data[ligand_res] = []
 
                         # Get atom names safely
-                        donor_atom_name = "?"
+                        donor_atom_name = "N/A"
                         if hasattr(inter, 'get_donor_atom'):
                             donor_atom = inter.get_donor_atom()
                             if donor_atom and hasattr(donor_atom, 'name'):
@@ -1445,7 +1445,7 @@ class ResultsPanel:
                         elif hasattr(inter, 'donor') and inter.donor:
                             donor_atom_name = inter.donor.name
 
-                        acceptor_atom_name = "?"
+                        acceptor_atom_name = "N/A"
                         if hasattr(inter, 'get_acceptor_atom'):
                             acceptor_atom = inter.get_acceptor_atom()
                             if acceptor_atom and hasattr(acceptor_atom, 'name'):

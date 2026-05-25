@@ -231,7 +231,7 @@ class NPMolecularInteractionAnalyzer:
         self.n_pi_interactions = []
         self.cooperativity_chains = []
         self.water_bridges = []
-        self.ligand_interactions = []
+        self.ligand_interactions = LigandInteraction()
 
         # Analyze interactions with progress updates
         update_progress("Finding hydrogen bonds...")

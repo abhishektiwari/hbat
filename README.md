@@ -40,18 +40,20 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
 [![Google Scholar Citation](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.26434%2Fchemrxiv.15000141%2Fv1&link=https%3A%2F%2Fscholar.google.com%2Fcitations%3Fview_op%3Dview_citation%26hl%3Den%26user%3DMb7eYKYAAAAJ%26citation_for_view%3DMb7eYKYAAAAJ%3A3bvyWxjaHKcC)](https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mb7eYKYAAAAJ&citation_for_view=Mb7eYKYAAAAJ:3bvyWxjaHKcC)
 
 **HBAT Desktop (Mac, Windows, Linux):**
-![HBAT Desktop](https://static.abhishek-tiwari.com/hbat/hbat-window-v2.png)
+![HBAT Desktop](https://static.abhishek-tiwari.com/hbat/hbat-window-v3.png)
 
 **HBAT Web:** Try it out at [hbat-web.abhishek-tiwari.com](https://hbat-web.abhishek-tiwari.com)
 
-![HBAT Web](https://static.abhishek-tiwari.com/hbat/hbat-2-web-v1.png)
+![HBAT Web](https://static.abhishek-tiwari.com/hbat/hbat-2-web-v2.png)
 
-**Visualizing interactions using HBAT Web (Halogen Bond in PDB Entry 4x21):**
-![Halogen Bonds in PDB Entry 4x21](https://static.abhishek-tiwari.com/hbat/py3dmol-4x21-v1.png)
+**Visualizing interactions with HBAT Web using D3MOl and PyMOL (PDB Entry 6RSA):**
+![Water Bridge in PDB Entry 6RSA](https://static.abhishek-tiwari.com/hbat/6rsa_A_ARG_10_to_A_ASP_38_pymol.png)
+
+![Pi Interaction in PDB Entry 6RSA](https://static.abhishek-tiwari.com/hbat/6rsa_A_MET_29_to_A_PHE_46_pi.png)
 
 **Cooperativity chain detection and visualization (PDB Entry 6RSA):**
 
-![Cooperativity chain detection and visualization](https://static.abhishek-tiwari.com/hbat/6rsa-pdb-chain-6.png)
+![Cooperativity chain detection and visualization](https://static.abhishek-tiwari.com/hbat/6rsa_chain_H_bond_chain_10.png)
 
 ## Background
 HBAT 2 is a modern Python re-implementation of the original Perl-based tool developed by [Abhishek Tiwari](https://www.abhishek-tiwari.com) and Sunil Kumar Panigrahi. HBAT v1 can still be downloaded from [SourceForge](https://sourceforge.net/projects/hbat/files/HBAT/) however Perl version is not maintained anymore. 

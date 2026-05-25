@@ -181,7 +181,7 @@ class HBATWebApp:
                 "Cite", icon="format_quote", on_click=self._show_citation_dialog
             ).props("flat color=yellow")
             with ui.link(
-                target="http://hbat.abhishek-tiwari.com", new_tab=True
+                target="http://hbat.abhishek-tiwari.com/web", new_tab=True
             ).classes("text-white no-underline"):
                 ui.button("Docs", icon="description").props("flat color=white")
             with ui.link(
