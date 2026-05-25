@@ -39,13 +39,6 @@ jobs:
       run: make type-check
     
     - name: Run fast tests (all Python versions)
-      if: matrix.python-version != '3.13'
       run: xvfb-run -a make test-fast
-      env:
-        DISPLAY: :99
-
-    - name: Run all tests including slow tests (Python 3.13 only)
-      if: matrix.python-version == '3.13'
-      run: xvfb-run -a make test
       env:
         DISPLAY: :99
