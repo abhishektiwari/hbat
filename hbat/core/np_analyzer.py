@@ -721,7 +721,15 @@ class NPMolecularInteractionAnalyzer:
         8. Skip same-residue interactions (local mode only)
         9. Create PiInteraction objects for valid interactions
         """
-        aromatic_centers = self._get_aromatic_centers()
+        # Get all aromatic rings with residue filter
+        aromatic_centers = []
+
+        for residue in self.parser.residues.values():
+            if residue.name in RESIDUES_WITH_AROMATIC_RINGS:
+                aromatic_center = residue.get_aromatic_center()
+                if aromatic_center is not None:
+                    aromatic_centers.append({"residue": residue, "center": aromatic_center})
+
         if not aromatic_centers:
             return
 
@@ -801,8 +809,6 @@ class NPMolecularInteractionAnalyzer:
                     pi_center_vec3d = center_info["center"]
 
                     # Get the aromatic ring atoms
-                    from ..constants import RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS
-
                     ring_atom_names = RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS.get(
                         pi_residue_obj.name, []
                     )
@@ -963,16 +969,6 @@ class NPMolecularInteractionAnalyzer:
             atom2.element, 2.0
         )  # Default 2.0 Å if unknown
         return radius1 + radius2
-
-    def _get_aromatic_centers(self) -> List[Dict[str, Any]]:
-        """Get aromatic ring centers using NumPy."""
-        centers = []
-
-        for residue in self.parser.residues.values():
-            aromatic_center = residue.get_aromatic_center()
-            if aromatic_center is not None:
-                centers.append({"residue": residue, "center": aromatic_center})
-        return centers
 
     def _calculate_ring_normal(self, ring_atoms: List[Atom]) -> np.ndarray:
         """Calculate the normal vector of an aromatic ring plane.
