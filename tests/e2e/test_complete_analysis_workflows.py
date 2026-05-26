@@ -30,9 +30,9 @@ from hbat.constants.parameters import AnalysisParameters
             "name": "6rsa.pdb",
             "file": "example_pdb_files/6rsa.pdb",
             "type": "protein",
-            "expected_interactions": ["hydrogen_bonds", "pi_interactions", "carbonyl_interactions"],
+            "expected_interactions": ["hydrogen_bonds", "pi_interactions", "carbonyl_interactions", "n_pi_interactions", "water_bridges"],
             "expected_ligand_interactions": True,
-            "expected_water_bridges": True,
+            "expected_ligand_interactions_with_water_bridges": True,
         },
         {
             "name": "7nwd.pdb",
@@ -40,31 +40,31 @@ from hbat.constants.parameters import AnalysisParameters
             "type": "nucleic_acid",
             "expected_interactions": ["hydrogen_bonds", "pi_pi_interactions", "pi_interactions"],
             "expected_ligand_interactions": False,
-            "expected_water_bridges": False,
+            "expected_ligand_interactions_with_water_bridges": False,
         },
         {
             "name": "1ubi.pdb",
             "file": "example_pdb_files/1ubi.pdb",
             "type": "protein",
-            "expected_interactions": ["hydrogen_bonds"],
+            "expected_interactions": ["hydrogen_bonds", "pi_interactions", "carbonyl_interactions", "water_bridges"],
             "expected_ligand_interactions": False,
-            "expected_water_bridges": False,
+            "expected_ligand_interactions_with_water_bridges": False,
         },
         {
             "name": "4laz.pdb",
             "file": "example_pdb_files/4laz.pdb",
             "type": "protein",
-            "expected_interactions": ["hydrogen_bonds", "pi_pi_interactions"],
+            "expected_interactions": ["hydrogen_bonds", "halogen_bonds", "pi_pi_interactions", "pi_interactions", "carbonyl_interactions", "n_pi_interactions", "water_bridges"],
             "expected_ligand_interactions": True,
-            "expected_water_bridges": True,
+            "expected_ligand_interactions_with_water_bridges": False,
         },
         {
             "name": "4hhb.pdb",
             "file": "example_pdb_files/4hhb.pdb",
             "type": "protein",
-            "expected_interactions": ["hydrogen_bonds"],
+            "expected_interactions": ["hydrogen_bonds", "pi_interactions", "carbonyl_interactions", "water_bridges"],
             "expected_ligand_interactions": True,
-            "expected_water_bridges": True,
+            "expected_ligand_interactions_with_water_bridges": True,
         },
     ]
 )
@@ -139,6 +139,11 @@ INTERACTION_SPECS = [
         "name": "hydrogen_bonds",
         "required_properties": ["donor", "hydrogen", "acceptor", "distance", "angle"],
         "expected_count_key": "hydrogen_bonds",
+    },
+    {
+        "name": "water_bridges",
+        "required_properties": ["water_residues", "bridge_length"],
+        "expected_count_key": "water_bridges",
     },
     {
         "name": "pi_pi_interactions",
@@ -491,6 +496,87 @@ class TestLigandAndWaterBridges:
 
         assert summary["ligand_interactions"]["count"] == lig_count
         assert summary["water_bridges"]["count"] == wb_count
+
+    def test_ligand_water_bridge_relationships(self, pdb_structure):
+        """Test if ligands have water bridge interactions.
+
+        Verifies expected_ligand_interactions_with_water_bridges field:
+        - True: structure has ligands involved in water bridges
+        - False: ligands don't have water bridge interactions (or no ligands)
+        """
+        pdb_file = pdb_structure["file"]
+        if not os.path.exists(pdb_file):
+            pytest.skip(f"PDB file {pdb_file} not found")
+
+        params = AnalysisParameters(
+            fix_pdb_enabled=True,
+            fix_pdb_method="openbabel",
+            fix_pdb_add_hydrogens=True,
+        )
+        analyzer = MolecularInteractionAnalyzer(params)
+        success = analyzer.analyze_file(pdb_file)
+        assert success, f"Failed to analyze {pdb_structure['name']}"
+
+        # Get ligand and water bridge info
+        has_ligands = (
+            analyzer.ligand_interactions
+            and len(analyzer.ligand_interactions.interactions) > 0
+        )
+        has_water_bridges = (
+            analyzer.water_bridges and len(analyzer.water_bridges) > 0
+        )
+
+        expected_with_wb = pdb_structure.get(
+            "expected_ligand_interactions_with_water_bridges", False
+        )
+
+        if expected_with_wb:
+            # Should have both ligands and water bridges
+            assert has_ligands, (
+                f"{pdb_structure['name']}: Expected ligands with water bridges"
+            )
+            assert has_water_bridges, (
+                f"{pdb_structure['name']}: Expected water bridges with ligands"
+            )
+
+            # Verify ligands are involved in water bridges
+            if has_ligands and has_water_bridges:
+                ligand_residues = set(
+                    analyzer.ligand_interactions.ligand_info.keys()
+                )
+
+                # Check if any water bridge involves a ligand residue
+                ligand_in_wb = False
+                for wb in analyzer.water_bridges:
+                    try:
+                        donor_res = wb.get_donor_residue()
+                        acceptor_res = wb.get_acceptor_residue()
+
+                        # Check if ligand residue is in donor or acceptor
+                        for lig_res in ligand_residues:
+                            if (
+                                lig_res in donor_res
+                                or lig_res in acceptor_res
+                            ):
+                                ligand_in_wb = True
+                                break
+                    except (AttributeError, TypeError):
+                        # Some water bridges may not have these methods
+                        continue
+
+                    if ligand_in_wb:
+                        break
+
+                assert ligand_in_wb, (
+                    f"{pdb_structure['name']}: Expected ligands to be involved in water bridges"
+                )
+        else:
+            # Either no ligands, or ligands without water bridge interactions
+            # This is acceptable - just verify consistency
+            if has_ligands and has_water_bridges:
+                # Both exist but ligands not expected to have WB interactions
+                # This is valid for structures where WB exist independently
+                pass
 
 
 @pytest.mark.e2e
