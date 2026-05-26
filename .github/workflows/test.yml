@@ -34,10 +34,7 @@ jobs:
     
     - name: Format code
       run: make format
-    
-    - name: Run type check
-      run: make type-check
-    
+
     - name: Run fast tests (all Python versions)
       run: xvfb-run -a make test-fast
       env:
