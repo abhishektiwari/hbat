@@ -7,7 +7,8 @@ on:
     branches: [ main]
 
 jobs:
-  test:
+  # Basic tests for all Python versions
+  test-unit-cli-gui:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -15,30 +16,89 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    
+
     - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y graphviz xvfb
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements-dev.txt
         pip install -e .
-    
+
     - name: Format code
       run: make format
-    
-    - name: Run type check
-      run: make type-check
-    
-    - name: Run fast tests (all Python versions)
-      run: xvfb-run -a make test-fast
+
+    - name: Run unit, CLI, and GUI tests
+      run: xvfb-run -a bash -c "make test-unit && make test-cli && make test-gui"
+      env:
+        DISPLAY: :99
+
+  # Integration tests (Python 3.13 only, runs in parallel with e2e)
+  test-integration:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.13"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y graphviz xvfb
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
+        pip install -e .
+
+    - name: Run integration tests
+      run: xvfb-run -a make test-integration
+      env:
+        DISPLAY: :99
+
+  # E2E tests (Python 3.13 only, runs in parallel with integration)
+  test-e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.13"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y graphviz xvfb
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
+        pip install -e .
+
+    - name: Run E2E tests
+      run: xvfb-run -a make test-e2e
       env:
         DISPLAY: :99

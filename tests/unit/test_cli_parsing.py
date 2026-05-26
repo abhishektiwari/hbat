@@ -414,6 +414,83 @@ class TestParameterConversion:
         params = load_parameters_from_args(args)
         assert params.covalent_cutoff_factor == 0.85
 
+    def test_pi_pi_stacking_parameter_loading(self):
+        """Test loading pi-pi stacking parameters."""
+        parser = create_parser()
+        args = parser.parse_args(
+            [
+                "test.pdb",
+                "--pi-pi-distance",
+                "5.5",
+                "--pi-pi-parallel-angle",
+                "20",
+                "--pi-pi-tshaped-angle-min",
+                "50",
+                "--pi-pi-tshaped-angle-max",
+                "90",
+                "--pi-pi-offset",
+                "2.0",
+            ]
+        )
+
+        params = load_parameters_from_args(args)
+        assert params.pi_pi_distance_cutoff == 5.5
+        assert params.pi_pi_parallel_angle_cutoff == 20.0
+        assert params.pi_pi_tshaped_angle_min == 50.0
+        assert params.pi_pi_tshaped_angle_max == 90.0
+        assert params.pi_pi_offset_cutoff == 2.0
+
+    def test_carbonyl_parameter_loading(self):
+        """Test loading carbonyl interaction parameters."""
+        parser = create_parser()
+        args = parser.parse_args(
+            [
+                "test.pdb",
+                "--carbonyl-distance",
+                "3.6",
+                "--carbonyl-angle-min",
+                "100",
+                "--carbonyl-angle-max",
+                "180",
+            ]
+        )
+
+        params = load_parameters_from_args(args)
+        assert params.carbonyl_distance_cutoff == 3.6
+        assert params.carbonyl_angle_min == 100.0
+        assert params.carbonyl_angle_max == 180.0
+
+    def test_n_pi_parameter_loading(self):
+        """Test loading n->pi* interaction parameters."""
+        parser = create_parser()
+        args = parser.parse_args(
+            [
+                "test.pdb",
+                "--n-pi-distance",
+                "4.0",
+                "--n-pi-sulfur-distance",
+                "4.5",
+                "--n-pi-angle-min",
+                "80",
+                "--n-pi-angle-max",
+                "170",
+            ]
+        )
+
+        params = load_parameters_from_args(args)
+        assert params.n_pi_distance_cutoff == 4.0
+        assert params.n_pi_sulfur_distance_cutoff == 4.5
+        assert params.n_pi_angle_min == 80.0
+        assert params.n_pi_angle_max == 170.0
+
+    def test_da_distance_parameter_loading(self):
+        """Test loading donor-acceptor distance parameter."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--da-distance", "3.5"])
+
+        params = load_parameters_from_args(args)
+        assert params.hb_donor_acceptor_cutoff == 3.5
+
     def test_analysis_filter_parameter_loading(self):
         """Test loading analysis filter parameters."""
         parser = create_parser()
@@ -421,11 +498,9 @@ class TestParameterConversion:
             ["test.pdb", "--no-hydrogen-bonds", "--no-halogen-bonds"]
         )
 
-        load_parameters_from_args(args)
-        # Note: The actual parameter loading would need to handle these flags
-        # This test validates that the arguments are parsed correctly
-        assert hasattr(args, "no_hydrogen_bonds")
-        assert hasattr(args, "no_halogen_bonds")
+        params = load_parameters_from_args(args)
+        assert isinstance(params, AnalysisParameters)
+        # Verify arguments were parsed correctly
         assert args.no_hydrogen_bonds is True
         assert args.no_halogen_bonds is True
 
@@ -468,10 +543,10 @@ class TestArgumentValidation:
         assert args.verbose is True
         assert args.fix_add_hydrogens is True
 
-        # Test without flags (should be False/None)
+        # Test without flags (should be False)
         args = parser.parse_args(["test.pdb"])
-        assert args.fix_pdb is False or args.fix_pdb is None
-        assert args.verbose is False or args.verbose is None
+        assert args.fix_pdb is False
+        assert args.verbose is False
 
     def test_choice_arguments(self):
         """Test arguments with predefined choices."""
@@ -489,3 +564,294 @@ class TestArgumentValidation:
 
         args = parser.parse_args(["test.pdb", "--fix-method", "pdbfixer"])
         assert args.fix_method == "pdbfixer"
+
+    def test_invalid_mode_choice(self):
+        """Test that invalid mode choice raises error."""
+        parser = create_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["test.pdb", "--mode", "invalid_mode"])
+
+    def test_invalid_fix_method_choice(self):
+        """Test that invalid fix method choice raises error."""
+        parser = create_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["test.pdb", "--fix-method", "invalid_method"])
+
+    def test_default_hb_distance(self):
+        """Test default hydrogen bond distance."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb"])
+        assert hasattr(args, "hb_distance")
+        assert args.hb_distance > 0
+
+    def test_default_hb_angle(self):
+        """Test default hydrogen bond angle."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb"])
+        assert hasattr(args, "hb_angle")
+        assert args.hb_angle > 0
+
+    def test_default_xb_distance(self):
+        """Test default halogen bond distance."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb"])
+        assert hasattr(args, "xb_distance")
+        assert args.xb_distance > 0
+
+    def test_default_pi_pi_distance(self):
+        """Test default pi-pi stacking distance."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb"])
+        assert hasattr(args, "pi_pi_distance")
+        assert args.pi_pi_distance > 0
+
+    def test_default_carbonyl_distance(self):
+        """Test default carbonyl interaction distance."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb"])
+        assert hasattr(args, "carbonyl_distance")
+        assert args.carbonyl_distance > 0
+
+    def test_default_n_pi_distance(self):
+        """Test default n->pi* interaction distance."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb"])
+        assert hasattr(args, "n_pi_distance")
+        assert args.n_pi_distance > 0
+
+
+@pytest.mark.unit
+class TestPiPiStackingArguments:
+    """Test pi-pi stacking specific CLI arguments."""
+
+    def test_pi_pi_distance_argument(self):
+        """Test --pi-pi-distance argument parsing."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--pi-pi-distance", "5.5"])
+        assert args.pi_pi_distance == 5.5
+
+    def test_pi_pi_parallel_angle_argument(self):
+        """Test --pi-pi-parallel-angle argument parsing."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--pi-pi-parallel-angle", "20"])
+        assert args.pi_pi_parallel_angle == 20.0
+
+    def test_pi_pi_tshaped_angles_argument(self):
+        """Test --pi-pi-tshaped-angle-min and --pi-pi-tshaped-angle-max arguments."""
+        parser = create_parser()
+        args = parser.parse_args(
+            [
+                "test.pdb",
+                "--pi-pi-tshaped-angle-min",
+                "50",
+                "--pi-pi-tshaped-angle-max",
+                "90",
+            ]
+        )
+        assert args.pi_pi_tshaped_angle_min == 50.0
+        assert args.pi_pi_tshaped_angle_max == 90.0
+
+    def test_pi_pi_offset_argument(self):
+        """Test --pi-pi-offset argument parsing."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--pi-pi-offset", "2.0"])
+        assert args.pi_pi_offset == 2.0
+
+    def test_all_pi_pi_arguments_together(self):
+        """Test all pi-pi stacking arguments together."""
+        parser = create_parser()
+        args = parser.parse_args(
+            [
+                "test.pdb",
+                "--pi-pi-distance",
+                "5.3",
+                "--pi-pi-parallel-angle",
+                "25",
+                "--pi-pi-tshaped-angle-min",
+                "55",
+                "--pi-pi-tshaped-angle-max",
+                "85",
+                "--pi-pi-offset",
+                "1.8",
+            ]
+        )
+        assert args.pi_pi_distance == 5.3
+        assert args.pi_pi_parallel_angle == 25.0
+        assert args.pi_pi_tshaped_angle_min == 55.0
+        assert args.pi_pi_tshaped_angle_max == 85.0
+        assert args.pi_pi_offset == 1.8
+
+
+@pytest.mark.unit
+class TestCarbonylArguments:
+    """Test carbonyl interaction specific CLI arguments."""
+
+    def test_carbonyl_distance_argument(self):
+        """Test --carbonyl-distance argument parsing."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--carbonyl-distance", "3.6"])
+        assert args.carbonyl_distance == 3.6
+
+    def test_carbonyl_angle_min_argument(self):
+        """Test --carbonyl-angle-min argument parsing."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--carbonyl-angle-min", "100"])
+        assert args.carbonyl_angle_min == 100.0
+
+    def test_carbonyl_angle_max_argument(self):
+        """Test --carbonyl-angle-max argument parsing."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--carbonyl-angle-max", "180"])
+        assert args.carbonyl_angle_max == 180.0
+
+
+@pytest.mark.unit
+class TestNPiArguments:
+    """Test n->pi* interaction specific CLI arguments."""
+
+    def test_n_pi_distance_argument(self):
+        """Test --n-pi-distance argument parsing."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--n-pi-distance", "4.0"])
+        assert args.n_pi_distance == 4.0
+
+    def test_n_pi_sulfur_distance_argument(self):
+        """Test --n-pi-sulfur-distance argument parsing."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--n-pi-sulfur-distance", "4.5"])
+        assert args.n_pi_sulfur_distance == 4.5
+
+    def test_n_pi_angle_arguments(self):
+        """Test --n-pi-angle-min and --n-pi-angle-max arguments."""
+        parser = create_parser()
+        args = parser.parse_args(
+            ["test.pdb", "--n-pi-angle-min", "80", "--n-pi-angle-max", "170"]
+        )
+        assert args.n_pi_angle_min == 80.0
+        assert args.n_pi_angle_max == 170.0
+
+    def test_all_n_pi_arguments_together(self):
+        """Test all n->pi* interaction arguments together."""
+        parser = create_parser()
+        args = parser.parse_args(
+            [
+                "test.pdb",
+                "--n-pi-distance",
+                "4.2",
+                "--n-pi-sulfur-distance",
+                "4.7",
+                "--n-pi-angle-min",
+                "75",
+                "--n-pi-angle-max",
+                "175",
+            ]
+        )
+        assert args.n_pi_distance == 4.2
+        assert args.n_pi_sulfur_distance == 4.7
+        assert args.n_pi_angle_min == 75.0
+        assert args.n_pi_angle_max == 175.0
+
+
+@pytest.mark.unit
+class TestOutputControlArguments:
+    """Test output control arguments."""
+
+    def test_quiet_flag(self):
+        """Test --quiet flag parsing."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--quiet"])
+        assert args.quiet is True
+
+        args = parser.parse_args(["test.pdb"])
+        assert args.quiet is False
+
+    def test_summary_only_flag(self):
+        """Test --summary-only flag parsing."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--summary-only"])
+        assert args.summary_only is True
+
+        args = parser.parse_args(["test.pdb"])
+        assert args.summary_only is False
+
+    def test_quiet_shorthand(self):
+        """Test -q shorthand for --quiet."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "-q"])
+        assert args.quiet is True
+
+
+@pytest.mark.unit
+class TestAnalysisFilterArguments:
+    """Test analysis filter arguments for new interaction families."""
+
+    def test_no_pi_interactions_flag(self):
+        """Test --no-pi-interactions flag."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--no-pi-interactions"])
+        assert args.no_pi_interactions is True
+
+        args = parser.parse_args(["test.pdb"])
+        assert args.no_pi_interactions is False
+
+    def test_no_pi_pi_stacking_flag(self):
+        """Test --no-pi-pi-stacking flag."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--no-pi-pi-stacking"])
+        assert args.no_pi_pi_stacking is True
+
+        args = parser.parse_args(["test.pdb"])
+        assert args.no_pi_pi_stacking is False
+
+    def test_no_carbonyl_interactions_flag(self):
+        """Test --no-carbonyl-interactions flag."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--no-carbonyl-interactions"])
+        assert args.no_carbonyl_interactions is True
+
+        args = parser.parse_args(["test.pdb"])
+        assert args.no_carbonyl_interactions is False
+
+    def test_no_n_pi_interactions_flag(self):
+        """Test --no-n-pi-interactions flag."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--no-n-pi-interactions"])
+        assert args.no_n_pi_interactions is True
+
+        args = parser.parse_args(["test.pdb"])
+        assert args.no_n_pi_interactions is False
+
+    def test_multiple_filter_flags_together(self):
+        """Test multiple filter flags combined."""
+        parser = create_parser()
+        args = parser.parse_args(
+            [
+                "test.pdb",
+                "--no-pi-interactions",
+                "--no-pi-pi-stacking",
+                "--no-carbonyl-interactions",
+                "--no-n-pi-interactions",
+            ]
+        )
+        assert args.no_pi_interactions is True
+        assert args.no_pi_pi_stacking is True
+        assert args.no_carbonyl_interactions is True
+        assert args.no_n_pi_interactions is True
+
+
+@pytest.mark.unit
+class TestDaDistanceArgument:
+    """Test donor-acceptor distance argument."""
+
+    def test_da_distance_argument(self):
+        """Test --da-distance argument parsing."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb", "--da-distance", "3.5"])
+        assert args.da_distance == 3.5
+
+    def test_da_distance_default(self):
+        """Test --da-distance default value."""
+        parser = create_parser()
+        args = parser.parse_args(["test.pdb"])
+        assert hasattr(args, "da_distance")
+        assert args.da_distance > 0

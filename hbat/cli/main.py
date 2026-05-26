@@ -903,13 +903,36 @@ def load_parameters_from_args(args: argparse.Namespace) -> AnalysisParameters:
             analysis_mode=args.mode,
             # PDB fixing parameters
             fix_pdb_enabled=args.fix_pdb,
-            fix_pdb_method=args.fix_method,
+            fix_pdb_method=_get_fix_pdb_method_for_input(args),
             fix_pdb_add_hydrogens=args.fix_add_hydrogens,
             fix_pdb_add_heavy_atoms=args.fix_add_heavy_atoms,
             fix_pdb_replace_nonstandard=args.fix_replace_nonstandard,
             fix_pdb_remove_heterogens=args.fix_remove_heterogens,
             fix_pdb_keep_water=args.fix_keep_water,
         )
+
+
+def _get_fix_pdb_method_for_input(args: argparse.Namespace) -> str:
+    """Determine PDB fixing method based on input file format.
+
+    Auto-switches to PDBFixer for CIF files since OpenBabel loses ligand
+    information (HETATM records) when converting from CIF.
+
+    :param args: Parsed command-line arguments
+    :type args: argparse.Namespace
+    :returns: PDB fixing method ('pdbfixer' or 'openbabel')
+    :rtype: str
+    """
+    # Auto-switch to PDBFixer for CIF files (preserves ligand information)
+    if hasattr(args, "input") and args.input and args.input.lower().endswith(".cif"):
+        if args.fix_method != "pdbfixer":
+            print_progress(
+                "CIF file detected - auto-switching PDB fixing method to 'pdbfixer' "
+                "(preserves ligand information)",
+                not args.quiet if hasattr(args, "quiet") else True,
+            )
+        return "pdbfixer"
+    return args.fix_method
 
 
 def print_progress(message: str, verbose: bool = True) -> None:

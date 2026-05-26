@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 class TestHeteroatomHandling:
-    """Test P5.3: CIF handling of heteroatoms and ligands."""
+    """Test CIF handling of heteroatoms and ligands."""
 
     def test_cif_heteroatom_detection(self):
         """Test that heteroatoms are correctly detected in CIF files."""

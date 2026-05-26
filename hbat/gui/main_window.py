@@ -108,7 +108,7 @@ class MainWindow:
             label="Save Results...", accelerator="Ctrl+S", command=self._save_results
         )
         file_menu.add_command(
-            label="Save Fixed PDB...",
+            label="Save Fixed Structure...",
             accelerator="Ctrl+Shift+S",
             command=self._save_fixed_pdb,
         )
@@ -238,9 +238,9 @@ class MainWindow:
         text_frame.grid_rowconfigure(0, weight=1)
         text_frame.grid_columnconfigure(0, weight=1)
 
-        # Fixed PDB content tab
+        # Fixed Structure content tab
         fixed_file_frame = ttk.Frame(self.left_notebook)
-        self.left_notebook.add(fixed_file_frame, text="Fixed PDB")
+        self.left_notebook.add(fixed_file_frame, text="Fixed Structure")
 
         # Create text widget with both vertical and horizontal scrollbars
         fixed_text_frame = ttk.Frame(fixed_file_frame)
@@ -266,7 +266,7 @@ class MainWindow:
         fixed_text_frame.grid_rowconfigure(0, weight=1)
         fixed_text_frame.grid_columnconfigure(0, weight=1)
 
-        # Add context menu for Fixed PDB tab
+        # Add context menu for Fixed Structure tab
         self._create_fixed_pdb_context_menu()
 
         # Store parameters for session persistence
@@ -500,6 +500,20 @@ class MainWindow:
             ]
             params.fix_pdb_keep_water = self.session_pdb_fixing_params["keep_water"]
 
+        # Auto-switch to PDBFixer for CIF files (preserves ligand information)
+        if (
+            self.current_file
+            and self.current_file.lower().endswith(".cif")
+            and params.fix_pdb_enabled
+            and params.fix_pdb_method != "pdbfixer"
+        ):
+            params.fix_pdb_method = "pdbfixer"
+            messagebox.showinfo(
+                "CIF File Detected",
+                "CIF file detected - PDB fixing method auto-switched to PDBFixer "
+                "to preserve ligand information.",
+            )
+
         # Start async analysis without popup window
         tae.async_execute(
             self._perform_analysis_async(params), visible=False, show_exceptions=False
@@ -579,7 +593,7 @@ class MainWindow:
         # Update results panel
         self.results_panel.update_results(self.analyzer)
 
-        # Update Fixed PDB tab if PDB fixing was applied
+        # Update Fixed Structure tab if PDB fixing was applied
         self._update_fixed_pdb_content()
 
         # Update status
@@ -656,18 +670,10 @@ class MainWindow:
 
                 # Show appropriate success message based on format
                 if extension in [".csv", ".json"]:
-                    base_name = file_path.stem
                     directory = file_path.parent
                     messagebox.showinfo(
                         "Success",
-                        f"Results saved as separate {extension.upper()} files:\n"
-                        f"- {base_name}_h_bonds{extension}\n"
-                        f"- {base_name}_x_bonds{extension}\n"
-                        f"- {base_name}_pi_interactions{extension}\n"
-                        f"- {base_name}_pi_pi_interactions{extension}\n"
-                        f"- {base_name}_carbonyl_interactions{extension}\n"
-                        f"- {base_name}_n_pi_interactions{extension}\n"
-                        f"- {base_name}_cooperativity_chains{extension}\n\n"
+                        f"Results saved as separate {extension.upper()} files\n\n"
                         f"Location: {directory}",
                     )
                     self.status_var.set(
@@ -819,6 +825,8 @@ Author: Abhishek Tiwari
         """Open PDB fixing settings dialog.
 
         Creates a modal dialog for configuring PDB fixing parameters.
+        Note: Auto-switching to PDBFixer for CIF files happens at analysis runtime,
+        not when the dialog is opened, giving users full control over settings.
 
         :returns: None
         :rtype: None
@@ -860,9 +868,9 @@ Author: Abhishek Tiwari
         webbrowser.open("https://hbat.abhishek-tiwari.com")
 
     def _update_fixed_pdb_content(self) -> None:
-        """Update the Fixed PDB tab with the processed structure content.
+        """Update the Fixed Structure tab with the processed structure content.
 
-        Shows the PDB structure after any fixing has been applied,
+        Shows the structure (PDB or CIF) after any fixing has been applied,
         or indicates that no fixing was done.
 
         :returns: None
@@ -882,11 +890,14 @@ Author: Abhishek Tiwari
             try:
                 fixed_file_path = pdb_info.get("fixed_file_path")
                 if fixed_file_path and os.path.exists(fixed_file_path):
-                    # Read content from the saved fixed PDB file
+                    # Read content from the saved fixed file
                     with open(fixed_file_path, "r") as f:
                         fixed_content = f.read()
                     self.fixed_file_text.insert(1.0, fixed_content)
-                    self._highlight_pdb_records_in_widget(self.fixed_file_text)
+
+                    # Apply PDB highlighting only for PDB files, not CIF
+                    if fixed_file_path.lower().endswith(".pdb"):
+                        self._highlight_pdb_records_in_widget(self.fixed_file_text)
                 else:
                     # Fallback to generating content from atoms
                     fixed_content = self._generate_pdb_content_from_atoms()
@@ -894,11 +905,16 @@ Author: Abhishek Tiwari
                     self._highlight_pdb_records_in_widget(self.fixed_file_text)
 
                 # Show tab title indicating changes
-                self.left_notebook.tab(1, text="Fixed PDB ✓")
+                file_ext = (
+                    os.path.splitext(fixed_file_path)[1].upper()
+                    if fixed_file_path
+                    else ".PDB"
+                )
+                self.left_notebook.tab(1, text=f"Fixed Structure{file_ext} ✓")
 
             except Exception as e:
                 self.fixed_file_text.insert(
-                    tk.END, f"Error loading fixed PDB content: {e}\n"
+                    tk.END, f"Error loading fixed structure content: {e}\n"
                 )
                 self.fixed_file_text.insert(
                     tk.END, "Original structure was used for analysis."
@@ -933,10 +949,10 @@ Author: Abhishek Tiwari
                 self.fixed_file_text.insert(tk.END, "4. Re-run the analysis")
 
             # Show tab title indicating no changes
-            self.left_notebook.tab(1, text="Fixed PDB")
+            self.left_notebook.tab(1, text="Fixed Structure")
 
     def _clear_fixed_pdb_content(self) -> None:
-        """Clear the Fixed PDB tab content.
+        """Clear the Fixed Structure tab content.
 
         :returns: None
         :rtype: None
@@ -1054,7 +1070,7 @@ Author: Abhishek Tiwari
                 text_widget.tag_add("remark", line_start, line_end)
 
     def _create_fixed_pdb_context_menu(self) -> None:
-        """Create context menu for the Fixed PDB text widget.
+        """Create context menu for the Fixed Structure text widget.
 
         :returns: None
         :rtype: None
@@ -1062,7 +1078,7 @@ Author: Abhishek Tiwari
         # Create context menu
         self.fixed_pdb_context_menu = tk.Menu(self.root, tearoff=0)
         self.fixed_pdb_context_menu.add_command(
-            label="Save Fixed PDB...", command=self._save_fixed_pdb
+            label="Save Fixed Structure...", command=self._save_fixed_pdb
         )
         self.fixed_pdb_context_menu.add_separator()
         self.fixed_pdb_context_menu.add_command(
@@ -1094,7 +1110,7 @@ Author: Abhishek Tiwari
             self.fixed_pdb_context_menu.grab_release()
 
     def _save_fixed_pdb(self) -> None:
-        """Save the Fixed PDB content to a file.
+        """Save the fixed structure content to a file.
 
         :returns: None
         :rtype: None
@@ -1111,7 +1127,7 @@ Author: Abhishek Tiwari
             result = messagebox.askyesno(
                 "No PDB Fixing Applied",
                 "PDB fixing was not applied to this structure. "
-                "The saved file will be identical to the original PDB.\n\n"
+                "The saved file will be identical to the original file.\n\n"
                 "Do you want to continue?",
             )
             if not result:
@@ -1136,7 +1152,7 @@ Author: Abhishek Tiwari
                 ("Text files", "*.txt"),
                 ("All files", "*.*"),
             ],
-            initialname=default_name,
+            initialfile=default_name,
         )
 
         if filename:

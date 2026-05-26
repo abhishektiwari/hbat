@@ -38,8 +38,16 @@ Constants
 
 .. toctree::
    :maxdepth: 2
-   
+
    constants/index
+
+Configuration
+-------------
+
+.. toctree::
+   :maxdepth: 2
+
+   config/index
 
 Utilities
 ---------

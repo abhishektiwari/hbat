@@ -5,13 +5,18 @@ This module contains the core data structures representing molecular entities
 including atoms, bonds, and residues from PDB files.
 """
 
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import numpy as np
 
 from ..constants import (
+    BACKBONE_CARBONYL_ATOMS,
+    CARBONYL_BOND_LENGTH_RANGE,
+    HYDROGEN_BOND_DONOR_ELEMENTS,
     HYDROGEN_ELEMENTS,
     RESIDUES_WITH_AROMATIC_RINGS,
+    RESIDUES_WITH_BACKBONE_CARBONYLS,
+    RESIDUES_WITH_SIDECHAIN_CARBONYLS,
     RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS,
     AtomicData,
     BondDetectionMethods,
@@ -284,6 +289,153 @@ class Atom:
         metals = AtomicData.METAL_ELEMENTS
         return self.element.upper() in metals
 
+    def get_vdw_radius(self) -> float:
+        """Get van der Waals radius of this atom in Angstroms.
+
+        :returns: vdW radius (default 2.0 if element unknown)
+        :rtype: float
+        """
+        return AtomicData.VDW_RADII.get(self.element.upper(), 2.0)
+
+    def calculate_vdw_distance(self, other: "Atom") -> float:
+        """Calculate sum of van der Waals radii between this and another atom.
+
+        :param other: The other atom
+        :type other: Atom
+        :returns: Sum of vdW radii in Angstroms
+        :rtype: float
+        """
+        return self.get_vdw_radius() + other.get_vdw_radius()
+
+    def find_bonded_atom(
+        self,
+        element: Union[str, set],
+        bonds: list,
+        atoms: list,
+    ) -> Optional["Atom"]:
+        """Find the first bonded atom matching the given element(s).
+
+        :param element: Element symbol string or set of element symbols to match
+        :type element: Union[str, set]
+        :param bonds: List of Bond objects to search
+        :type bonds: list
+        :param atoms: List of Atom objects to search
+        :type atoms: list
+        :returns: First matching bonded atom, or None if not found
+        :rtype: Optional[Atom]
+        """
+        elements = (
+            {element.upper()}
+            if isinstance(element, str)
+            else {e.upper() for e in element}
+        )
+        for bond in bonds:
+            if bond.involves_atom(self.serial):
+                partner_serial = bond.get_partner(self.serial)
+                if partner_serial is not None:
+                    for atom in atoms:
+                        if (
+                            atom.serial == partner_serial
+                            and atom.element.upper() in elements
+                        ):
+                            return atom
+        return None
+
+    def get_bonded_donor(self, bonds: list, atoms: list) -> Optional["Atom"]:
+        """Find the donor heavy atom (N/O/S) bonded to this hydrogen.
+
+        :param bonds: List of Bond objects to search
+        :type bonds: list
+        :param atoms: List of Atom objects to search
+        :type atoms: list
+        :returns: Bonded donor atom, or None
+        :rtype: Optional[Atom]
+        """
+        return self.find_bonded_atom(HYDROGEN_BOND_DONOR_ELEMENTS, bonds, atoms)
+
+    def get_bonded_carbon(self, bonds: list, atoms: list) -> Optional["Atom"]:
+        """Find the carbon atom bonded to this atom (e.g. for halogen bonding).
+
+        :param bonds: List of Bond objects to search
+        :type bonds: list
+        :param atoms: List of Atom objects to search
+        :type atoms: list
+        :returns: Bonded carbon atom, or None
+        :rtype: Optional[Atom]
+        """
+        return self.find_bonded_atom("C", bonds, atoms)
+
+    def get_bonded_hydrogen(self, bonds: list, atoms: list) -> Optional["Atom"]:
+        """Find the hydrogen atom bonded to this donor atom.
+
+        :param bonds: List of Bond objects to search
+        :type bonds: list
+        :param atoms: List of Atom objects to search
+        :type atoms: list
+        :returns: Bonded hydrogen atom, or None
+        :rtype: Optional[Atom]
+        """
+        return self.find_bonded_atom(HYDROGEN_ELEMENTS, bonds, atoms)
+
+    def classify_lone_pair_subtype(self, residue: "Residue") -> str:
+        """Classify this atom's lone pair subtype for n→π* interaction analysis.
+
+        :param residue: The residue containing this atom
+        :type residue: Residue
+        :returns: Subtype classification string
+        :rtype: str
+        """
+        element = self.element.upper()
+        atom_name = self.name
+
+        if element == "O":
+            if atom_name == "O":
+                return "backbone-carbonyl"
+            elif atom_name in ["OD1", "OD2"]:
+                return (
+                    "aspartate-carbonyl"
+                    if residue.name == "ASP"
+                    else "asparagine-carbonyl"
+                )
+            elif atom_name in ["OE1", "OE2"]:
+                return (
+                    "glutamate-carbonyl"
+                    if residue.name == "GLU"
+                    else "glutamine-carbonyl"
+                )
+            elif atom_name in ["OG", "OG1"]:
+                return "hydroxyl-oxygen"
+            elif atom_name == "OH":
+                return "tyrosine-hydroxyl"
+            else:
+                return "carbonyl-oxygen"
+        elif element == "N":
+            if atom_name == "N":
+                return "backbone-amine"
+            elif atom_name in ["ND1", "ND2", "NE1", "NE2"]:
+                return "histidine-nitrogen"
+            elif atom_name in ["NE", "NZ"]:
+                return (
+                    "lysine-nitrogen" if residue.name == "LYS" else "arginine-nitrogen"
+                )
+            elif atom_name in ["NE2", "ND2"]:
+                return (
+                    "asparagine-nitrogen"
+                    if residue.name == "ASN"
+                    else "glutamine-nitrogen"
+                )
+            else:
+                return "amine-nitrogen"
+        elif element == "S":
+            if atom_name == "SG":
+                return "cysteine-sulfur"
+            elif atom_name == "SD":
+                return "methionine-sulfur"
+            else:
+                return "sulfur-donor"
+
+        return f"{element.lower()}-donor"
+
     def __iter__(self) -> Iterator[Tuple[str, Any]]:
         """Iterate over atom attributes as (name, value) pairs.
 
@@ -460,26 +612,69 @@ class Residue:
         """
         return [atom for atom in self.atoms if atom.element.upper() == element.upper()]
 
-    def center_of_mass(self) -> NPVec3D:
-        """Calculate center of mass of residue.
+    def get_carbonyl_groups(
+        self, atom_to_index: Dict[Atom, int]
+    ) -> List[Tuple[int, int, bool, str]]:
+        """Identify C=O groups in this residue.
 
-        Computes the mass-weighted centroid of all atoms in the residue.
-
-        :returns: Center of mass coordinates
-        :rtype: NPVec3D
+        :param atom_to_index: Mapping from Atom objects to their global indices
+        :returns: List of (C_index, O_index, is_backbone, residue_id) tuples
         """
-        if not self.atoms:
-            return NPVec3D(0, 0, 0)
+        groups = []
+        residue_id = f"{self.name}{self.seq_num}"
 
-        total_mass = 0.0
-        weighted_pos = NPVec3D(0, 0, 0)
+        if self.name in RESIDUES_WITH_BACKBONE_CARBONYLS:
+            backbone_c = backbone_o = None
+            for atom in self.atoms:
+                if atom.name == "C" and atom.element.upper() == "C":
+                    backbone_c = atom
+                elif atom.name == "O" and atom.element.upper() == "O":
+                    backbone_o = atom
+            if backbone_c and backbone_o:
+                co_dist = backbone_c.coords.distance_to(backbone_o.coords)
+                lo, hi = CARBONYL_BOND_LENGTH_RANGE["amide"]
+                if lo <= co_dist <= hi:
+                    groups.append(
+                        (
+                            atom_to_index[backbone_c],
+                            atom_to_index[backbone_o],
+                            True,
+                            residue_id,
+                        )
+                    )
 
+        if self.name in RESIDUES_WITH_SIDECHAIN_CARBONYLS:
+            c_name, o_name = RESIDUES_WITH_SIDECHAIN_CARBONYLS[self.name]
+            sidechain_c = sidechain_o = None
+            for atom in self.atoms:
+                if atom.name == c_name and atom.element.upper() == "C":
+                    sidechain_c = atom
+                elif atom.name == o_name and atom.element.upper() == "O":
+                    sidechain_o = atom
+            if sidechain_c and sidechain_o:
+                co_dist = sidechain_c.coords.distance_to(sidechain_o.coords)
+                key = "amide" if self.name in ["ASN", "GLN"] else "carboxylate"
+                lo, hi = CARBONYL_BOND_LENGTH_RANGE[key]
+                if lo <= co_dist <= hi:
+                    groups.append(
+                        (
+                            atom_to_index[sidechain_c],
+                            atom_to_index[sidechain_o],
+                            False,
+                            residue_id,
+                        )
+                    )
+
+        return groups
+
+    def get_lone_pair_donor_atoms(self) -> List[Tuple[Atom, str, str]]:
+        """Return (atom, element, subtype) tuples for O/N/S lone pair donors in this residue."""
+        donors = []
         for atom in self.atoms:
-            mass = self._get_atomic_mass(atom.element)
-            total_mass += mass
-            weighted_pos = weighted_pos + (atom.coords * mass)
-
-        return weighted_pos / total_mass if total_mass > 0 else NPVec3D(0, 0, 0)
+            element = atom.element.upper()
+            if element in {"O", "N", "S"}:
+                donors.append((atom, element, atom.classify_lone_pair_subtype(self)))
+        return donors
 
     def _get_atomic_mass(self, element: str) -> float:
         """Get approximate atomic mass for element."""

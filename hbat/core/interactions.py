@@ -522,11 +522,6 @@ class HalogenBond(MolecularInteraction):
         return self._angle
 
     @property
-    def halogen_residue(self) -> str:
-        """Legacy property for halogen residue."""
-        return self.get_donor_residue()
-
-    @property
     def donor(self) -> Atom:
         """Property accessor for donor atom (halogen)."""
         return self.halogen
@@ -742,11 +737,6 @@ class PiInteraction(MolecularInteraction):
     @property
     def angle(self) -> float:
         return self._angle
-
-    @property
-    def pi_residue(self) -> str:
-        """Legacy property for π residue."""
-        return self.get_acceptor_residue()
 
     @property
     def donor(self) -> Atom:
@@ -1074,14 +1064,6 @@ class PiPiInteraction(MolecularInteraction):
         """
         return "Pi-Pi"
 
-    def get_stacking_type(self) -> str:
-        """Get the specific stacking geometry classification.
-
-        :returns: "parallel", "T-shaped", or "offset"
-        :rtype: str
-        """
-        return self.stacking_type
-
     def get_donor_interaction_distance(self) -> float:
         """Distance from first ring centroid to midpoint.
 
@@ -1119,21 +1101,6 @@ class PiPiInteraction(MolecularInteraction):
         :rtype: bool
         """
         return False
-
-    def get_ring_atoms(self, ring_num: int) -> List[Atom]:
-        """Get atoms of a specific ring.
-
-        :param ring_num: Ring number (1 or 2)
-        :type ring_num: int
-        :returns: List of atoms in the specified ring
-        :rtype: List[Atom]
-        """
-        if ring_num == 1:
-            return self.ring1_atoms
-        elif ring_num == 2:
-            return self.ring2_atoms
-        else:
-            raise ValueError("Ring number must be 1 or 2")
 
     def __str__(self) -> str:
         """String representation of the π-π interaction.
@@ -1360,21 +1327,6 @@ class CarbonylInteraction(MolecularInteraction):
         """
         return True
 
-    def get_carbonyl_atoms(self, carbonyl_type: str) -> tuple:
-        """Get atoms of a specific carbonyl group.
-
-        :param carbonyl_type: "donor" or "acceptor"
-        :type carbonyl_type: str
-        :returns: Tuple of (carbon, oxygen) atoms
-        :rtype: tuple
-        """
-        if carbonyl_type == "donor":
-            return (self.donor_carbon, self.donor_oxygen)
-        elif carbonyl_type == "acceptor":
-            return (self.acceptor_carbon, self.acceptor_oxygen)
-        else:
-            raise ValueError("Carbonyl type must be 'donor' or 'acceptor'")
-
     def _generate_interaction_classification(self) -> str:
         """Generate interaction classification based on backbone/sidechain location.
 
@@ -1585,22 +1537,6 @@ class NPiInteraction(MolecularInteraction):
         """
         return "n-Pi"
 
-    def get_subtype(self) -> str:
-        """Get the specific n→π* interaction subtype.
-
-        :returns: Subtype classification (e.g., "carbonyl-aromatic", "amine-aromatic")
-        :rtype: str
-        """
-        return self.subtype
-
-    def get_donor_element(self) -> str:
-        """Get the donor atom element.
-
-        :returns: Element symbol of the lone pair donor (O, N, or S)
-        :rtype: str
-        """
-        return self.donor_element
-
     def get_donor_interaction_distance(self) -> float:
         """Distance from lone pair atom to π center (same as total distance).
 
@@ -1642,38 +1578,6 @@ class NPiInteraction(MolecularInteraction):
         """
         return False
 
-    def get_pi_atoms(self) -> List[Atom]:
-        """Get atoms constituting the π system.
-
-        :returns: List of atoms in the π system
-        :rtype: List[Atom]
-        """
-        return self.pi_atoms
-
-    def is_carbonyl_donor(self) -> bool:
-        """Check if the donor is a carbonyl oxygen.
-
-        :returns: True if donor is carbonyl oxygen
-        :rtype: bool
-        """
-        return "carbonyl" in self.subtype.lower()
-
-    def is_amine_donor(self) -> bool:
-        """Check if the donor is an amine nitrogen.
-
-        :returns: True if donor is amine nitrogen
-        :rtype: bool
-        """
-        return "amine" in self.subtype.lower() or "amino" in self.subtype.lower()
-
-    def is_sulfur_donor(self) -> bool:
-        """Check if the donor is a sulfur atom.
-
-        :returns: True if donor is sulfur atom
-        :rtype: bool
-        """
-        return self.donor_element == "S" or "sulfur" in self.subtype.lower()
-
     def _classify_pi_system(self) -> str:
         """Classify the π system type based on constituent atoms.
 
@@ -1703,34 +1607,6 @@ class NPiInteraction(MolecularInteraction):
                 return "aromatic"
 
         return "aromatic"
-
-    def _classify_donor_subtype(self) -> str:
-        """Classify the donor atom subtype.
-
-        :returns: Donor subtype (e.g., "carbonyl-O", "amine-N", "thiol-S")
-        :rtype: str
-        """
-        element = self.donor_element
-
-        if element == "O":
-            # Check if carbonyl oxygen by looking at bonded carbon
-            if hasattr(self.lone_pair_atom, "bonds"):
-                for bonded_atom in self.lone_pair_atom.bonds:
-                    if bonded_atom.element.upper() == "C":
-                        # Simple heuristic: if O-C distance is short, likely carbonyl
-                        distance = self.lone_pair_atom.coords.distance_to(
-                            bonded_atom.coords
-                        )
-                        if distance < 1.35:  # Typical C=O bond length
-                            return "carbonyl-O"
-            return "hydroxyl-O"
-
-        elif element == "N":
-            return "amine-N"
-        elif element == "S":
-            return "thiol-S"
-        else:
-            return f"{element.lower()}-lone_pair"
 
     def __str__(self) -> str:
         """String representation of the n→π* interaction.

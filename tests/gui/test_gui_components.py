@@ -185,9 +185,9 @@ class TestGeometryCutoffsDialog:
             dialog.set_parameters(new_params)
 
             # Check that values were stored
-            assert dialog._param_values["hb_distance"] == 3.1
-            assert dialog._param_values["hb_angle"] == 130.0
-            assert dialog._param_values["whb_distance"] == 3.7
+            assert dialog._param_values["hb_distance_cutoff"] == 3.1
+            assert dialog._param_values["hb_angle_cutoff"] == 130.0
+            assert dialog._param_values["whb_distance_cutoff"] == 3.7
             assert dialog._param_values["analysis_mode"] == "complete"
 
         finally:

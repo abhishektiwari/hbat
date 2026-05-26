@@ -14,6 +14,7 @@ from ..constants.parameters import (
     ParameterRanges,
     ParametersDefault,
 )
+from ..config.parameter_controller import ParameterController
 
 
 class ToolTip:
@@ -140,179 +141,19 @@ class GeometryCutoffsDialog:
         self.set_parameters(self.current_params)
 
     def _init_variables(self):
-        """Initialize tkinter variables with default values."""
-        self.analysis_mode = tk.StringVar(value=ParametersDefault.ANALYSIS_MODE)
-        self.covalent_factor = tk.DoubleVar(
-            value=ParametersDefault.COVALENT_CUTOFF_FACTOR
-        )
-        self.hb_distance = tk.DoubleVar(value=ParametersDefault.HB_DISTANCE_CUTOFF)
-        self.hb_angle = tk.DoubleVar(value=ParametersDefault.HB_ANGLE_CUTOFF)
-        self.da_distance = tk.DoubleVar(value=ParametersDefault.HB_DA_DISTANCE)
-        self.whb_distance = tk.DoubleVar(value=ParametersDefault.WHB_DISTANCE_CUTOFF)
-        self.whb_angle = tk.DoubleVar(value=ParametersDefault.WHB_ANGLE_CUTOFF)
-        self.whb_da_distance = tk.DoubleVar(value=ParametersDefault.WHB_DA_DISTANCE)
-        self.xb_distance = tk.DoubleVar(value=ParametersDefault.XB_DISTANCE_CUTOFF)
-        self.xb_angle = tk.DoubleVar(value=ParametersDefault.XB_ANGLE_CUTOFF)
-        self.pi_distance = tk.DoubleVar(value=ParametersDefault.PI_DISTANCE_CUTOFF)
-        self.pi_angle = tk.DoubleVar(value=ParametersDefault.PI_ANGLE_CUTOFF)
-
-        # Initialize π interaction subtype variables (needed for set_parameters)
-        self.pi_ccl_distance = None
-        self.pi_ccl_angle = None
-        self.pi_cbr_distance = None
-        self.pi_cbr_angle = None
-        self.pi_ci_distance = None
-        self.pi_ci_angle = None
-        self.pi_ch_distance = None
-        self.pi_ch_angle = None
-        self.pi_nh_distance = None
-        self.pi_nh_angle = None
-        self.pi_oh_distance = None
-        self.pi_oh_angle = None
-        self.pi_sh_distance = None
-        self.pi_sh_angle = None
-
-        # New interaction type variables
-        self.pi_pi_distance = tk.DoubleVar(
-            value=ParametersDefault.PI_PI_DISTANCE_CUTOFF
-        )
-        self.pi_pi_parallel_angle = tk.DoubleVar(
-            value=ParametersDefault.PI_PI_PARALLEL_ANGLE_CUTOFF
-        )
-        self.pi_pi_tshaped_angle_min = tk.DoubleVar(
-            value=ParametersDefault.PI_PI_TSHAPED_ANGLE_MIN
-        )
-        self.pi_pi_tshaped_angle_max = tk.DoubleVar(
-            value=ParametersDefault.PI_PI_TSHAPED_ANGLE_MAX
-        )
-        self.pi_pi_offset = tk.DoubleVar(value=ParametersDefault.PI_PI_OFFSET_CUTOFF)
-
-        self.carbonyl_distance = tk.DoubleVar(
-            value=ParametersDefault.CARBONYL_DISTANCE_CUTOFF
-        )
-        self.carbonyl_angle_min = tk.DoubleVar(
-            value=ParametersDefault.CARBONYL_ANGLE_MIN
-        )
-        self.carbonyl_angle_max = tk.DoubleVar(
-            value=ParametersDefault.CARBONYL_ANGLE_MAX
-        )
-
-        self.n_pi_distance = tk.DoubleVar(value=ParametersDefault.N_PI_DISTANCE_CUTOFF)
-        self.n_pi_sulfur_distance = tk.DoubleVar(
-            value=ParametersDefault.N_PI_SULFUR_DISTANCE_CUTOFF
-        )
-        self.n_pi_angle_min = tk.DoubleVar(value=ParametersDefault.N_PI_ANGLE_MIN)
-        self.n_pi_angle_max = tk.DoubleVar(value=ParametersDefault.N_PI_ANGLE_MAX)
-
-        # Store parameter values directly
-        self._param_values = {}
+        """Initialize parameter controller and variable dictionaries."""
+        self.controller = ParameterController()
+        self._vars = {}  # field_name -> tk.Var (created lazily per panel)
+        self._param_values = {}  # field_name -> value (cross-panel backing store)
 
     def _store_current_values(self):
         """Store current parameter values before switching categories."""
-        try:
-            self._param_values.update(
-                {
-                    "hb_distance": (
-                        self.hb_distance.get()
-                        if hasattr(self, "hb_distance")
-                        else ParametersDefault.HB_DISTANCE_CUTOFF
-                    ),
-                    "hb_angle": (
-                        self.hb_angle.get()
-                        if hasattr(self, "hb_angle")
-                        else ParametersDefault.HB_ANGLE_CUTOFF
-                    ),
-                    "da_distance": (
-                        self.da_distance.get()
-                        if hasattr(self, "da_distance")
-                        else ParametersDefault.HB_DA_DISTANCE
-                    ),
-                    "whb_distance": (
-                        self.whb_distance.get()
-                        if hasattr(self, "whb_distance")
-                        else ParametersDefault.WHB_DISTANCE_CUTOFF
-                    ),
-                    "whb_angle": (
-                        self.whb_angle.get()
-                        if hasattr(self, "whb_angle")
-                        else ParametersDefault.WHB_ANGLE_CUTOFF
-                    ),
-                    "whb_da_distance": (
-                        self.whb_da_distance.get()
-                        if hasattr(self, "whb_da_distance")
-                        else ParametersDefault.WHB_DA_DISTANCE
-                    ),
-                    "xb_distance": (
-                        self.xb_distance.get()
-                        if hasattr(self, "xb_distance")
-                        else ParametersDefault.XB_DISTANCE_CUTOFF
-                    ),
-                    "xb_angle": (
-                        self.xb_angle.get()
-                        if hasattr(self, "xb_angle")
-                        else ParametersDefault.XB_ANGLE_CUTOFF
-                    ),
-                    "pi_distance": (
-                        self.pi_distance.get()
-                        if hasattr(self, "pi_distance")
-                        else ParametersDefault.PI_DISTANCE_CUTOFF
-                    ),
-                    "pi_angle": (
-                        self.pi_angle.get()
-                        if hasattr(self, "pi_angle")
-                        else ParametersDefault.PI_ANGLE_CUTOFF
-                    ),
-                    "covalent_factor": (
-                        self.covalent_factor.get()
-                        if hasattr(self, "covalent_factor")
-                        else ParametersDefault.COVALENT_CUTOFF_FACTOR
-                    ),
-                    "analysis_mode": (
-                        self.analysis_mode.get()
-                        if hasattr(self, "analysis_mode")
-                        else ParametersDefault.ANALYSIS_MODE
-                    ),
-                }
-            )
-
-            # Store π interaction subtype values if they exist
-            pi_vars = [
-                "pi_ccl_distance",
-                "pi_ccl_angle",
-                "pi_cbr_distance",
-                "pi_cbr_angle",
-                "pi_ci_distance",
-                "pi_ci_angle",
-                "pi_ch_distance",
-                "pi_ch_angle",
-                "pi_nh_distance",
-                "pi_nh_angle",
-                "pi_oh_distance",
-                "pi_oh_angle",
-                "pi_sh_distance",
-                "pi_sh_angle",
-                "pi_pi_distance",
-                "pi_pi_parallel_angle",
-                "pi_pi_tshaped_angle_min",
-                "pi_pi_tshaped_angle_max",
-                "pi_pi_offset",
-                "carbonyl_distance",
-                "carbonyl_angle_min",
-                "carbonyl_angle_max",
-                "n_pi_distance",
-                "n_pi_sulfur_distance",
-                "n_pi_angle_min",
-                "n_pi_angle_max",
-            ]
-
-            for var_name in pi_vars:
-                if hasattr(self, var_name):
-                    var = getattr(self, var_name)
-                    if var:
-                        self._param_values[var_name] = var.get()
-
-        except tk.TclError:
-            pass  # Variables destroyed, ignore
+        for field, var in self._vars.items():
+            if var is not None:
+                try:
+                    self._param_values[field] = var.get()
+                except tk.TclError:
+                    pass  # Widget destroyed, ignore
 
     def _create_widgets(self) -> None:
         """Create and layout all parameter widgets with list selection interface.
@@ -440,20 +281,20 @@ class GeometryCutoffsDialog:
         stored_mode = self._param_values.get(
             "analysis_mode", ParametersDefault.ANALYSIS_MODE
         )
-        self.analysis_mode = tk.StringVar(value=stored_mode)
+        self._vars["analysis_mode"] = tk.StringVar(value=stored_mode)
         mode_frame = ttk.Frame(group)
         mode_frame.grid(row=0, column=1, sticky=tk.W, padx=10, pady=2)
 
         ttk.Radiobutton(
             mode_frame,
             text="Complete PDB Analysis",
-            variable=self.analysis_mode,
+            variable=self._vars["analysis_mode"],
             value="complete",
         ).pack(anchor=tk.W)
         ttk.Radiobutton(
             mode_frame,
             text="Local Interactions Only",
-            variable=self.analysis_mode,
+            variable=self._vars["analysis_mode"],
             value="local",
         ).pack(anchor=tk.W)
 
@@ -462,14 +303,14 @@ class GeometryCutoffsDialog:
             row=1, column=0, sticky=tk.W, pady=2
         )
         stored_factor = self._param_values.get(
-            "covalent_factor", ParametersDefault.COVALENT_CUTOFF_FACTOR
+            "covalent_cutoff_factor", ParametersDefault.COVALENT_CUTOFF_FACTOR
         )
-        self.covalent_factor = tk.DoubleVar(value=stored_factor)
+        self._vars["covalent_cutoff_factor"] = tk.DoubleVar(value=stored_factor)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_COVALENT_FACTOR,
             to=ParameterRanges.MAX_COVALENT_FACTOR,
-            variable=self.covalent_factor,
+            variable=self._vars["covalent_cutoff_factor"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=1, column=1, sticky=tk.W, padx=10, pady=2)
@@ -480,11 +321,13 @@ class GeometryCutoffsDialog:
 
         def update_factor_label(*args):
             try:
-                factor_label.config(text=f"{self.covalent_factor.get():.2f}")
+                factor_label.config(
+                    text=f"{self._vars['covalent_cutoff_factor'].get():.2f}"
+                )
             except tk.TclError:
                 pass  # Widget destroyed, ignore
 
-        self.covalent_factor.trace("w", update_factor_label)
+        self._vars["covalent_cutoff_factor"].trace("w", update_factor_label)
         update_factor_label()
 
     def _on_category_selected(self, event):
@@ -536,14 +379,14 @@ class GeometryCutoffsDialog:
             row=0, column=0, sticky=tk.W, pady=2
         )
         stored_dist = self._param_values.get(
-            "hb_distance", ParametersDefault.HB_DISTANCE_CUTOFF
+            "hb_distance_cutoff", ParametersDefault.HB_DISTANCE_CUTOFF
         )
-        self.hb_distance = tk.DoubleVar(value=stored_dist)
+        self._vars["hb_distance_cutoff"] = tk.DoubleVar(value=stored_dist)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
             to=ParameterRanges.MAX_DISTANCE,
-            variable=self.hb_distance,
+            variable=self._vars["hb_distance_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=0, column=1, sticky=tk.W, padx=10, pady=2)
@@ -553,11 +396,13 @@ class GeometryCutoffsDialog:
 
         def update_hb_dist(*args):
             try:
-                hb_dist_label.config(text=f"{self.hb_distance.get():.1f}")
+                hb_dist_label.config(
+                    text=f"{self._vars['hb_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
-        self.hb_distance.trace("w", update_hb_dist)
+        self._vars["hb_distance_cutoff"].trace("w", update_hb_dist)
         update_hb_dist()
 
         # D-H...A angle
@@ -565,14 +410,14 @@ class GeometryCutoffsDialog:
             row=1, column=0, sticky=tk.W, pady=2
         )
         stored_angle = self._param_values.get(
-            "hb_angle", ParametersDefault.HB_ANGLE_CUTOFF
+            "hb_angle_cutoff", ParametersDefault.HB_ANGLE_CUTOFF
         )
-        self.hb_angle = tk.DoubleVar(value=stored_angle)
+        self._vars["hb_angle_cutoff"] = tk.DoubleVar(value=stored_angle)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_ANGLE,
             to=ParameterRanges.MAX_ANGLE,
-            variable=self.hb_angle,
+            variable=self._vars["hb_angle_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=1, column=1, sticky=tk.W, padx=10, pady=2)
@@ -582,11 +427,11 @@ class GeometryCutoffsDialog:
 
         def update_hb_angle(*args):
             try:
-                hb_angle_label.config(text=f"{self.hb_angle.get():.0f}")
+                hb_angle_label.config(text=f"{self._vars['hb_angle_cutoff'].get():.0f}")
             except tk.TclError:
                 pass
 
-        self.hb_angle.trace("w", update_hb_angle)
+        self._vars["hb_angle_cutoff"].trace("w", update_hb_angle)
         update_hb_angle()
 
         # D...A distance
@@ -594,14 +439,14 @@ class GeometryCutoffsDialog:
             row=2, column=0, sticky=tk.W, pady=2
         )
         stored_da = self._param_values.get(
-            "da_distance", ParametersDefault.HB_DA_DISTANCE
+            "hb_donor_acceptor_cutoff", ParametersDefault.HB_DA_DISTANCE
         )
-        self.da_distance = tk.DoubleVar(value=stored_da)
+        self._vars["hb_donor_acceptor_cutoff"] = tk.DoubleVar(value=stored_da)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
             to=ParameterRanges.MAX_DISTANCE,
-            variable=self.da_distance,
+            variable=self._vars["hb_donor_acceptor_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=2, column=1, sticky=tk.W, padx=10, pady=2)
@@ -611,11 +456,13 @@ class GeometryCutoffsDialog:
 
         def update_da_dist(*args):
             try:
-                da_dist_label.config(text=f"{self.da_distance.get():.1f}")
+                da_dist_label.config(
+                    text=f"{self._vars['hb_donor_acceptor_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
-        self.da_distance.trace("w", update_da_dist)
+        self._vars["hb_donor_acceptor_cutoff"].trace("w", update_da_dist)
         update_da_dist()
 
     def _create_weak_hydrogen_bond_parameters(self, parent):
@@ -630,14 +477,14 @@ class GeometryCutoffsDialog:
             row=0, column=0, sticky=tk.W, pady=2
         )
         stored_whb_dist = self._param_values.get(
-            "whb_distance", ParametersDefault.WHB_DISTANCE_CUTOFF
+            "whb_distance_cutoff", ParametersDefault.WHB_DISTANCE_CUTOFF
         )
-        self.whb_distance = tk.DoubleVar(value=stored_whb_dist)
+        self._vars["whb_distance_cutoff"] = tk.DoubleVar(value=stored_whb_dist)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
             to=ParameterRanges.MAX_DISTANCE,
-            variable=self.whb_distance,
+            variable=self._vars["whb_distance_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=0, column=1, sticky=tk.W, padx=10, pady=2)
@@ -647,11 +494,13 @@ class GeometryCutoffsDialog:
 
         def update_whb_dist(*args):
             try:
-                whb_dist_label.config(text=f"{self.whb_distance.get():.1f}")
+                whb_dist_label.config(
+                    text=f"{self._vars['whb_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
-        self.whb_distance.trace("w", update_whb_dist)
+        self._vars["whb_distance_cutoff"].trace("w", update_whb_dist)
         update_whb_dist()
 
         # WHB D-H...A angle
@@ -659,14 +508,14 @@ class GeometryCutoffsDialog:
             row=1, column=0, sticky=tk.W, pady=2
         )
         stored_whb_angle = self._param_values.get(
-            "whb_angle", ParametersDefault.WHB_ANGLE_CUTOFF
+            "whb_angle_cutoff", ParametersDefault.WHB_ANGLE_CUTOFF
         )
-        self.whb_angle = tk.DoubleVar(value=stored_whb_angle)
+        self._vars["whb_angle_cutoff"] = tk.DoubleVar(value=stored_whb_angle)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_ANGLE,
             to=ParameterRanges.MAX_ANGLE,
-            variable=self.whb_angle,
+            variable=self._vars["whb_angle_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=1, column=1, sticky=tk.W, padx=10, pady=2)
@@ -676,11 +525,13 @@ class GeometryCutoffsDialog:
 
         def update_whb_angle(*args):
             try:
-                whb_angle_label.config(text=f"{self.whb_angle.get():.0f}")
+                whb_angle_label.config(
+                    text=f"{self._vars['whb_angle_cutoff'].get():.0f}"
+                )
             except tk.TclError:
                 pass
 
-        self.whb_angle.trace("w", update_whb_angle)
+        self._vars["whb_angle_cutoff"].trace("w", update_whb_angle)
         update_whb_angle()
 
         # WHB D...A distance
@@ -688,14 +539,14 @@ class GeometryCutoffsDialog:
             row=2, column=0, sticky=tk.W, pady=2
         )
         stored_whb_da = self._param_values.get(
-            "whb_da_distance", ParametersDefault.WHB_DA_DISTANCE
+            "whb_donor_acceptor_cutoff", ParametersDefault.WHB_DA_DISTANCE
         )
-        self.whb_da_distance = tk.DoubleVar(value=stored_whb_da)
+        self._vars["whb_donor_acceptor_cutoff"] = tk.DoubleVar(value=stored_whb_da)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
             to=ParameterRanges.MAX_DISTANCE,
-            variable=self.whb_da_distance,
+            variable=self._vars["whb_donor_acceptor_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=2, column=1, sticky=tk.W, padx=10, pady=2)
@@ -705,11 +556,13 @@ class GeometryCutoffsDialog:
 
         def update_whb_da_dist(*args):
             try:
-                whb_da_dist_label.config(text=f"{self.whb_da_distance.get():.1f}")
+                whb_da_dist_label.config(
+                    text=f"{self._vars['whb_donor_acceptor_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
-        self.whb_da_distance.trace("w", update_whb_da_dist)
+        self._vars["whb_donor_acceptor_cutoff"].trace("w", update_whb_da_dist)
         update_whb_da_dist()
 
     def _create_halogen_bond_parameters(self, parent):
@@ -722,14 +575,14 @@ class GeometryCutoffsDialog:
             row=0, column=0, sticky=tk.W, pady=2
         )
         stored_xb_dist = self._param_values.get(
-            "xb_distance", ParametersDefault.XB_DISTANCE_CUTOFF
+            "xb_distance_cutoff", ParametersDefault.XB_DISTANCE_CUTOFF
         )
-        self.xb_distance = tk.DoubleVar(value=stored_xb_dist)
+        self._vars["xb_distance_cutoff"] = tk.DoubleVar(value=stored_xb_dist)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
             to=ParameterRanges.MAX_DISTANCE,
-            variable=self.xb_distance,
+            variable=self._vars["xb_distance_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=0, column=1, sticky=tk.W, padx=10, pady=2)
@@ -739,11 +592,13 @@ class GeometryCutoffsDialog:
 
         def update_xb_dist(*args):
             try:
-                xb_dist_label.config(text=f"{self.xb_distance.get():.1f}")
+                xb_dist_label.config(
+                    text=f"{self._vars['xb_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
-        self.xb_distance.trace("w", update_xb_dist)
+        self._vars["xb_distance_cutoff"].trace("w", update_xb_dist)
         update_xb_dist()
 
         # C-X...A angle
@@ -751,14 +606,14 @@ class GeometryCutoffsDialog:
             row=1, column=0, sticky=tk.W, pady=2
         )
         stored_xb_angle = self._param_values.get(
-            "xb_angle", ParametersDefault.XB_ANGLE_CUTOFF
+            "xb_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF
         )
-        self.xb_angle = tk.DoubleVar(value=stored_xb_angle)
+        self._vars["xb_angle_cutoff"] = tk.DoubleVar(value=stored_xb_angle)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_ANGLE,
             to=ParameterRanges.MAX_ANGLE,
-            variable=self.xb_angle,
+            variable=self._vars["xb_angle_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=1, column=1, sticky=tk.W, padx=10, pady=2)
@@ -768,11 +623,11 @@ class GeometryCutoffsDialog:
 
         def update_xb_angle(*args):
             try:
-                xb_angle_label.config(text=f"{self.xb_angle.get():.0f}")
+                xb_angle_label.config(text=f"{self._vars['xb_angle_cutoff'].get():.0f}")
             except tk.TclError:
                 pass
 
-        self.xb_angle.trace("w", update_xb_angle)
+        self._vars["xb_angle_cutoff"].trace("w", update_xb_angle)
         update_xb_angle()
 
     def _create_pi_interaction_parameters(self, parent):
@@ -788,14 +643,14 @@ class GeometryCutoffsDialog:
             row=0, column=0, sticky=tk.W, pady=2
         )
         stored_pi_dist = self._param_values.get(
-            "pi_distance", ParametersDefault.PI_DISTANCE_CUTOFF
+            "pi_distance_cutoff", ParametersDefault.PI_DISTANCE_CUTOFF
         )
-        self.pi_distance = tk.DoubleVar(value=stored_pi_dist)
+        self._vars["pi_distance_cutoff"] = tk.DoubleVar(value=stored_pi_dist)
         ttk.Scale(
             general_group,
             from_=ParameterRanges.MIN_DISTANCE,
             to=ParameterRanges.MAX_DISTANCE,
-            variable=self.pi_distance,
+            variable=self._vars["pi_distance_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=0, column=1, sticky=tk.W, padx=10, pady=2)
@@ -805,11 +660,13 @@ class GeometryCutoffsDialog:
 
         def update_pi_dist(*args):
             try:
-                pi_dist_label.config(text=f"{self.pi_distance.get():.1f}")
+                pi_dist_label.config(
+                    text=f"{self._vars['pi_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
-        self.pi_distance.trace("w", update_pi_dist)
+        self._vars["pi_distance_cutoff"].trace("w", update_pi_dist)
         update_pi_dist()
 
         # D-H...π angle
@@ -817,14 +674,14 @@ class GeometryCutoffsDialog:
             row=1, column=0, sticky=tk.W, pady=2
         )
         stored_pi_angle = self._param_values.get(
-            "pi_angle", ParametersDefault.PI_ANGLE_CUTOFF
+            "pi_angle_cutoff", ParametersDefault.PI_ANGLE_CUTOFF
         )
-        self.pi_angle = tk.DoubleVar(value=stored_pi_angle)
+        self._vars["pi_angle_cutoff"] = tk.DoubleVar(value=stored_pi_angle)
         ttk.Scale(
             general_group,
             from_=ParameterRanges.MIN_ANGLE,
             to=ParameterRanges.MAX_ANGLE,
-            variable=self.pi_angle,
+            variable=self._vars["pi_angle_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=1, column=1, sticky=tk.W, padx=10, pady=2)
@@ -834,11 +691,11 @@ class GeometryCutoffsDialog:
 
         def update_pi_angle(*args):
             try:
-                pi_angle_label.config(text=f"{self.pi_angle.get():.0f}")
+                pi_angle_label.config(text=f"{self._vars['pi_angle_cutoff'].get():.0f}")
             except tk.TclError:
                 pass
 
-        self.pi_angle.trace("w", update_pi_angle)
+        self._vars["pi_angle_cutoff"].trace("w", update_pi_angle)
         update_pi_angle()
 
         # π interaction subtype parameters
@@ -852,26 +709,25 @@ class GeometryCutoffsDialog:
             parent_frame,
             row,
             label_text,
-            dist_var_name,
-            angle_var_name,
+            dist_field_name,
+            angle_field_name,
             dist_default,
             angle_default,
         ):
             # Get stored values or use defaults
-            stored_dist = self._param_values.get(dist_var_name, dist_default)
-            stored_angle = self._param_values.get(angle_var_name, angle_default)
+            stored_dist = self._param_values.get(dist_field_name, dist_default)
+            stored_angle = self._param_values.get(angle_field_name, angle_default)
 
             # Distance parameter
             ttk.Label(parent_frame, text=f"{label_text} Distance (Å):").grid(
                 row=row, column=0, sticky=tk.W, pady=2
             )
-            dist_var = tk.DoubleVar(value=stored_dist)
-            setattr(self, dist_var_name, dist_var)
+            self._vars[dist_field_name] = tk.DoubleVar(value=stored_dist)
             ttk.Scale(
                 parent_frame,
                 from_=ParameterRanges.MIN_DISTANCE,
                 to=ParameterRanges.MAX_DISTANCE,
-                variable=dist_var,
+                variable=self._vars[dist_field_name],
                 orient=tk.HORIZONTAL,
                 length=150,
             ).grid(row=row, column=1, sticky=tk.W, padx=5, pady=2)
@@ -883,13 +739,12 @@ class GeometryCutoffsDialog:
             ttk.Label(parent_frame, text=f"{label_text} Angle (°):").grid(
                 row=row, column=3, sticky=tk.W, pady=2, padx=(20, 0)
             )
-            angle_var = tk.DoubleVar(value=stored_angle)
-            setattr(self, angle_var_name, angle_var)
+            self._vars[angle_field_name] = tk.DoubleVar(value=stored_angle)
             ttk.Scale(
                 parent_frame,
                 from_=ParameterRanges.MIN_ANGLE,
                 to=ParameterRanges.MAX_ANGLE,
-                variable=angle_var,
+                variable=self._vars[angle_field_name],
                 orient=tk.HORIZONTAL,
                 length=150,
             ).grid(row=row, column=4, sticky=tk.W, padx=5, pady=2)
@@ -900,18 +755,18 @@ class GeometryCutoffsDialog:
             # Update functions
             def update_dist(*args):
                 try:
-                    dist_label.config(text=f"{dist_var.get():.1f}")
+                    dist_label.config(text=f"{self._vars[dist_field_name].get():.1f}")
                 except tk.TclError:
                     pass
 
             def update_angle(*args):
                 try:
-                    angle_label.config(text=f"{angle_var.get():.0f}")
+                    angle_label.config(text=f"{self._vars[angle_field_name].get():.0f}")
                 except tk.TclError:
                     pass
 
-            dist_var.trace("w", update_dist)
-            angle_var.trace("w", update_angle)
+            self._vars[dist_field_name].trace("w", update_dist)
+            self._vars[angle_field_name].trace("w", update_angle)
             update_dist()
             update_angle()
 
@@ -920,8 +775,8 @@ class GeometryCutoffsDialog:
             subtypes_group,
             0,
             "C-Cl...π",
-            "pi_ccl_distance",
-            "pi_ccl_angle",
+            "pi_ccl_distance_cutoff",
+            "pi_ccl_angle_cutoff",
             ParametersDefault.PI_CCL_DISTANCE_CUTOFF,
             ParametersDefault.PI_CCL_ANGLE_CUTOFF,
         )
@@ -929,8 +784,8 @@ class GeometryCutoffsDialog:
             subtypes_group,
             1,
             "C-Br...π",
-            "pi_cbr_distance",
-            "pi_cbr_angle",
+            "pi_cbr_distance_cutoff",
+            "pi_cbr_angle_cutoff",
             ParametersDefault.PI_CBR_DISTANCE_CUTOFF,
             ParametersDefault.PI_CBR_ANGLE_CUTOFF,
         )
@@ -938,8 +793,8 @@ class GeometryCutoffsDialog:
             subtypes_group,
             2,
             "C-I...π",
-            "pi_ci_distance",
-            "pi_ci_angle",
+            "pi_ci_distance_cutoff",
+            "pi_ci_angle_cutoff",
             ParametersDefault.PI_CI_DISTANCE_CUTOFF,
             ParametersDefault.PI_CI_ANGLE_CUTOFF,
         )
@@ -947,8 +802,8 @@ class GeometryCutoffsDialog:
             subtypes_group,
             3,
             "C-H...π",
-            "pi_ch_distance",
-            "pi_ch_angle",
+            "pi_ch_distance_cutoff",
+            "pi_ch_angle_cutoff",
             ParametersDefault.PI_CH_DISTANCE_CUTOFF,
             ParametersDefault.PI_CH_ANGLE_CUTOFF,
         )
@@ -956,8 +811,8 @@ class GeometryCutoffsDialog:
             subtypes_group,
             4,
             "N-H...π",
-            "pi_nh_distance",
-            "pi_nh_angle",
+            "pi_nh_distance_cutoff",
+            "pi_nh_angle_cutoff",
             ParametersDefault.PI_NH_DISTANCE_CUTOFF,
             ParametersDefault.PI_NH_ANGLE_CUTOFF,
         )
@@ -965,8 +820,8 @@ class GeometryCutoffsDialog:
             subtypes_group,
             5,
             "O-H...π",
-            "pi_oh_distance",
-            "pi_oh_angle",
+            "pi_oh_distance_cutoff",
+            "pi_oh_angle_cutoff",
             ParametersDefault.PI_OH_DISTANCE_CUTOFF,
             ParametersDefault.PI_OH_ANGLE_CUTOFF,
         )
@@ -974,8 +829,8 @@ class GeometryCutoffsDialog:
             subtypes_group,
             6,
             "S-H...π",
-            "pi_sh_distance",
-            "pi_sh_angle",
+            "pi_sh_distance_cutoff",
+            "pi_sh_angle_cutoff",
             ParametersDefault.PI_SH_DISTANCE_CUTOFF,
             ParametersDefault.PI_SH_ANGLE_CUTOFF,
         )
@@ -997,16 +852,15 @@ class GeometryCutoffsDialog:
             "Based on McGaughey et al. (1998) and crystallographic data.",
         )
 
-        self.pi_pi_distance.set(
-            self._param_values.get(
-                "pi_pi_distance", ParametersDefault.PI_PI_DISTANCE_CUTOFF
-            )
+        stored_pi_pi_dist = self._param_values.get(
+            "pi_pi_distance_cutoff", ParametersDefault.PI_PI_DISTANCE_CUTOFF
         )
+        self._vars["pi_pi_distance_cutoff"] = tk.DoubleVar(value=stored_pi_pi_dist)
         pi_pi_scale = ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
             to=ParameterRanges.MAX_DISTANCE,
-            variable=self.pi_pi_distance,
+            variable=self._vars["pi_pi_distance_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         )
@@ -1022,11 +876,13 @@ class GeometryCutoffsDialog:
 
         def update_pi_pi_dist(*args):
             try:
-                pi_pi_dist_label.config(text=f"{self.pi_pi_distance.get():.1f}")
+                pi_pi_dist_label.config(
+                    text=f"{self._vars['pi_pi_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
-        self.pi_pi_distance.trace("w", update_pi_pi_dist)
+        self._vars["pi_pi_distance_cutoff"].trace("w", update_pi_pi_dist)
         update_pi_pi_dist()
 
         # Parallel angle cutoff
@@ -1041,16 +897,17 @@ class GeometryCutoffsDialog:
             "Based on Hunter & Sanders (1990) π-π interaction classification.",
         )
 
-        self.pi_pi_parallel_angle.set(
-            self._param_values.get(
-                "pi_pi_parallel_angle", ParametersDefault.PI_PI_PARALLEL_ANGLE_CUTOFF
-            )
+        stored_pi_pi_parallel = self._param_values.get(
+            "pi_pi_parallel_angle_cutoff", ParametersDefault.PI_PI_PARALLEL_ANGLE_CUTOFF
+        )
+        self._vars["pi_pi_parallel_angle_cutoff"] = tk.DoubleVar(
+            value=stored_pi_pi_parallel
         )
         parallel_scale = ttk.Scale(
             group,
             from_=ParameterRanges.MIN_ANGLE,
             to=ParameterRanges.MAX_ANGLE,
-            variable=self.pi_pi_parallel_angle,
+            variable=self._vars["pi_pi_parallel_angle_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         )
@@ -1067,12 +924,12 @@ class GeometryCutoffsDialog:
         def update_pi_pi_parallel(*args):
             try:
                 pi_pi_parallel_label.config(
-                    text=f"{self.pi_pi_parallel_angle.get():.0f}"
+                    text=f"{self._vars['pi_pi_parallel_angle_cutoff'].get():.0f}"
                 )
             except tk.TclError:
                 pass
 
-        self.pi_pi_parallel_angle.trace("w", update_pi_pi_parallel)
+        self._vars["pi_pi_parallel_angle_cutoff"].trace("w", update_pi_pi_parallel)
         update_pi_pi_parallel()
 
         # T-shaped angle minimum
@@ -1087,16 +944,15 @@ class GeometryCutoffsDialog:
             "Based on Burley & Petsko (1985) aromatic interaction studies.",
         )
 
-        self.pi_pi_tshaped_angle_min.set(
-            self._param_values.get(
-                "pi_pi_tshaped_angle_min", ParametersDefault.PI_PI_TSHAPED_ANGLE_MIN
-            )
+        stored_pi_pi_tmin = self._param_values.get(
+            "pi_pi_tshaped_angle_min", ParametersDefault.PI_PI_TSHAPED_ANGLE_MIN
         )
+        self._vars["pi_pi_tshaped_angle_min"] = tk.DoubleVar(value=stored_pi_pi_tmin)
         tmin_scale = ttk.Scale(
             group,
             from_=ParameterRanges.MIN_ANGLE,
             to=ParameterRanges.MAX_ANGLE,
-            variable=self.pi_pi_tshaped_angle_min,
+            variable=self._vars["pi_pi_tshaped_angle_min"],
             orient=tk.HORIZONTAL,
             length=200,
         )
@@ -1113,28 +969,27 @@ class GeometryCutoffsDialog:
         def update_pi_pi_tmin(*args):
             try:
                 pi_pi_tmin_label.config(
-                    text=f"{self.pi_pi_tshaped_angle_min.get():.0f}"
+                    text=f"{self._vars['pi_pi_tshaped_angle_min'].get():.0f}"
                 )
             except tk.TclError:
                 pass
 
-        self.pi_pi_tshaped_angle_min.trace("w", update_pi_pi_tmin)
+        self._vars["pi_pi_tshaped_angle_min"].trace("w", update_pi_pi_tmin)
         update_pi_pi_tmin()
 
         # T-shaped angle maximum
         ttk.Label(group, text="T-shaped Angle Max (°):").grid(
             row=3, column=0, sticky=tk.W, pady=2
         )
-        self.pi_pi_tshaped_angle_max.set(
-            self._param_values.get(
-                "pi_pi_tshaped_angle_max", ParametersDefault.PI_PI_TSHAPED_ANGLE_MAX
-            )
+        stored_pi_pi_tmax = self._param_values.get(
+            "pi_pi_tshaped_angle_max", ParametersDefault.PI_PI_TSHAPED_ANGLE_MAX
         )
+        self._vars["pi_pi_tshaped_angle_max"] = tk.DoubleVar(value=stored_pi_pi_tmax)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_ANGLE,
             to=ParameterRanges.MAX_ANGLE,
-            variable=self.pi_pi_tshaped_angle_max,
+            variable=self._vars["pi_pi_tshaped_angle_max"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=3, column=1, sticky=tk.W, padx=10, pady=2)
@@ -1145,28 +1000,27 @@ class GeometryCutoffsDialog:
         def update_pi_pi_tmax(*args):
             try:
                 pi_pi_tmax_label.config(
-                    text=f"{self.pi_pi_tshaped_angle_max.get():.0f}"
+                    text=f"{self._vars['pi_pi_tshaped_angle_max'].get():.0f}"
                 )
             except tk.TclError:
                 pass
 
-        self.pi_pi_tshaped_angle_max.trace("w", update_pi_pi_tmax)
+        self._vars["pi_pi_tshaped_angle_max"].trace("w", update_pi_pi_tmax)
         update_pi_pi_tmax()
 
         # Offset cutoff
         ttk.Label(group, text="Offset Cutoff (Å):").grid(
             row=4, column=0, sticky=tk.W, pady=2
         )
-        self.pi_pi_offset.set(
-            self._param_values.get(
-                "pi_pi_offset", ParametersDefault.PI_PI_OFFSET_CUTOFF
-            )
+        stored_pi_pi_offset = self._param_values.get(
+            "pi_pi_offset_cutoff", ParametersDefault.PI_PI_OFFSET_CUTOFF
         )
+        self._vars["pi_pi_offset_cutoff"] = tk.DoubleVar(value=stored_pi_pi_offset)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
             to=ParameterRanges.MAX_DISTANCE,
-            variable=self.pi_pi_offset,
+            variable=self._vars["pi_pi_offset_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=4, column=1, sticky=tk.W, padx=10, pady=2)
@@ -1176,11 +1030,13 @@ class GeometryCutoffsDialog:
 
         def update_pi_pi_offset(*args):
             try:
-                pi_pi_offset_label.config(text=f"{self.pi_pi_offset.get():.1f}")
+                pi_pi_offset_label.config(
+                    text=f"{self._vars['pi_pi_offset_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
-        self.pi_pi_offset.trace("w", update_pi_pi_offset)
+        self._vars["pi_pi_offset_cutoff"].trace("w", update_pi_pi_offset)
         update_pi_pi_offset()
 
     def _create_carbonyl_interaction_parameters(self, parent):
@@ -1202,16 +1058,15 @@ class GeometryCutoffsDialog:
             "• Critical for protein backbone stability and folding",
         )
 
-        self.carbonyl_distance.set(
-            self._param_values.get(
-                "carbonyl_distance", ParametersDefault.CARBONYL_DISTANCE_CUTOFF
-            )
+        stored_carb_dist = self._param_values.get(
+            "carbonyl_distance_cutoff", ParametersDefault.CARBONYL_DISTANCE_CUTOFF
         )
+        self._vars["carbonyl_distance_cutoff"] = tk.DoubleVar(value=stored_carb_dist)
         carb_scale = ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
             to=ParameterRanges.MAX_DISTANCE,
-            variable=self.carbonyl_distance,
+            variable=self._vars["carbonyl_distance_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         )
@@ -1227,11 +1082,13 @@ class GeometryCutoffsDialog:
 
         def update_carbonyl_dist(*args):
             try:
-                carbonyl_dist_label.config(text=f"{self.carbonyl_distance.get():.1f}")
+                carbonyl_dist_label.config(
+                    text=f"{self._vars['carbonyl_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
-        self.carbonyl_distance.trace("w", update_carbonyl_dist)
+        self._vars["carbonyl_distance_cutoff"].trace("w", update_carbonyl_dist)
         update_carbonyl_dist()
 
         # Angle minimum
@@ -1246,16 +1103,15 @@ class GeometryCutoffsDialog:
             "• Represents stereoelectronically favored approach geometry",
         )
 
-        self.carbonyl_angle_min.set(
-            self._param_values.get(
-                "carbonyl_angle_min", ParametersDefault.CARBONYL_ANGLE_MIN
-            )
+        stored_carb_min = self._param_values.get(
+            "carbonyl_angle_min", ParametersDefault.CARBONYL_ANGLE_MIN
         )
+        self._vars["carbonyl_angle_min"] = tk.DoubleVar(value=stored_carb_min)
         angle_min_scale = ttk.Scale(
             group,
             from_=ParameterRanges.MIN_ANGLE,
             to=ParameterRanges.MAX_ANGLE,
-            variable=self.carbonyl_angle_min,
+            variable=self._vars["carbonyl_angle_min"],
             orient=tk.HORIZONTAL,
             length=200,
         )
@@ -1271,27 +1127,28 @@ class GeometryCutoffsDialog:
 
         def update_carbonyl_min(*args):
             try:
-                carbonyl_min_label.config(text=f"{self.carbonyl_angle_min.get():.0f}")
+                carbonyl_min_label.config(
+                    text=f"{self._vars['carbonyl_angle_min'].get():.0f}"
+                )
             except tk.TclError:
                 pass
 
-        self.carbonyl_angle_min.trace("w", update_carbonyl_min)
+        self._vars["carbonyl_angle_min"].trace("w", update_carbonyl_min)
         update_carbonyl_min()
 
         # Angle maximum
         ttk.Label(group, text="Bürgi-Dunitz Angle Max (°):").grid(
             row=2, column=0, sticky=tk.W, pady=2
         )
-        self.carbonyl_angle_max.set(
-            self._param_values.get(
-                "carbonyl_angle_max", ParametersDefault.CARBONYL_ANGLE_MAX
-            )
+        stored_carb_max = self._param_values.get(
+            "carbonyl_angle_max", ParametersDefault.CARBONYL_ANGLE_MAX
         )
+        self._vars["carbonyl_angle_max"] = tk.DoubleVar(value=stored_carb_max)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_ANGLE,
             to=ParameterRanges.MAX_ANGLE,
-            variable=self.carbonyl_angle_max,
+            variable=self._vars["carbonyl_angle_max"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=2, column=1, sticky=tk.W, padx=10, pady=2)
@@ -1301,11 +1158,13 @@ class GeometryCutoffsDialog:
 
         def update_carbonyl_max(*args):
             try:
-                carbonyl_max_label.config(text=f"{self.carbonyl_angle_max.get():.0f}")
+                carbonyl_max_label.config(
+                    text=f"{self._vars['carbonyl_angle_max'].get():.0f}"
+                )
             except tk.TclError:
                 pass
 
-        self.carbonyl_angle_max.trace("w", update_carbonyl_max)
+        self._vars["carbonyl_angle_max"].trace("w", update_carbonyl_max)
         update_carbonyl_max()
 
     def _create_n_pi_interaction_parameters(self, parent):
@@ -1325,16 +1184,15 @@ class GeometryCutoffsDialog:
             "• Important for molecular recognition and binding affinity",
         )
 
-        self.n_pi_distance.set(
-            self._param_values.get(
-                "n_pi_distance", ParametersDefault.N_PI_DISTANCE_CUTOFF
-            )
+        stored_n_pi_dist = self._param_values.get(
+            "n_pi_distance_cutoff", ParametersDefault.N_PI_DISTANCE_CUTOFF
         )
+        self._vars["n_pi_distance_cutoff"] = tk.DoubleVar(value=stored_n_pi_dist)
         n_pi_scale = ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
             to=ParameterRanges.MAX_DISTANCE,
-            variable=self.n_pi_distance,
+            variable=self._vars["n_pi_distance_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         )
@@ -1350,11 +1208,13 @@ class GeometryCutoffsDialog:
 
         def update_n_pi_dist(*args):
             try:
-                n_pi_dist_label.config(text=f"{self.n_pi_distance.get():.1f}")
+                n_pi_dist_label.config(
+                    text=f"{self._vars['n_pi_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
-        self.n_pi_distance.trace("w", update_n_pi_dist)
+        self._vars["n_pi_distance_cutoff"].trace("w", update_n_pi_dist)
         update_n_pi_dist()
 
         # Sulfur distance cutoff
@@ -1369,16 +1229,17 @@ class GeometryCutoffsDialog:
             "• Weaker than O/N interactions but geometrically significant",
         )
 
-        self.n_pi_sulfur_distance.set(
-            self._param_values.get(
-                "n_pi_sulfur_distance", ParametersDefault.N_PI_SULFUR_DISTANCE_CUTOFF
-            )
+        stored_n_pi_sulfur = self._param_values.get(
+            "n_pi_sulfur_distance_cutoff", ParametersDefault.N_PI_SULFUR_DISTANCE_CUTOFF
+        )
+        self._vars["n_pi_sulfur_distance_cutoff"] = tk.DoubleVar(
+            value=stored_n_pi_sulfur
         )
         sulfur_scale = ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
             to=ParameterRanges.MAX_DISTANCE,
-            variable=self.n_pi_sulfur_distance,
+            variable=self._vars["n_pi_sulfur_distance_cutoff"],
             orient=tk.HORIZONTAL,
             length=200,
         )
@@ -1394,25 +1255,28 @@ class GeometryCutoffsDialog:
 
         def update_n_pi_sulfur(*args):
             try:
-                n_pi_sulfur_label.config(text=f"{self.n_pi_sulfur_distance.get():.1f}")
+                n_pi_sulfur_label.config(
+                    text=f"{self._vars['n_pi_sulfur_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
-        self.n_pi_sulfur_distance.trace("w", update_n_pi_sulfur)
+        self._vars["n_pi_sulfur_distance_cutoff"].trace("w", update_n_pi_sulfur)
         update_n_pi_sulfur()
 
         # Angle minimum
         ttk.Label(group, text="Angle Min (°):").grid(
             row=2, column=0, sticky=tk.W, pady=2
         )
-        self.n_pi_angle_min.set(
-            self._param_values.get("n_pi_angle_min", ParametersDefault.N_PI_ANGLE_MIN)
+        stored_n_pi_min = self._param_values.get(
+            "n_pi_angle_min", ParametersDefault.N_PI_ANGLE_MIN
         )
+        self._vars["n_pi_angle_min"] = tk.DoubleVar(value=stored_n_pi_min)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_ANGLE,
             to=ParameterRanges.MAX_ANGLE,
-            variable=self.n_pi_angle_min,
+            variable=self._vars["n_pi_angle_min"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=2, column=1, sticky=tk.W, padx=10, pady=2)
@@ -1422,25 +1286,26 @@ class GeometryCutoffsDialog:
 
         def update_n_pi_min(*args):
             try:
-                n_pi_min_label.config(text=f"{self.n_pi_angle_min.get():.0f}")
+                n_pi_min_label.config(text=f"{self._vars['n_pi_angle_min'].get():.0f}")
             except tk.TclError:
                 pass
 
-        self.n_pi_angle_min.trace("w", update_n_pi_min)
+        self._vars["n_pi_angle_min"].trace("w", update_n_pi_min)
         update_n_pi_min()
 
         # Angle maximum
         ttk.Label(group, text="Angle Max (°):").grid(
             row=3, column=0, sticky=tk.W, pady=2
         )
-        self.n_pi_angle_max.set(
-            self._param_values.get("n_pi_angle_max", ParametersDefault.N_PI_ANGLE_MAX)
+        stored_n_pi_max = self._param_values.get(
+            "n_pi_angle_max", ParametersDefault.N_PI_ANGLE_MAX
         )
+        self._vars["n_pi_angle_max"] = tk.DoubleVar(value=stored_n_pi_max)
         ttk.Scale(
             group,
             from_=ParameterRanges.MIN_ANGLE,
             to=ParameterRanges.MAX_ANGLE,
-            variable=self.n_pi_angle_max,
+            variable=self._vars["n_pi_angle_max"],
             orient=tk.HORIZONTAL,
             length=200,
         ).grid(row=3, column=1, sticky=tk.W, padx=10, pady=2)
@@ -1450,11 +1315,11 @@ class GeometryCutoffsDialog:
 
         def update_n_pi_max(*args):
             try:
-                n_pi_max_label.config(text=f"{self.n_pi_angle_max.get():.0f}")
+                n_pi_max_label.config(text=f"{self._vars['n_pi_angle_max'].get():.0f}")
             except tk.TclError:
                 pass
 
-        self.n_pi_angle_max.trace("w", update_n_pi_max)
+        self._vars["n_pi_angle_max"].trace("w", update_n_pi_max)
         update_n_pi_max()
 
     def get_parameters(self) -> AnalysisParameters:
@@ -1463,130 +1328,16 @@ class GeometryCutoffsDialog:
         :returns: Current analysis parameters
         :rtype: AnalysisParameters
         """
-        # Store current values first
+        # Store current values from tkinter variables
         self._store_current_values()
 
-        # Get values from stored parameters or current variables
-        def get_value(var_name, default_value):
-            if var_name in self._param_values:
-                return self._param_values[var_name]
-            elif hasattr(self, var_name):
-                var = getattr(self, var_name)
-                if var:
-                    try:
-                        return var.get()
-                    except tk.TclError:
-                        pass
-            return default_value
+        # Create new AnalysisParameters with values from backing store
+        params = AnalysisParameters()
+        for field, value in self._param_values.items():
+            if hasattr(params, field):
+                setattr(params, field, value)
 
-        return AnalysisParameters(
-            hb_distance_cutoff=get_value(
-                "hb_distance", ParametersDefault.HB_DISTANCE_CUTOFF
-            ),
-            hb_angle_cutoff=get_value("hb_angle", ParametersDefault.HB_ANGLE_CUTOFF),
-            hb_donor_acceptor_cutoff=get_value(
-                "da_distance", ParametersDefault.HB_DA_DISTANCE
-            ),
-            whb_distance_cutoff=get_value(
-                "whb_distance", ParametersDefault.WHB_DISTANCE_CUTOFF
-            ),
-            whb_angle_cutoff=get_value("whb_angle", ParametersDefault.WHB_ANGLE_CUTOFF),
-            whb_donor_acceptor_cutoff=get_value(
-                "whb_da_distance", ParametersDefault.WHB_DA_DISTANCE
-            ),
-            xb_distance_cutoff=get_value(
-                "xb_distance", ParametersDefault.XB_DISTANCE_CUTOFF
-            ),
-            xb_angle_cutoff=get_value("xb_angle", ParametersDefault.XB_ANGLE_CUTOFF),
-            pi_distance_cutoff=get_value(
-                "pi_distance", ParametersDefault.PI_DISTANCE_CUTOFF
-            ),
-            pi_angle_cutoff=get_value("pi_angle", ParametersDefault.PI_ANGLE_CUTOFF),
-            # π interaction subtype parameters
-            pi_ccl_distance_cutoff=get_value(
-                "pi_ccl_distance", ParametersDefault.PI_CCL_DISTANCE_CUTOFF
-            ),
-            pi_ccl_angle_cutoff=get_value(
-                "pi_ccl_angle", ParametersDefault.PI_CCL_ANGLE_CUTOFF
-            ),
-            pi_cbr_distance_cutoff=get_value(
-                "pi_cbr_distance", ParametersDefault.PI_CBR_DISTANCE_CUTOFF
-            ),
-            pi_cbr_angle_cutoff=get_value(
-                "pi_cbr_angle", ParametersDefault.PI_CBR_ANGLE_CUTOFF
-            ),
-            pi_ci_distance_cutoff=get_value(
-                "pi_ci_distance", ParametersDefault.PI_CI_DISTANCE_CUTOFF
-            ),
-            pi_ci_angle_cutoff=get_value(
-                "pi_ci_angle", ParametersDefault.PI_CI_ANGLE_CUTOFF
-            ),
-            pi_ch_distance_cutoff=get_value(
-                "pi_ch_distance", ParametersDefault.PI_CH_DISTANCE_CUTOFF
-            ),
-            pi_ch_angle_cutoff=get_value(
-                "pi_ch_angle", ParametersDefault.PI_CH_ANGLE_CUTOFF
-            ),
-            pi_nh_distance_cutoff=get_value(
-                "pi_nh_distance", ParametersDefault.PI_NH_DISTANCE_CUTOFF
-            ),
-            pi_nh_angle_cutoff=get_value(
-                "pi_nh_angle", ParametersDefault.PI_NH_ANGLE_CUTOFF
-            ),
-            pi_oh_distance_cutoff=get_value(
-                "pi_oh_distance", ParametersDefault.PI_OH_DISTANCE_CUTOFF
-            ),
-            pi_oh_angle_cutoff=get_value(
-                "pi_oh_angle", ParametersDefault.PI_OH_ANGLE_CUTOFF
-            ),
-            pi_sh_distance_cutoff=get_value(
-                "pi_sh_distance", ParametersDefault.PI_SH_DISTANCE_CUTOFF
-            ),
-            pi_sh_angle_cutoff=get_value(
-                "pi_sh_angle", ParametersDefault.PI_SH_ANGLE_CUTOFF
-            ),
-            # New interaction parameters
-            pi_pi_distance_cutoff=get_value(
-                "pi_pi_distance", ParametersDefault.PI_PI_DISTANCE_CUTOFF
-            ),
-            pi_pi_parallel_angle_cutoff=get_value(
-                "pi_pi_parallel_angle", ParametersDefault.PI_PI_PARALLEL_ANGLE_CUTOFF
-            ),
-            pi_pi_tshaped_angle_min=get_value(
-                "pi_pi_tshaped_angle_min", ParametersDefault.PI_PI_TSHAPED_ANGLE_MIN
-            ),
-            pi_pi_tshaped_angle_max=get_value(
-                "pi_pi_tshaped_angle_max", ParametersDefault.PI_PI_TSHAPED_ANGLE_MAX
-            ),
-            pi_pi_offset_cutoff=get_value(
-                "pi_pi_offset", ParametersDefault.PI_PI_OFFSET_CUTOFF
-            ),
-            carbonyl_distance_cutoff=get_value(
-                "carbonyl_distance", ParametersDefault.CARBONYL_DISTANCE_CUTOFF
-            ),
-            carbonyl_angle_min=get_value(
-                "carbonyl_angle_min", ParametersDefault.CARBONYL_ANGLE_MIN
-            ),
-            carbonyl_angle_max=get_value(
-                "carbonyl_angle_max", ParametersDefault.CARBONYL_ANGLE_MAX
-            ),
-            n_pi_distance_cutoff=get_value(
-                "n_pi_distance", ParametersDefault.N_PI_DISTANCE_CUTOFF
-            ),
-            n_pi_sulfur_distance_cutoff=get_value(
-                "n_pi_sulfur_distance", ParametersDefault.N_PI_SULFUR_DISTANCE_CUTOFF
-            ),
-            n_pi_angle_min=get_value(
-                "n_pi_angle_min", ParametersDefault.N_PI_ANGLE_MIN
-            ),
-            n_pi_angle_max=get_value(
-                "n_pi_angle_max", ParametersDefault.N_PI_ANGLE_MAX
-            ),
-            covalent_cutoff_factor=get_value(
-                "covalent_factor", ParametersDefault.COVALENT_CUTOFF_FACTOR
-            ),
-            analysis_mode=get_value("analysis_mode", ParametersDefault.ANALYSIS_MODE),
-        )
+        return params
 
     def set_parameters(self, params: AnalysisParameters) -> None:
         """Set parameter values from AnalysisParameters object.
@@ -1594,100 +1345,14 @@ class GeometryCutoffsDialog:
         :param params: Analysis parameters to set
         :type params: AnalysisParameters
         """
-        # Store values directly in our parameter storage
-        self._param_values.update(
-            {
-                "hb_distance": params.hb_distance_cutoff,
-                "hb_angle": params.hb_angle_cutoff,
-                "da_distance": params.hb_donor_acceptor_cutoff,
-                "whb_distance": params.whb_distance_cutoff,
-                "whb_angle": params.whb_angle_cutoff,
-                "whb_da_distance": params.whb_donor_acceptor_cutoff,
-                "xb_distance": params.xb_distance_cutoff,
-                "xb_angle": params.xb_angle_cutoff,
-                "pi_distance": params.pi_distance_cutoff,
-                "pi_angle": params.pi_angle_cutoff,
-                "pi_ccl_distance": params.pi_ccl_distance_cutoff,
-                "pi_ccl_angle": params.pi_ccl_angle_cutoff,
-                "pi_cbr_distance": params.pi_cbr_distance_cutoff,
-                "pi_cbr_angle": params.pi_cbr_angle_cutoff,
-                "pi_ci_distance": params.pi_ci_distance_cutoff,
-                "pi_ci_angle": params.pi_ci_angle_cutoff,
-                "pi_ch_distance": params.pi_ch_distance_cutoff,
-                "pi_ch_angle": params.pi_ch_angle_cutoff,
-                "pi_nh_distance": params.pi_nh_distance_cutoff,
-                "pi_nh_angle": params.pi_nh_angle_cutoff,
-                "pi_oh_distance": params.pi_oh_distance_cutoff,
-                "pi_oh_angle": params.pi_oh_angle_cutoff,
-                "pi_sh_distance": params.pi_sh_distance_cutoff,
-                "pi_sh_angle": params.pi_sh_angle_cutoff,
-                # New interaction parameters
-                "pi_pi_distance": params.pi_pi_distance_cutoff,
-                "pi_pi_parallel_angle": params.pi_pi_parallel_angle_cutoff,
-                "pi_pi_tshaped_angle_min": params.pi_pi_tshaped_angle_min,
-                "pi_pi_tshaped_angle_max": params.pi_pi_tshaped_angle_max,
-                "pi_pi_offset": params.pi_pi_offset_cutoff,
-                "carbonyl_distance": params.carbonyl_distance_cutoff,
-                "carbonyl_angle_min": params.carbonyl_angle_min,
-                "carbonyl_angle_max": params.carbonyl_angle_max,
-                "n_pi_distance": params.n_pi_distance_cutoff,
-                "n_pi_sulfur_distance": params.n_pi_sulfur_distance_cutoff,
-                "n_pi_angle_min": params.n_pi_angle_min,
-                "n_pi_angle_max": params.n_pi_angle_max,
-                "covalent_factor": params.covalent_cutoff_factor,
-                "analysis_mode": params.analysis_mode,
-            }
-        )
-
-        # Set values on existing variables if they exist
-        def safe_set(var_name, value):
-            if hasattr(self, var_name):
-                var = getattr(self, var_name)
-                if var:
-                    try:
-                        var.set(value)
-                    except tk.TclError:
-                        pass  # Variable destroyed, ignore
-
-        safe_set("hb_distance", params.hb_distance_cutoff)
-        safe_set("hb_angle", params.hb_angle_cutoff)
-        safe_set("da_distance", params.hb_donor_acceptor_cutoff)
-        safe_set("whb_distance", params.whb_distance_cutoff)
-        safe_set("whb_angle", params.whb_angle_cutoff)
-        safe_set("whb_da_distance", params.whb_donor_acceptor_cutoff)
-        safe_set("xb_distance", params.xb_distance_cutoff)
-        safe_set("xb_angle", params.xb_angle_cutoff)
-        safe_set("pi_distance", params.pi_distance_cutoff)
-        safe_set("pi_angle", params.pi_angle_cutoff)
-        safe_set("pi_ccl_distance", params.pi_ccl_distance_cutoff)
-        safe_set("pi_ccl_angle", params.pi_ccl_angle_cutoff)
-        safe_set("pi_cbr_distance", params.pi_cbr_distance_cutoff)
-        safe_set("pi_cbr_angle", params.pi_cbr_angle_cutoff)
-        safe_set("pi_ci_distance", params.pi_ci_distance_cutoff)
-        safe_set("pi_ci_angle", params.pi_ci_angle_cutoff)
-        safe_set("pi_ch_distance", params.pi_ch_distance_cutoff)
-        safe_set("pi_ch_angle", params.pi_ch_angle_cutoff)
-        safe_set("pi_nh_distance", params.pi_nh_distance_cutoff)
-        safe_set("pi_nh_angle", params.pi_nh_angle_cutoff)
-        safe_set("pi_oh_distance", params.pi_oh_distance_cutoff)
-        safe_set("pi_oh_angle", params.pi_oh_angle_cutoff)
-        safe_set("pi_sh_distance", params.pi_sh_distance_cutoff)
-        safe_set("pi_sh_angle", params.pi_sh_angle_cutoff)
-        # New interaction parameters
-        safe_set("pi_pi_distance", params.pi_pi_distance_cutoff)
-        safe_set("pi_pi_parallel_angle", params.pi_pi_parallel_angle_cutoff)
-        safe_set("pi_pi_tshaped_angle_min", params.pi_pi_tshaped_angle_min)
-        safe_set("pi_pi_tshaped_angle_max", params.pi_pi_tshaped_angle_max)
-        safe_set("pi_pi_offset", params.pi_pi_offset_cutoff)
-        safe_set("carbonyl_distance", params.carbonyl_distance_cutoff)
-        safe_set("carbonyl_angle_min", params.carbonyl_angle_min)
-        safe_set("carbonyl_angle_max", params.carbonyl_angle_max)
-        safe_set("n_pi_distance", params.n_pi_distance_cutoff)
-        safe_set("n_pi_sulfur_distance", params.n_pi_sulfur_distance_cutoff)
-        safe_set("n_pi_angle_min", params.n_pi_angle_min)
-        safe_set("n_pi_angle_max", params.n_pi_angle_max)
-        safe_set("covalent_factor", params.covalent_cutoff_factor)
-        safe_set("analysis_mode", params.analysis_mode)
+        for field, value in vars(params).items():
+            self._param_values[field] = value
+            var = self._vars.get(field)
+            if var is not None:
+                try:
+                    var.set(value)
+                except tk.TclError:
+                    pass  # Variable destroyed, ignore
 
     def _set_defaults(self):
         """Reset all parameters to default values."""
@@ -1721,97 +1386,140 @@ class GeometryCutoffsDialog:
 
         params = data["parameters"]
 
+        # Helper to apply value to parameter
+        def apply_value(field_name, value):
+            self._param_values[field_name] = value
+            var = self._vars.get(field_name)
+            if var is not None:
+                try:
+                    var.set(value)
+                except tk.TclError:
+                    pass
+
         # Apply hydrogen bond parameters
         if "hydrogen_bonds" in params:
             hb = params["hydrogen_bonds"]
-            self.hb_distance.set(
-                hb.get("h_a_distance_cutoff", ParametersDefault.HB_DISTANCE_CUTOFF)
+            apply_value(
+                "hb_distance_cutoff",
+                hb.get("h_a_distance_cutoff", ParametersDefault.HB_DISTANCE_CUTOFF),
             )
-            self.hb_angle.set(
-                hb.get("dha_angle_cutoff", ParametersDefault.HB_ANGLE_CUTOFF)
+            apply_value(
+                "hb_angle_cutoff",
+                hb.get("dha_angle_cutoff", ParametersDefault.HB_ANGLE_CUTOFF),
             )
-            self.da_distance.set(
-                hb.get("d_a_distance_cutoff", ParametersDefault.HB_DA_DISTANCE)
+            apply_value(
+                "hb_donor_acceptor_cutoff",
+                hb.get("d_a_distance_cutoff", ParametersDefault.HB_DA_DISTANCE),
             )
 
         # Apply halogen bond parameters
         if "halogen_bonds" in params:
             xb = params["halogen_bonds"]
-            self.xb_distance.set(
-                xb.get("x_a_distance_cutoff", ParametersDefault.XB_DISTANCE_CUTOFF)
+            apply_value(
+                "xb_distance_cutoff",
+                xb.get("x_a_distance_cutoff", ParametersDefault.XB_DISTANCE_CUTOFF),
             )
-            self.xb_angle.set(
-                xb.get("dxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF)
+            apply_value(
+                "xb_angle_cutoff",
+                xb.get("dxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF),
             )
 
         # Apply π interaction parameters
         if "pi_interactions" in params:
             pi = params["pi_interactions"]
-            self.pi_distance.set(
-                pi.get("h_pi_distance_cutoff", ParametersDefault.PI_DISTANCE_CUTOFF)
+            apply_value(
+                "pi_distance_cutoff",
+                pi.get("h_pi_distance_cutoff", ParametersDefault.PI_DISTANCE_CUTOFF),
             )
-            self.pi_angle.set(
-                pi.get("dh_pi_angle_cutoff", ParametersDefault.PI_ANGLE_CUTOFF)
+            apply_value(
+                "pi_angle_cutoff",
+                pi.get("dh_pi_angle_cutoff", ParametersDefault.PI_ANGLE_CUTOFF),
             )
 
             # Apply π interaction subtype parameters
-            self.pi_ccl_distance.set(
+            apply_value(
+                "pi_ccl_distance_cutoff",
                 pi.get(
                     "ccl_pi_distance_cutoff", ParametersDefault.PI_CCL_DISTANCE_CUTOFF
-                )
+                ),
             )
-            self.pi_ccl_angle.set(
-                pi.get("ccl_pi_angle_cutoff", ParametersDefault.PI_CCL_ANGLE_CUTOFF)
+            apply_value(
+                "pi_ccl_angle_cutoff",
+                pi.get("ccl_pi_angle_cutoff", ParametersDefault.PI_CCL_ANGLE_CUTOFF),
             )
-            self.pi_cbr_distance.set(
+            apply_value(
+                "pi_cbr_distance_cutoff",
                 pi.get(
                     "cbr_pi_distance_cutoff", ParametersDefault.PI_CBR_DISTANCE_CUTOFF
-                )
+                ),
             )
-            self.pi_cbr_angle.set(
-                pi.get("cbr_pi_angle_cutoff", ParametersDefault.PI_CBR_ANGLE_CUTOFF)
+            apply_value(
+                "pi_cbr_angle_cutoff",
+                pi.get("cbr_pi_angle_cutoff", ParametersDefault.PI_CBR_ANGLE_CUTOFF),
             )
-            self.pi_ci_distance.set(
-                pi.get("ci_pi_distance_cutoff", ParametersDefault.PI_CI_DISTANCE_CUTOFF)
+            apply_value(
+                "pi_ci_distance_cutoff",
+                pi.get(
+                    "ci_pi_distance_cutoff", ParametersDefault.PI_CI_DISTANCE_CUTOFF
+                ),
             )
-            self.pi_ci_angle.set(
-                pi.get("ci_pi_angle_cutoff", ParametersDefault.PI_CI_ANGLE_CUTOFF)
+            apply_value(
+                "pi_ci_angle_cutoff",
+                pi.get("ci_pi_angle_cutoff", ParametersDefault.PI_CI_ANGLE_CUTOFF),
             )
-            self.pi_ch_distance.set(
-                pi.get("ch_pi_distance_cutoff", ParametersDefault.PI_CH_DISTANCE_CUTOFF)
+            apply_value(
+                "pi_ch_distance_cutoff",
+                pi.get(
+                    "ch_pi_distance_cutoff", ParametersDefault.PI_CH_DISTANCE_CUTOFF
+                ),
             )
-            self.pi_ch_angle.set(
-                pi.get("ch_pi_angle_cutoff", ParametersDefault.PI_CH_ANGLE_CUTOFF)
+            apply_value(
+                "pi_ch_angle_cutoff",
+                pi.get("ch_pi_angle_cutoff", ParametersDefault.PI_CH_ANGLE_CUTOFF),
             )
-            self.pi_nh_distance.set(
-                pi.get("nh_pi_distance_cutoff", ParametersDefault.PI_NH_DISTANCE_CUTOFF)
+            apply_value(
+                "pi_nh_distance_cutoff",
+                pi.get(
+                    "nh_pi_distance_cutoff", ParametersDefault.PI_NH_DISTANCE_CUTOFF
+                ),
             )
-            self.pi_nh_angle.set(
-                pi.get("nh_pi_angle_cutoff", ParametersDefault.PI_NH_ANGLE_CUTOFF)
+            apply_value(
+                "pi_nh_angle_cutoff",
+                pi.get("nh_pi_angle_cutoff", ParametersDefault.PI_NH_ANGLE_CUTOFF),
             )
-            self.pi_oh_distance.set(
-                pi.get("oh_pi_distance_cutoff", ParametersDefault.PI_OH_DISTANCE_CUTOFF)
+            apply_value(
+                "pi_oh_distance_cutoff",
+                pi.get(
+                    "oh_pi_distance_cutoff", ParametersDefault.PI_OH_DISTANCE_CUTOFF
+                ),
             )
-            self.pi_oh_angle.set(
-                pi.get("oh_pi_angle_cutoff", ParametersDefault.PI_OH_ANGLE_CUTOFF)
+            apply_value(
+                "pi_oh_angle_cutoff",
+                pi.get("oh_pi_angle_cutoff", ParametersDefault.PI_OH_ANGLE_CUTOFF),
             )
-            self.pi_sh_distance.set(
-                pi.get("sh_pi_distance_cutoff", ParametersDefault.PI_SH_DISTANCE_CUTOFF)
+            apply_value(
+                "pi_sh_distance_cutoff",
+                pi.get(
+                    "sh_pi_distance_cutoff", ParametersDefault.PI_SH_DISTANCE_CUTOFF
+                ),
             )
-            self.pi_sh_angle.set(
-                pi.get("sh_pi_angle_cutoff", ParametersDefault.PI_SH_ANGLE_CUTOFF)
+            apply_value(
+                "pi_sh_angle_cutoff",
+                pi.get("sh_pi_angle_cutoff", ParametersDefault.PI_SH_ANGLE_CUTOFF),
             )
 
         # Apply general parameters
         if "general" in params:
             gen = params["general"]
-            self.covalent_factor.set(
+            apply_value(
+                "covalent_cutoff_factor",
                 gen.get(
                     "covalent_cutoff_factor", ParametersDefault.COVALENT_CUTOFF_FACTOR
-                )
+                ),
             )
-            self.analysis_mode.set(
-                gen.get("analysis_mode", ParametersDefault.ANALYSIS_MODE)
+            apply_value(
+                "analysis_mode",
+                gen.get("analysis_mode", ParametersDefault.ANALYSIS_MODE),
             )
 
     def _ok(self):

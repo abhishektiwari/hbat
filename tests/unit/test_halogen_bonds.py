@@ -97,7 +97,7 @@ class TestHalogenBondVdWDistanceCriteria:
             )
 
             # Test vdW sum calculation
-            vdw_sum = analyzer._get_vdw_sum(hal_atom, acc_atom)
+            vdw_sum = hal_atom.calculate_vdw_distance(acc_atom)
             expected = expected_sums[(hal_elem, acc_elem)]
 
             assert abs(vdw_sum - expected) < 0.01, (
@@ -139,7 +139,7 @@ class TestHalogenBondVdWDistanceCriteria:
             record_type="ATOM",
         )
 
-        max_vdw_sum = analyzer._get_vdw_sum(i_atom, se_atom)
+        max_vdw_sum = i_atom.calculate_vdw_distance(se_atom)
         assert abs(max_vdw_sum - 3.88) < 0.01
 
     def test_distance_criteria_scenarios(self):
@@ -251,7 +251,7 @@ class TestHalogenBondDetectionLogic:
 
         # Distance is 3.3 Å
         distance = 3.3
-        vdw_sum = mock_analyzer._get_vdw_sum(cl_atom, o_atom)  # 3.27 Å
+        vdw_sum = cl_atom.calculate_vdw_distance(o_atom)  # 3.27 Å
         fixed_cutoff = mock_analyzer.parameters.xb_distance_cutoff  # 3.5 Å
 
         # Should pass: distance (3.3) <= fixed_cutoff (3.5), even though > vdW_sum (3.27)
@@ -563,7 +563,7 @@ class TestHalogenBondAnalysisParameters:
 
             # Test distance just at the cutoff
             distance = cutoff
-            vdw_sum = analyzer._get_vdw_sum(cl_atom, o_atom)  # 3.27 Å
+            vdw_sum = cl_atom.calculate_vdw_distance(o_atom)  # 3.27 Å
 
             meets_criteria = (distance <= vdw_sum) or (distance <= cutoff)
             assert meets_criteria  # Should always pass at exactly the cutoff
@@ -621,7 +621,7 @@ class TestHalogenBondEdgeCases:
         )
 
         # Should use default 2.0 Å for each: 2.0 + 2.0 = 4.0 Å
-        vdw_sum = analyzer._get_vdw_sum(unknown_atom1, unknown_atom2)
+        vdw_sum = unknown_atom1.calculate_vdw_distance(unknown_atom2)
         assert vdw_sum == 4.0
 
     def test_vdw_sum_mixed_known_unknown_elements(self):
@@ -661,7 +661,7 @@ class TestHalogenBondEdgeCases:
         )
 
         # Should be: CL (1.75) + Unknown (2.0) = 3.75 Å
-        vdw_sum = analyzer._get_vdw_sum(cl_atom, unknown_atom)
+        vdw_sum = cl_atom.calculate_vdw_distance(unknown_atom)
         assert vdw_sum == 3.75
 
     def test_extreme_distance_values(self):
