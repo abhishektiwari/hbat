@@ -131,14 +131,16 @@ class ParameterController:
         """Get all parameters grouped by category.
 
         Returns:
-            Dictionary mapping categories to parameter configs:
-            {
-                "Hydrogen Bonds": {
-                    "hb_distance_cutoff": ParameterConfig(...),
+            Dictionary mapping categories to parameter configs.
+            Example structure::
+
+                {
+                    "Hydrogen Bonds": {
+                        "hb_distance_cutoff": ParameterConfig(...),
+                        ...
+                    },
                     ...
-                },
-                ...
-            }
+                }
         """
         grouped = {}
         for config in PARAMETER_CONFIGS:

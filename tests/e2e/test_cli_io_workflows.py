@@ -354,8 +354,10 @@ class TestCLIPDBFixing:
         ), "ligand_interactions must be present"
 
     def test_fix_method_openbabel_cif(self):
-        """Test CIF input with OpenBabel fixing method.
+        """Test CIF input auto-switches to PDBFixer (even if OpenBabel requested).
 
+        When user requests OpenBabel with CIF files, auto-switch to PDBFixer
+        to preserve ligand information (HETATM records).
         Validates all expected 6rsa interactions per PLAN.md baseline.
         """
         parser = create_parser()
@@ -364,17 +366,20 @@ class TestCLIPDBFixing:
                 "example_pdb_files/6RSA.cif",
                 "--fix-pdb",
                 "--fix-method",
-                "openbabel",
+                "openbabel",  # User requests OpenBabel, but CIF will auto-switch to PDBFixer
             ]
         )
 
         params = load_parameters_from_args(args)
         assert params.fix_pdb_enabled is True
-        assert params.fix_pdb_method == "openbabel"
+        # Auto-switch happens for CIF files: OpenBabel → PDBFixer
+        assert params.fix_pdb_method == "pdbfixer", (
+            "CIF files auto-switch from OpenBabel to PDBFixer to preserve ligand info"
+        )
 
         analyzer = MolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file("example_pdb_files/6RSA.cif")
-        assert success, "OpenBabel analysis should succeed for CIF"
+        assert success, "Analysis should succeed with auto-switched PDBFixer for CIF"
 
         # Verify all expected interactions for 6rsa
         assert len(analyzer.hydrogen_bonds) > 0, "hydrogen_bonds must be > 0"
@@ -384,7 +389,7 @@ class TestCLIPDBFixing:
         )
         assert len(analyzer.n_pi_interactions) > 0, "n_pi_interactions must be > 0"
         assert len(analyzer.water_bridges) > 0, "water_bridges must be > 0"
-        # Note: ligand_interactions may not be detected with OpenBabel on CIF format
+        # With PDBFixer, ligand_interactions should now be detected (preserves HETATM)
 
     def test_pdb_and_cif_equivalence_with_pdbfixer(self):
         """Test format equivalence: PDB vs CIF with PDBFixer.
