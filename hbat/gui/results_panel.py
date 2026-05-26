@@ -18,7 +18,11 @@ except ImportError:
     VISUALIZATION_AVAILABLE = False
 
 from ..core.analysis import MolecularInteractionAnalyzer
-from ..config import INTERACTION_CONFIGS, extract_interaction_data, get_interaction_config
+from ..config import (
+    INTERACTION_CONFIGS,
+    extract_interaction_data,
+    get_interaction_config,
+)
 
 
 class ResultsPanel:
@@ -357,7 +361,9 @@ class ResultsPanel:
 
         # Extract column names and create treeview
         column_names = tuple(col.name for col in config.columns)
-        tree = ttk.Treeview(tree_frame, columns=column_names, show="headings", height=15)
+        tree = ttk.Treeview(
+            tree_frame, columns=column_names, show="headings", height=15
+        )
 
         # Configure columns
         for col in config.columns:
@@ -366,7 +372,9 @@ class ResultsPanel:
 
         # Add scrollbars
         v_scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
-        h_scrollbar = ttk.Scrollbar(tree_frame, orient=tk.HORIZONTAL, command=tree.xview)
+        h_scrollbar = ttk.Scrollbar(
+            tree_frame, orient=tk.HORIZONTAL, command=tree.xview
+        )
         tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
 
         tree.grid(row=0, column=0, sticky="nsew")
@@ -404,13 +412,13 @@ class ResultsPanel:
         ttk.Button(
             search_frame,
             text="Filter",
-            command=lambda: self._filter_results(tree, search_var.get())
+            command=lambda: self._filter_results(tree, search_var.get()),
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
             search_frame,
             text="Clear",
-            command=lambda: self._clear_filter(tree, search_var)
+            command=lambda: self._clear_filter(tree, search_var),
         ).pack(side=tk.LEFT, padx=5)
 
         # Store search variable for later access if needed
@@ -921,7 +929,9 @@ class ResultsPanel:
                 self._update_interaction_tab(interaction_type, config)
             elif tree == self.coop_tree:
                 self._update_cooperativity_chains()
-            elif tree == getattr(self, "lig_inter_tree", None) or tree == getattr(self, "lig_wb_tree", None):
+            elif tree == getattr(self, "lig_inter_tree", None) or tree == getattr(
+                self, "lig_wb_tree", None
+            ):
                 self._update_ligand_interactions()
 
     def clear_results(self) -> None:
@@ -940,13 +950,24 @@ class ResultsPanel:
 
         # Clear all treeviews dynamically
         trees_to_clear = [
-            "hb_tree", "xb_tree", "pi_tree", "pi_pi_tree",
-            "carbonyl_tree", "n_pi_tree", "wb_tree",
-            "coop_tree", "lig_inter_tree", "lig_wb_tree",
+            "hb_tree",
+            "xb_tree",
+            "pi_tree",
+            "pi_pi_tree",
+            "carbonyl_tree",
+            "n_pi_tree",
+            "wb_tree",
+            "coop_tree",
+            "lig_inter_tree",
+            "lig_wb_tree",
             # Also handle new-style names
-            "hydrogen_bonds_tree", "water_bridges_tree", "halogen_bonds_tree",
-            "pi_interactions_tree", "pi_pi_interactions_tree",
-            "carbonyl_interactions_tree", "n_pi_interactions_tree",
+            "hydrogen_bonds_tree",
+            "water_bridges_tree",
+            "halogen_bonds_tree",
+            "pi_interactions_tree",
+            "pi_pi_interactions_tree",
+            "carbonyl_interactions_tree",
+            "n_pi_interactions_tree",
             "cooperativity_chains_tree",
         ]
 
@@ -958,13 +979,23 @@ class ResultsPanel:
 
         # Clear all search filters dynamically
         search_vars_to_clear = [
-            "hb_search_var", "xb_search_var", "pi_search_var", "pi_pi_search_var",
-            "carbonyl_search_var", "n_pi_search_var", "coop_search_var", "wb_search_var",
+            "hb_search_var",
+            "xb_search_var",
+            "pi_search_var",
+            "pi_pi_search_var",
+            "carbonyl_search_var",
+            "n_pi_search_var",
+            "coop_search_var",
+            "wb_search_var",
             "lig_selector_var",
             # Also handle new-style names
-            "hydrogen_bonds_search_var", "water_bridges_search_var", "halogen_bonds_search_var",
-            "pi_interactions_search_var", "pi_pi_interactions_search_var",
-            "carbonyl_interactions_search_var", "n_pi_interactions_search_var",
+            "hydrogen_bonds_search_var",
+            "water_bridges_search_var",
+            "halogen_bonds_search_var",
+            "pi_interactions_search_var",
+            "pi_pi_interactions_search_var",
+            "carbonyl_interactions_search_var",
+            "n_pi_interactions_search_var",
             "cooperativity_chains_search_var",
         ]
 

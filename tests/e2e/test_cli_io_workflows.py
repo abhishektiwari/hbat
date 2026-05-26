@@ -119,29 +119,21 @@ def validate_expected_interactions(analyzer, expected_interactions):
         expected_interactions: dict with expected interaction flags from fixture
     """
     if expected_interactions.get("hydrogen_bonds"):
-        assert (
-            len(analyzer.hydrogen_bonds) > 0
-        ), "hydrogen_bonds must be > 0"
+        assert len(analyzer.hydrogen_bonds) > 0, "hydrogen_bonds must be > 0"
 
     if expected_interactions.get("pi_interactions"):
-        assert (
-            len(analyzer.pi_interactions) > 0
-        ), "pi_interactions must be > 0"
+        assert len(analyzer.pi_interactions) > 0, "pi_interactions must be > 0"
 
     if expected_interactions.get("carbonyl_interactions"):
-        assert (
-            len(analyzer.carbonyl_interactions) > 0
-        ), "carbonyl_interactions must be > 0"
+        assert len(analyzer.carbonyl_interactions) > 0, (
+            "carbonyl_interactions must be > 0"
+        )
 
     if expected_interactions.get("n_pi_interactions"):
-        assert (
-            len(analyzer.n_pi_interactions) > 0
-        ), "n_pi_interactions must be > 0"
+        assert len(analyzer.n_pi_interactions) > 0, "n_pi_interactions must be > 0"
 
     if expected_interactions.get("water_bridges"):
-        assert (
-            len(analyzer.water_bridges) > 0
-        ), "water_bridges must be > 0"
+        assert len(analyzer.water_bridges) > 0, "water_bridges must be > 0"
 
     if expected_interactions.get("ligand_interactions"):
         assert (
@@ -152,9 +144,9 @@ def validate_expected_interactions(analyzer, expected_interactions):
     if expected_interactions.get("ligand_interactions_with_water_bridges"):
         # Water bridge interactions may be embedded in ligand_interactions
         # or in water_bridges - just verify water_bridges exist
-        assert (
-            len(analyzer.water_bridges) > 0
-        ), "ligand_interactions_with_water_bridges requires water_bridges"
+        assert len(analyzer.water_bridges) > 0, (
+            "ligand_interactions_with_water_bridges requires water_bridges"
+        )
 
 
 # ============================================================================
@@ -182,9 +174,7 @@ class TestCLIBasicWorkflows:
         assert success, f"Analysis should succeed for {input_file['name']}"
 
         # Validate all expected interactions from fixture
-        validate_expected_interactions(
-            analyzer, input_file["expected_interactions"]
-        )
+        validate_expected_interactions(analyzer, input_file["expected_interactions"])
 
     def test_cli_analyze_with_custom_parameters(self, input_file):
         """Test CLI with custom parameters: --hb-distance, --hb-angle.
@@ -317,12 +307,10 @@ class TestCLIPDBFixing:
         # Verify all expected interactions for 6rsa
         assert len(analyzer.hydrogen_bonds) > 0, "hydrogen_bonds must be > 0"
         assert len(analyzer.pi_interactions) > 0, "pi_interactions must be > 0"
-        assert (
-            len(analyzer.carbonyl_interactions) > 0
-        ), "carbonyl_interactions must be > 0"
-        assert (
-            len(analyzer.n_pi_interactions) > 0
-        ), "n_pi_interactions must be > 0"
+        assert len(analyzer.carbonyl_interactions) > 0, (
+            "carbonyl_interactions must be > 0"
+        )
+        assert len(analyzer.n_pi_interactions) > 0, "n_pi_interactions must be > 0"
         assert len(analyzer.water_bridges) > 0, "water_bridges must be > 0"
         assert (
             analyzer.ligand_interactions is not None
@@ -355,12 +343,10 @@ class TestCLIPDBFixing:
         # Verify all expected interactions for 6rsa
         assert len(analyzer.hydrogen_bonds) > 0, "hydrogen_bonds must be > 0"
         assert len(analyzer.pi_interactions) > 0, "pi_interactions must be > 0"
-        assert (
-            len(analyzer.carbonyl_interactions) > 0
-        ), "carbonyl_interactions must be > 0"
-        assert (
-            len(analyzer.n_pi_interactions) > 0
-        ), "n_pi_interactions must be > 0"
+        assert len(analyzer.carbonyl_interactions) > 0, (
+            "carbonyl_interactions must be > 0"
+        )
+        assert len(analyzer.n_pi_interactions) > 0, "n_pi_interactions must be > 0"
         assert len(analyzer.water_bridges) > 0, "water_bridges must be > 0"
         assert (
             analyzer.ligand_interactions is not None
@@ -393,12 +379,10 @@ class TestCLIPDBFixing:
         # Verify all expected interactions for 6rsa
         assert len(analyzer.hydrogen_bonds) > 0, "hydrogen_bonds must be > 0"
         assert len(analyzer.pi_interactions) > 0, "pi_interactions must be > 0"
-        assert (
-            len(analyzer.carbonyl_interactions) > 0
-        ), "carbonyl_interactions must be > 0"
-        assert (
-            len(analyzer.n_pi_interactions) > 0
-        ), "n_pi_interactions must be > 0"
+        assert len(analyzer.carbonyl_interactions) > 0, (
+            "carbonyl_interactions must be > 0"
+        )
+        assert len(analyzer.n_pi_interactions) > 0, "n_pi_interactions must be > 0"
         assert len(analyzer.water_bridges) > 0, "water_bridges must be > 0"
         # Note: ligand_interactions may not be detected with OpenBabel on CIF format
 
@@ -434,24 +418,20 @@ class TestCLIPDBFixing:
         assert len(analyzer_cif.hydrogen_bonds) > 0, "CIF hydrogen_bonds must be > 0"
         assert len(analyzer_pdb.pi_interactions) > 0, "PDB pi_interactions must be > 0"
         assert len(analyzer_cif.pi_interactions) > 0, "CIF pi_interactions must be > 0"
-        assert (
-            len(analyzer_pdb.carbonyl_interactions) > 0
-        ), "PDB carbonyl_interactions must be > 0"
-        assert (
-            len(analyzer_cif.carbonyl_interactions) > 0
-        ), "CIF carbonyl_interactions must be > 0"
-        assert (
-            len(analyzer_pdb.n_pi_interactions) > 0
-        ), "PDB n_pi_interactions must be > 0"
-        assert (
-            len(analyzer_cif.n_pi_interactions) > 0
-        ), "CIF n_pi_interactions must be > 0"
-        assert (
-            len(analyzer_pdb.water_bridges) > 0
-        ), "PDB water_bridges must be > 0"
-        assert (
-            len(analyzer_cif.water_bridges) > 0
-        ), "CIF water_bridges must be > 0"
+        assert len(analyzer_pdb.carbonyl_interactions) > 0, (
+            "PDB carbonyl_interactions must be > 0"
+        )
+        assert len(analyzer_cif.carbonyl_interactions) > 0, (
+            "CIF carbonyl_interactions must be > 0"
+        )
+        assert len(analyzer_pdb.n_pi_interactions) > 0, (
+            "PDB n_pi_interactions must be > 0"
+        )
+        assert len(analyzer_cif.n_pi_interactions) > 0, (
+            "CIF n_pi_interactions must be > 0"
+        )
+        assert len(analyzer_pdb.water_bridges) > 0, "PDB water_bridges must be > 0"
+        assert len(analyzer_cif.water_bridges) > 0, "CIF water_bridges must be > 0"
 
         # Verify ligand interactions with water bridges in both
         assert (
@@ -497,24 +477,20 @@ class TestCLIPDBFixing:
         assert len(analyzer_cif.hydrogen_bonds) > 0, "CIF hydrogen_bonds must be > 0"
         assert len(analyzer_pdb.pi_interactions) > 0, "PDB pi_interactions must be > 0"
         assert len(analyzer_cif.pi_interactions) > 0, "CIF pi_interactions must be > 0"
-        assert (
-            len(analyzer_pdb.carbonyl_interactions) > 0
-        ), "PDB carbonyl_interactions must be > 0"
-        assert (
-            len(analyzer_cif.carbonyl_interactions) > 0
-        ), "CIF carbonyl_interactions must be > 0"
-        assert (
-            len(analyzer_pdb.n_pi_interactions) > 0
-        ), "PDB n_pi_interactions must be > 0"
-        assert (
-            len(analyzer_cif.n_pi_interactions) > 0
-        ), "CIF n_pi_interactions must be > 0"
-        assert (
-            len(analyzer_pdb.water_bridges) > 0
-        ), "PDB water_bridges must be > 0"
-        assert (
-            len(analyzer_cif.water_bridges) > 0
-        ), "CIF water_bridges must be > 0"
+        assert len(analyzer_pdb.carbonyl_interactions) > 0, (
+            "PDB carbonyl_interactions must be > 0"
+        )
+        assert len(analyzer_cif.carbonyl_interactions) > 0, (
+            "CIF carbonyl_interactions must be > 0"
+        )
+        assert len(analyzer_pdb.n_pi_interactions) > 0, (
+            "PDB n_pi_interactions must be > 0"
+        )
+        assert len(analyzer_cif.n_pi_interactions) > 0, (
+            "CIF n_pi_interactions must be > 0"
+        )
+        assert len(analyzer_pdb.water_bridges) > 0, "PDB water_bridges must be > 0"
+        assert len(analyzer_cif.water_bridges) > 0, "CIF water_bridges must be > 0"
 
         # Note: ligand_interactions detection is inconsistent with OpenBabel across formats
         # PDB should have ligand_interactions, but CIF may not
@@ -577,9 +553,7 @@ class TestCLIFormatSupport:
 
         # Parser should recognize the file type from extension
         assert args.input == input_file["path"]
-        assert args.input.endswith(
-            ("pdb", "cif")
-        ), "Input should be PDB or CIF format"
+        assert args.input.endswith(("pdb", "cif")), "Input should be PDB or CIF format"
 
     def test_cli_cif_specific_behaviors(self):
         """Test CIF-specific workflows (no parametrization)."""
@@ -681,18 +655,16 @@ class TestCLIOutputFormats:
             assert len(data["hydrogen_bonds"]) > 0, "hydrogen_bonds must have entries"
             assert "pi_interactions" in data, "JSON must contain pi_interactions"
             assert len(data["pi_interactions"]) > 0, "pi_interactions must have entries"
-            assert (
-                "carbonyl_interactions" in data
-            ), "JSON must contain carbonyl_interactions"
-            assert (
-                len(data["carbonyl_interactions"]) > 0
-            ), "carbonyl_interactions must have entries"
-            assert (
-                "n_pi_interactions" in data
-            ), "JSON must contain n_pi_interactions"
-            assert (
-                len(data["n_pi_interactions"]) > 0
-            ), "n_pi_interactions must have entries"
+            assert "carbonyl_interactions" in data, (
+                "JSON must contain carbonyl_interactions"
+            )
+            assert len(data["carbonyl_interactions"]) > 0, (
+                "carbonyl_interactions must have entries"
+            )
+            assert "n_pi_interactions" in data, "JSON must contain n_pi_interactions"
+            assert len(data["n_pi_interactions"]) > 0, (
+                "n_pi_interactions must have entries"
+            )
             assert "water_bridges" in data, "JSON must contain water_bridges"
             assert len(data["water_bridges"]) > 0, "water_bridges must have entries"
 
@@ -735,18 +707,16 @@ class TestCLIOutputFormats:
             assert len(data["hydrogen_bonds"]) > 0, "hydrogen_bonds must have entries"
             assert "pi_interactions" in data, "JSON must contain pi_interactions"
             assert len(data["pi_interactions"]) > 0, "pi_interactions must have entries"
-            assert (
-                "carbonyl_interactions" in data
-            ), "JSON must contain carbonyl_interactions"
-            assert (
-                len(data["carbonyl_interactions"]) > 0
-            ), "carbonyl_interactions must have entries"
-            assert (
-                "n_pi_interactions" in data
-            ), "JSON must contain n_pi_interactions"
-            assert (
-                len(data["n_pi_interactions"]) > 0
-            ), "n_pi_interactions must have entries"
+            assert "carbonyl_interactions" in data, (
+                "JSON must contain carbonyl_interactions"
+            )
+            assert len(data["carbonyl_interactions"]) > 0, (
+                "carbonyl_interactions must have entries"
+            )
+            assert "n_pi_interactions" in data, "JSON must contain n_pi_interactions"
+            assert len(data["n_pi_interactions"]) > 0, (
+                "n_pi_interactions must have entries"
+            )
             assert "water_bridges" in data, "JSON must contain water_bridges"
             assert len(data["water_bridges"]) > 0, "water_bridges must have entries"
 
@@ -890,9 +860,7 @@ class TestCLIOutputQuietAndSummary:
         Parametrized by input_file (pdb, cif).
         """
         parser = create_parser()
-        args = parser.parse_args(
-            [input_file["path"], "--quiet", "--summary-only"]
-        )
+        args = parser.parse_args([input_file["path"], "--quiet", "--summary-only"])
 
         params = load_parameters_from_args(args)
         assert args.quiet is True
@@ -995,9 +963,7 @@ class TestCLIPresets:
         parser = create_parser()
         # Simulate: "--preset high_resolution --hb-distance 2.8"
         # In real CLI, preset is loaded first, then args override
-        args = parser.parse_args(
-            [sample_pdb_file, "--hb-distance", "2.8"]
-        )
+        args = parser.parse_args([sample_pdb_file, "--hb-distance", "2.8"])
 
         params = load_parameters_from_args(args)
         # Explicit flag should override
@@ -1073,9 +1039,7 @@ class TestCLIPerformanceAndScaling:
         elapsed_time = time.time() - start_time
 
         assert success
-        assert elapsed_time < 30.0, (
-            f"Analysis took too long: {elapsed_time:.2f}s"
-        )
+        assert elapsed_time < 30.0, f"Analysis took too long: {elapsed_time:.2f}s"
 
     def test_memory_usage_acceptable(self):
         """Test that memory usage is acceptable (module growth < 50)."""
@@ -1091,6 +1055,4 @@ class TestCLIPerformanceAndScaling:
 
         assert success
         module_growth = final_objects - initial_objects
-        assert module_growth < 50, (
-            f"Too many new modules loaded: {module_growth}"
-        )
+        assert module_growth < 50, f"Too many new modules loaded: {module_growth}"

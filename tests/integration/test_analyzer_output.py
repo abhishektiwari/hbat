@@ -290,9 +290,9 @@ class TestAnalyzerStatisticsIntegration:
 
         # At least some optional keys should be present
         optional_found = [key for key in optional_keys if key in summary]
-        assert (
-            len(optional_found) > 0
-        ), "Summary should include at least some new interaction types"
+        assert len(optional_found) > 0, (
+            "Summary should include at least some new interaction types"
+        )
 
         # Hydrogen bonds should have detailed breakdown
         assert "count" in summary["hydrogen_bonds"], "H-bond summary should have count"
@@ -304,7 +304,9 @@ class TestAnalyzerStatisticsIntegration:
                     assert isinstance(summary[key]["count"], int), (
                         f"{key} count should be int"
                     )
-                    assert summary[key]["count"] >= 0, f"{key} count should be non-negative"
+                    assert summary[key]["count"] >= 0, (
+                        f"{key} count should be non-negative"
+                    )
                 elif key == "total_interactions":
                     assert isinstance(summary[key], int), f"{key} should be int"
                     assert summary[key] >= 0, f"{key} should be non-negative"

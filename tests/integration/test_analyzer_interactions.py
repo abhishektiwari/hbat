@@ -386,9 +386,13 @@ class TestWaterBridgeDetection:
         # If water bridges are found, validate them
         for wb in water_bridges[:5]:  # Check first 5
             assert hasattr(wb, "donor_atom"), "Water bridge should have donor atom"
-            assert hasattr(wb, "acceptor_atom"), "Water bridge should have acceptor atom"
+            assert hasattr(wb, "acceptor_atom"), (
+                "Water bridge should have acceptor atom"
+            )
             assert hasattr(wb, "bridge_path"), "Water bridge should have bridge path"
-            assert hasattr(wb, "total_distance"), "Water bridge should have total distance"
+            assert hasattr(wb, "total_distance"), (
+                "Water bridge should have total distance"
+            )
 
             # Validate distances
             assert wb.total_distance > 0, "Total distance should be positive"
@@ -497,9 +501,7 @@ class TestLigandInteractionDetection:
         assert success, "Failed to analyze structure"
 
         # Check that ligand interactions object exists
-        assert hasattr(analyzer, "ligand_interactions"), (
-            "Ligand interactions not found"
-        )
+        assert hasattr(analyzer, "ligand_interactions"), "Ligand interactions not found"
 
         ligand_interactions = analyzer.ligand_interactions
         assert ligand_interactions is not None
@@ -626,9 +628,7 @@ class TestWaterBridgeLigandIntegration:
         # Get counts
         wb_count = len(water_bridges)
         lig_int_count = (
-            len(ligand_interactions.interactions)
-            if ligand_interactions
-            else 0
+            len(ligand_interactions.interactions) if ligand_interactions else 0
         )
 
         print(f"✓ Water bridges: {wb_count}, Ligand interactions: {lig_int_count}")

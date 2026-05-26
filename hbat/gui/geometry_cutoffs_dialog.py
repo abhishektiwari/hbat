@@ -143,7 +143,7 @@ class GeometryCutoffsDialog:
     def _init_variables(self):
         """Initialize parameter controller and variable dictionaries."""
         self.controller = ParameterController()
-        self._vars = {}          # field_name -> tk.Var (created lazily per panel)
+        self._vars = {}  # field_name -> tk.Var (created lazily per panel)
         self._param_values = {}  # field_name -> value (cross-panel backing store)
 
     def _store_current_values(self):
@@ -321,7 +321,9 @@ class GeometryCutoffsDialog:
 
         def update_factor_label(*args):
             try:
-                factor_label.config(text=f"{self._vars['covalent_cutoff_factor'].get():.2f}")
+                factor_label.config(
+                    text=f"{self._vars['covalent_cutoff_factor'].get():.2f}"
+                )
             except tk.TclError:
                 pass  # Widget destroyed, ignore
 
@@ -394,7 +396,9 @@ class GeometryCutoffsDialog:
 
         def update_hb_dist(*args):
             try:
-                hb_dist_label.config(text=f"{self._vars['hb_distance_cutoff'].get():.1f}")
+                hb_dist_label.config(
+                    text=f"{self._vars['hb_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
@@ -452,7 +456,9 @@ class GeometryCutoffsDialog:
 
         def update_da_dist(*args):
             try:
-                da_dist_label.config(text=f"{self._vars['hb_donor_acceptor_cutoff'].get():.1f}")
+                da_dist_label.config(
+                    text=f"{self._vars['hb_donor_acceptor_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
@@ -488,7 +494,9 @@ class GeometryCutoffsDialog:
 
         def update_whb_dist(*args):
             try:
-                whb_dist_label.config(text=f"{self._vars['whb_distance_cutoff'].get():.1f}")
+                whb_dist_label.config(
+                    text=f"{self._vars['whb_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
@@ -517,7 +525,9 @@ class GeometryCutoffsDialog:
 
         def update_whb_angle(*args):
             try:
-                whb_angle_label.config(text=f"{self._vars['whb_angle_cutoff'].get():.0f}")
+                whb_angle_label.config(
+                    text=f"{self._vars['whb_angle_cutoff'].get():.0f}"
+                )
             except tk.TclError:
                 pass
 
@@ -546,7 +556,9 @@ class GeometryCutoffsDialog:
 
         def update_whb_da_dist(*args):
             try:
-                whb_da_dist_label.config(text=f"{self._vars['whb_donor_acceptor_cutoff'].get():.1f}")
+                whb_da_dist_label.config(
+                    text=f"{self._vars['whb_donor_acceptor_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
@@ -580,7 +592,9 @@ class GeometryCutoffsDialog:
 
         def update_xb_dist(*args):
             try:
-                xb_dist_label.config(text=f"{self._vars['xb_distance_cutoff'].get():.1f}")
+                xb_dist_label.config(
+                    text=f"{self._vars['xb_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
@@ -646,7 +660,9 @@ class GeometryCutoffsDialog:
 
         def update_pi_dist(*args):
             try:
-                pi_dist_label.config(text=f"{self._vars['pi_distance_cutoff'].get():.1f}")
+                pi_dist_label.config(
+                    text=f"{self._vars['pi_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
@@ -860,7 +876,9 @@ class GeometryCutoffsDialog:
 
         def update_pi_pi_dist(*args):
             try:
-                pi_pi_dist_label.config(text=f"{self._vars['pi_pi_distance_cutoff'].get():.1f}")
+                pi_pi_dist_label.config(
+                    text=f"{self._vars['pi_pi_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
@@ -882,7 +900,9 @@ class GeometryCutoffsDialog:
         stored_pi_pi_parallel = self._param_values.get(
             "pi_pi_parallel_angle_cutoff", ParametersDefault.PI_PI_PARALLEL_ANGLE_CUTOFF
         )
-        self._vars["pi_pi_parallel_angle_cutoff"] = tk.DoubleVar(value=stored_pi_pi_parallel)
+        self._vars["pi_pi_parallel_angle_cutoff"] = tk.DoubleVar(
+            value=stored_pi_pi_parallel
+        )
         parallel_scale = ttk.Scale(
             group,
             from_=ParameterRanges.MIN_ANGLE,
@@ -1010,7 +1030,9 @@ class GeometryCutoffsDialog:
 
         def update_pi_pi_offset(*args):
             try:
-                pi_pi_offset_label.config(text=f"{self._vars['pi_pi_offset_cutoff'].get():.1f}")
+                pi_pi_offset_label.config(
+                    text=f"{self._vars['pi_pi_offset_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
@@ -1060,7 +1082,9 @@ class GeometryCutoffsDialog:
 
         def update_carbonyl_dist(*args):
             try:
-                carbonyl_dist_label.config(text=f"{self._vars['carbonyl_distance_cutoff'].get():.1f}")
+                carbonyl_dist_label.config(
+                    text=f"{self._vars['carbonyl_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
@@ -1103,7 +1127,9 @@ class GeometryCutoffsDialog:
 
         def update_carbonyl_min(*args):
             try:
-                carbonyl_min_label.config(text=f"{self._vars['carbonyl_angle_min'].get():.0f}")
+                carbonyl_min_label.config(
+                    text=f"{self._vars['carbonyl_angle_min'].get():.0f}"
+                )
             except tk.TclError:
                 pass
 
@@ -1132,7 +1158,9 @@ class GeometryCutoffsDialog:
 
         def update_carbonyl_max(*args):
             try:
-                carbonyl_max_label.config(text=f"{self._vars['carbonyl_angle_max'].get():.0f}")
+                carbonyl_max_label.config(
+                    text=f"{self._vars['carbonyl_angle_max'].get():.0f}"
+                )
             except tk.TclError:
                 pass
 
@@ -1180,7 +1208,9 @@ class GeometryCutoffsDialog:
 
         def update_n_pi_dist(*args):
             try:
-                n_pi_dist_label.config(text=f"{self._vars['n_pi_distance_cutoff'].get():.1f}")
+                n_pi_dist_label.config(
+                    text=f"{self._vars['n_pi_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
@@ -1202,7 +1232,9 @@ class GeometryCutoffsDialog:
         stored_n_pi_sulfur = self._param_values.get(
             "n_pi_sulfur_distance_cutoff", ParametersDefault.N_PI_SULFUR_DISTANCE_CUTOFF
         )
-        self._vars["n_pi_sulfur_distance_cutoff"] = tk.DoubleVar(value=stored_n_pi_sulfur)
+        self._vars["n_pi_sulfur_distance_cutoff"] = tk.DoubleVar(
+            value=stored_n_pi_sulfur
+        )
         sulfur_scale = ttk.Scale(
             group,
             from_=ParameterRanges.MIN_DISTANCE,
@@ -1223,7 +1255,9 @@ class GeometryCutoffsDialog:
 
         def update_n_pi_sulfur(*args):
             try:
-                n_pi_sulfur_label.config(text=f"{self._vars['n_pi_sulfur_distance_cutoff'].get():.1f}")
+                n_pi_sulfur_label.config(
+                    text=f"{self._vars['n_pi_sulfur_distance_cutoff'].get():.1f}"
+                )
             except tk.TclError:
                 pass
 
@@ -1234,7 +1268,9 @@ class GeometryCutoffsDialog:
         ttk.Label(group, text="Angle Min (°):").grid(
             row=2, column=0, sticky=tk.W, pady=2
         )
-        stored_n_pi_min = self._param_values.get("n_pi_angle_min", ParametersDefault.N_PI_ANGLE_MIN)
+        stored_n_pi_min = self._param_values.get(
+            "n_pi_angle_min", ParametersDefault.N_PI_ANGLE_MIN
+        )
         self._vars["n_pi_angle_min"] = tk.DoubleVar(value=stored_n_pi_min)
         ttk.Scale(
             group,
@@ -1261,7 +1297,9 @@ class GeometryCutoffsDialog:
         ttk.Label(group, text="Angle Max (°):").grid(
             row=3, column=0, sticky=tk.W, pady=2
         )
-        stored_n_pi_max = self._param_values.get("n_pi_angle_max", ParametersDefault.N_PI_ANGLE_MAX)
+        stored_n_pi_max = self._param_values.get(
+            "n_pi_angle_max", ParametersDefault.N_PI_ANGLE_MAX
+        )
         self._vars["n_pi_angle_max"] = tk.DoubleVar(value=stored_n_pi_max)
         ttk.Scale(
             group,
@@ -1421,7 +1459,9 @@ class GeometryCutoffsDialog:
             )
             apply_value(
                 "pi_ci_distance_cutoff",
-                pi.get("ci_pi_distance_cutoff", ParametersDefault.PI_CI_DISTANCE_CUTOFF),
+                pi.get(
+                    "ci_pi_distance_cutoff", ParametersDefault.PI_CI_DISTANCE_CUTOFF
+                ),
             )
             apply_value(
                 "pi_ci_angle_cutoff",
@@ -1429,7 +1469,9 @@ class GeometryCutoffsDialog:
             )
             apply_value(
                 "pi_ch_distance_cutoff",
-                pi.get("ch_pi_distance_cutoff", ParametersDefault.PI_CH_DISTANCE_CUTOFF),
+                pi.get(
+                    "ch_pi_distance_cutoff", ParametersDefault.PI_CH_DISTANCE_CUTOFF
+                ),
             )
             apply_value(
                 "pi_ch_angle_cutoff",
@@ -1437,7 +1479,9 @@ class GeometryCutoffsDialog:
             )
             apply_value(
                 "pi_nh_distance_cutoff",
-                pi.get("nh_pi_distance_cutoff", ParametersDefault.PI_NH_DISTANCE_CUTOFF),
+                pi.get(
+                    "nh_pi_distance_cutoff", ParametersDefault.PI_NH_DISTANCE_CUTOFF
+                ),
             )
             apply_value(
                 "pi_nh_angle_cutoff",
@@ -1445,7 +1489,9 @@ class GeometryCutoffsDialog:
             )
             apply_value(
                 "pi_oh_distance_cutoff",
-                pi.get("oh_pi_distance_cutoff", ParametersDefault.PI_OH_DISTANCE_CUTOFF),
+                pi.get(
+                    "oh_pi_distance_cutoff", ParametersDefault.PI_OH_DISTANCE_CUTOFF
+                ),
             )
             apply_value(
                 "pi_oh_angle_cutoff",
@@ -1453,7 +1499,9 @@ class GeometryCutoffsDialog:
             )
             apply_value(
                 "pi_sh_distance_cutoff",
-                pi.get("sh_pi_distance_cutoff", ParametersDefault.PI_SH_DISTANCE_CUTOFF),
+                pi.get(
+                    "sh_pi_distance_cutoff", ParametersDefault.PI_SH_DISTANCE_CUTOFF
+                ),
             )
             apply_value(
                 "pi_sh_angle_cutoff",

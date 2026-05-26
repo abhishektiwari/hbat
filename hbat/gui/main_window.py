@@ -905,7 +905,11 @@ Author: Abhishek Tiwari
                     self._highlight_pdb_records_in_widget(self.fixed_file_text)
 
                 # Show tab title indicating changes
-                file_ext = os.path.splitext(fixed_file_path)[1].upper() if fixed_file_path else ".PDB"
+                file_ext = (
+                    os.path.splitext(fixed_file_path)[1].upper()
+                    if fixed_file_path
+                    else ".PDB"
+                )
                 self.left_notebook.tab(1, text=f"Fixed Structure{file_ext} ✓")
 
             except Exception as e:

@@ -639,7 +639,9 @@ class NPMolecularInteractionAnalyzer:
                     continue  # Skip this pair - doesn't meet either distance criterion
 
                 # Find carbon atom bonded to halogen
-                carbon_atom = x_atom.get_bonded_carbon(self.parser.bonds, self.parser.atoms)
+                carbon_atom = x_atom.get_bonded_carbon(
+                    self.parser.bonds, self.parser.atoms
+                )
                 if not carbon_atom:
                     continue
 
@@ -722,7 +724,9 @@ class NPMolecularInteractionAnalyzer:
             if residue.name in RESIDUES_WITH_AROMATIC_RINGS:
                 aromatic_center = residue.get_aromatic_center()
                 if aromatic_center is not None:
-                    aromatic_centers.append({"residue": residue, "center": aromatic_center})
+                    aromatic_centers.append(
+                        {"residue": residue, "center": aromatic_center}
+                    )
 
         if not aromatic_centers:
             return

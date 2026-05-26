@@ -439,7 +439,13 @@ class TestPDBFixingExpansionFlags:
         """Test --fix-method pdbfixer propagates."""
         parser = create_parser()
         args = parser.parse_args(
-            ["dummy.pdb", "--fix-pdb", "--fix-method", "pdbfixer", "--fix-add-hydrogens"]
+            [
+                "dummy.pdb",
+                "--fix-pdb",
+                "--fix-method",
+                "pdbfixer",
+                "--fix-add-hydrogens",
+            ]
         )
         params = load_parameters_from_args(args)
 
@@ -476,9 +482,7 @@ class TestPDBFixingExpansionFlags:
     def test_fix_remove_heterogens_propagates(self):
         """Test --fix-remove-heterogens flag propagates."""
         parser = create_parser()
-        args = parser.parse_args(
-            ["dummy.pdb", "--fix-pdb", "--fix-remove-heterogens"]
-        )
+        args = parser.parse_args(["dummy.pdb", "--fix-pdb", "--fix-remove-heterogens"])
         params = load_parameters_from_args(args)
 
         assert params.fix_pdb_remove_heterogens is True

@@ -541,14 +541,14 @@ class HBATWebApp:
             f.write(self.pdb_content)
 
         # Auto-switch to PDBFixer for CIF files (OpenBabel loses ligand info)
-        if filename.lower().endswith('.cif'):
+        if filename.lower().endswith(".cif"):
             if self.parameter_panel:
                 self.parameter_panel.fix_pdb_method = "pdbfixer"
                 ui.notify(
                     "CIF file detected - PDB fixing method switched to PDBFixer "
                     "(preserves ligand information)",
                     type="info",
-                    position="top-left"
+                    position="top-left",
                 )
 
         # ui.notify(f"File loaded: {filename}", type="positive", position="top-left")

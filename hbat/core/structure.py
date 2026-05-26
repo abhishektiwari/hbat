@@ -324,13 +324,20 @@ class Atom:
         :returns: First matching bonded atom, or None if not found
         :rtype: Optional[Atom]
         """
-        elements = {element.upper()} if isinstance(element, str) else {e.upper() for e in element}
+        elements = (
+            {element.upper()}
+            if isinstance(element, str)
+            else {e.upper() for e in element}
+        )
         for bond in bonds:
             if bond.involves_atom(self.serial):
                 partner_serial = bond.get_partner(self.serial)
                 if partner_serial is not None:
                     for atom in atoms:
-                        if atom.serial == partner_serial and atom.element.upper() in elements:
+                        if (
+                            atom.serial == partner_serial
+                            and atom.element.upper() in elements
+                        ):
                             return atom
         return None
 
@@ -385,9 +392,17 @@ class Atom:
             if atom_name == "O":
                 return "backbone-carbonyl"
             elif atom_name in ["OD1", "OD2"]:
-                return "aspartate-carbonyl" if residue.name == "ASP" else "asparagine-carbonyl"
+                return (
+                    "aspartate-carbonyl"
+                    if residue.name == "ASP"
+                    else "asparagine-carbonyl"
+                )
             elif atom_name in ["OE1", "OE2"]:
-                return "glutamate-carbonyl" if residue.name == "GLU" else "glutamine-carbonyl"
+                return (
+                    "glutamate-carbonyl"
+                    if residue.name == "GLU"
+                    else "glutamine-carbonyl"
+                )
             elif atom_name in ["OG", "OG1"]:
                 return "hydroxyl-oxygen"
             elif atom_name == "OH":
@@ -400,9 +415,15 @@ class Atom:
             elif atom_name in ["ND1", "ND2", "NE1", "NE2"]:
                 return "histidine-nitrogen"
             elif atom_name in ["NE", "NZ"]:
-                return "lysine-nitrogen" if residue.name == "LYS" else "arginine-nitrogen"
+                return (
+                    "lysine-nitrogen" if residue.name == "LYS" else "arginine-nitrogen"
+                )
             elif atom_name in ["NE2", "ND2"]:
-                return "asparagine-nitrogen" if residue.name == "ASN" else "glutamine-nitrogen"
+                return (
+                    "asparagine-nitrogen"
+                    if residue.name == "ASN"
+                    else "glutamine-nitrogen"
+                )
             else:
                 return "amine-nitrogen"
         elif element == "S":
@@ -613,7 +634,14 @@ class Residue:
                 co_dist = backbone_c.coords.distance_to(backbone_o.coords)
                 lo, hi = CARBONYL_BOND_LENGTH_RANGE["amide"]
                 if lo <= co_dist <= hi:
-                    groups.append((atom_to_index[backbone_c], atom_to_index[backbone_o], True, residue_id))
+                    groups.append(
+                        (
+                            atom_to_index[backbone_c],
+                            atom_to_index[backbone_o],
+                            True,
+                            residue_id,
+                        )
+                    )
 
         if self.name in RESIDUES_WITH_SIDECHAIN_CARBONYLS:
             c_name, o_name = RESIDUES_WITH_SIDECHAIN_CARBONYLS[self.name]
@@ -628,7 +656,14 @@ class Residue:
                 key = "amide" if self.name in ["ASN", "GLN"] else "carboxylate"
                 lo, hi = CARBONYL_BOND_LENGTH_RANGE[key]
                 if lo <= co_dist <= hi:
-                    groups.append((atom_to_index[sidechain_c], atom_to_index[sidechain_o], False, residue_id))
+                    groups.append(
+                        (
+                            atom_to_index[sidechain_c],
+                            atom_to_index[sidechain_o],
+                            False,
+                            residue_id,
+                        )
+                    )
 
         return groups
 

@@ -30,7 +30,13 @@ from hbat.constants.parameters import AnalysisParameters
             "name": "6rsa.pdb",
             "file": "example_pdb_files/6rsa.pdb",
             "type": "protein",
-            "expected_interactions": ["hydrogen_bonds", "pi_interactions", "carbonyl_interactions", "n_pi_interactions", "water_bridges"],
+            "expected_interactions": [
+                "hydrogen_bonds",
+                "pi_interactions",
+                "carbonyl_interactions",
+                "n_pi_interactions",
+                "water_bridges",
+            ],
             "expected_ligand_interactions": True,
             "expected_ligand_interactions_with_water_bridges": True,
         },
@@ -38,7 +44,11 @@ from hbat.constants.parameters import AnalysisParameters
             "name": "7nwd.pdb",
             "file": "example_pdb_files/7nwd.pdb",
             "type": "nucleic_acid",
-            "expected_interactions": ["hydrogen_bonds", "pi_pi_interactions", "pi_interactions"],
+            "expected_interactions": [
+                "hydrogen_bonds",
+                "pi_pi_interactions",
+                "pi_interactions",
+            ],
             "expected_ligand_interactions": False,
             "expected_ligand_interactions_with_water_bridges": False,
         },
@@ -46,7 +56,12 @@ from hbat.constants.parameters import AnalysisParameters
             "name": "1ubi.pdb",
             "file": "example_pdb_files/1ubi.pdb",
             "type": "protein",
-            "expected_interactions": ["hydrogen_bonds", "pi_interactions", "carbonyl_interactions", "water_bridges"],
+            "expected_interactions": [
+                "hydrogen_bonds",
+                "pi_interactions",
+                "carbonyl_interactions",
+                "water_bridges",
+            ],
             "expected_ligand_interactions": False,
             "expected_ligand_interactions_with_water_bridges": False,
         },
@@ -54,7 +69,15 @@ from hbat.constants.parameters import AnalysisParameters
             "name": "4laz.pdb",
             "file": "example_pdb_files/4laz.pdb",
             "type": "protein",
-            "expected_interactions": ["hydrogen_bonds", "halogen_bonds", "pi_pi_interactions", "pi_interactions", "carbonyl_interactions", "n_pi_interactions", "water_bridges"],
+            "expected_interactions": [
+                "hydrogen_bonds",
+                "halogen_bonds",
+                "pi_pi_interactions",
+                "pi_interactions",
+                "carbonyl_interactions",
+                "n_pi_interactions",
+                "water_bridges",
+            ],
             "expected_ligand_interactions": True,
             "expected_ligand_interactions_with_water_bridges": False,
         },
@@ -62,7 +85,12 @@ from hbat.constants.parameters import AnalysisParameters
             "name": "4hhb.pdb",
             "file": "example_pdb_files/4hhb.pdb",
             "type": "protein",
-            "expected_interactions": ["hydrogen_bonds", "pi_interactions", "carbonyl_interactions", "water_bridges"],
+            "expected_interactions": [
+                "hydrogen_bonds",
+                "pi_interactions",
+                "carbonyl_interactions",
+                "water_bridges",
+            ],
             "expected_ligand_interactions": True,
             "expected_ligand_interactions_with_water_bridges": True,
         },
@@ -355,9 +383,9 @@ class TestCompleteWorkflows:
             # Verify interaction properties for detected interactions
             for interaction in interactions[:5]:  # Check first 5
                 for prop in interaction_spec["required_properties"]:
-                    assert hasattr(
-                        interaction, prop
-                    ), f"Missing property {prop} in {interaction_attr}"
+                    assert hasattr(interaction, prop), (
+                        f"Missing property {prop} in {interaction_attr}"
+                    )
 
             # Verify consistency in summary
             summary = analyzer.get_summary()
@@ -373,9 +401,9 @@ class TestCompleteWorkflows:
             if len(interactions) > 0:
                 for interaction in interactions[:5]:  # Check first 5
                     for prop in interaction_spec["required_properties"]:
-                        assert hasattr(
-                            interaction, prop
-                        ), f"Missing property {prop} in {interaction_attr}"
+                        assert hasattr(interaction, prop), (
+                            f"Missing property {prop} in {interaction_attr}"
+                        )
 
 
 @pytest.mark.e2e
@@ -450,16 +478,20 @@ class TestLigandAndWaterBridges:
 
             # Verify water bridge properties
             for wb in analyzer.water_bridges[:3]:  # Check first 3
-                assert hasattr(wb, "water_residues"), "Bridge should have water_residues"
+                assert hasattr(wb, "water_residues"), (
+                    "Bridge should have water_residues"
+                )
                 assert hasattr(wb, "bridge_length"), "Bridge should have bridge_length"
-                assert hasattr(
-                    wb, "get_donor_acceptor_distance"
-                ), "Bridge should have get_donor_acceptor_distance method"
+                assert hasattr(wb, "get_donor_acceptor_distance"), (
+                    "Bridge should have get_donor_acceptor_distance method"
+                )
         else:
             # If water bridges are found, verify their properties
             if wb_count > 0:
                 for wb in analyzer.water_bridges[:3]:
-                    assert len(wb.water_residues) > 0, "Bridge should have water residues"
+                    assert len(wb.water_residues) > 0, (
+                        "Bridge should have water residues"
+                    )
                     assert wb.bridge_length > 0, "Bridge length should be positive"
 
     def test_ligand_water_bridge_integration(self, pdb_structure):
@@ -522,9 +554,7 @@ class TestLigandAndWaterBridges:
             analyzer.ligand_interactions
             and len(analyzer.ligand_interactions.interactions) > 0
         )
-        has_water_bridges = (
-            analyzer.water_bridges and len(analyzer.water_bridges) > 0
-        )
+        has_water_bridges = analyzer.water_bridges and len(analyzer.water_bridges) > 0
 
         expected_with_wb = pdb_structure.get(
             "expected_ligand_interactions_with_water_bridges", False
@@ -541,9 +571,7 @@ class TestLigandAndWaterBridges:
 
             # Verify ligands are involved in water bridges
             if has_ligands and has_water_bridges:
-                ligand_residues = set(
-                    analyzer.ligand_interactions.ligand_info.keys()
-                )
+                ligand_residues = set(analyzer.ligand_interactions.ligand_info.keys())
 
                 # Check if any water bridge involves a ligand residue
                 ligand_in_wb = False
@@ -554,10 +582,7 @@ class TestLigandAndWaterBridges:
 
                         # Check if ligand residue is in donor or acceptor
                         for lig_res in ligand_residues:
-                            if (
-                                lig_res in donor_res
-                                or lig_res in acceptor_res
-                            ):
+                            if lig_res in donor_res or lig_res in acceptor_res:
                                 ligand_in_wb = True
                                 break
                     except (AttributeError, TypeError):
@@ -761,7 +786,9 @@ class TestCooperativityAnalysis:
 
         # Verify cooperativity analysis
         if len(chains) > 0:
-            cooperativity_count = summary.get("cooperativity_chains", {}).get("count", 0)
+            cooperativity_count = summary.get("cooperativity_chains", {}).get(
+                "count", 0
+            )
             assert cooperativity_count == len(chains)
 
             # Verify chain properties

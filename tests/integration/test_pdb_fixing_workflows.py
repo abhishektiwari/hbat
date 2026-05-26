@@ -27,10 +27,12 @@ from pathlib import Path
 # Helper Functions
 # ============================================================================
 
+
 def has_openbabel():
     """Check if OpenBabel is available."""
     try:
         from openbabel import openbabel  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -40,6 +42,7 @@ def has_pdbfixer():
     """Check if PDBFixer is available."""
     try:
         import pdbfixer  # noqa: F401
+
         try:
             from openmm.app import PDBFile  # noqa: F401
         except ImportError:
@@ -53,32 +56,35 @@ def has_pdbfixer():
 # Parametrized Fixtures
 # ============================================================================
 
-@pytest.fixture(params=[
-    {
-        "file": "example_pdb_files/6rsa.pdb",
-        "format": "pdb",
-        "name": "6rsa",
-        "hydrogen_change": "increased",  # Most files: hydrogen count increases
-    },
-    {
-        "file": "example_pdb_files/6RSA.cif",
-        "format": "cif",
-        "name": "6rsa_cif",
-        "hydrogen_change": "increased",
-    },
-    {
-        "file": "example_pdb_files/1ubi.pdb",
-        "format": "pdb",
-        "name": "1ubi",
-        "hydrogen_change": "increased",
-    },
-    {
-        "file": "example_pdb_files/7nwd.pdb",
-        "format": "pdb",
-        "name": "7nwd",
-        "hydrogen_change": "decreased",  # 7nwd is special case: hydrogens decrease
-    },
-])
+
+@pytest.fixture(
+    params=[
+        {
+            "file": "example_pdb_files/6rsa.pdb",
+            "format": "pdb",
+            "name": "6rsa",
+            "hydrogen_change": "increased",  # Most files: hydrogen count increases
+        },
+        {
+            "file": "example_pdb_files/6RSA.cif",
+            "format": "cif",
+            "name": "6rsa_cif",
+            "hydrogen_change": "increased",
+        },
+        {
+            "file": "example_pdb_files/1ubi.pdb",
+            "format": "pdb",
+            "name": "1ubi",
+            "hydrogen_change": "increased",
+        },
+        {
+            "file": "example_pdb_files/7nwd.pdb",
+            "format": "pdb",
+            "name": "7nwd",
+            "hydrogen_change": "decreased",  # 7nwd is special case: hydrogens decrease
+        },
+    ]
+)
 def input_file(request):
     """Parametrized fixture for input files."""
     return request.param
@@ -93,6 +99,7 @@ def fix_method(request):
 # ============================================================================
 # Core PDB Fixing Workflow Tests
 # ============================================================================
+
 
 @pytest.mark.integration
 @pytest.mark.requires_pdb_files

@@ -259,9 +259,7 @@ class TestMultiFileJsonExport:
             assert exit_code == 0
 
             # List created JSON files
-            json_files = [
-                f for f in os.listdir(tmpdir) if f.endswith(".json")
-            ]
+            json_files = [f for f in os.listdir(tmpdir) if f.endswith(".json")]
             assert len(json_files) >= 1
 
     def test_json_flag_h_bonds_file_content(self, sample_pdb_file):
@@ -448,9 +446,7 @@ class TestQuietFlag:
             output_path = os.path.join(tmpdir, "results.txt")
 
             parser = create_parser()
-            args = parser.parse_args(
-                [sample_pdb_file, "--quiet", "-o", output_path]
-            )
+            args = parser.parse_args([sample_pdb_file, "--quiet", "-o", output_path])
 
             exit_code, _ = _run_and_capture(args)
 
@@ -507,9 +503,7 @@ class TestSummaryOnlyFlag:
     def test_summary_only_and_quiet_combination(self, sample_pdb_file):
         """Test combining --summary-only and --quiet."""
         parser = create_parser()
-        args = parser.parse_args(
-            [sample_pdb_file, "--summary-only", "--quiet"]
-        )
+        args = parser.parse_args([sample_pdb_file, "--summary-only", "--quiet"])
 
         exit_code, _ = _run_and_capture(args)
 
@@ -531,7 +525,9 @@ class TestListPresetsFlag:
             sys.stdout = old_stdout
 
         # Should contain some preset names
-        assert "high_resolution" in output.lower() or "high-resolution" in output.lower()
+        assert (
+            "high_resolution" in output.lower() or "high-resolution" in output.lower()
+        )
 
     def test_list_presets_output_has_header(self):
         """Test list presets output has header."""

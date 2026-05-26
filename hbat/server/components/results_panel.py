@@ -468,9 +468,9 @@ class WebResultsPanel:
 
         with panel:
             # Title with count
-            ui.label(
-                f"{interaction_config.label} ({len(interactions)})"
-            ).classes("text-h5")
+            ui.label(f"{interaction_config.label} ({len(interactions)})").classes(
+                "text-h5"
+            )
 
             # Build columns from config
             columns = [
@@ -503,17 +503,13 @@ class WebResultsPanel:
 
             # Create filter input
             filter_input = (
-                ui.input(
-                    placeholder="Filter interactions (residue, atom, type, etc.)"
-                )
+                ui.input(placeholder="Filter interactions (residue, atom, type, etc.)")
                 .props("clearable outlined dense")
                 .classes("w-full mb-2")
             )
 
             # Create table
-            table = ui.table(columns=columns, rows=rows, row_key="id").classes(
-                "w-full"
-            )
+            table = ui.table(columns=columns, rows=rows, row_key="id").classes("w-full")
             filter_input.bind_value(table, "filter")
 
             # Add visualization button column (only if viz method exists)

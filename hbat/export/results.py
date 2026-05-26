@@ -211,7 +211,9 @@ def export_to_json_files(
             interactions = getattr(analyzer, config.analyzer_attr)
             if interactions:
                 output_file = directory / filename_pattern
-                write_interaction_to_json(analyzer, interaction_type, output_file, input_file)
+                write_interaction_to_json(
+                    analyzer, interaction_type, output_file, input_file
+                )
 
     # Export ligand interactions - one JSON per ligand (regular interactions only)
     # and one JSON per ligand for water bridges
@@ -301,7 +303,9 @@ def _organize_all_interactions_by_type(
                 ),
                 # Raw objects (for text)
                 "interactions_raw": _get_ligand_interactions_list(analyzer, ligand_res),
-                "water_bridges_raw": _get_ligand_water_bridges_list(analyzer, ligand_res),
+                "water_bridges_raw": _get_ligand_water_bridges_list(
+                    analyzer, ligand_res
+                ),
             }
 
             organized["ligands"].append(ligand_data)
@@ -365,6 +369,7 @@ def export_to_json_single_file(
 # ============================================================================
 # GENERIC WRITE FUNCTIONS (using centralized config)
 # ============================================================================
+
 
 def write_interaction_to_csv(
     analyzer: NPMolecularInteractionAnalyzer,
@@ -434,8 +439,7 @@ def _extract_interaction_json_data(
         row_data = extract_interaction_data(interaction, config)
         # Convert keys to use json_key names
         interaction_dict = {
-            col.json_key: row_data.get(col.name)
-            for col in config.columns
+            col.json_key: row_data.get(col.name) for col in config.columns
         }
         result.append(interaction_dict)
 
@@ -740,9 +744,7 @@ def _build_ligand_water_bridges_data(
                 "water_molecules": wb.water_residues,
                 "end_residue": wb.get_acceptor_residue(),
                 "bridge_length": wb.bridge_length,
-                "distance_angstrom": float(
-                    f"{wb.get_donor_acceptor_distance():.2f}"
-                ),
+                "distance_angstrom": float(f"{wb.get_donor_acceptor_distance():.2f}"),
             }
 
             if hasattr(wb, "donor_acceptor_properties"):

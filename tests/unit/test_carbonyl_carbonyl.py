@@ -763,6 +763,7 @@ class TestCarbonylInteractionValidation:
         # Carbonyl interactions assume oxygen is bonded to carbon
         assert carbonyl.is_donor_interaction_bonded() is True
 
+
 @pytest.mark.unit
 class TestCarbonylInteractionString:
     """Test carbonyl interaction string representation."""
