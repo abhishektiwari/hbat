@@ -362,19 +362,19 @@ class TestMultipleFileExports:
                     "Hydrogen_Atom",
                     "Acceptor_Residue",
                     "Acceptor_Atom",
-                    "Distance_Angstrom",
-                    "Angle_Degrees",
-                    "Donor_Acceptor_Distance_Angstrom",
-                    "Bond_Type",
-                    "B/S_Interaction",
+                    "H...A_(Å)",
+                    "Angle_(°)",
+                    "D...A_(Å)",
+                    "Type",
                     "D-A_Properties",
+                    "B/S_Interaction",
                 ]
 
                 # Check data
                 assert len(rows) == 2  # Header + 1 data row
                 assert rows[1][0] == "A123GLY"
-                assert rows[1][9] == "B-B"
-                assert rows[1][10] == "PBN-PBN"
+                assert rows[1][9] == "PBN-PBN"  # D-A_Properties
+                assert rows[1][10] == "B-B"  # B/S_Interaction
 
             # Verify halogen bonds CSV has D-A Properties and B/S columns
             with open(os.path.join(tmpdir, "results_x_bonds.csv"), "r") as f:
@@ -413,8 +413,8 @@ class TestMultipleFileExports:
                 assert "interactions" in data
                 assert len(data["interactions"]) == 1
                 assert data["interactions"][0]["donor_residue"] == "A123GLY"
-                assert "backbone_sidechain_interaction" in data["interactions"][0]
-                assert "donor_acceptor_properties" in data["interactions"][0]
+                assert "bs_int" in data["interactions"][0]
+                assert "da_props" in data["interactions"][0]
 
             # Verify cooperativity chains JSON
             with open(
@@ -422,9 +422,9 @@ class TestMultipleFileExports:
             ) as f:
                 data = json.load(f)
 
-                assert "chains" in data
-                assert len(data["chains"]) == 1
-                assert data["chains"][0]["chain_length"] == 3
+                assert "interactions" in data
+                assert len(data["interactions"]) == 1
+                assert data["interactions"][0]["chain_length"] == 3
 
 
 @pytest.mark.cli
