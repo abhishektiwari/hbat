@@ -17,41 +17,80 @@ from hbat.visualization.minimal_pdb_extractor import (
 from hbat.visualization.pymol_exporter import PyMOLExporter
 
 
-# Test data: PDB structures with expected interaction counts
+# Test data: PDB structures with expected interaction types
+# Based on pdb_structure fixture from test_complete_analysis_workflows.py
 VISUALIZATION_TEST_DATA = [
     {
-        "pdb_name": "6rsa.pdb",
-        "description": "Small protein with ligand and interactions",
-        "expected_hbonds_min": 150,
-        "expected_hbonds_max": 300,
-        "expected_pi_interactions_min": 5,
-        "expected_pi_interactions_max": 30,
-        "has_halogen_bonds": False,
-        "has_pi_pi_stacking": False,
+        "name": "6rsa.pdb",
+        "file": "example_pdb_files/6rsa.pdb",
+        "type": "protein",
+        "expected_interactions": [
+            "hydrogen_bonds",
+            "pi_interactions",
+            "carbonyl_interactions",
+            "n_pi_interactions",
+            "water_bridges",
+        ],
+        "expected_ligand_interactions": True,
+        "expected_ligand_interactions_with_water_bridges": True,
     },
     {
-        "pdb_name": "4hhb.pdb",
-        "description": "Large tetrameric protein (hemoglobin)",
-        "expected_hbonds_min": 650,
-        "expected_hbonds_max": 1050,
-        "expected_pi_interactions_min": 90,
-        "expected_pi_interactions_max": 140,
-        "has_halogen_bonds": False,
-        "has_pi_pi_stacking": False,
+        "name": "7nwd.pdb",
+        "file": "example_pdb_files/7nwd.pdb",
+        "type": "nucleic_acid",
+        "expected_interactions": [
+            "hydrogen_bonds",
+            "pi_pi_interactions",
+            "pi_interactions",
+        ],
+        "expected_ligand_interactions": False,
+        "expected_ligand_interactions_with_water_bridges": False,
     },
     {
-        "pdb_name": "4laz.pdb",
-        "description": "Multi-subunit complex",
-        "expected_hbonds_min": 700,
-        "expected_hbonds_max": 1000,
-        "expected_pi_interactions_min": 50,
-        "expected_pi_interactions_max": 80,
-        "has_halogen_bonds": True,
-        "has_pi_pi_stacking": True,
+        "name": "1ubi.pdb",
+        "file": "example_pdb_files/1ubi.pdb",
+        "type": "protein",
+        "expected_interactions": [
+            "hydrogen_bonds",
+            "pi_interactions",
+            "carbonyl_interactions",
+            "water_bridges",
+        ],
+        "expected_ligand_interactions": False,
+        "expected_ligand_interactions_with_water_bridges": False,
+    },
+    {
+        "name": "4laz.pdb",
+        "file": "example_pdb_files/4laz.pdb",
+        "type": "protein",
+        "expected_interactions": [
+            "hydrogen_bonds",
+            "halogen_bonds",
+            "pi_pi_interactions",
+            "pi_interactions",
+            "carbonyl_interactions",
+            "n_pi_interactions",
+            "water_bridges",
+        ],
+        "expected_ligand_interactions": True,
+        "expected_ligand_interactions_with_water_bridges": False,
+    },
+    {
+        "name": "4hhb.pdb",
+        "file": "example_pdb_files/4hhb.pdb",
+        "type": "protein",
+        "expected_interactions": [
+            "hydrogen_bonds",
+            "pi_interactions",
+            "carbonyl_interactions",
+            "water_bridges",
+        ],
+        "expected_ligand_interactions": True,
+        "expected_ligand_interactions_with_water_bridges": True,
     },
 ]
 
-# Test data: interaction type specific tests
+# Interaction type to PyMOL method mapping
 INTERACTION_TYPE_TEST_DATA = [
     {
         "interaction_type": "hydrogen_bonds",
@@ -83,6 +122,11 @@ INTERACTION_TYPE_TEST_DATA = [
         "method_name": "add_n_pi_interactions",
         "expected_section": "N-Pi Interactions",
     },
+    {
+        "interaction_type": "water_bridges",
+        "method_name": "add_water_bridges",
+        "expected_section": "Water Bridge",
+    },
 ]
 
 
@@ -92,18 +136,17 @@ class TestMinimalPdbExtraction:
     """Test minimal PDB extraction functionality with parameterized data."""
 
     @pytest.mark.parametrize(
-        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["name"]
     )
-    def test_minimal_pdb_format_validity(self, test_data, expected_results):
+    def test_minimal_pdb_format_validity(self, test_data):
         """Test that minimal PDB extraction produces valid PDB format.
 
         Parameterized test verifying:
         - Minimal PDB contains required header, title, atom records
-        - PDB format compliance
-        - Size reduction compared to full structure
+        - PDB format compliance (valid for visualization)
+        - Extracts atoms from structure correctly
         """
-        pdb_name = test_data["pdb_name"]
-        pdb_file = expected_results[pdb_name]["file"]
+        pdb_file = test_data["file"]
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
@@ -154,15 +197,15 @@ class TestMinimalPdbExtraction:
         )
 
     @pytest.mark.parametrize(
-        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["name"]
     )
-    def test_minimal_pdb_empty_interactions(self, test_data, expected_results):
+    def test_minimal_pdb_empty_interactions(self, test_data):
         """Test minimal PDB with empty interaction list returns full structure.
 
         Verifies fallback behavior when no interactions are provided.
         """
-        pdb_name = test_data["pdb_name"]
-        pdb_file = expected_results[pdb_name]["file"]
+        pdb_name = test_data["name"]
+        pdb_file = test_data["file"]
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
@@ -184,9 +227,9 @@ class TestMinimalPdbExtraction:
         assert "END" in minimal_pdb, f"{pdb_name}: Should have END"
 
     @pytest.mark.parametrize(
-        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["name"]
     )
-    def test_minimal_pdb_atom_records_valid(self, test_data, expected_results):
+    def test_minimal_pdb_atom_records_valid(self, test_data):
         """Test that all extracted atoms have valid PDB record format.
 
         Verifies:
@@ -194,8 +237,8 @@ class TestMinimalPdbExtraction:
         - Valid serial numbers
         - Proper field formatting
         """
-        pdb_name = test_data["pdb_name"]
-        pdb_file = expected_results[pdb_name]["file"]
+        pdb_name = test_data["name"]
+        pdb_file = test_data["file"]
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
@@ -238,9 +281,9 @@ class TestPyMOLExporter:
     """Test PyMOL exporter functionality with parameterized data."""
 
     @pytest.mark.parametrize(
-        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["name"]
     )
-    def test_pymol_script_basic_structure(self, test_data, expected_results):
+    def test_pymol_script_basic_structure(self, test_data):
         """Test PyMOL script generation with correct structure.
 
         Parameterized test verifying:
@@ -249,8 +292,8 @@ class TestPyMOLExporter:
         - Basic PyMOL configuration
         - Minimum content length
         """
-        pdb_name = test_data["pdb_name"]
-        pdb_file = expected_results[pdb_name]["file"]
+        pdb_name = test_data["name"]
+        pdb_file = test_data["file"]
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
@@ -275,9 +318,9 @@ class TestPyMOLExporter:
         assert len(script) > 100, f"{pdb_name}: Script too short"
 
     @pytest.mark.parametrize(
-        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["name"]
     )
-    def test_pymol_hydrogen_bonds(self, test_data, expected_results):
+    def test_pymol_hydrogen_bonds(self, test_data):
         """Test PyMOL hydrogen bond visualization command generation.
 
         Parameterized test verifying H-bond specific PyMOL commands:
@@ -285,8 +328,8 @@ class TestPyMOLExporter:
         - Distance command syntax
         - Selection naming
         """
-        pdb_name = test_data["pdb_name"]
-        pdb_file = expected_results[pdb_name]["file"]
+        pdb_name = test_data["name"]
+        pdb_file = test_data["file"]
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
@@ -317,14 +360,15 @@ class TestPyMOLExporter:
         INTERACTION_TYPE_TEST_DATA,
         ids=lambda x: x["interaction_type"],
     )
-    def test_pymol_interaction_type_support(self, interaction_data, expected_results):
+    def test_pymol_interaction_type_support(self, interaction_data):
         """Test PyMOL export for all supported interaction types.
 
-        Parameterized across all interaction types (H-bonds, halogen, π, etc.)
-        verifying that each type generates proper PyMOL commands.
+        Parameterized across all interaction types (H-bonds, halogen, π, water bridges, etc.)
+        Uses 4laz.pdb as it has the most diverse interaction types.
+        Verifies that each type generates proper PyMOL commands.
         """
         pdb_name = "4laz.pdb"  # Use complex structure with many interaction types
-        pdb_file = expected_results[pdb_name]["file"]
+        pdb_file = "example_pdb_files/4laz.pdb"
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
@@ -357,9 +401,9 @@ class TestPyMOLExporter:
         )
 
     @pytest.mark.parametrize(
-        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["name"]
     )
-    def test_pymol_script_file_export(self, test_data, expected_results):
+    def test_pymol_script_file_export(self, test_data):
         """Test exporting PyMOL script to file system.
 
         Parameterized test verifying:
@@ -368,8 +412,8 @@ class TestPyMOLExporter:
         - File contains expected content
         - Proper cleanup
         """
-        pdb_name = test_data["pdb_name"]
-        pdb_file = expected_results[pdb_name]["file"]
+        pdb_name = test_data["name"]
+        pdb_file = test_data["file"]
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
@@ -409,16 +453,16 @@ class TestPyMOLExporter:
                 os.remove(temp_file)
 
     @pytest.mark.parametrize(
-        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["name"]
     )
-    def test_pymol_all_interactions_combined(self, test_data, expected_results):
+    def test_pymol_all_interactions_combined(self, test_data):
         """Test PyMOL script generation with all available interactions.
 
         Parameterized test adding all detected interaction types to a single
         PyMOL script and verifying comprehensive visualization commands.
         """
-        pdb_name = test_data["pdb_name"]
-        pdb_file = expected_results[pdb_name]["file"]
+        pdb_name = test_data["name"]
+        pdb_file = test_data["file"]
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
@@ -464,16 +508,16 @@ class TestPyMOLExporter:
         )
 
     @pytest.mark.parametrize(
-        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["pdb_name"]
+        "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["name"]
     )
-    def test_pymol_residue_tracking(self, test_data, expected_results):
+    def test_pymol_residue_tracking(self, test_data):
         """Test PyMOL exporter residue tracking for visualization.
 
         Verifies that residues involved in interactions are properly tracked
         for stick and sphere visualization in PyMOL.
         """
-        pdb_name = test_data["pdb_name"]
-        pdb_file = expected_results[pdb_name]["file"]
+        pdb_name = test_data["name"]
+        pdb_file = test_data["file"]
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
