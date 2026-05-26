@@ -39,3 +39,15 @@ jobs:
       run: xvfb-run -a make test-fast
       env:
         DISPLAY: :99
+
+    - name: Run unit, CLI, and GUI tests (Python 3.10, 3.11, 3.12)
+      if: matrix.python-version != '3.13'
+      run: xvfb-run -a bash -c "make test-unit && make test-cli && make test-gui"
+      env:
+        DISPLAY: :99
+
+    - name: Run extended tests (Python 3.13)
+      if: matrix.python-version == '3.13'
+      run: xvfb-run -a bash -c "make test-unit && make test-cli && make test-gui && make test-integration && make test-e2e"
+      env:
+        DISPLAY: :99
