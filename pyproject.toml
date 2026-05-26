@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "hbat"
 authors = [
-    {name = "Abhishek Tiwari", email = "hbat@abhishek-tiwari.com"},
+    {name = "Abhishek Tiwari", email = "abhishek@abhishek-tiwari.com"},
 ]
 description = "Hydrogen Bond Analysis Tool supporting PDB and mmCIF structure formats"
 readme = "README.md"
