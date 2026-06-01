@@ -8,6 +8,8 @@ from typing import Callable, Optional
 
 from nicegui import ui
 
+from ..utils.validators import validate_pdb_id
+
 
 class UploadPanel:
     """File upload panel component."""
@@ -88,23 +90,11 @@ class UploadPanel:
         async def download_structure():
             """Download structure file from RCSB using PDB ID."""
             pdb_id = self.pdb_id_input.value.strip().lower()
-            if not pdb_id:
-                ui.notify("Please enter a PDB ID", type="warning", position="top-left")
-                return
 
-            if len(pdb_id) != 4:
-                ui.notify(
-                    "PDB ID must be 4 characters", type="warning", position="top-left"
-                )
-                return
-
-            # Validate PDB ID format (alphanumeric only, security check)
-            if not pdb_id.isalnum():
-                ui.notify(
-                    "PDB ID must contain only letters and numbers",
-                    type="warning",
-                    position="top-left",
-                )
+            # Validate PDB ID format
+            is_valid, error_message = validate_pdb_id(pdb_id)
+            if not is_valid:
+                ui.notify(error_message, type="warning", position="top-left")
                 return
 
             try:
@@ -200,14 +190,12 @@ class UploadPanel:
             self.pdb_id_input = (
                 ui.input(
                     label="PDB ID",
-                    placeholder="e.g., 1BHL",
+                    placeholder="e.g., 1BHL or pdb_00001abc",
                     validation={
-                        "Must be 4 characters": lambda v: (
-                            len(v.strip()) == 4 if v else True
-                        )
+                        "Invalid PDB ID format": lambda v: validate_pdb_id(v)[0] if v else True
                     },
                 )
-                .props("maxlength=4")
+                .props("maxlength=12")
                 .classes("w-full")
             )
 
@@ -243,7 +231,9 @@ Maximum file size: 1 MB
 
 **Download from RCSB PDB:**
 
-- Enter a 4-character PDB ID (e.g., 1BHL, 1GAI, 1UBI)
+- Enter a PDB ID using one of these formats:
+  - **Traditional**: 4-character ID (e.g., 1BHL, 1GAI, 1UBI) - format: 1 digit + 3 alphanumeric
+  - **Extended (wwPDB)**: 12-character ID (e.g., pdb_00001abc) - format: "pdb_" + 8 alphanumeric
 - Select desired format (PDB or mmCIF)
 - Files are downloaded directly from RCSB PDB
 - Common examples: 1BHL (Hemoglobin), 1UBI (Ubiquitin)
