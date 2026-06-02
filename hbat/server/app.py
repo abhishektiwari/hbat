@@ -113,29 +113,29 @@ class HBATWebApp:
         """
         await ui.run_javascript(js_code)
 
-    async def _track_export(self, file_extension: str, file_name: str = None):
-        """Track file download event to Google Analytics via gtag.
+    async def _track_export(self, export_format: str):
+        """Track analysis export event to Google Analytics via gtag.
 
-        :param file_extension: File extension (json, csv, txt, pdb, cif, zip)
-        :param file_name: File name being downloaded (optional, defaults to current_file)
+        :param export_format: Export format (json, csv, txt, pdb, cif, zip)
         """
         import json
 
-        if file_name is None:
-            file_name = self.current_file
+        # Extract PDB ID from filename (e.g., "1ABC.pdb" -> "1ABC")
+        pdb_id = Path(self.current_file).stem if self.current_file else "unknown"
 
         # Build event parameters
         event_params = {
-            "file_extension": file_extension,
-            "file_name": file_name,
+            "export_format": export_format,
+            "pdb_id": pdb_id,
+            "file_name": self.current_file,
         }
 
-        # Track file_download event
+        # Track analysis_export event
         js_params = json.dumps(event_params)
         js_code = f"""
         if (typeof gtag !== 'undefined') {{
-            gtag('event', 'file_download', {js_params});
-            console.log('File download event tracked:', {js_params});
+            gtag('event', 'analysis_export', {js_params});
+            console.log('Analysis export event tracked:', {js_params});
         }} else {{
             console.warn('gtag is not defined');
         }}
@@ -729,7 +729,7 @@ class HBATWebApp:
             self.analyzer, str(output_file), input_file=self.current_file
         )
         ui.download(str(output_file))
-        await self._track_export("json", output_file.name)
+        await self._track_export("json")
         ui.notify(
             f"Exported to {output_file.name}", type="positive", position="top-left"
         )
@@ -777,7 +777,7 @@ class HBATWebApp:
 
             # Download the zip file
             ui.download(str(zip_path))
-            await self._track_export("zip", zip_path.name)
+            await self._track_export("csv")
 
             # Build notification message
             files_count = len(csv_files)
@@ -817,7 +817,7 @@ class HBATWebApp:
         )
         export_to_txt_single_file(self.analyzer, str(output_file))
         ui.download(str(output_file))
-        await self._track_export("txt", output_file.name)
+        await self._track_export("txt")
         ui.notify(
             f"Exported to {output_file.name}", type="positive", position="top-left"
         )
@@ -861,13 +861,12 @@ class HBATWebApp:
                 return
 
             # Determine file extension (pdb or cif)
-            file_path_obj = Path(fixed_file_path)
-            file_ext = file_path_obj.suffix.lower().lstrip(".")
-            file_ext = file_ext if file_ext in ("pdb", "cif") else "pdb"
+            file_ext = Path(fixed_file_path).suffix.lower().lstrip(".")
+            export_format = file_ext if file_ext in ("pdb", "cif") else "pdb"
 
             # Download the file directly
             ui.download(fixed_file_path)
-            await self._track_export(file_ext, file_path_obj.name)
+            await self._track_export(export_format)
             ui.notify(
                 f"Downloaded {file_type}",
                 type="positive",
