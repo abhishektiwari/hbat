@@ -85,7 +85,7 @@ class HBATWebApp:
                 self.status_label.text = message
 
     async def _track_analysis_completion(self, analysis_time_seconds: float):
-        """Track analysis completion event to Google Analytics data layer.
+        """Track analysis completion event to Google Analytics via gtag.
 
         :param analysis_time_seconds: Time taken for analysis in seconds
         """
@@ -94,20 +94,51 @@ class HBATWebApp:
         # Extract PDB ID from filename (e.g., "1ABC.pdb" -> "1ABC")
         pdb_id = Path(self.current_file).stem if self.current_file else "unknown"
 
-        # Build data layer event object
-        event_data = {
-            "event": "analysis_completed",
+        # Build event parameters (GA4 custom parameters)
+        event_params = {
             "pdb_id": pdb_id,
             "file_name": self.current_file,
             "analysis_time_seconds": round(analysis_time_seconds, 2),
         }
 
-        # Push to data layer
-        js_data = json.dumps(event_data)
+        # Use gtag to track event (GA4 recommended method)
+        js_params = json.dumps(event_params)
         js_code = f"""
-        window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push({js_data});
-        console.log('Analysis completed event tracked:', {js_data});
+        if (typeof gtag !== 'undefined') {{
+            gtag('event', 'analysis_completed', {js_params});
+            console.log('Event tracked:', {js_params});
+        }} else {{
+            console.warn('gtag is not defined');
+        }}
+        """
+        await ui.run_javascript(js_code)
+
+    async def _track_export(self, file_extension: str, file_name: str = None):
+        """Track file download event to Google Analytics via gtag.
+
+        :param file_extension: File extension (json, csv, txt, pdb, cif, zip)
+        :param file_name: File name being downloaded (optional, defaults to current_file)
+        """
+        import json
+
+        if file_name is None:
+            file_name = self.current_file
+
+        # Build event parameters
+        event_params = {
+            "file_extension": file_extension,
+            "file_name": file_name,
+        }
+
+        # Track file_download event
+        js_params = json.dumps(event_params)
+        js_code = f"""
+        if (typeof gtag !== 'undefined') {{
+            gtag('event', 'file_download', {js_params});
+            console.log('File download event tracked:', {js_params});
+        }} else {{
+            console.warn('gtag is not defined');
+        }}
         """
         await ui.run_javascript(js_code)
 
@@ -682,7 +713,7 @@ class HBATWebApp:
             self.analysis_running = False
             self.analyze_button.enable()
 
-    def _export_json(self):
+    async def _export_json(self):
         """Export results as JSON."""
         if not self.analyzer:
             ui.notify(
@@ -698,11 +729,12 @@ class HBATWebApp:
             self.analyzer, str(output_file), input_file=self.current_file
         )
         ui.download(str(output_file))
+        await self._track_export("json", output_file.name)
         ui.notify(
             f"Exported to {output_file.name}", type="positive", position="top-left"
         )
 
-    def _export_csv(self):
+    async def _export_csv(self):
         """Export results as CSV (creates a zip file with all CSV files and fixed PDB)."""
         if not self.analyzer:
             ui.notify(
@@ -745,6 +777,7 @@ class HBATWebApp:
 
             # Download the zip file
             ui.download(str(zip_path))
+            await self._track_export("zip", zip_path.name)
 
             # Build notification message
             files_count = len(csv_files)
@@ -770,7 +803,7 @@ class HBATWebApp:
                 "No CSV files were generated", type="warning", position="top-left"
             )
 
-    def _export_txt(self):
+    async def _export_txt(self):
         """Export results as TXT."""
         if not self.analyzer:
             ui.notify(
@@ -784,11 +817,12 @@ class HBATWebApp:
         )
         export_to_txt_single_file(self.analyzer, str(output_file))
         ui.download(str(output_file))
+        await self._track_export("txt", output_file.name)
         ui.notify(
             f"Exported to {output_file.name}", type="positive", position="top-left"
         )
 
-    def _export_fixed_structure(self):
+    async def _export_fixed_structure(self):
         """Download the fixed structure (or original if no fixing was applied)."""
         if not self.analyzer:
             ui.notify(
@@ -826,8 +860,14 @@ class HBATWebApp:
                 )
                 return
 
+            # Determine file extension (pdb or cif)
+            file_path_obj = Path(fixed_file_path)
+            file_ext = file_path_obj.suffix.lower().lstrip(".")
+            file_ext = file_ext if file_ext in ("pdb", "cif") else "pdb"
+
             # Download the file directly
             ui.download(fixed_file_path)
+            await self._track_export(file_ext, file_path_obj.name)
             ui.notify(
                 f"Downloaded {file_type}",
                 type="positive",
