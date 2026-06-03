@@ -33,8 +33,8 @@ UPLOADS_DIR.mkdir(exist_ok=True)
 SESSIONS_BASE_DIR = UPLOADS_DIR / "sessions"
 SESSIONS_BASE_DIR.mkdir(exist_ok=True)
 
-# Global session manager
-session_manager = SessionManager(SESSIONS_BASE_DIR, session_timeout_hours=24)
+# Global session manager (7 days = 168 hours)
+session_manager = SessionManager(SESSIONS_BASE_DIR, session_timeout_hours=168)
 
 
 class HBATWebApp:
