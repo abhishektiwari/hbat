@@ -55,14 +55,14 @@ class UploadPanel:
                 # read() is async, so we need to await it
                 content = await e.file.read()
 
-                # Check file size (1 MB = 1048576 bytes)
-                MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MB in bytes
+                # Check file size (2 MB = 2097152 bytes)
+                MAX_FILE_SIZE = 2 * 1024 * 1024  # 2 MB in bytes
                 file_size = len(content)
 
                 if file_size > MAX_FILE_SIZE:
                     size_mb = file_size / (1024 * 1024)
                     ui.notify(
-                        f"File too large: {size_mb:.2f} MB. Maximum allowed: 1 MB",
+                        f"File too large: {size_mb:.2f} MB. Maximum allowed: 2 MB",
                         type="negative",
                         position="top-left",
                     )
@@ -118,14 +118,14 @@ class UploadPanel:
                 with urllib.request.urlopen(url, timeout=30) as response:  # nosec B310
                     content = response.read()
 
-                # Check file size (1 MB = 1048576 bytes)
-                MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MB in bytes
+                # Check file size (2 MB = 2097152 bytes)
+                MAX_FILE_SIZE = 2 * 1024 * 1024  # 2 MB in bytes
                 file_size = len(content)
 
                 if file_size > MAX_FILE_SIZE:
                     size_mb = file_size / (1024 * 1024)
                     ui.notify(
-                        f"Downloaded file too large: {size_mb:.2f} MB. Maximum allowed: 1 MB",
+                        f"Downloaded file too large: {size_mb:.2f} MB. Maximum allowed: 2 MB",
                         type="negative",
                         position="top-left",
                     )
@@ -227,7 +227,7 @@ class UploadPanel:
 
 Both formats can be uploaded directly or downloaded from [RCSB PDB](https://www.rcsb.org/)
 
-Maximum file size: 1 MB
+Maximum file size: 2 MB
 
 **Download from RCSB PDB:**
 
