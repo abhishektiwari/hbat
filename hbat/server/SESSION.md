@@ -12,21 +12,20 @@ The HBAT web server now uses UUID-based session management to isolate data for m
 - A `.session_timestamp` file tracks when the session was created
 
 ### Active Period
-- Sessions remain valid for 24 hours from creation
+- Sessions remain valid for 7 days (168 hours) from creation
 - All user files are stored in their session directory: `uploads/sessions/<uuid>/`
 
 ### Cleanup
-- On startup: All expired sessions (>24 hours old) are removed
+- On startup: All expired sessions (>7 days old) are removed
 - Periodic: Every 6 hours, expired sessions are automatically cleaned up
-- Manual: When a user clicks "Start Over", their session is immediately deleted
 
 ## Configuration
 
 ### Session Timeout
-Default timeout is 24 hours. To change it, modify `hbat/server/app.py`:
+Default timeout is 7 days (168 hours). To change it, modify `hbat/server/app.py`:
 
 ```python
-session_manager = SessionManager(SESSIONS_BASE_DIR, session_timeout_hours=48)  # 48 hours
+session_manager = SessionManager(SESSIONS_BASE_DIR, session_timeout_hours=168)  # 7 days
 ```
 
 ### Cleanup Interval
