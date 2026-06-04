@@ -901,9 +901,10 @@ class HBATWebApp:
 
     def _start_over(self):
         """Reset the application to initial state."""
-        # Clean up old session if it exists
-        if self.session_id:
-            session_manager.delete_session(self.session_id)
+        # Preserve old session data so user can access it later
+        # Commented out to keep sessions intact when starting a new analysis
+        # if self.session_id:
+        #     session_manager.delete_session(self.session_id)
 
         # Reset analyzer and file state
         self.analyzer = None
