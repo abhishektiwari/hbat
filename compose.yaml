@@ -22,10 +22,10 @@ services:
       resources:
         limits:
           cpus: '2'
-          memory: 2G
+          memory: 3G
         reservations:
           cpus: '1'
-          memory: 512M
+          memory: 1.5G
     x-caddy: |
       hbat-web.abhishek-tiwari.com {
           reverse_proxy {{upstreams "web" 8080}} {
