@@ -33,8 +33,8 @@ UPLOADS_DIR.mkdir(exist_ok=True)
 SESSIONS_BASE_DIR = UPLOADS_DIR / "sessions"
 SESSIONS_BASE_DIR.mkdir(exist_ok=True)
 
-# Global session manager
-session_manager = SessionManager(SESSIONS_BASE_DIR, session_timeout_hours=24)
+# Global session manager (7 days = 168 hours)
+session_manager = SessionManager(SESSIONS_BASE_DIR, session_timeout_hours=168)
 
 
 class HBATWebApp:
@@ -70,6 +70,9 @@ class HBATWebApp:
         self.nav_results: Optional[ui.item] = None
         self.nav_export: Optional[ui.item] = None
 
+        # Analytics tracking
+        self.analysis_start_time: Optional[datetime] = None
+
     def _update_status_label(self, message: str = "Ready"):
         """Update status label with current file information.
 
@@ -80,6 +83,64 @@ class HBATWebApp:
                 self.status_label.text = f"Ready - File: {self.current_file}"
             else:
                 self.status_label.text = message
+
+    async def _track_analysis_completion(self, analysis_time_seconds: float):
+        """Track analysis completion event to Google Analytics via gtag.
+
+        :param analysis_time_seconds: Time taken for analysis in seconds
+        """
+        import json
+
+        # Extract PDB ID from filename (e.g., "1ABC.pdb" -> "1ABC")
+        pdb_id = Path(self.current_file).stem if self.current_file else "unknown"
+
+        # Build event parameters (GA4 custom parameters)
+        event_params = {
+            "pdb_id": pdb_id,
+            "file_name": self.current_file,
+            "analysis_time_seconds": round(analysis_time_seconds, 2),
+        }
+
+        # Use gtag to track event (GA4 recommended method)
+        js_params = json.dumps(event_params)
+        js_code = f"""
+        if (typeof gtag !== 'undefined') {{
+            gtag('event', 'analysis_completed', {js_params});
+            console.log('Event tracked:', {js_params});
+        }} else {{
+            console.warn('gtag is not defined');
+        }}
+        """
+        await ui.run_javascript(js_code)
+
+    async def _track_export(self, export_format: str):
+        """Track analysis export event to Google Analytics via gtag.
+
+        :param export_format: Export format (json, csv, txt, pdb, cif, zip)
+        """
+        import json
+
+        # Extract PDB ID from filename (e.g., "1ABC.pdb" -> "1ABC")
+        pdb_id = Path(self.current_file).stem if self.current_file else "unknown"
+
+        # Build event parameters
+        event_params = {
+            "export_format": export_format,
+            "pdb_id": pdb_id,
+            "file_name": self.current_file,
+        }
+
+        # Track analysis_export event
+        js_params = json.dumps(event_params)
+        js_code = f"""
+        if (typeof gtag !== 'undefined') {{
+            gtag('event', 'analysis_export', {js_params});
+            console.log('Analysis export event tracked:', {js_params});
+        }} else {{
+            console.warn('gtag is not defined');
+        }}
+        """
+        await ui.run_javascript(js_code)
 
     def _show_citation_dialog(self):
         """Show citation dialog."""
@@ -576,6 +637,9 @@ class HBATWebApp:
         self.status_label.text = "Running analysis..."
         self.status_label.classes(replace="text-caption q-mt-sm text-warning text-bold")
 
+        # Record analysis start time for tracking
+        self.analysis_start_time = datetime.now()
+
         # Create notification for progress feedback
         notification = ui.notification(timeout=None)
         notification.message = "Analyzing molecular interactions..."
@@ -595,6 +659,11 @@ class HBATWebApp:
             )
 
             if success:
+                # Calculate analysis time
+                analysis_time = (
+                    datetime.now() - self.analysis_start_time
+                ).total_seconds()
+
                 self.status_label.text = (
                     f"Analysis completed! File: {self.current_file}"
                 )
@@ -621,6 +690,9 @@ class HBATWebApp:
                     self.analyzer, self.current_file
                 )
 
+                # Track analysis completion to Google Analytics
+                await self._track_analysis_completion(analysis_time)
+
                 # Auto-advance to results step
                 self.stepper.next()
             else:
@@ -641,7 +713,7 @@ class HBATWebApp:
             self.analysis_running = False
             self.analyze_button.enable()
 
-    def _export_json(self):
+    async def _export_json(self):
         """Export results as JSON."""
         if not self.analyzer:
             ui.notify(
@@ -657,11 +729,12 @@ class HBATWebApp:
             self.analyzer, str(output_file), input_file=self.current_file
         )
         ui.download(str(output_file))
+        await self._track_export("json")
         ui.notify(
             f"Exported to {output_file.name}", type="positive", position="top-left"
         )
 
-    def _export_csv(self):
+    async def _export_csv(self):
         """Export results as CSV (creates a zip file with all CSV files and fixed PDB)."""
         if not self.analyzer:
             ui.notify(
@@ -704,6 +777,7 @@ class HBATWebApp:
 
             # Download the zip file
             ui.download(str(zip_path))
+            await self._track_export("csv")
 
             # Build notification message
             files_count = len(csv_files)
@@ -729,7 +803,7 @@ class HBATWebApp:
                 "No CSV files were generated", type="warning", position="top-left"
             )
 
-    def _export_txt(self):
+    async def _export_txt(self):
         """Export results as TXT."""
         if not self.analyzer:
             ui.notify(
@@ -743,11 +817,12 @@ class HBATWebApp:
         )
         export_to_txt_single_file(self.analyzer, str(output_file))
         ui.download(str(output_file))
+        await self._track_export("txt")
         ui.notify(
             f"Exported to {output_file.name}", type="positive", position="top-left"
         )
 
-    def _export_fixed_structure(self):
+    async def _export_fixed_structure(self):
         """Download the fixed structure (or original if no fixing was applied)."""
         if not self.analyzer:
             ui.notify(
@@ -785,8 +860,13 @@ class HBATWebApp:
                 )
                 return
 
+            # Determine file extension (pdb or cif)
+            file_ext = Path(fixed_file_path).suffix.lower().lstrip(".")
+            export_format = file_ext if file_ext in ("pdb", "cif") else "pdb"
+
             # Download the file directly
             ui.download(fixed_file_path)
+            await self._track_export(export_format)
             ui.notify(
                 f"Downloaded {file_type}",
                 type="positive",
@@ -821,9 +901,10 @@ class HBATWebApp:
 
     def _start_over(self):
         """Reset the application to initial state."""
-        # Clean up old session if it exists
-        if self.session_id:
-            session_manager.delete_session(self.session_id)
+        # Preserve old session data so user can access it later
+        # Commented out to keep sessions intact when starting a new analysis
+        # if self.session_id:
+        #     session_manager.delete_session(self.session_id)
 
         # Reset analyzer and file state
         self.analyzer = None
@@ -904,6 +985,30 @@ def create_app():
         # Load 3Dmol library for this page
         ui.add_head_html(
             '<script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>'
+        )
+
+        # Add Google Analytics tracking
+        ui.add_head_html(
+            """<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-Y4J82QZJ50"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-Y4J82QZJ50');
+
+  // Data layer tracking helper
+  window.trackEvent = function(eventName, eventData = {}) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      'event': eventName,
+      ...eventData,
+      'timestamp': new Date().toISOString()
+    });
+    console.log('Data Layer Event:', eventName, eventData);
+  };
+</script>"""
         )
 
         # Add meta tags for SEO and social sharing
