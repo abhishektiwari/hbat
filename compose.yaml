@@ -21,13 +21,24 @@ services:
       replicas: 1
       resources:
         limits:
-          cpus: '1'
-          memory: 1G
+          cpus: '2'
+          memory: 2G
         reservations:
           cpus: '1'
           memory: 512M
-    x-ports:
-      - hbat-web.abhishek-tiwari.com:8080/https
+    x-caddy: |
+      hbat-web.abhishek-tiwari.com {
+          reverse_proxy {{upstreams "web" 8080}} {
+              import common_proxy
+              transport http {
+                  dial_timeout 10s
+                  response_header_timeout 60s
+                  read_timeout 600s
+                  write_timeout 600s
+              }
+          }
+          log
+      }
 
 volumes:
   hbat-uploads:
