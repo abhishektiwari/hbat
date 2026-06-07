@@ -1499,11 +1499,15 @@ class WebResultsPanel:
                 """Update ligplot when ligand selection changes."""
                 try:
                     ligand_name = ligand_res.split(":")[1]
-                    gen = LigplotGenerator(ligand_name, self.analyzer, residue_id=ligand_res)
+                    gen = LigplotGenerator(
+                        ligand_name, self.analyzer, residue_id=ligand_res
+                    )
                     html = gen.generate_svg(width=400, height=300)
                     ligplot_container.content = html
                 except Exception as e:
-                    ligplot_container.content = f"<p>Could not generate ligplot: {str(e)}</p>"
+                    ligplot_container.content = (
+                        f"<p>Could not generate ligplot: {str(e)}</p>"
+                    )
 
             # Initial ligplot
             if first_ligand:

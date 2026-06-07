@@ -60,14 +60,14 @@ class LigplotGenerator:
         if self.residue_id:
             # Use specific residue ID if provided (format: "CHAIN:NAME:SEQ")
             ligand_atoms = [
-                a for a in self.analyzer.parser.atoms
+                a
+                for a in self.analyzer.parser.atoms
                 if f"{a.chain_id}:{a.res_name}:{a.res_seq}" == self.residue_id
             ]
         else:
             # Fallback: use residue name only (for backward compatibility)
             ligand_atoms = [
-                a for a in self.analyzer.parser.atoms
-                if a.res_name == self.ligand_name
+                a for a in self.analyzer.parser.atoms if a.res_name == self.ligand_name
             ]
 
         if not ligand_atoms:
@@ -139,16 +139,18 @@ class LigplotGenerator:
         """
         try:
             # Write PDB to temp file
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".pdb", delete=False
+            ) as f:
                 f.write(pdb_block)
                 pdb_path = f.name
 
             # Use obabel to convert and infer bond orders
-            sdf_path = pdb_path.replace('.pdb', '.sdf')
+            sdf_path = pdb_path.replace(".pdb", ".sdf")
             result = subprocess.run(
-                ['obabel', pdb_path, '-O', sdf_path, '-h'],
+                ["obabel", pdb_path, "-O", sdf_path, "-h"],
                 capture_output=True,
-                timeout=5
+                timeout=5,
             )
 
             if result.returncode == 0:
@@ -158,6 +160,7 @@ class LigplotGenerator:
                 if mol:
                     # Clean up temp files
                     import os
+
                     os.unlink(pdb_path)
                     os.unlink(sdf_path)
 
@@ -315,7 +318,6 @@ class LigplotGenerator:
         """
         return html
 
-
     def _generate_svg_only(self, width: int = 300, height: int = 250) -> Optional[str]:
         """
         Generate SVG without legend (for downloading/exporting).
@@ -379,17 +381,20 @@ class LigplotGenerator:
 
         for interaction_type, label in type_to_label.items():
             # Only show interactions applicable to this ligand
-            if interaction_type in self.applicable_interactions and interaction_type in self.colors:
+            if (
+                interaction_type in self.applicable_interactions
+                and interaction_type in self.colors
+            ):
                 # Convert RGB tuple to hex color
                 rgb = self.colors[interaction_type]
-                hex_color = f"#{int(rgb[0]*255):02x}{int(rgb[1]*255):02x}{int(rgb[2]*255):02x}"
+                hex_color = f"#{int(rgb[0] * 255):02x}{int(rgb[1] * 255):02x}{int(rgb[2] * 255):02x}"
 
-                legend_html += f'''
+                legend_html += f"""
                 <div style="display: flex; align-items: center; font-size: 11px;">
                     <div style="width: 14px; height: 14px; background: {hex_color}; border-radius: 2px; margin-right: 6px;"></div>
                     <span>{label}</span>
                 </div>
-                '''
+                """
 
-        legend_html += '</div>'
+        legend_html += "</div>"
         return legend_html

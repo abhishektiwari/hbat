@@ -192,7 +192,9 @@ class UploadPanel:
                     label="PDB ID",
                     placeholder="e.g., 1BHL or pdb_00001abc",
                     validation={
-                        "Invalid PDB ID format": lambda v: validate_pdb_id(v)[0] if v else True
+                        "Invalid PDB ID format": lambda v: (
+                            validate_pdb_id(v)[0] if v else True
+                        )
                     },
                 )
                 .props("maxlength=12")
