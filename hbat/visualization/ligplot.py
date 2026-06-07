@@ -7,6 +7,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem.Draw import rdMolDraw2D
 from .minimal_pdb_extractor import _format_atom_as_pdb
+import urllib.parse
 import urllib.request
 import json
 import tempfile
@@ -189,6 +190,9 @@ class LigplotGenerator:
         """
         rcsb_url = f"https://data.rcsb.org/rest/v1/core/chemcomp/{self.ligand_name}"
         try:
+            parsed = urllib.parse.urlparse(rcsb_url)
+            if parsed.scheme not in ("http", "https"):
+                return None
             with urllib.request.urlopen(rcsb_url, timeout=5) as response:
                 data = json.loads(response.read())
                 if "rcsb_chem_comp_descriptor" in data:
