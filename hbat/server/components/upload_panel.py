@@ -114,7 +114,18 @@ class UploadPanel:
                     url = f"https://files.rcsb.org/download/{safe_pdb_id}.cif"
                     filename = f"{pdb_id}.cif"
 
+                # Validate URL scheme and domain before opening
+                parsed = urllib.parse.urlparse(url)
+                if parsed.scheme != "https" or not parsed.netloc.endswith("rcsb.org"):
+                    ui.notify(
+                        "Invalid URL scheme or domain",
+                        type="negative",
+                        position="top-left",
+                    )
+                    return
+
                 # Add timeout for security (30 seconds)
+                # URL is validated to be https://files.rcsb.org only
                 with urllib.request.urlopen(url, timeout=30) as response:  # nosec B310
                     content = response.read()
 
@@ -192,7 +203,9 @@ class UploadPanel:
                     label="PDB ID",
                     placeholder="e.g., 1BHL or pdb_00001abc",
                     validation={
-                        "Invalid PDB ID format": lambda v: validate_pdb_id(v)[0] if v else True
+                        "Invalid PDB ID format": lambda v: (
+                            validate_pdb_id(v)[0] if v else True
+                        )
                     },
                 )
                 .props("maxlength=12")

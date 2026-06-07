@@ -8,6 +8,9 @@ pdbreader>=0.1.0
 # Numerical computing
 numpy
 
+# Molecular visualization and cheminformatics
+rdkit>=2026.3.2
+
 # Visualization and graph analysis
 networkx>=2.8.0
 matplotlib>=3.5.0

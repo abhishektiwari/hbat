@@ -28,6 +28,7 @@ from ...visualization.minimal_pdb_extractor import (
 )
 from ...visualization.chain_graph import render_chain_for_web
 from ...visualization import export_interactions_to_pymol
+from ...visualization.ligplot import LigplotGenerator
 from ...visualization.pymol3d import (
     generate_carbonyl_interaction_viewer_js,
     generate_halogen_bond_viewer_js,
@@ -1490,6 +1491,33 @@ class WebResultsPanel:
                 .props("clearable outlined dense")
                 .classes("w-full mb-4")
             )
+
+            # Ligplot visualization (2D structure with highlighted atoms)
+            ligplot_container = ui.html().classes("w-full mb-4")
+
+            def update_ligplot(ligand_res):
+                """Update ligplot when ligand selection changes."""
+                try:
+                    ligand_name = ligand_res.split(":")[1]
+                    gen = LigplotGenerator(
+                        ligand_name, self.analyzer, residue_id=ligand_res
+                    )
+                    html = gen.generate_svg(width=400, height=300)
+                    ligplot_container.content = html
+                except Exception as e:
+                    ligplot_container.content = (
+                        f"<p>Could not generate ligplot: {str(e)}</p>"
+                    )
+
+            # Initial ligplot
+            if first_ligand:
+                update_ligplot(first_ligand)
+
+            # Update ligplot when selection changes
+            def on_ligand_change(selected_value):
+                update_ligplot(selected_value.value)
+
+            selected_ligand.on_value_change(on_ligand_change)
 
             # Action buttons for regular interactions
             def show_all_interactions_viewer(selected_ligand_res):

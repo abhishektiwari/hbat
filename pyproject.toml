@@ -27,6 +27,7 @@ keywords = ["bioinformatics", "chemistry", "hydrogen bonds", "halogen bonds", "p
 dependencies = [
     "pdbreader>=0.1.0",
     "numpy>=1.23.0",
+    "rdkit>=2026.3.2",
     "networkx>=2.8.0",
     "graphviz>=0.20.0",
     "Pillow>=9.0.0",
@@ -96,6 +97,7 @@ all = [
 [project.scripts]
 hbat = "hbat.cli.main:main"
 hbat-gui = "hbat.gui:main"
+hbat-server = "hbat.server.app:create_app"
 
 [project.urls]
 Homepage = "https://github.com/abhishektiwari/hbat"
