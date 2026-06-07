@@ -16,14 +16,17 @@ import subprocess
 class LigplotGenerator:
     """Generate simple ligplot SVG showing ligand with highlighted atoms."""
 
-    def __init__(self, ligand_name: str, analyzer):
+    def __init__(self, ligand_name: str, analyzer, residue_id: Optional[str] = None):
         """
         Initialize ligplot generator.
 
         :param ligand_name: Ligand residue name (e.g., "IMP", "ATP")
         :param analyzer: NPMolecularInteractionAnalyzer instance
+        :param residue_id: Full residue ID in format "CHAIN:NAME:SEQ" to identify specific ligand.
+                          If not provided, uses ligand_name for backward compatibility.
         """
         self.ligand_name = ligand_name
+        self.residue_id = residue_id
         self.analyzer = analyzer
         self.mol = None
         # Map RDKit atom index to PDB info: {idx: {"serial": 1862, "name": "O3V"}}
@@ -31,10 +34,10 @@ class LigplotGenerator:
 
         # Interaction colors (RGB tuples, values 0-1)
         self.colors = {
-            "HydrogenBond": (1, 0.5, 0.5),  # Blue
-            "HalogenBond": (0.7, 0.7, 0.3),  # Red
+            "HydrogenBond": (1, 0.5, 0.5),  # Red/Pink
+            "HalogenBond": (0.7, 0.7, 0.3),  # Yellow
             "PiInteraction": (0.6, 0.2, 1),  # Purple
-            "PiPiInteraction": (0.4, 0, 0.8),  # Dark purple
+            "PiPiInteraction": (1, 0.65, 0),  # Orange
             "WaterBridge": (0, 0.8, 1),  # Cyan
             "Carbonyl": (0.8, 0, 0.8),  # Magenta
             "NPiInteraction": (0, 0.8, 0.4),  # Green
@@ -52,10 +55,18 @@ class LigplotGenerator:
         :rtype: Optional[Chem.Mol]
         """
         # Get ligand atoms from PDB for serial and name reference
-        ligand_atoms = [
-            a for a in self.analyzer.parser.atoms
-            if a.res_name == self.ligand_name
-        ]
+        if self.residue_id:
+            # Use specific residue ID if provided (format: "CHAIN:NAME:SEQ")
+            ligand_atoms = [
+                a for a in self.analyzer.parser.atoms
+                if f"{a.chain_id}:{a.res_name}:{a.res_seq}" == self.residue_id
+            ]
+        else:
+            # Fallback: use residue name only (for backward compatibility)
+            ligand_atoms = [
+                a for a in self.analyzer.parser.atoms
+                if a.res_name == self.ligand_name
+            ]
 
         if not ligand_atoms:
             return None
@@ -252,6 +263,10 @@ class LigplotGenerator:
 
     def _find_ligand_residue_id(self) -> Optional[str]:
         """Find ligand residue ID."""
+        # Use provided residue_id if available
+        if self.residue_id:
+            return self.residue_id
+        # Otherwise, find the first matching residue by name
         for atom in self.analyzer.parser.atoms:
             if atom.res_name == self.ligand_name:
                 return f"{atom.chain_id}:{atom.res_name}:{atom.res_seq}"
@@ -266,10 +281,109 @@ class LigplotGenerator:
         :returns: HTML string with SVG and legend
         :rtype: str
         """
+        svg = self._generate_svg_only(width, height)
+        if not svg:
+            return f"<p>Could not find structure data for {self.ligand_name}</p>"
+
+        # Create color legend
+        legend_html = self._create_color_legend()
+
+        # Combine SVG and legend in a vertical flex container (diagram center, legend bottom)
+        html = f"""
+        <div style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
+            <div style="display: flex; justify-content: center;">
+                {svg}
+            </div>
+            <div>
+                {legend_html}
+            </div>
+        </div>
+        """
+        return html
+
+    def get_svg_only(self, width: int = 300, height: int = 250, include_legend: bool = True) -> Optional[str]:
+        """
+        Generate SVG without HTML wrapper (for downloading/exporting).
+
+        :param width: SVG width in pixels
+        :param height: SVG height in pixels
+        :param include_legend: If True, add legend as SVG elements
+        :returns: SVG string or None
+        :rtype: Optional[str]
+        """
+        svg = self._generate_svg_only(width, height)
+        if not svg or not include_legend:
+            return svg
+
+        # Add legend to SVG
+        return self._add_legend_to_svg(svg, width)
+
+    def _add_legend_to_svg(self, svg: str, width: int) -> str:
+        """
+        Add legend as SVG elements to the generated SVG.
+
+        :param svg: SVG string from RDKit
+        :param width: SVG width for layout
+        :returns: SVG with embedded legend
+        :rtype: str
+        """
+        # Map interaction types to labels
+        type_to_label = {
+            "HydrogenBond": "H-Bond",
+            "HalogenBond": "Halogen Bond",
+            "PiInteraction": "π–Inter",
+            "PiPiInteraction": "π–π Stacking",
+            "WaterBridge": "Water Bridge",
+            "Carbonyl": "Carbonyl",
+            "NPiInteraction": "n-π*",
+        }
+
+        # Create legend SVG elements
+        legend_items = []
+        x_pos = 10
+        y_pos = 10
+        item_height = 20
+
+        for interaction_type, label in type_to_label.items():
+            if interaction_type in self.colors:
+                rgb = self.colors[interaction_type]
+                hex_color = f"#{int(rgb[0]*255):02x}{int(rgb[1]*255):02x}{int(rgb[2]*255):02x}"
+
+                # Color box
+                legend_items.append(
+                    f'<rect x="{x_pos}" y="{y_pos}" width="14" height="14" '
+                    f'fill="{hex_color}" stroke="black" stroke-width="0.5"/>'
+                )
+                # Label text
+                legend_items.append(
+                    f'<text x="{x_pos + 18}" y="{y_pos + 12}" font-size="11" '
+                    f'font-family="Arial,sans-serif">{label}</text>'
+                )
+
+                x_pos += 140
+                if x_pos > width - 150:
+                    x_pos = 10
+                    y_pos += item_height + 5
+
+        # Insert legend before closing </svg> tag
+        legend_group = f'<g id="ligplot-legend">\n' + '\n'.join(legend_items) + '\n</g>'
+        svg = svg.replace('</svg>', f'{legend_group}\n</svg>')
+
+        return svg
+
+    def _generate_svg_only(self, width: int = 300, height: int = 250) -> Optional[str]:
+        """
+        Generate SVG without legend (for downloading/exporting).
+
+        :param width: SVG width in pixels
+        :param height: SVG height in pixels
+        :returns: SVG string or None
+        :rtype: Optional[str]
+        """
         # Get molecule with correct bond orders and stereo removed
         self.mol = self.get_ligand_mol()
         if not self.mol:
-            return f"<p>Could not find structure data for {self.ligand_name}</p>"
+            return None
 
         # Generate 2D coordinates
         AllChem.Compute2DCoords(self.mol)
@@ -296,23 +410,7 @@ class LigplotGenerator:
             highlightAtomColors=highlight_colors,
         )
         drawer.FinishDrawing()
-        svg = drawer.GetDrawingText()
-
-        # Create color legend
-        legend_html = self._create_color_legend()
-
-        # Combine SVG and legend in a vertical flex container (diagram center, legend bottom)
-        html = f"""
-        <div style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
-            <div style="display: flex; justify-content: center;">
-                {svg}
-            </div>
-            <div>
-                {legend_html}
-            </div>
-        </div>
-        """
-        return html
+        return drawer.GetDrawingText()
 
     def _create_color_legend(self) -> str:
         """
