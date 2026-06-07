@@ -31,6 +31,8 @@ class LigplotGenerator:
         self.mol = None
         # Map RDKit atom index to PDB info: {idx: {"serial": 1862, "name": "O3V"}}
         self.pdb_ligand_atom_info = {}
+        # Track which interaction types are present in current ligand
+        self.applicable_interactions = set()
 
         # Interaction colors (RGB tuples, values 0-1)
         self.colors = {
@@ -202,48 +204,60 @@ class LigplotGenerator:
         """
         ligand_res_id = self._find_ligand_residue_id()
         if not ligand_res_id:
+            self.applicable_interactions.clear()
             return {}
 
         interacting = {}
+        self.applicable_interactions.clear()
 
         # H-bonds
         for hbond in self.analyzer.hydrogen_bonds:
             if hbond.donor_residue == ligand_res_id:
                 interacting[hbond.donor.serial] = "HydrogenBond"
+                self.applicable_interactions.add("HydrogenBond")
             elif hbond.acceptor_residue == ligand_res_id:
                 interacting[hbond.acceptor.serial] = "HydrogenBond"
+                self.applicable_interactions.add("HydrogenBond")
 
         # Halogen bonds
         if hasattr(self.analyzer, "halogen_bonds"):
             for xbond in self.analyzer.halogen_bonds:
                 if xbond.donor_residue == ligand_res_id:
                     interacting[xbond.donor.serial] = "HalogenBond"
+                    self.applicable_interactions.add("HalogenBond")
                 elif xbond.acceptor_residue == ligand_res_id:
                     interacting[xbond.acceptor.serial] = "HalogenBond"
+                    self.applicable_interactions.add("HalogenBond")
 
         # π-interactions
         if hasattr(self.analyzer, "pi_interactions"):
             for pi_int in self.analyzer.pi_interactions:
                 if pi_int.donor_residue == ligand_res_id:
                     interacting[pi_int.donor.serial] = "PiInteraction"
+                    self.applicable_interactions.add("PiInteraction")
                 elif pi_int.acceptor_residue == ligand_res_id:
                     interacting[pi_int.acceptor.serial] = "PiInteraction"
+                    self.applicable_interactions.add("PiInteraction")
 
         # π–π stacking interactions
         if hasattr(self.analyzer, "pi_pi_interactions"):
             for pipi in self.analyzer.pi_pi_interactions:
                 if pipi.donor_residue == ligand_res_id:
                     interacting[pipi.donor.serial] = "PiPiInteraction"
+                    self.applicable_interactions.add("PiPiInteraction")
                 elif pipi.acceptor_residue == ligand_res_id:
                     interacting[pipi.acceptor.serial] = "PiPiInteraction"
+                    self.applicable_interactions.add("PiPiInteraction")
 
         # Water bridges
         if hasattr(self.analyzer, "water_bridges"):
             for wb in self.analyzer.water_bridges:
                 if wb.donor_residue == ligand_res_id:
                     interacting[wb.donor.serial] = "WaterBridge"
+                    self.applicable_interactions.add("WaterBridge")
                 elif wb.acceptor_residue == ligand_res_id:
                     interacting[wb.acceptor.serial] = "WaterBridge"
+                    self.applicable_interactions.add("WaterBridge")
 
         # Map PDB serials to RDKit indices by position
         ligand_atoms = [
@@ -320,7 +334,7 @@ class LigplotGenerator:
 
     def _add_legend_to_svg(self, svg: str, width: int) -> str:
         """
-        Add legend as SVG elements to the generated SVG.
+        Add legend as SVG elements to the generated SVG (only applicable interactions).
 
         :param svg: SVG string from RDKit
         :param width: SVG width for layout
@@ -345,7 +359,8 @@ class LigplotGenerator:
         item_height = 20
 
         for interaction_type, label in type_to_label.items():
-            if interaction_type in self.colors:
+            # Only include applicable interactions
+            if interaction_type in self.applicable_interactions and interaction_type in self.colors:
                 rgb = self.colors[interaction_type]
                 hex_color = f"#{int(rgb[0]*255):02x}{int(rgb[1]*255):02x}{int(rgb[2]*255):02x}"
 
@@ -414,7 +429,7 @@ class LigplotGenerator:
 
     def _create_color_legend(self) -> str:
         """
-        Create HTML color legend showing interaction types from colors dictionary.
+        Create HTML color legend showing only applicable interaction types.
 
         :returns: HTML string with legend
         :rtype: str
@@ -433,7 +448,8 @@ class LigplotGenerator:
         legend_html = '<div style="border: 1px solid #ccc; padding: 12px 15px; border-radius: 4px; background: #f9f9f9; display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; align-items: center;">'
 
         for interaction_type, label in type_to_label.items():
-            if interaction_type in self.colors:
+            # Only show interactions applicable to this ligand
+            if interaction_type in self.applicable_interactions and interaction_type in self.colors:
                 # Convert RGB tuple to hex color
                 rgb = self.colors[interaction_type]
                 hex_color = f"#{int(rgb[0]*255):02x}{int(rgb[1]*255):02x}{int(rgb[2]*255):02x}"
