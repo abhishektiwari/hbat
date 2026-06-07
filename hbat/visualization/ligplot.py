@@ -155,7 +155,7 @@ class LigplotGenerator:
         drawer = rdMolDraw2D.MolDraw2DSVG(width, height)
 
         # Enable atom indices display
-        drawer.drawOptions().addAtomIndices = True
+        # drawer.drawOptions().addAtomIndices = True
 
         # Prepare highlight data
         highlight_atoms = list(atom_highlights.keys())
@@ -168,9 +168,6 @@ class LigplotGenerator:
         )
         drawer.FinishDrawing()
         svg = drawer.GetDrawingText()
-
-        # Add atom index labels to the SVG
-        svg = self._add_atom_indices_to_svg(svg)
 
         # Create color legend
         legend_html = self._create_color_legend()
@@ -187,38 +184,6 @@ class LigplotGenerator:
         </div>
         """
         return html
-
-    def _add_atom_indices_to_svg(self, svg: str) -> str:
-        """
-        Add atom index numbers to the SVG based on ellipse positions.
-
-        :param svg: Original SVG string from MolDraw2D
-        :returns: Modified SVG with atom indices
-        :rtype: str
-        """
-        import re
-
-        # Extract atom positions from ellipse elements
-        # SVG format: <ellipse cx='x' cy='y' rx='r' ry='r' class='atom-N'...>
-        ellipse_pattern = r"<ellipse cx='([^']+)' cy='([^']+)'[^>]*class='atom-(\d+)'"
-
-        atom_texts = []
-        for match in re.finditer(ellipse_pattern, svg):
-            cx = float(match.group(1))
-            cy = float(match.group(2))
-            atom_idx = match.group(3)
-
-            atom_texts.append(
-                f'<text x="{cx:.1f}" y="{cy+2:.1f}" font-size="9" font-weight="bold" '
-                f'text-anchor="middle" fill="black" pointer-events="none">{atom_idx}</text>'
-            )
-
-        # Add text elements before closing SVG
-        if atom_texts:
-            atom_group = "\n".join(atom_texts)
-            svg = svg.replace("</svg>", f"{atom_group}\n</svg>")
-
-        return svg
 
     def _create_color_legend(self) -> str:
         """
