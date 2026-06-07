@@ -23,17 +23,62 @@ class LigplotGenerator:
         self.ligand_name = ligand_name
         self.analyzer = analyzer
         self.mol = None
+        self.pdb_serials = []  # Track PDB serial numbers for atom mapping
 
         # Interaction colors (RGB tuples, values 0-1)
         self.colors = {
-            "HydrogenBond": (1,0.5,0.5),  # Blue
-            "HalogenBond": (0.7,0.7,0.3),     # Red
-            "PiInteraction": (0.6, 0.2, 1), # Purple
-            "PiPiInteraction": (0.4, 0, 0.8), # Dark purple
-            "WaterBridge": (0, 0.8, 1),     # Cyan
-            "Carbonyl": (0.8, 0, 0.8),      # Magenta
-            "NPiInteraction": (0, 0.8, 0.4), # Green
+            "HydrogenBond": (1, 0.5, 0.5),  # Blue
+            "HalogenBond": (0.7, 0.7, 0.3),  # Red
+            "PiInteraction": (0.6, 0.2, 1),  # Purple
+            "PiPiInteraction": (0.4, 0, 0.8),  # Dark purple
+            "WaterBridge": (0, 0.8, 1),  # Cyan
+            "Carbonyl": (0.8, 0, 0.8),  # Magenta
+            "NPiInteraction": (0, 0.8, 0.4),  # Green
         }
+
+    def get_ligand_mol(self) -> Optional[Chem.Mol]:
+        """
+        Get RDKit molecule with correct bond orders and PDB atom reference.
+
+        Uses SMILES from CCD for correct bond orders while tracking PDB serials
+        for interaction matching.
+
+        :returns: RDKit Mol object or None
+        :rtype: Optional[Chem.Mol]
+        """
+        # Get ligand atoms from PDB for serial reference
+        ligand_atoms = [
+            a for a in self.analyzer.parser.atoms
+            if a.res_name == self.ligand_name
+        ]
+
+        if not ligand_atoms:
+            return None
+
+        self.pdb_serials = [a.serial for a in ligand_atoms]
+
+        # Get SMILES from CCD (has correct bond orders)
+        smiles = self.get_smiles()
+        if not smiles:
+            return None
+
+        try:
+            mol = Chem.MolFromSmiles(smiles)
+            if not mol:
+                return None
+
+            # Remove stereochemistry for flat 2D
+            Chem.RemoveStereochemistry(mol)
+            for bond in mol.GetBonds():
+                bond.SetStereo(Chem.BondStereo.STEREONONE)
+
+            # Add hydrogens
+            mol = Chem.AddHs(mol)
+
+            return mol
+        except Exception as e:
+            print(f"Failed to create molecule from SMILES: {e}")
+            return None
 
     def get_smiles(self) -> Optional[str]:
         """
@@ -106,7 +151,6 @@ class LigplotGenerator:
                     interacting[wb.acceptor.serial] = "WaterBridge"
 
         # Map PDB serials to RDKit indices by position
-        # Get ligand atoms in PDB order
         ligand_atoms = [
             atom
             for atom in self.analyzer.parser.atoms
@@ -136,14 +180,10 @@ class LigplotGenerator:
         :returns: HTML string with SVG and legend
         :rtype: str
         """
-        # Get SMILES and create molecule
-        smiles = self.get_smiles()
-        if not smiles:
-            return f"<p>Could not find SMILES for {self.ligand_name}</p>"
-
-        self.mol = Chem.MolFromSmiles(smiles)
+        # Get molecule with correct bond orders and stereo removed
+        self.mol = self.get_ligand_mol()
         if not self.mol:
-            return f"<p>Invalid SMILES for {self.ligand_name}</p>"
+            return f"<p>Could not find structure data for {self.ligand_name}</p>"
 
         # Generate 2D coordinates
         AllChem.Compute2DCoords(self.mol)
@@ -153,9 +193,6 @@ class LigplotGenerator:
 
         # Draw molecule with highlights
         drawer = rdMolDraw2D.MolDraw2DSVG(width, height)
-
-        # Enable atom indices display
-        # drawer.drawOptions().addAtomIndices = True
 
         # Prepare highlight data
         highlight_atoms = list(atom_highlights.keys())
