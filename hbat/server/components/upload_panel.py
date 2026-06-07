@@ -114,18 +114,19 @@ class UploadPanel:
                     url = f"https://files.rcsb.org/download/{safe_pdb_id}.cif"
                     filename = f"{pdb_id}.cif"
 
-                # Validate URL scheme before opening
+                # Validate URL scheme and domain before opening
                 parsed = urllib.parse.urlparse(url)
-                if parsed.scheme not in ("http", "https"):
+                if parsed.scheme != "https" or not parsed.netloc.endswith("rcsb.org"):
                     ui.notify(
-                        "Invalid URL scheme",
+                        "Invalid URL scheme or domain",
                         type="negative",
                         position="top-left",
                     )
                     return
 
                 # Add timeout for security (30 seconds)
-                with urllib.request.urlopen(url, timeout=30) as response:
+                # URL is validated to be https://files.rcsb.org only
+                with urllib.request.urlopen(url, timeout=30) as response:  # nosec B310
                     content = response.read()
 
                 # Check file size (2 MB = 2097152 bytes)

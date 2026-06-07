@@ -191,9 +191,10 @@ class LigplotGenerator:
         rcsb_url = f"https://data.rcsb.org/rest/v1/core/chemcomp/{self.ligand_name}"
         try:
             parsed = urllib.parse.urlparse(rcsb_url)
-            if parsed.scheme not in ("http", "https"):
+            if parsed.scheme != "https" or not parsed.netloc.endswith("rcsb.org"):
                 return None
-            with urllib.request.urlopen(rcsb_url, timeout=5) as response:
+            # URL is validated to be https://data.rcsb.org only
+            with urllib.request.urlopen(rcsb_url, timeout=5) as response:  # nosec B310
                 data = json.loads(response.read())
                 if "rcsb_chem_comp_descriptor" in data:
                     descriptor = data["rcsb_chem_comp_descriptor"]
@@ -201,6 +202,18 @@ class LigplotGenerator:
         except Exception as e:
             print(f"Failed to get SMILES for {self.ligand_name}: {e}")
         return None
+
+    def _collect_interaction_atoms(
+        self, interactions, interaction_type: str, ligand_res_id: str, interacting: Dict
+    ) -> None:
+        """Collect atoms from a set of interactions."""
+        for interaction in interactions:
+            if interaction.donor_residue == ligand_res_id:
+                interacting[interaction.donor.serial] = interaction_type
+                self.applicable_interactions.add(interaction_type)
+            elif interaction.acceptor_residue == ligand_res_id:
+                interacting[interaction.acceptor.serial] = interaction_type
+                self.applicable_interactions.add(interaction_type)
 
     def get_interacting_atoms(self) -> Dict[int, tuple]:
         """
@@ -217,54 +230,29 @@ class LigplotGenerator:
         interacting = {}
         self.applicable_interactions.clear()
 
-        # H-bonds
-        for hbond in self.analyzer.hydrogen_bonds:
-            if hbond.donor_residue == ligand_res_id:
-                interacting[hbond.donor.serial] = "HydrogenBond"
-                self.applicable_interactions.add("HydrogenBond")
-            elif hbond.acceptor_residue == ligand_res_id:
-                interacting[hbond.acceptor.serial] = "HydrogenBond"
-                self.applicable_interactions.add("HydrogenBond")
-
-        # Halogen bonds
+        # Collect all interaction types
+        self._collect_interaction_atoms(
+            self.analyzer.hydrogen_bonds, "HydrogenBond", ligand_res_id, interacting
+        )
         if hasattr(self.analyzer, "halogen_bonds"):
-            for xbond in self.analyzer.halogen_bonds:
-                if xbond.donor_residue == ligand_res_id:
-                    interacting[xbond.donor.serial] = "HalogenBond"
-                    self.applicable_interactions.add("HalogenBond")
-                elif xbond.acceptor_residue == ligand_res_id:
-                    interacting[xbond.acceptor.serial] = "HalogenBond"
-                    self.applicable_interactions.add("HalogenBond")
-
-        # π-interactions
+            self._collect_interaction_atoms(
+                self.analyzer.halogen_bonds, "HalogenBond", ligand_res_id, interacting
+            )
         if hasattr(self.analyzer, "pi_interactions"):
-            for pi_int in self.analyzer.pi_interactions:
-                if pi_int.donor_residue == ligand_res_id:
-                    interacting[pi_int.donor.serial] = "PiInteraction"
-                    self.applicable_interactions.add("PiInteraction")
-                elif pi_int.acceptor_residue == ligand_res_id:
-                    interacting[pi_int.acceptor.serial] = "PiInteraction"
-                    self.applicable_interactions.add("PiInteraction")
-
-        # π–π stacking interactions
+            self._collect_interaction_atoms(
+                self.analyzer.pi_interactions, "PiInteraction", ligand_res_id, interacting
+            )
         if hasattr(self.analyzer, "pi_pi_interactions"):
-            for pipi in self.analyzer.pi_pi_interactions:
-                if pipi.donor_residue == ligand_res_id:
-                    interacting[pipi.donor.serial] = "PiPiInteraction"
-                    self.applicable_interactions.add("PiPiInteraction")
-                elif pipi.acceptor_residue == ligand_res_id:
-                    interacting[pipi.acceptor.serial] = "PiPiInteraction"
-                    self.applicable_interactions.add("PiPiInteraction")
-
-        # Water bridges
+            self._collect_interaction_atoms(
+                self.analyzer.pi_pi_interactions,
+                "PiPiInteraction",
+                ligand_res_id,
+                interacting,
+            )
         if hasattr(self.analyzer, "water_bridges"):
-            for wb in self.analyzer.water_bridges:
-                if wb.donor_residue == ligand_res_id:
-                    interacting[wb.donor.serial] = "WaterBridge"
-                    self.applicable_interactions.add("WaterBridge")
-                elif wb.acceptor_residue == ligand_res_id:
-                    interacting[wb.acceptor.serial] = "WaterBridge"
-                    self.applicable_interactions.add("WaterBridge")
+            self._collect_interaction_atoms(
+                self.analyzer.water_bridges, "WaterBridge", ligand_res_id, interacting
+            )
 
         # Map PDB serials to RDKit indices by position
         ligand_atoms = [
@@ -274,7 +262,6 @@ class LigplotGenerator:
         ]
 
         rdkit_indices = {}
-        # Check if molecule is set, otherwise use ligand atoms count
         max_atoms = self.mol.GetNumAtoms() if self.mol else len(ligand_atoms)
         for i, pdb_atom in enumerate(ligand_atoms):
             if pdb_atom.serial in interacting and i < max_atoms:
