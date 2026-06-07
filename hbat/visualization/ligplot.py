@@ -6,8 +6,11 @@ from typing import Dict, List, Optional
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem.Draw import rdMolDraw2D
+from .minimal_pdb_extractor import _format_atom_as_pdb
 import urllib.request
 import json
+import tempfile
+import subprocess
 
 
 class LigplotGenerator:
@@ -23,7 +26,8 @@ class LigplotGenerator:
         self.ligand_name = ligand_name
         self.analyzer = analyzer
         self.mol = None
-        self.pdb_serials = []  # Track PDB serial numbers for atom mapping
+        # Map RDKit atom index to PDB info: {idx: {"serial": 1862, "name": "O3V"}}
+        self.pdb_ligand_atom_info = {}
 
         # Interaction colors (RGB tuples, values 0-1)
         self.colors = {
@@ -41,12 +45,13 @@ class LigplotGenerator:
         Get RDKit molecule with correct bond orders and PDB atom reference.
 
         Uses SMILES from CCD for correct bond orders while tracking PDB serials
-        for interaction matching.
+        for interaction matching. Falls back to OpenBabel for bond order inference
+        if SMILES template matching fails.
 
         :returns: RDKit Mol object or None
         :rtype: Optional[Chem.Mol]
         """
-        # Get ligand atoms from PDB for serial reference
+        # Get ligand atoms from PDB for serial and name reference
         ligand_atoms = [
             a for a in self.analyzer.parser.atoms
             if a.res_name == self.ligand_name
@@ -55,30 +60,109 @@ class LigplotGenerator:
         if not ligand_atoms:
             return None
 
-        self.pdb_serials = [a.serial for a in ligand_atoms]
+        # Build PDB atom info map: {atom_idx: {"serial": int, "name": str}}
+        self.pdb_ligand_atom_info = {
+            i: {"serial": a.serial, "name": a.name.strip()}
+            for i, a in enumerate(ligand_atoms)
+        }
 
-        # Get SMILES from CCD (has correct bond orders)
+        # Create PDB block from ligand atoms (preserves atom order)
+        pdb_lines = [_format_atom_as_pdb(a) for a in ligand_atoms]
+        pdb_block = "HEADER    LIGAND\n" + "\n".join(pdb_lines) + "\nEND\n"
+
+        # Load molecule from PDB block (correct atom order)
+        mol_pdb = Chem.MolFromPDBBlock(pdb_block, removeHs=True, sanitize=False)
+        if not mol_pdb:
+            return None
+
+        # Try to get SMILES template for correct bond orders
         smiles = self.get_smiles()
-        if not smiles:
-            return None
+        if smiles:
+            try:
+                template = Chem.MolFromSmiles(smiles)
+                if template and template.GetNumAtoms() == mol_pdb.GetNumAtoms():
+                    # Transfer bond orders from template to PDB molecule
+                    mol = AllChem.AssignBondOrdersFromTemplate(template, mol_pdb)
 
+                    # Remove stereochemistry for flat 2D
+                    Chem.RemoveStereochemistry(mol)
+                    for bond in mol.GetBonds():
+                        bond.SetStereo(Chem.BondStereo.STEREONONE)
+
+                    # Add hydrogens
+                    mol = Chem.AddHs(mol)
+                    return mol
+            except Exception as e:
+                # Template matching failed, try OpenBabel for bond order inference
+                print(f"Template matching failed for {self.ligand_name}: {e}")
+
+        # Fallback: use OpenBabel to infer bond orders from coordinates
         try:
-            mol = Chem.MolFromSmiles(smiles)
-            if not mol:
-                return None
-
-            # Remove stereochemistry for flat 2D
-            Chem.RemoveStereochemistry(mol)
-            for bond in mol.GetBonds():
-                bond.SetStereo(Chem.BondStereo.STEREONONE)
-
-            # Add hydrogens
-            mol = Chem.AddHs(mol)
-
-            return mol
+            mol = self._get_mol_from_obabel(pdb_block)
+            if mol:
+                return mol
         except Exception as e:
-            print(f"Failed to create molecule from SMILES: {e}")
+            print(f"OpenBabel inference failed: {e}")
+
+        # Last resort: return molecule with inferred bonds from PDB
+        try:
+            Chem.SanitizeMol(mol_pdb)
+            Chem.RemoveStereochemistry(mol_pdb)
+            for bond in mol_pdb.GetBonds():
+                bond.SetStereo(Chem.BondStereo.STEREONONE)
+            mol_pdb = Chem.AddHs(mol_pdb)
+            return mol_pdb
+        except Exception as e:
+            print(f"Failed to sanitize molecule from PDB block: {e}")
             return None
+
+    def _get_mol_from_obabel(self, pdb_block: str) -> Optional[Chem.Mol]:
+        """
+        Use OpenBabel to infer bond orders from PDB coordinates.
+
+        :param pdb_block: PDB format text block
+        :returns: RDKit Mol object or None
+        :rtype: Optional[Chem.Mol]
+        """
+        try:
+            # Write PDB to temp file
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.pdb', delete=False) as f:
+                f.write(pdb_block)
+                pdb_path = f.name
+
+            # Use obabel to convert and infer bond orders
+            sdf_path = pdb_path.replace('.pdb', '.sdf')
+            result = subprocess.run(
+                ['obabel', pdb_path, '-O', sdf_path, '-h'],
+                capture_output=True,
+                timeout=5
+            )
+
+            if result.returncode == 0:
+                # Load from SDF which has explicit bond orders
+                with open(sdf_path) as f:
+                    mol = Chem.MolFromMolBlock(f.read())
+                if mol:
+                    # Clean up temp files
+                    import os
+                    os.unlink(pdb_path)
+                    os.unlink(sdf_path)
+
+                    # Remove stereochemistry for flat 2D
+                    Chem.RemoveStereochemistry(mol)
+                    for bond in mol.GetBonds():
+                        bond.SetStereo(Chem.BondStereo.STEREONONE)
+
+                    # Add hydrogens
+                    mol = Chem.AddHs(mol)
+                    return mol
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            # OpenBabel not available or failed
+            pass
+        except Exception as e:
+            print(f"Error in OpenBabel conversion: {e}")
+
+        return None
 
     def get_smiles(self) -> Optional[str]:
         """
@@ -158,8 +242,10 @@ class LigplotGenerator:
         ]
 
         rdkit_indices = {}
+        # Check if molecule is set, otherwise use ligand atoms count
+        max_atoms = self.mol.GetNumAtoms() if self.mol else len(ligand_atoms)
         for i, pdb_atom in enumerate(ligand_atoms):
-            if pdb_atom.serial in interacting and i < self.mol.GetNumAtoms():
+            if pdb_atom.serial in interacting and i < max_atoms:
                 rdkit_indices[i] = self.colors[interacting[pdb_atom.serial]]
 
         return rdkit_indices
@@ -190,6 +276,12 @@ class LigplotGenerator:
 
         # Get interacting atoms
         atom_highlights = self.get_interacting_atoms()
+
+        # Add PDB atom names as notes only for highlighted atoms
+        for atom_idx in atom_highlights.keys():
+            if atom_idx in self.pdb_ligand_atom_info:
+                atom_name = self.pdb_ligand_atom_info[atom_idx]["name"]
+                self.mol.GetAtomWithIdx(atom_idx).SetProp("atomNote", atom_name)
 
         # Draw molecule with highlights
         drawer = rdMolDraw2D.MolDraw2DSVG(width, height)
