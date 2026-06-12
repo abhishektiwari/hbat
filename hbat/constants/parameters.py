@@ -964,6 +964,17 @@ class AnalysisParameters:
 
         return errors
 
+    def validate_or_raise(self, context: str = "parameters") -> None:
+        """Validate parameters and raise a descriptive error when invalid.
+
+        :param context: Description of where the parameters came from
+        :type context: str
+        :raises ValueError: If one or more parameters are invalid
+        """
+        errors = self.validate()
+        if errors:
+            raise ValueError(f"Invalid {context}: {'; '.join(errors)}")
+
 
 # Parameter validation ranges
 class ParameterRanges:

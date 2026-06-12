@@ -69,9 +69,7 @@ class NPMolecularInteractionAnalyzer:
         self.parameters = parameters or AnalysisParameters()
 
         # Validate parameters
-        validation_errors = self.parameters.validate()
-        if validation_errors:
-            raise ValueError(f"Invalid parameters: {'; '.join(validation_errors)}")
+        self.parameters.validate_or_raise()
 
         self.parser = PDBParser()
         self.hydrogen_bonds: List[HydrogenBond] = []
@@ -347,6 +345,20 @@ class NPMolecularInteractionAnalyzer:
             atom2_idx
         )
 
+    def _should_skip_same_residue(self, residue1: Any, residue2: Any) -> bool:
+        """Return whether an interaction between two residues should be skipped."""
+        return (
+            self.parameters.analysis_mode == AnalysisModes.INTER
+            and residue1 == residue2
+        )
+
+    def _should_skip_atom_pair(self, atom1_idx: int, atom2_idx: int) -> bool:
+        """Return whether an atom pair should be skipped based on residue mode."""
+        return self._should_skip_same_residue(
+            self._atom_to_residue.get(atom1_idx),
+            self._atom_to_residue.get(atom2_idx),
+        )
+
     def _find_hydrogen_bonds_vectorized(self) -> None:
         """Find hydrogen bonds using vectorized NumPy operations.
 
@@ -452,10 +464,9 @@ class NPMolecularInteractionAnalyzer:
                     continue
 
                 # Inter mode excludes interactions within the same residue
-                if self.parameters.analysis_mode == AnalysisModes.INTER:
-                    acceptor_idx = self._atom_indices["acceptor"][a_idx]
-                    if self._are_same_residue(donor_idx, acceptor_idx):
-                        continue
+                acceptor_idx = self._atom_indices["acceptor"][a_idx]
+                if self._should_skip_atom_pair(donor_idx, acceptor_idx):
+                    continue
 
                 # Calculate angle using NPVec3D
                 donor_vec = NPVec3D(
@@ -623,11 +634,10 @@ class NPMolecularInteractionAnalyzer:
                 ]
 
                 # Inter mode excludes interactions within the same residue
-                if self.parameters.analysis_mode == AnalysisModes.INTER:
-                    halogen_idx = self._atom_indices["halogen"][x_idx]
-                    acceptor_idx = self._atom_indices["halogen_acceptor"][a_idx]
-                    if self._are_same_residue(halogen_idx, acceptor_idx):
-                        continue
+                halogen_idx = self._atom_indices["halogen"][x_idx]
+                acceptor_idx = self._atom_indices["halogen_acceptor"][a_idx]
+                if self._should_skip_atom_pair(halogen_idx, acceptor_idx):
+                    continue
 
                 # Check distance criteria: vdW sum OR fixed cutoff
                 distance = float(distances[x_idx, a_idx])
@@ -772,18 +782,18 @@ class NPMolecularInteractionAnalyzer:
                 center_info = aromatic_centers[center_idx]
 
                 # Inter mode excludes interactions within the same residue
-                if self.parameters.analysis_mode == AnalysisModes.INTER:
-                    donor_idx = self._serial_to_idx.get(donor_atom.serial)
-                    if donor_idx is not None:
-                        # Create residue key for aromatic center
-                        aromatic_residue_key = (
-                            center_info["residue"].chain_id,
-                            center_info["residue"].seq_num,
-                            center_info["residue"].name,
-                        )
-                        donor_residue_key = self._atom_to_residue.get(donor_idx)
-                        if donor_residue_key == aromatic_residue_key:
-                            continue
+                donor_idx = self._serial_to_idx.get(donor_atom.serial)
+                if donor_idx is not None:
+                    aromatic_residue_key = (
+                        center_info["residue"].chain_id,
+                        center_info["residue"].seq_num,
+                        center_info["residue"].name,
+                    )
+                    donor_residue_key = self._atom_to_residue.get(donor_idx)
+                    if self._should_skip_same_residue(
+                        donor_residue_key, aromatic_residue_key
+                    ):
+                        continue
 
                 # Calculate angle
                 donor_vec = NPVec3D(
@@ -1011,7 +1021,8 @@ class NPMolecularInteractionAnalyzer:
         6. Compute angle between plane normals (0° = parallel, 90° = perpendicular)
         7. Calculate lateral offset for parallel configurations
         8. Classify stacking type based on angle and offset criteria
-        9. Create PiPiInteraction objects with stacking type annotation
+        9. Exclude same-residue interactions in inter mode
+        10. Create PiPiInteraction objects with stacking type annotation
         """
         if self.parameters.pi_pi_distance_cutoff <= 0:
             return  # Skip if disabled
@@ -1045,8 +1056,10 @@ class NPMolecularInteractionAnalyzer:
         # Pairwise comparison of all aromatic rings
         for i, ring1 in enumerate(aromatic_rings):
             for ring2 in aromatic_rings[i + 1 :]:
-                # Skip same residue
-                if ring1["residue"] == ring2["residue"]:
+                # Inter mode excludes interactions within the same residue
+                if self._should_skip_same_residue(
+                    ring1["residue"], ring2["residue"]
+                ):
                     continue
 
                 # Calculate centroid-to-centroid distance
@@ -1158,7 +1171,7 @@ class NPMolecularInteractionAnalyzer:
         **Algorithm:**
 
         1. Identify all C=O groups from backbone and sidechains
-        2. For each carbonyl pair from different residues:
+        2. For each carbonyl pair allowed by the interaction inclusion mode:
            a. Calculate O···C distance between donor oxygen and acceptor carbon
            b. Filter pairs within 3.2 Å distance cutoff
            c. Calculate Bürgi-Dunitz angle (O···C=O)
@@ -1194,8 +1207,10 @@ class NPMolecularInteractionAnalyzer:
         # Pairwise comparison of carbonyl groups
         for i, donor_carbonyl in enumerate(carbonyl_data):
             for acceptor_carbonyl in carbonyl_data[i + 1 :]:
-                # Skip same residue interactions
-                if donor_carbonyl["residue_id"] == acceptor_carbonyl["residue_id"]:
+                # Inter mode excludes interactions within the same residue
+                if self._should_skip_same_residue(
+                    donor_carbonyl["residue_id"], acceptor_carbonyl["residue_id"]
+                ):
                     continue
 
                 # Get atom coordinates
@@ -1406,7 +1421,7 @@ class NPMolecularInteractionAnalyzer:
            d. Calculate angle_to_normal (donor→π vector vs. plane normal)
            e. Convert to angle_to_plane (90° - angle_to_normal)
            f. Verify angle_to_plane is 0-45° (shallow approach)
-        4. Skip same-residue interactions
+        4. Exclude same-residue interactions in inter mode
         5. Create NPiInteraction objects with subtype classification
         """
         if self.parameters.n_pi_distance_cutoff <= 0:
@@ -1457,7 +1472,7 @@ class NPMolecularInteractionAnalyzer:
                 ring_center = ring_info["center"]
                 ring_atoms = ring_info["atoms"]
 
-                # Skip same residue interactions
+                # Inter mode excludes interactions within the same residue
                 donor_residue_key = (
                     donor_atom.chain_id,
                     donor_atom.res_seq,
@@ -1468,7 +1483,9 @@ class NPMolecularInteractionAnalyzer:
                     ring_info["residue"].seq_num,
                     ring_info["residue"].name,
                 )
-                if donor_residue_key == acceptor_residue_key:
+                if self._should_skip_same_residue(
+                    donor_residue_key, acceptor_residue_key
+                ):
                     continue
 
                 # Calculate distance to π center

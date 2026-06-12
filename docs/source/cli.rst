@@ -185,6 +185,32 @@ General Parameters
    - ``inter``: Analyze interactions between different residues only (default)
    - ``all``: Analyze both inter-residue and intra-residue interactions
 
+Interaction Inclusion Modes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The interaction inclusion mode controls whether interactions within the same
+residue are reported:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 25 25
+
+   * - Mode
+     - Inter-residue
+     - Intra-residue
+   * - ``inter``
+     - Yes
+     - No
+   * - ``all``
+     - Yes
+     - Yes
+
+.. important::
+
+   This is a breaking change. The previous ``local`` and ``complete`` values
+   are no longer valid. Replace ``local`` with ``inter`` and ``complete`` with
+   ``all`` in scripts, API calls, and preset files.
+
 Structure Fixing Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 

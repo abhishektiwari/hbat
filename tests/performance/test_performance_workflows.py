@@ -186,43 +186,43 @@ class TestLargeStructureParameterPerformance:
 
     def test_analysis_mode_performance_impact(self, large_pdb_file):
         """Test performance impact of analysis modes on large structures."""
-        # Test complete mode
-        complete_params = AnalysisParameters(analysis_mode="all")
-        complete_analyzer = MolecularInteractionAnalyzer(complete_params)
+        # Test all mode
+        all_params = AnalysisParameters(analysis_mode="all")
+        all_analyzer = MolecularInteractionAnalyzer(all_params)
 
-        complete_start = time.time()
-        complete_success = complete_analyzer.analyze_file(large_pdb_file)
-        complete_time = time.time() - complete_start
-        complete_stats = complete_analyzer.get_summary()
+        all_start = time.time()
+        all_success = all_analyzer.analyze_file(large_pdb_file)
+        all_time = time.time() - all_start
+        all_stats = all_analyzer.get_summary()
 
-        assert complete_success
+        assert all_success
 
-        # Test local mode
-        local_params = AnalysisParameters(analysis_mode="inter")
-        local_analyzer = MolecularInteractionAnalyzer(local_params)
+        # Test inter mode
+        inter_params = AnalysisParameters(analysis_mode="inter")
+        inter_analyzer = MolecularInteractionAnalyzer(inter_params)
 
-        local_start = time.time()
-        local_success = local_analyzer.analyze_file(large_pdb_file)
-        local_time = time.time() - local_start
-        local_stats = local_analyzer.get_summary()
+        inter_start = time.time()
+        inter_success = inter_analyzer.analyze_file(large_pdb_file)
+        inter_time = time.time() - inter_start
+        inter_stats = inter_analyzer.get_summary()
 
-        assert local_success
+        assert inter_success
 
-        # Local mode should generally be faster
-        time_speedup = complete_time / local_time
+        # Inter mode should generally be faster
+        time_speedup = all_time / inter_time
 
         print("\nAnalysis Mode Performance (4jsv.pdb):")
-        print("  Complete mode:")
-        print(f"    Time: {complete_time:.2f}s")
-        print(f"    Interactions: {complete_stats['total_interactions']}")
-        print("  Local mode:")
-        print(f"    Time: {local_time:.2f}s")
-        print(f"    Interactions: {local_stats['total_interactions']}")
+        print("  All mode:")
+        print(f"    Time: {all_time:.2f}s")
+        print(f"    Interactions: {all_stats['total_interactions']}")
+        print("  Inter mode:")
+        print(f"    Time: {inter_time:.2f}s")
+        print(f"    Interactions: {inter_stats['total_interactions']}")
         print(f"  Speedup: {time_speedup:.2f}x")
 
         # Both should complete in reasonable time
-        assert complete_time < 300.0, "Complete mode should finish within 5 minutes"
-        assert local_time < 200.0, "Local mode should finish within 3.5 minutes"
+        assert all_time < 300.0, "All mode should finish within 5 minutes"
+        assert inter_time < 200.0, "Inter mode should finish within 3.5 minutes"
 
     def test_parameter_strictness_performance_impact(self, large_pdb_file):
         """Test performance impact of parameter strictness."""

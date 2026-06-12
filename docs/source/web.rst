@@ -50,7 +50,10 @@ After uploading a PDB file:
 
 - **Fix PDB**: Enable PDB fixing (adds missing atoms/hydrogens)
 - **Fixing Method**: Choose between OpenBabel or PDBFixer
-- **Analysis Mode**: Complete (all interactions) or Local (intra-residue only)
+- **Interaction Inclusion**:
+
+  - ``inter``: Include interactions between different residues only (default)
+  - ``all``: Include both inter-residue and intra-residue interactions
 
 **Hydrogen Bond Parameters**:
 

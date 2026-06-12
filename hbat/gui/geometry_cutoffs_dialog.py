@@ -1376,8 +1376,11 @@ class GeometryCutoffsDialog:
 
         if result:
             # Apply the loaded preset
-            self._apply_preset_data(result)
-            messagebox.showinfo("Success", "Preset loaded successfully")
+            try:
+                self._apply_preset_data(result)
+                messagebox.showinfo("Success", "Preset loaded successfully")
+            except ValueError as e:
+                messagebox.showerror("Invalid Preset", str(e))
 
     def _apply_preset_data(self, data: Dict[str, Any]) -> None:
         """Apply preset data to parameters."""
@@ -1385,6 +1388,7 @@ class GeometryCutoffsDialog:
             raise ValueError("Invalid preset format: missing 'parameters' section")
 
         params = data["parameters"]
+        previous_params = self.get_parameters()
 
         # Helper to apply value to parameter
         def apply_value(field_name, value):
@@ -1521,6 +1525,12 @@ class GeometryCutoffsDialog:
                 "analysis_mode",
                 gen.get("analysis_mode", ParametersDefault.ANALYSIS_MODE),
             )
+
+        try:
+            self.get_parameters().validate_or_raise("preset parameters")
+        except ValueError:
+            self.set_parameters(previous_params)
+            raise
 
     def _ok(self):
         """Handle OK button - save settings and close."""

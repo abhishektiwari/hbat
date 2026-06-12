@@ -285,7 +285,8 @@ Calculation Process
 4. **Validation**:
 
    - Check centroid-to-centroid distance
-   - Verify interaction is between different residues
+   - Apply the interaction inclusion mode: ``inter`` excludes same-residue
+     interactions, while ``all`` includes them
    - Apply distance and angle cutoffs
 
 Carbonyl Interactions (n→π*)

@@ -558,7 +558,7 @@ def load_preset_file(preset_path: str) -> AnalysisParameters:
         general_params = params.get("general", {})
         fix_params = params.get("pdb_fixing", {})
 
-        return AnalysisParameters(
+        preset_params = AnalysisParameters(
             hb_distance_cutoff=hb_params.get(
                 "h_a_distance_cutoff", ParametersDefault.HB_DISTANCE_CUTOFF
             ),
@@ -698,6 +698,8 @@ def load_preset_file(preset_path: str) -> AnalysisParameters:
                 "angle_max", ParametersDefault.N_PI_ANGLE_MAX
             ),
         )
+        preset_params.validate_or_raise("preset parameters")
+        return preset_params
 
     except Exception as e:
         print_error(f"Failed to load preset file '{preset_path}': {str(e)}")

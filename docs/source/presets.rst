@@ -312,6 +312,13 @@ Invalid preset format:
 - Ensure JSON syntax is correct
 - Verify all required fields are present
 - Check parameter value ranges
+- Replace legacy ``analysis_mode`` values before loading:
+
+  - ``local`` must be changed to ``inter``
+  - ``complete`` must be changed to ``all``
+
+  Legacy preset values are intentionally rejected rather than migrated
+  automatically.
 
 Permission errors:
 

@@ -192,6 +192,16 @@ With custom parameters:
 hbat input.pdb -o results.txt --hb-distance 3.0 --mode inter
 ```
 
+Interaction inclusion modes:
+
+| Mode | Inter-residue | Intra-residue |
+|---|---:|---:|
+| `inter` | Yes | No |
+| `all` | Yes | Yes |
+
+> **Breaking change:** The previous `local` and `complete` mode values are no
+> longer valid. Replace `local` with `inter` and `complete` with `all`.
+
 #### List Available Presets
 
 ```bash
