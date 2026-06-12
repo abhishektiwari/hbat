@@ -198,7 +198,7 @@ HBAT presets are saved as JSON files with the following structure:
        },
        "general": {
          "covalent_cutoff_factor": 0.85,
-         "analysis_mode": "complete"
+         "analysis_mode": "all"
        },
        "pdb_fixing": {
          "enabled": true,

@@ -187,7 +187,7 @@ class TestLargeStructureParameterPerformance:
     def test_analysis_mode_performance_impact(self, large_pdb_file):
         """Test performance impact of analysis modes on large structures."""
         # Test complete mode
-        complete_params = AnalysisParameters(analysis_mode="complete")
+        complete_params = AnalysisParameters(analysis_mode="all")
         complete_analyzer = MolecularInteractionAnalyzer(complete_params)
 
         complete_start = time.time()
@@ -198,7 +198,7 @@ class TestLargeStructureParameterPerformance:
         assert complete_success
 
         # Test local mode
-        local_params = AnalysisParameters(analysis_mode="local")
+        local_params = AnalysisParameters(analysis_mode="inter")
         local_analyzer = MolecularInteractionAnalyzer(local_params)
 
         local_start = time.time()
@@ -228,7 +228,7 @@ class TestLargeStructureParameterPerformance:
         """Test performance impact of parameter strictness."""
         # Strict parameters (fewer interactions to compute)
         strict_params = AnalysisParameters(
-            hb_distance_cutoff=2.5, hb_angle_cutoff=150.0, analysis_mode="local"
+            hb_distance_cutoff=2.5, hb_angle_cutoff=150.0, analysis_mode="inter"
         )
         strict_analyzer = MolecularInteractionAnalyzer(strict_params)
 
@@ -241,7 +241,7 @@ class TestLargeStructureParameterPerformance:
 
         # Permissive parameters (more interactions to compute)
         permissive_params = AnalysisParameters(
-            hb_distance_cutoff=4.0, hb_angle_cutoff=100.0, analysis_mode="complete"
+            hb_distance_cutoff=4.0, hb_angle_cutoff=100.0, analysis_mode="all"
         )
         permissive_analyzer = MolecularInteractionAnalyzer(permissive_params)
 

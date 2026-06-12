@@ -23,7 +23,7 @@ from ..constants import (
     RING_ATOMS_FOR_RESIDUES_WITH_AROMATIC_RINGS,
     WATER_MOLECULES,
 )
-from ..constants.parameters import AnalysisParameters
+from ..constants.parameters import AnalysisModes, AnalysisParameters
 from .interactions import (
     CarbonylInteraction,
     CooperativityChain,
@@ -451,8 +451,8 @@ class NPMolecularInteractionAnalyzer:
                 if donor_atom.serial == a_atom.serial:
                     continue
 
-                # Skip if same residue (for local mode) - optimized check
-                if self.parameters.analysis_mode == "local":
+                # Inter mode excludes interactions within the same residue
+                if self.parameters.analysis_mode == AnalysisModes.INTER:
                     acceptor_idx = self._atom_indices["acceptor"][a_idx]
                     if self._are_same_residue(donor_idx, acceptor_idx):
                         continue
@@ -574,7 +574,7 @@ class NPMolecularInteractionAnalyzer:
         4. For each candidate pair, find carbon atom bonded to halogen
         5. Calculate C-X···A angle
         6. Verify angle ≥ 150° for linear σ-hole geometry
-        7. Skip same-residue interactions (local mode only)
+        7. Skip same-residue interactions (inter mode only)
         8. Create HalogenBond objects for valid interactions
         """
         if (
@@ -622,8 +622,8 @@ class NPMolecularInteractionAnalyzer:
                     self._atom_indices["halogen_acceptor"][a_idx]
                 ]
 
-                # Skip if same residue (for local mode) - optimized check
-                if self.parameters.analysis_mode == "local":
+                # Inter mode excludes interactions within the same residue
+                if self.parameters.analysis_mode == AnalysisModes.INTER:
                     halogen_idx = self._atom_indices["halogen"][x_idx]
                     acceptor_idx = self._atom_indices["halogen_acceptor"][a_idx]
                     if self._are_same_residue(halogen_idx, acceptor_idx):
@@ -714,7 +714,7 @@ class NPMolecularInteractionAnalyzer:
         5. Filter pairs within subtype-specific distance cutoff
         6. Calculate D-H···π or D-X···π angle for each candidate
         7. Verify angle meets minimum threshold for interaction subtype
-        8. Skip same-residue interactions (local mode only)
+        8. Skip same-residue interactions (inter mode only)
         9. Create PiInteraction objects for valid interactions
         """
         # Get all aromatic rings with residue filter
@@ -771,8 +771,8 @@ class NPMolecularInteractionAnalyzer:
             for center_idx in close_centers:
                 center_info = aromatic_centers[center_idx]
 
-                # Skip same residue (for local mode) - optimized check
-                if self.parameters.analysis_mode == "local":
+                # Inter mode excludes interactions within the same residue
+                if self.parameters.analysis_mode == AnalysisModes.INTER:
                     donor_idx = self._serial_to_idx.get(donor_atom.serial)
                     if donor_idx is not None:
                         # Create residue key for aromatic center

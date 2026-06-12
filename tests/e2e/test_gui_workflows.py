@@ -251,7 +251,7 @@ class TestAnalysisWorkflows(BaseGUIWorkflowTest):
 
         # Test that parameters can be created and used for analysis
         gui_params = AnalysisParameters(
-            hb_distance_cutoff=3.2, hb_angle_cutoff=125.0, analysis_mode="complete"
+            hb_distance_cutoff=3.2, hb_angle_cutoff=125.0, analysis_mode="all"
         )
 
         # Test analysis with GUI parameters
@@ -322,7 +322,7 @@ class TestPresetWorkflows(BaseGUIWorkflowTest):
 
         # Simulate preset save/load workflow
         original_params = AnalysisParameters(
-            hb_distance_cutoff=3.1, hb_angle_cutoff=135.0, analysis_mode="local"
+            hb_distance_cutoff=3.1, hb_angle_cutoff=135.0, analysis_mode="inter"
         )
 
         # Create temporary preset file

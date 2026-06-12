@@ -274,8 +274,8 @@ class GeometryCutoffsDialog:
         group = ttk.LabelFrame(parent, text="General Parameters", padding=10)
         group.pack(fill=tk.X, padx=10, pady=5)
 
-        # Analysis mode
-        ttk.Label(group, text="Analysis Mode:").grid(
+        # Interaction inclusion mode
+        ttk.Label(group, text="Interaction Inclusion:").grid(
             row=0, column=0, sticky=tk.W, pady=2
         )
         stored_mode = self._param_values.get(
@@ -287,15 +287,15 @@ class GeometryCutoffsDialog:
 
         ttk.Radiobutton(
             mode_frame,
-            text="Complete PDB Analysis",
+            text="All interactions",
             variable=self._vars["analysis_mode"],
-            value="complete",
+            value="all",
         ).pack(anchor=tk.W)
         ttk.Radiobutton(
             mode_frame,
-            text="Local Interactions Only",
+            text="Inter-residue only",
             variable=self._vars["analysis_mode"],
-            value="local",
+            value="inter",
         ).pack(anchor=tk.W)
 
         # Covalent bond cutoff factor

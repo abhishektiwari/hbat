@@ -45,7 +45,7 @@ class TestAnalyzerParserIntegration:
         """Test analyzer parameters affect parsing behavior."""
         # Create analyzer with custom parameters
         params = AnalysisParameters(
-            covalent_cutoff_factor=0.9, analysis_mode="complete"
+            covalent_cutoff_factor=0.9, analysis_mode="all"
         )
         analyzer = MolecularInteractionAnalyzer(params)
 
@@ -54,7 +54,7 @@ class TestAnalyzerParserIntegration:
 
         # Verify parameters are applied
         assert analyzer.parameters.covalent_cutoff_factor == 0.9
-        assert analyzer.parameters.analysis_mode == "complete"
+        assert analyzer.parameters.analysis_mode == "all"
 
         # Verify parser reflects parameter settings
         atoms = analyzer.parser.atoms
@@ -230,41 +230,41 @@ class TestAnalyzerParameterIntegration:
 
     def test_analysis_mode_effects(self, sample_pdb_file):
         """Test analysis mode effects."""
-        # Complete mode
-        complete_params = AnalysisParameters(analysis_mode="complete")
-        complete_analyzer = MolecularInteractionAnalyzer(complete_params)
+        # All mode includes both inter-residue and intra-residue interactions
+        all_params = AnalysisParameters(analysis_mode="all")
+        all_analyzer = MolecularInteractionAnalyzer(all_params)
 
-        # Local mode
-        local_params = AnalysisParameters(analysis_mode="local")
-        local_analyzer = MolecularInteractionAnalyzer(local_params)
+        # Inter mode excludes intra-residue interactions
+        inter_params = AnalysisParameters(analysis_mode="inter")
+        inter_analyzer = MolecularInteractionAnalyzer(inter_params)
 
         # Analyze with both modes
-        complete_success = complete_analyzer.analyze_file(sample_pdb_file)
-        local_success = local_analyzer.analyze_file(sample_pdb_file)
+        all_success = all_analyzer.analyze_file(sample_pdb_file)
+        inter_success = inter_analyzer.analyze_file(sample_pdb_file)
 
-        assert complete_success and local_success
+        assert all_success and inter_success
 
         # Compare results
-        # Create statistics from complete analyzer results
-        complete_stats = {
-            "hydrogen_bonds": len(complete_analyzer.hydrogen_bonds),
-            "halogen_bonds": len(complete_analyzer.halogen_bonds),
-            "pi_interactions": len(complete_analyzer.pi_interactions),
-            "total_interactions": len(complete_analyzer.hydrogen_bonds)
-            + len(complete_analyzer.halogen_bonds)
-            + len(complete_analyzer.pi_interactions),
+        # Create statistics from all-mode analyzer results
+        all_stats = {
+            "hydrogen_bonds": len(all_analyzer.hydrogen_bonds),
+            "halogen_bonds": len(all_analyzer.halogen_bonds),
+            "pi_interactions": len(all_analyzer.pi_interactions),
+            "total_interactions": len(all_analyzer.hydrogen_bonds)
+            + len(all_analyzer.halogen_bonds)
+            + len(all_analyzer.pi_interactions),
         }
-        # Create statistics from local analyzer results
-        local_stats = {
-            "hydrogen_bonds": len(local_analyzer.hydrogen_bonds),
-            "halogen_bonds": len(local_analyzer.halogen_bonds),
-            "pi_interactions": len(local_analyzer.pi_interactions),
-            "total_interactions": len(local_analyzer.hydrogen_bonds)
-            + len(local_analyzer.halogen_bonds)
-            + len(local_analyzer.pi_interactions),
+        # Create statistics from inter-mode analyzer results
+        inter_stats = {
+            "hydrogen_bonds": len(inter_analyzer.hydrogen_bonds),
+            "halogen_bonds": len(inter_analyzer.halogen_bonds),
+            "pi_interactions": len(inter_analyzer.pi_interactions),
+            "total_interactions": len(inter_analyzer.hydrogen_bonds)
+            + len(inter_analyzer.halogen_bonds)
+            + len(inter_analyzer.pi_interactions),
         }
 
-        # Complete mode should generally find more interactions
+        # All mode should generally find more interactions
         assert (
-            complete_stats["total_interactions"] >= local_stats["total_interactions"]
-        ), "Complete mode should find at least as many interactions"
+            all_stats["total_interactions"] >= inter_stats["total_interactions"]
+        ), "All mode should find at least as many interactions"

@@ -81,7 +81,7 @@ class ParametersDefault:
 
     # General analysis parameters
     COVALENT_CUTOFF_FACTOR = 0.85  # Covalent bond detection factor (0.0-1.0)
-    ANALYSIS_MODE = "local"  # Analysis mode: "complete" or "local"
+    ANALYSIS_MODE = "inter"  # Interaction inclusion mode: "inter" or "all"
 
     # Bond distance thresholds
     MAX_BOND_DISTANCE = 2.5  # Reasonable maximum for most covalent bonds (Angstroms)
@@ -222,7 +222,7 @@ class AnalysisParameters:
     :type n_pi_angle_max: float
     :param covalent_cutoff_factor: Factor for covalent bond detection
     :type covalent_cutoff_factor: float
-    :param analysis_mode: Analysis mode ('local' or 'global')
+    :param analysis_mode: Interaction inclusion mode ('inter' or 'all')
     :type analysis_mode: str
     :param fix_pdb_enabled: Enable PDB structure fixing
     :type fix_pdb_enabled: bool
@@ -323,7 +323,7 @@ class AnalysisParameters:
         :type pi_angle_cutoff: float
         :param covalent_cutoff_factor: Factor for covalent bond detection
         :type covalent_cutoff_factor: float
-        :param analysis_mode: Analysis mode ('local' or 'global')
+        :param analysis_mode: Interaction inclusion mode ('inter' or 'all')
         :type analysis_mode: str
         :param fix_pdb_enabled: Enable PDB structure fixing
         :type fix_pdb_enabled: bool
@@ -1009,12 +1009,12 @@ class PDBFixingModes:
 
 # Analysis mode constants
 class AnalysisModes:
-    """Available analysis modes."""
+    """Available interaction inclusion modes."""
 
-    COMPLETE = "complete"
-    LOCAL = "local"
+    INTER = "inter"
+    ALL = "all"
 
-    ALL_MODES = [COMPLETE, LOCAL]
+    ALL_MODES = [INTER, ALL]
 
 
 # Bond detection method constants

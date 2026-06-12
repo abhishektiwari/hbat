@@ -43,7 +43,7 @@ class TestAnalysisParametersCreation:
         assert params.pi_sh_distance_cutoff > 0
         assert params.pi_sh_angle_cutoff > 0
         assert params.covalent_cutoff_factor > 0
-        assert params.analysis_mode in ["complete", "local"]
+        assert params.analysis_mode in ["all", "inter"]
 
         # Test PDB fixing defaults
         assert isinstance(params.fix_pdb_enabled, bool)
@@ -169,10 +169,10 @@ class TestAnalysisParametersCustomization:
 
     def test_custom_general_parameters(self):
         """Test setting custom general parameters."""
-        params = AnalysisParameters(covalent_cutoff_factor=0.9, analysis_mode="local")
+        params = AnalysisParameters(covalent_cutoff_factor=0.9, analysis_mode="inter")
 
         assert params.covalent_cutoff_factor == 0.9
-        assert params.analysis_mode == "local"
+        assert params.analysis_mode == "inter"
 
     def test_custom_pdb_fixing_parameters(self):
         """Test setting custom PDB fixing parameters."""
@@ -201,11 +201,20 @@ class TestAnalysisParametersValidation:
 
     def test_valid_analysis_modes(self):
         """Test valid analysis mode values."""
-        valid_modes = ["complete", "local"]
+        valid_modes = ["inter", "all"]
 
         for mode in valid_modes:
             params = AnalysisParameters(analysis_mode=mode)
             assert params.analysis_mode == mode
+
+    @pytest.mark.parametrize("legacy_mode", ["local", "complete"])
+    def test_legacy_analysis_modes_are_rejected(self, legacy_mode):
+        """Test that removed analysis mode values fail validation."""
+        params = AnalysisParameters(analysis_mode=legacy_mode)
+
+        errors = params.validate()
+
+        assert any("Analysis mode must be one of: inter, all" in error for error in errors)
 
     def test_valid_pdb_fixing_methods(self):
         """Test valid PDB fixing method values."""
@@ -351,7 +360,7 @@ class TestAnalysisParametersCombinations:
             pi_distance_cutoff=3.8,
             pi_angle_cutoff=100.0,
             covalent_cutoff_factor=0.8,
-            analysis_mode="local",
+            analysis_mode="inter",
         )
 
         # Verify all values are set correctly
@@ -366,7 +375,7 @@ class TestAnalysisParametersCombinations:
         assert params.pi_distance_cutoff == 3.8
         assert params.pi_angle_cutoff == 100.0
         assert params.covalent_cutoff_factor == 0.8
-        assert params.analysis_mode == "local"
+        assert params.analysis_mode == "inter"
 
     def test_permissive_parameters_combination(self):
         """Test permissive analysis parameter combination."""
@@ -382,7 +391,7 @@ class TestAnalysisParametersCombinations:
             pi_distance_cutoff=5.0,
             pi_angle_cutoff=70.0,
             covalent_cutoff_factor=1.0,
-            analysis_mode="complete",
+            analysis_mode="all",
         )
 
         # Verify all values are set correctly
@@ -397,7 +406,7 @@ class TestAnalysisParametersCombinations:
         assert params.pi_distance_cutoff == 5.0
         assert params.pi_angle_cutoff == 70.0
         assert params.covalent_cutoff_factor == 1.0
-        assert params.analysis_mode == "complete"
+        assert params.analysis_mode == "all"
 
     def test_pdb_fixing_enabled_combination(self):
         """Test parameter combination with PDB fixing enabled."""
@@ -407,7 +416,7 @@ class TestAnalysisParametersCombinations:
             fix_pdb_method="openbabel",
             fix_pdb_add_hydrogens=True,
             fix_pdb_add_heavy_atoms=False,
-            analysis_mode="complete",
+            analysis_mode="all",
         )
 
         assert params.hb_distance_cutoff == 3.5
@@ -415,7 +424,7 @@ class TestAnalysisParametersCombinations:
         assert params.fix_pdb_method == "openbabel"
         assert params.fix_pdb_add_hydrogens is True
         assert params.fix_pdb_add_heavy_atoms is False
-        assert params.analysis_mode == "complete"
+        assert params.analysis_mode == "all"
 
     def test_pdbfixer_specific_combination(self):
         """Test parameter combination specific to PDBFixer."""
@@ -445,11 +454,11 @@ class TestAnalysisParametersEquality:
     def test_parameters_equality_same_values(self):
         """Test equality of parameters with same values."""
         params1 = AnalysisParameters(
-            hb_distance_cutoff=3.5, hb_angle_cutoff=120.0, analysis_mode="complete"
+            hb_distance_cutoff=3.5, hb_angle_cutoff=120.0, analysis_mode="all"
         )
 
         params2 = AnalysisParameters(
-            hb_distance_cutoff=3.5, hb_angle_cutoff=120.0, analysis_mode="complete"
+            hb_distance_cutoff=3.5, hb_angle_cutoff=120.0, analysis_mode="all"
         )
 
         # Test that parameters can be compared (behavior depends on implementation)
@@ -476,7 +485,7 @@ class TestAnalysisParametersStringRepresentation:
     def test_parameters_string_representation(self):
         """Test that parameters can be converted to string."""
         params = AnalysisParameters(
-            hb_distance_cutoff=3.5, hb_angle_cutoff=120.0, analysis_mode="complete"
+            hb_distance_cutoff=3.5, hb_angle_cutoff=120.0, analysis_mode="all"
         )
 
         # Test that string conversion works (exact format depends on implementation)

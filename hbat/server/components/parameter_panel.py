@@ -668,13 +668,16 @@ class ParameterPanel:
 
             with ui.column().classes("w-full q-mt-md gap-4"):
                 ui.select(
-                    options=["complete", "local"],
-                    label="Analysis Mode",
+                    options={
+                        "inter": "Inter-residue only",
+                        "all": "All interactions",
+                    },
+                    label="Interaction Inclusion",
                     value=self.analysis_mode,
                     with_input=True,
                 ).bind_value(self, "analysis_mode").tooltip(
-                    "complete: Include all interactions (including intra-residue); "
-                    "local: Exclude intra-residue interactions"
+                    "inter: Exclude interactions within the same residue; "
+                    "all: Include inter-residue and intra-residue interactions"
                 )
 
                 ui.number(

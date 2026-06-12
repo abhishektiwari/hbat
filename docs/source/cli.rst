@@ -178,12 +178,12 @@ General Parameters
    Covalent bond detection factor (default: 0.85). This factor is multiplied
    with the sum of covalent radii to determine if atoms are covalently bonded.
 
-.. option:: --mode {complete,local}
+.. option:: --mode {inter,all}
 
-   Analysis mode:
+   Interaction inclusion mode:
 
-   - ``complete``: Analyze all interactions (default)
-   - ``local``: Analyze only intra-residue interactions
+   - ``inter``: Analyze interactions between different residues only (default)
+   - ``all``: Analyze both inter-residue and intra-residue interactions
 
 Structure Fixing Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -414,11 +414,11 @@ Use a preset with custom overrides:
 
    hbat protein.pdb --preset drug_design_strict --hb-distance 3.0
 
-Analyze only local interactions:
+Analyze inter-residue interactions only:
 
 .. code-block:: bash
 
-   hbat protein.pdb --mode local
+   hbat protein.pdb --mode inter
 
 Quick summary with quiet output:
 

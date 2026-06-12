@@ -151,7 +151,7 @@ class TestGeometryCutoffsDialog:
                 hb_distance_cutoff=3.2,
                 hb_angle_cutoff=125.0,
                 whb_distance_cutoff=3.8,
-                analysis_mode="local",
+                analysis_mode="inter",
             )
             dialog.set_parameters(test_params)
 
@@ -161,7 +161,7 @@ class TestGeometryCutoffsDialog:
             assert result_params.hb_distance_cutoff == 3.2
             assert result_params.hb_angle_cutoff == 125.0
             assert result_params.whb_distance_cutoff == 3.8
-            assert result_params.analysis_mode == "local"
+            assert result_params.analysis_mode == "inter"
 
         finally:
             dialog.dialog.destroy()
@@ -179,7 +179,7 @@ class TestGeometryCutoffsDialog:
                 hb_distance_cutoff=3.1,
                 hb_angle_cutoff=130.0,
                 whb_distance_cutoff=3.7,
-                analysis_mode="complete",
+                analysis_mode="all",
             )
 
             dialog.set_parameters(new_params)
@@ -188,7 +188,7 @@ class TestGeometryCutoffsDialog:
             assert dialog._param_values["hb_distance_cutoff"] == 3.1
             assert dialog._param_values["hb_angle_cutoff"] == 130.0
             assert dialog._param_values["whb_distance_cutoff"] == 3.7
-            assert dialog._param_values["analysis_mode"] == "complete"
+            assert dialog._param_values["analysis_mode"] == "all"
 
         finally:
             dialog.dialog.destroy()
@@ -337,7 +337,7 @@ class TestGeometryCutoffsDialogAdvanced:
             hb_angle_cutoff=115.0,
             whb_distance_cutoff=3.7,
             xb_distance_cutoff=4.1,
-            analysis_mode="local",
+            analysis_mode="inter",
         )
 
         dialog = GeometryCutoffsDialog(self.root, initial_params)
@@ -346,7 +346,7 @@ class TestGeometryCutoffsDialogAdvanced:
             # Step 2: Verify initial parameters are set
             result1 = dialog.get_parameters()
             assert result1.hb_distance_cutoff == 3.1
-            assert result1.analysis_mode == "local"
+            assert result1.analysis_mode == "inter"
 
             # Step 3: Simulate parameter modifications by setting new parameters
             modified_params = AnalysisParameters(
@@ -354,7 +354,7 @@ class TestGeometryCutoffsDialogAdvanced:
                 hb_angle_cutoff=115.0,  # Original
                 whb_distance_cutoff=3.8,  # Modified
                 xb_distance_cutoff=4.2,  # Modified
-                analysis_mode="local",  # Original
+                analysis_mode="inter",  # Original
             )
             dialog.set_parameters(modified_params)
 
@@ -372,7 +372,7 @@ class TestGeometryCutoffsDialogAdvanced:
             assert final_params.hb_angle_cutoff == 115.0  # Original
             assert final_params.whb_distance_cutoff == 3.8  # Modified
             assert final_params.xb_distance_cutoff == 4.2  # Modified
-            assert final_params.analysis_mode == "local"  # Original
+            assert final_params.analysis_mode == "inter"  # Original
 
         finally:
             dialog.dialog.destroy()
@@ -399,7 +399,7 @@ class TestGeometryCutoffsDialogAdvanced:
                     },
                     "general": {
                         "covalent_cutoff_factor": 0.9,
-                        "analysis_mode": "complete",
+                        "analysis_mode": "all",
                     },
                 }
             }
@@ -412,7 +412,7 @@ class TestGeometryCutoffsDialogAdvanced:
             assert result_params.hb_distance_cutoff == 3.3
             assert result_params.hb_angle_cutoff == 125.0
             assert result_params.xb_distance_cutoff == 4.2
-            assert result_params.analysis_mode == "complete"
+            assert result_params.analysis_mode == "all"
 
         finally:
             dialog.dialog.destroy()
@@ -519,7 +519,7 @@ class TestGeometryCutoffsDialogAdvanced:
         try:
             # Set parameters properly first
             test_params = AnalysisParameters(
-                hb_distance_cutoff=3.4, hb_angle_cutoff=128.0, analysis_mode="local"
+                hb_distance_cutoff=3.4, hb_angle_cutoff=128.0, analysis_mode="inter"
             )
             dialog.set_parameters(test_params)
 
@@ -537,7 +537,7 @@ class TestGeometryCutoffsDialogAdvanced:
             result = dialog.get_parameters()
             assert result.hb_distance_cutoff == 3.4
             assert result.hb_angle_cutoff == 128.0
-            assert result.analysis_mode == "local"
+            assert result.analysis_mode == "inter"
 
         finally:
             dialog.dialog.destroy()

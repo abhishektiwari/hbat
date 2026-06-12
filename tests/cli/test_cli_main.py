@@ -108,7 +108,7 @@ class TestPresetManagement:
                 },
                 "general": {
                     "covalent_cutoff_factor": 0.85,
-                    "analysis_mode": "complete",
+                    "analysis_mode": "all",
                 },
                 "pdb_fixing": {
                     "enabled": True,
@@ -131,7 +131,7 @@ class TestPresetManagement:
             assert isinstance(params, AnalysisParameters)
             assert params.hb_distance_cutoff == 3.5
             assert params.hb_angle_cutoff == 120.0
-            assert params.analysis_mode == "complete"
+            assert params.analysis_mode == "all"
             # Test PDB fixing parameters are loaded
             assert params.fix_pdb_enabled is True
             assert params.fix_pdb_method == "pdbfixer"
