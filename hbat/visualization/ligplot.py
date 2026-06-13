@@ -240,7 +240,10 @@ class LigplotGenerator:
             )
         if hasattr(self.analyzer, "pi_interactions"):
             self._collect_interaction_atoms(
-                self.analyzer.pi_interactions, "PiInteraction", ligand_res_id, interacting
+                self.analyzer.pi_interactions,
+                "PiInteraction",
+                ligand_res_id,
+                interacting,
             )
         if hasattr(self.analyzer, "pi_pi_interactions"):
             self._collect_interaction_atoms(

@@ -230,9 +230,7 @@ class TestAnalysisIntegration:
             )
 
             # Test creating analyzer with GUI parameters
-            params = AnalysisParameters(
-                hb_distance_cutoff=3.2, analysis_mode="all"
-            )
+            params = AnalysisParameters(hb_distance_cutoff=3.2, analysis_mode="all")
 
             analyzer = NPMolecularInteractionAnalyzer(params)
             assert analyzer is not None
@@ -478,9 +476,7 @@ class TestGeometryCutoffsDialogLogic:
                     return AnalysisParameters(
                         hb_distance_cutoff=self._param_values.get("hb_distance", 3.5),
                         hb_angle_cutoff=self._param_values.get("hb_angle", 120.0),
-                        analysis_mode=self._param_values.get(
-                            "analysis_mode", "all"
-                        ),
+                        analysis_mode=self._param_values.get("analysis_mode", "all"),
                     )
 
             # Test workflow

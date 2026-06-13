@@ -272,6 +272,5 @@ notebooks/*.csv
 example_pdb_files/*_fixed.cif
 example_pdb_files/*_fixed.pdb
 
-# Ignore TODO.md
-TODO.md
-PLAN.md
+# Ignore Plans
+plan/*
