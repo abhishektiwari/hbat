@@ -1502,7 +1502,7 @@ class WebResultsPanel:
                     gen = LigplotGenerator(
                         ligand_name, self.analyzer, residue_id=ligand_res
                     )
-                    html = gen.generate_svg(width=400, height=300)
+                    html = gen.generate_svg(width=760, height=560)
                     ligplot_container.content = html
                 except Exception as e:
                     ligplot_container.content = (
