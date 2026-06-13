@@ -130,7 +130,7 @@ def analysis_parameters():
         hb_distance_cutoff=3.5,
         hb_angle_cutoff=120.0,
         hb_donor_acceptor_cutoff=4.0,
-        analysis_mode="complete",
+        analysis_mode="all",
     )
 
 
@@ -175,7 +175,7 @@ def strict_analysis_parameters():
         hb_distance_cutoff=3.0,
         hb_angle_cutoff=130.0,
         hb_donor_acceptor_cutoff=3.7,
-        analysis_mode="complete",
+        analysis_mode="all",
     )
 
 
@@ -245,7 +245,7 @@ def performance_parameters():
     return AnalysisParameters(
         hb_distance_cutoff=4.0,
         hb_angle_cutoff=110.0,
-        analysis_mode="complete",
+        analysis_mode="all",
         fix_pdb_enabled=False,
     )
 

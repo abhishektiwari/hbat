@@ -42,12 +42,12 @@ class TestCLIArgumentParsing:
         parser = create_parser()
 
         args = parser.parse_args(
-            ["test.pdb", "--hb-distance", "3.0", "--hb-angle", "130", "--mode", "local"]
+            ["test.pdb", "--hb-distance", "3.0", "--hb-angle", "130", "--mode", "inter"]
         )
 
         assert args.hb_distance == 3.0
         assert args.hb_angle == 130.0
-        assert args.mode == "local"
+        assert args.mode == "inter"
 
     def test_weak_hydrogen_bond_arguments(self):
         """Test weak hydrogen bond parameter arguments."""
@@ -262,13 +262,13 @@ class TestParameterConversion:
         """Test loading custom parameters."""
         parser = create_parser()
         args = parser.parse_args(
-            ["test.pdb", "--hb-distance", "3.2", "--hb-angle", "140", "--mode", "local"]
+            ["test.pdb", "--hb-distance", "3.2", "--hb-angle", "140", "--mode", "inter"]
         )
 
         params = load_parameters_from_args(args)
         assert params.hb_distance_cutoff == 3.2
         assert params.hb_angle_cutoff == 140.0
-        assert params.analysis_mode == "local"
+        assert params.analysis_mode == "inter"
 
     def test_weak_hydrogen_bond_parameter_loading(self):
         """Test loading weak hydrogen bond parameters."""
@@ -553,11 +553,11 @@ class TestArgumentValidation:
         parser = create_parser()
 
         # Test valid choice
-        args = parser.parse_args(["test.pdb", "--mode", "local"])
-        assert args.mode == "local"
+        args = parser.parse_args(["test.pdb", "--mode", "inter"])
+        assert args.mode == "inter"
 
-        args = parser.parse_args(["test.pdb", "--mode", "complete"])
-        assert args.mode == "complete"
+        args = parser.parse_args(["test.pdb", "--mode", "all"])
+        assert args.mode == "all"
 
         args = parser.parse_args(["test.pdb", "--fix-method", "openbabel"])
         assert args.fix_method == "openbabel"
@@ -570,6 +570,13 @@ class TestArgumentValidation:
         parser = create_parser()
         with pytest.raises(SystemExit):
             parser.parse_args(["test.pdb", "--mode", "invalid_mode"])
+
+    @pytest.mark.parametrize("legacy_mode", ["local", "complete"])
+    def test_legacy_mode_choices_are_rejected(self, legacy_mode):
+        """Test that removed mode choices are rejected by the CLI."""
+        parser = create_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["test.pdb", "--mode", legacy_mode])
 
     def test_invalid_fix_method_choice(self):
         """Test that invalid fix method choice raises error."""

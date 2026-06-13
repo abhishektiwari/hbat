@@ -542,7 +542,7 @@ n→π* Interaction Parameters:
 
 General Parameters:
   Covalent Bond Factor: {params.covalent_cutoff_factor:.2f}
-  Analysis Mode: {params.analysis_mode}
+  Interaction Inclusion: {params.analysis_mode}
 """
 
         # Add PDB fixing parameters if they exist

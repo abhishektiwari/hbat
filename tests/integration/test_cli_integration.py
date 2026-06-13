@@ -29,7 +29,7 @@ class TestCLIParameterIntegration:
                 "--hb-angle",
                 "125",
                 "--mode",
-                "complete",
+                "all",
             ]
         )
 
@@ -39,7 +39,7 @@ class TestCLIParameterIntegration:
         # Verify parameter values
         assert params.hb_distance_cutoff == 3.2
         assert params.hb_angle_cutoff == 125.0
-        assert params.analysis_mode == "complete"
+        assert params.analysis_mode == "all"
 
         # Use parameters in core analysis
         analyzer = MolecularInteractionAnalyzer(params)
@@ -50,7 +50,7 @@ class TestCLIParameterIntegration:
         # Verify parameters were applied in analysis
         assert analyzer.parameters.hb_distance_cutoff == 3.2
         assert analyzer.parameters.hb_angle_cutoff == 125.0
-        assert analyzer.parameters.analysis_mode == "complete"
+        assert analyzer.parameters.analysis_mode == "all"
 
         # Verify analysis results
         assert len(analyzer.hydrogen_bonds) >= 0
@@ -123,7 +123,7 @@ class TestCLIParameterIntegration:
                     "h_pi_distance_cutoff": 4.5,
                     "dh_pi_angle_cutoff": 90.0,
                 },
-                "general": {"covalent_cutoff_factor": 0.85, "analysis_mode": "local"},
+                "general": {"covalent_cutoff_factor": 0.85, "analysis_mode": "inter"},
                 "pdb_fixing": {
                     "enabled": False,
                     "method": "openbabel",
@@ -151,7 +151,7 @@ class TestCLIParameterIntegration:
             assert params.whb_distance_cutoff == 3.7
             assert params.whb_angle_cutoff == 145.0
             assert params.whb_donor_acceptor_cutoff == 3.8
-            assert params.analysis_mode == "local"
+            assert params.analysis_mode == "inter"
 
             # Use preset parameters in analysis
             analyzer = MolecularInteractionAnalyzer(params)
@@ -162,7 +162,7 @@ class TestCLIParameterIntegration:
             # Verify preset parameters were applied
             assert analyzer.parameters.hb_distance_cutoff == 3.3
             assert analyzer.parameters.hb_angle_cutoff == 128.0
-            assert analyzer.parameters.analysis_mode == "local"
+            assert analyzer.parameters.analysis_mode == "inter"
 
         except SystemExit:
             pytest.skip("Preset loading not available in test environment")
@@ -186,8 +186,8 @@ class TestCLIAnalysisIntegration:
             # Valid combinations
             ([sample_pdb_file, "--hb-distance", "3.5"], True),
             ([sample_pdb_file, "--hb-angle", "120"], True),
-            ([sample_pdb_file, "--mode", "complete"], True),
-            ([sample_pdb_file, "--mode", "local"], True),
+            ([sample_pdb_file, "--mode", "all"], True),
+            ([sample_pdb_file, "--mode", "inter"], True),
         ]
 
         for args_list, should_work in test_cases:
@@ -309,7 +309,7 @@ class TestCLIPresetIntegration:
                 },
                 "general": {
                     "covalent_cutoff_factor": 0.87,
-                    "analysis_mode": "complete",
+                    "analysis_mode": "all",
                 },
                 "pdb_fixing": {
                     "enabled": True,
@@ -343,7 +343,7 @@ class TestCLIPresetIntegration:
             assert params.pi_distance_cutoff == 4.6
             assert params.pi_angle_cutoff == 88.0
             assert params.covalent_cutoff_factor == 0.87
-            assert params.analysis_mode == "complete"
+            assert params.analysis_mode == "all"
             assert params.fix_pdb_enabled is True
             assert params.fix_pdb_method == "pdbfixer"
             assert params.fix_pdb_add_hydrogens is True
@@ -383,7 +383,7 @@ class TestCLIPresetIntegration:
                 },
                 "general": {
                     "covalent_cutoff_factor": 0.85,
-                    "analysis_mode": "complete",
+                    "analysis_mode": "all",
                 },
                 "pdb_fixing": {
                     "enabled": False,
@@ -505,7 +505,7 @@ class TestCLIValidationIntegration:
         valid_cases = [
             ["test.pdb"],
             ["test.pdb", "--hb-distance", "3.5"],
-            ["test.pdb", "--mode", "complete"],
+            ["test.pdb", "--mode", "all"],
             ["test.pdb", "--fix-pdb", "--fix-method", "openbabel"],
         ]
 

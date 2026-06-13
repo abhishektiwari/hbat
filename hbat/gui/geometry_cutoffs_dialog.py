@@ -274,8 +274,8 @@ class GeometryCutoffsDialog:
         group = ttk.LabelFrame(parent, text="General Parameters", padding=10)
         group.pack(fill=tk.X, padx=10, pady=5)
 
-        # Analysis mode
-        ttk.Label(group, text="Analysis Mode:").grid(
+        # Interaction inclusion mode
+        ttk.Label(group, text="Interaction Inclusion:").grid(
             row=0, column=0, sticky=tk.W, pady=2
         )
         stored_mode = self._param_values.get(
@@ -287,15 +287,15 @@ class GeometryCutoffsDialog:
 
         ttk.Radiobutton(
             mode_frame,
-            text="Complete PDB Analysis",
+            text="All interactions",
             variable=self._vars["analysis_mode"],
-            value="complete",
+            value="all",
         ).pack(anchor=tk.W)
         ttk.Radiobutton(
             mode_frame,
-            text="Local Interactions Only",
+            text="Inter-residue only",
             variable=self._vars["analysis_mode"],
-            value="local",
+            value="inter",
         ).pack(anchor=tk.W)
 
         # Covalent bond cutoff factor
@@ -1376,8 +1376,11 @@ class GeometryCutoffsDialog:
 
         if result:
             # Apply the loaded preset
-            self._apply_preset_data(result)
-            messagebox.showinfo("Success", "Preset loaded successfully")
+            try:
+                self._apply_preset_data(result)
+                messagebox.showinfo("Success", "Preset loaded successfully")
+            except ValueError as e:
+                messagebox.showerror("Invalid Preset", str(e))
 
     def _apply_preset_data(self, data: Dict[str, Any]) -> None:
         """Apply preset data to parameters."""
@@ -1385,6 +1388,7 @@ class GeometryCutoffsDialog:
             raise ValueError("Invalid preset format: missing 'parameters' section")
 
         params = data["parameters"]
+        previous_params = self.get_parameters()
 
         # Helper to apply value to parameter
         def apply_value(field_name, value):
@@ -1521,6 +1525,12 @@ class GeometryCutoffsDialog:
                 "analysis_mode",
                 gen.get("analysis_mode", ParametersDefault.ANALYSIS_MODE),
             )
+
+        try:
+            self.get_parameters().validate_or_raise("preset parameters")
+        except ValueError:
+            self.set_parameters(previous_params)
+            raise
 
     def _ok(self):
         """Handle OK button - save settings and close."""

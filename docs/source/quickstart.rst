@@ -17,7 +17,7 @@ See full CLI options :doc:`cli`.
    hbat input.pdb -o results.txt           # Save results to text file
    hbat input.pdb --csv results            # Export to multiple CSV files
    hbat input.pdb --hb-distance 3.0        # Custom H-bond distance cutoff
-   hbat input.pdb --mode local             # Local interactions only
+   hbat input.pdb --mode inter             # Inter-residue interactions only
    hbat input.pdb -o results.json          # Export to single JSON file
    hbat --list-presets                     # List available presets
    hbat input.pdb --preset high_resolution # Use preset

@@ -1200,22 +1200,22 @@ Author: Abhishek Tiwari
 
         if result:
             # Apply the loaded preset to session parameters
-            self._apply_preset_to_session(result)
-            self.status_var.set("Preset loaded and applied to session")
+            if self._apply_preset_to_session(result):
+                self.status_var.set("Preset loaded and applied to session")
 
-    def _apply_preset_to_session(self, preset_data: Dict[str, Any]) -> None:
+    def _apply_preset_to_session(self, preset_data: Dict[str, Any]) -> bool:
         """Apply preset data to session parameters.
 
         :param preset_data: Preset data to apply
         :type preset_data: Dict[str, Any]
-        :returns: None
-        :rtype: None
+        :returns: True if the preset was valid and applied, otherwise False
+        :rtype: bool
         """
         if "parameters" not in preset_data:
             messagebox.showerror(
                 "Error", "Invalid preset format: missing 'parameters' section"
             )
-            return
+            return False
 
         params_data = preset_data["parameters"]
 
@@ -1282,8 +1282,16 @@ Author: Abhishek Tiwari
                 }
             )
 
-        # Create new parameters object and store in session
-        self.session_parameters = AnalysisParameters(**kwargs)
+        # Validate before replacing the active session parameters
+        preset_params = AnalysisParameters(**kwargs)
+        try:
+            preset_params.validate_or_raise("preset parameters")
+        except ValueError as e:
+            messagebox.showerror("Invalid Preset", str(e))
+            return False
+
+        self.session_parameters = preset_params
+        return True
 
     def _on_closing(self) -> None:
         """Handle window closing event.

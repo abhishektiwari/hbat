@@ -955,10 +955,13 @@ PARAMETER_CONFIGS: List[ParameterConfig] = [
     ),
     ParameterConfig(
         name="analysis_mode",
-        label="Analysis Mode",
-        default="local",
+        label="Interaction Inclusion",
+        default="inter",
         category="General",
-        description="Analysis mode: 'local' or 'complete'",
+        description=(
+            "Interaction inclusion mode: 'inter' for different residues only "
+            "or 'all' to include same-residue interactions"
+        ),
         param_type="str",
     ),
     # PDB Structure Fixing Parameters

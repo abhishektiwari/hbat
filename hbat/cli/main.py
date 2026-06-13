@@ -85,7 +85,7 @@ Examples:
   %(prog)s input.pdb --csv results           # Export to multiple CSV files (one per interaction type)
   %(prog)s input.pdb --json results          # Export to multiple JSON files (one per interaction type)
   %(prog)s input.pdb --hb-distance 3.0       # Custom H-bond distance cutoff
-  %(prog)s input.pdb --mode local            # Local interactions only
+  %(prog)s input.pdb --mode inter            # Inter-residue interactions only
   %(prog)s --list-presets                    # List available presets
   %(prog)s input.pdb --preset high_resolution # Use preset with custom overrides
         """,
@@ -357,12 +357,15 @@ Examples:
         help=f"Covalent bond detection factor (default: {ParametersDefault.COVALENT_CUTOFF_FACTOR})",
     )
 
-    # Analysis mode
+    # Interaction inclusion mode
     param_group.add_argument(
         "--mode",
-        choices=["complete", "local"],
+        choices=["inter", "all"],
         default=ParametersDefault.ANALYSIS_MODE,
-        help="Analysis mode: complete (all interactions) or local (intra-residue only)",
+        help=(
+            "Interaction inclusion mode: inter includes interactions between "
+            "different residues only; all also includes intra-residue interactions"
+        ),
     )
 
     # PDB structure fixing options
@@ -555,7 +558,7 @@ def load_preset_file(preset_path: str) -> AnalysisParameters:
         general_params = params.get("general", {})
         fix_params = params.get("pdb_fixing", {})
 
-        return AnalysisParameters(
+        preset_params = AnalysisParameters(
             hb_distance_cutoff=hb_params.get(
                 "h_a_distance_cutoff", ParametersDefault.HB_DISTANCE_CUTOFF
             ),
@@ -695,6 +698,8 @@ def load_preset_file(preset_path: str) -> AnalysisParameters:
                 "angle_max", ParametersDefault.N_PI_ANGLE_MAX
             ),
         )
+        preset_params.validate_or_raise("preset parameters")
+        return preset_params
 
     except Exception as e:
         print_error(f"Failed to load preset file '{preset_path}': {str(e)}")
@@ -1215,7 +1220,9 @@ def run_analysis(args: argparse.Namespace) -> int:
         parameters = load_parameters_from_args(args)
 
         print_progress(f"Starting analysis of {args.input}", verbose)
-        print_progress(f"Analysis mode: {parameters.analysis_mode}", verbose)
+        print_progress(
+            f"Interaction inclusion mode: {parameters.analysis_mode}", verbose
+        )
 
         # Create analyzer
         analyzer = NPMolecularInteractionAnalyzer(parameters)

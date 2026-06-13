@@ -105,7 +105,7 @@ class TestDialogLogic:
                 },
                 "general": {
                     "covalent_cutoff_factor": 0.85,
-                    "analysis_mode": "complete",
+                    "analysis_mode": "all",
                 },
                 "pdb_fixing": {
                     "enabled": False,
@@ -231,7 +231,7 @@ class TestAnalysisIntegration:
 
             # Test creating analyzer with GUI parameters
             params = AnalysisParameters(
-                hb_distance_cutoff=3.2, analysis_mode="complete"
+                hb_distance_cutoff=3.2, analysis_mode="all"
             )
 
             analyzer = NPMolecularInteractionAnalyzer(params)
@@ -259,7 +259,7 @@ class TestDialogDataStructures:
                 xb_angle_cutoff=120.0,
                 pi_distance_cutoff=4.5,
                 pi_angle_cutoff=90.0,
-                analysis_mode="complete",
+                analysis_mode="all",
             )
 
             # Verify all geometry parameters exist
@@ -401,7 +401,7 @@ class TestGeometryCutoffsDialogLogic:
                 hb_distance_cutoff=3.2,
                 hb_angle_cutoff=125.0,
                 whb_distance_cutoff=3.8,
-                analysis_mode="local",
+                analysis_mode="inter",
             )
 
             setter.set_parameters(test_params)
@@ -410,7 +410,7 @@ class TestGeometryCutoffsDialogLogic:
             assert setter._param_values["hb_distance"] == 3.2
             assert setter._param_values["hb_angle"] == 125.0
             assert setter._param_values["whb_distance"] == 3.8
-            assert setter._param_values["analysis_mode"] == "local"
+            assert setter._param_values["analysis_mode"] == "inter"
 
         except ImportError as e:
             pytest.skip(f"AnalysisParameters not available: {e}")
@@ -479,7 +479,7 @@ class TestGeometryCutoffsDialogLogic:
                         hb_distance_cutoff=self._param_values.get("hb_distance", 3.5),
                         hb_angle_cutoff=self._param_values.get("hb_angle", 120.0),
                         analysis_mode=self._param_values.get(
-                            "analysis_mode", "complete"
+                            "analysis_mode", "all"
                         ),
                     )
 
@@ -488,7 +488,7 @@ class TestGeometryCutoffsDialogLogic:
 
             # 1. Set initial parameters
             initial_params = AnalysisParameters(
-                hb_distance_cutoff=3.2, analysis_mode="local"
+                hb_distance_cutoff=3.2, analysis_mode="inter"
             )
             dialog.set_parameters(initial_params)
 
@@ -501,7 +501,7 @@ class TestGeometryCutoffsDialogLogic:
             # Verify parameters were preserved and modified correctly
             assert final_params.hb_distance_cutoff == 3.8  # Modified
             assert final_params.hb_angle_cutoff == 130.0  # Modified
-            assert final_params.analysis_mode == "local"  # Preserved from initial
+            assert final_params.analysis_mode == "inter"  # Preserved from initial
 
         except ImportError as e:
             pytest.skip(f"AnalysisParameters not available: {e}")

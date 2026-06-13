@@ -189,8 +189,18 @@ hbat input.pdb --json results     # Creates results_h_bonds.json, results_x_bond
 With custom parameters:
 
 ```bash
-hbat input.pdb -o results.txt --hb-distance 3.0 --mode local
+hbat input.pdb -o results.txt --hb-distance 3.0 --mode inter
 ```
+
+Interaction inclusion modes:
+
+| Mode | Inter-residue | Intra-residue |
+|---|---:|---:|
+| `inter` | Yes | No |
+| `all` | Yes | Yes |
+
+> **Breaking change:** The previous `local` and `complete` mode values are no
+> longer valid. Replace `local` with `inter` and `complete` with `all`.
 
 #### List Available Presets
 
@@ -279,8 +289,10 @@ Analysis Parameters:
   General Parameters:
   --covalent-factor COVALENT_FACTOR
                         Covalent bond detection factor (default: 0.85)
-  --mode {complete,local}
-                        Analysis mode: complete (all interactions) or local (intra-residue only)
+  --mode {inter,all}
+                        Interaction inclusion mode: inter includes interactions
+                        between different residues only; all also includes
+                        intra-residue interactions
 
 Output Control:
   --verbose, -v         Verbose output with detailed progress

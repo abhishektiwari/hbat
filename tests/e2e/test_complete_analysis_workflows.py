@@ -116,19 +116,19 @@ def pdb_structure(request):
             "name": "strict",
             "hb_distance_cutoff": 3.0,
             "hb_angle_cutoff": 140.0,
-            "analysis_mode": "local",
+            "analysis_mode": "inter",
         },
         {
             "name": "permissive",
             "hb_distance_cutoff": 4.0,
             "hb_angle_cutoff": 110.0,
-            "analysis_mode": "complete",
+            "analysis_mode": "all",
         },
         {
             "name": "default",
             "hb_distance_cutoff": None,  # Use defaults
             "hb_angle_cutoff": None,
-            "analysis_mode": "complete",
+            "analysis_mode": "all",
         },
     ]
 )
