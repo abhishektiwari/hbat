@@ -1131,7 +1131,7 @@ class WebResultsPanel:
                 output_dir=session_dir,
                 filename_prefix=filename_prefix,
                 engine="dot",
-                rankdir="LR",
+                rankdir="TB",
             )
 
             if svg_content:
