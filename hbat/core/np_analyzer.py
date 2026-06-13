@@ -1057,9 +1057,7 @@ class NPMolecularInteractionAnalyzer:
         for i, ring1 in enumerate(aromatic_rings):
             for ring2 in aromatic_rings[i + 1 :]:
                 # Inter mode excludes interactions within the same residue
-                if self._should_skip_same_residue(
-                    ring1["residue"], ring2["residue"]
-                ):
+                if self._should_skip_same_residue(ring1["residue"], ring2["residue"]):
                     continue
 
                 # Calculate centroid-to-centroid distance

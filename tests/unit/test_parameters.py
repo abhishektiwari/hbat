@@ -214,7 +214,9 @@ class TestAnalysisParametersValidation:
 
         errors = params.validate()
 
-        assert any("Analysis mode must be one of: inter, all" in error for error in errors)
+        assert any(
+            "Analysis mode must be one of: inter, all" in error for error in errors
+        )
 
     def test_valid_pdb_fixing_methods(self):
         """Test valid PDB fixing method values."""

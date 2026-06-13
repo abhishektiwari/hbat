@@ -44,9 +44,7 @@ class TestAnalyzerParserIntegration:
     def test_analyzer_parameter_parser_integration(self, sample_pdb_file):
         """Test analyzer parameters affect parsing behavior."""
         # Create analyzer with custom parameters
-        params = AnalysisParameters(
-            covalent_cutoff_factor=0.9, analysis_mode="all"
-        )
+        params = AnalysisParameters(covalent_cutoff_factor=0.9, analysis_mode="all")
         analyzer = MolecularInteractionAnalyzer(params)
 
         success = analyzer.analyze_file(sample_pdb_file)
@@ -265,6 +263,6 @@ class TestAnalyzerParameterIntegration:
         }
 
         # All mode should generally find more interactions
-        assert (
-            all_stats["total_interactions"] >= inter_stats["total_interactions"]
-        ), "All mode should find at least as many interactions"
+        assert all_stats["total_interactions"] >= inter_stats["total_interactions"], (
+            "All mode should find at least as many interactions"
+        )
