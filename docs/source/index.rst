@@ -116,11 +116,19 @@ A Python package to automate the analysis of potential hydrogen bonds and simila
    :alt: Visualizing interactions using PyMoL
    :align: center
 
+   Visualizing water bridge with HBAT Web using PyMOL (PDB Entry 6RSA)
+
 .. figure:: https://static.abhishek-tiwari.com/hbat/6rsa_A_MET_29_to_A_PHE_46_pi.png
-   :alt: Visualizing interactions using PyMoL
+   :alt: Visualizing interactions using 3DMol
    :align: center
 
-   Visualizing interactions with HBAT Web using D3MOl and PyMOL (PDB Entry 6RSA)
+   Visualizing interactions with HBAT Web using D3MOl (PDB Entry 6RSA)
+
+.. figure:: https://static.abhishek-tiwari.com/hbat/2izf_B_BTN_300_ligplot_static.svg
+   :alt: Visualizing interactions using 3DMol
+   :align: center
+
+   Visualizing Ligand Interactions in 2D using HBAT Web LigPlots (PDB Entry 2IZF)
 
 .. figure:: https://static.abhishek-tiwari.com/hbat/6rsa_chain_H_bond_chain_10.png
    :alt: Cooperativity chain detection and visualization
