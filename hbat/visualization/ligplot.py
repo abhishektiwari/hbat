@@ -705,6 +705,23 @@ class LigplotGenerator:
         """
         return html
 
+    def generate_interactive_svg(
+        self, width: int = 760, height: int = 560
+    ) -> Optional[str]:
+        """Generate the interactive LigPlot SVG."""
+        return self._generate_svg_only(width, height)
+
+    def generate_static_svg(self, width: int = 760, height: int = 560) -> Optional[str]:
+        """Generate an SVG with all interaction lines visible."""
+        svg = self.generate_interactive_svg(width, height)
+        if not svg:
+            return None
+        return svg.replace(
+            "</style>",
+            ".ligplot-line { opacity: 1 !important; }</style>",
+            1,
+        )
+
     def _generate_svg_only(self, width: int = 300, height: int = 250) -> Optional[str]:
         """
         Generate SVG without legend (for downloading/exporting).
