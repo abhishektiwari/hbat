@@ -1131,7 +1131,7 @@ class WebResultsPanel:
                 output_dir=session_dir,
                 filename_prefix=filename_prefix,
                 engine="dot",
-                rankdir="LR",
+                rankdir="TB",
             )
 
             if svg_content:
@@ -1502,7 +1502,7 @@ class WebResultsPanel:
                     gen = LigplotGenerator(
                         ligand_name, self.analyzer, residue_id=ligand_res
                     )
-                    html = gen.generate_svg(width=400, height=300)
+                    html = gen.generate_svg(width=760, height=560)
                     ligplot_container.content = html
                 except Exception as e:
                     ligplot_container.content = (
@@ -1787,6 +1787,33 @@ class WebResultsPanel:
                     filename=f"{self._get_pdb_basename()}_{selected_ligand_res.replace(':', '_')}_interactions.zip",
                 )
 
+            def download_ligplot_svg(selected_ligand_res, static=False):
+                """Download an interactive or static LigPlot SVG."""
+                try:
+                    ligand_name = selected_ligand_res.split(":")[1]
+                    generator = LigplotGenerator(
+                        ligand_name, self.analyzer, residue_id=selected_ligand_res
+                    )
+                    svg = (
+                        generator.generate_static_svg(width=760, height=560)
+                        if static
+                        else generator.generate_interactive_svg(width=760, height=560)
+                    )
+                    if not svg:
+                        ui.notify("Could not generate LigPlot SVG", type="warning")
+                        return
+                    suffix = "ligplot_static" if static else "ligplot_interactive"
+                    ui.download(
+                        svg.encode("utf-8"),
+                        filename=(
+                            f"{self._get_pdb_basename()}_"
+                            f"{selected_ligand_res.replace(':', '_')}_{suffix}.svg"
+                        ),
+                        media_type="image/svg+xml",
+                    )
+                except Exception as e:
+                    ui.notify(f"Could not export LigPlot: {str(e)}", type="negative")
+
             # Action buttons container
             with ui.row().classes("w-full gap-2 q-mb-4"):
                 ui.button(
@@ -1806,6 +1833,18 @@ class WebResultsPanel:
                     icon="download",
                     on_click=lambda: download_csv(selected_ligand.value),
                 ).props("color=info")
+                ui.button(
+                    "Download Interactive LigPlot SVG",
+                    icon="image",
+                    on_click=lambda: download_ligplot_svg(selected_ligand.value),
+                ).props("color=info outline")
+                ui.button(
+                    "Download Static LigPlot SVG",
+                    icon="image",
+                    on_click=lambda: download_ligplot_svg(
+                        selected_ligand.value, static=True
+                    ),
+                ).props("color=info outline")
 
             # Handle ligand selection changes
             def on_ligand_selected(e):
