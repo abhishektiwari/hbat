@@ -746,7 +746,7 @@ class LigplotGenerator:
 
         # Draw molecule with highlights
         drawer = rdMolDraw2D.MolDraw2DSVG(width, height)
-        drawer.drawOptions().fixedBondLength = 18
+        drawer.drawOptions().fixedBondLength = 20
         drawer.drawOptions().clearBackground = False
 
         # Prepare highlight data
