@@ -70,7 +70,7 @@ Since its original publication, HBAT has been [cited more than 80 times](https:/
 
 **Comparative structural analysis**: HBAT has enabled systematic mutation analysis identifying disease-associated variants in cancer genes [@kavitha_insights_2024; @khan_prediction_2017; @khan_identification_2018; @abdulazeez_rs61742690_2019; @abdulazeez_-silico_2016].
 
-**Recent citations**: Recent applications include biosorption and molecular docking studies utilizing HBAT 2 for hydrogen bond analysis [@mehmet_karadayı_removal_2026, @ER2026142962].
+**Recent citations**: Recent applications include biosorption and molecular docking studies utilizing HBAT 2 for hydrogen bond analysis [@mehmet_karadayı_removal_2026; @ER2026142962].
 
 ![An example visualization of hydrogen-bonds network detected by HBAT 2 software for Protein Data Bank (PDB) entry 6RSA](./images/6rsa-network-hbonds.pdf)
 
