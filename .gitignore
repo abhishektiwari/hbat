@@ -195,6 +195,10 @@ example_pdb_files/*.pdb
 !example_pdb_files/1crn.pdb
 !example_pdb_files/4hhb.pdb
 
+# Pre-fixed PDB fixtures used by e2e tests (deterministic, checked in on purpose)
+!example_pdb_files/fixed/
+!example_pdb_files/fixed/*.pdb
+
 # Temporary files
 *.tmp
 *.temp
