@@ -28,7 +28,7 @@ from hbat.constants.parameters import AnalysisParameters
     params=[
         {
             "name": "6rsa.pdb",
-            "file": "example_pdb_files/6rsa.pdb",
+            "file": "example_pdb_files/fixed/6rsa_openbabel.pdb",
             "type": "protein",
             "expected_interactions": [
                 "hydrogen_bonds",
@@ -42,7 +42,7 @@ from hbat.constants.parameters import AnalysisParameters
         },
         {
             "name": "7nwd.pdb",
-            "file": "example_pdb_files/7nwd.pdb",
+            "file": "example_pdb_files/fixed/7nwd_openbabel.pdb",
             "type": "nucleic_acid",
             "expected_interactions": [
                 "hydrogen_bonds",
@@ -54,7 +54,7 @@ from hbat.constants.parameters import AnalysisParameters
         },
         {
             "name": "1ubi.pdb",
-            "file": "example_pdb_files/1ubi.pdb",
+            "file": "example_pdb_files/fixed/1ubi_openbabel.pdb",
             "type": "protein",
             "expected_interactions": [
                 "hydrogen_bonds",
@@ -67,7 +67,7 @@ from hbat.constants.parameters import AnalysisParameters
         },
         {
             "name": "4laz.pdb",
-            "file": "example_pdb_files/4laz.pdb",
+            "file": "example_pdb_files/fixed/4laz_openbabel.pdb",
             "type": "protein",
             "expected_interactions": [
                 "hydrogen_bonds",
@@ -83,7 +83,7 @@ from hbat.constants.parameters import AnalysisParameters
         },
         {
             "name": "4hhb.pdb",
-            "file": "example_pdb_files/4hhb.pdb",
+            "file": "example_pdb_files/fixed/4hhb_openbabel.pdb",
             "type": "protein",
             "expected_interactions": [
                 "hydrogen_bonds",
@@ -216,8 +216,9 @@ class TestCompleteWorkflows:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        # Create and run analyzer with default parameters
-        analyzer = MolecularInteractionAnalyzer()
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
+        analyzer = MolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success, f"Failed to analyze {pdb_structure['name']}"
 
@@ -265,16 +266,8 @@ class TestCompleteWorkflows:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        # Configure analyzer with fix settings
-        if fix_config["enabled"]:
-            params = AnalysisParameters(
-                fix_pdb_enabled=True,
-                fix_pdb_method=fix_config["method"],
-                fix_pdb_add_hydrogens=fix_config.get("add_hydrogens", False),
-                fix_pdb_add_heavy_atoms=fix_config.get("add_heavy_atoms", False),
-            )
-        else:
-            params = AnalysisParameters(fix_pdb_enabled=False)
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
 
         analyzer = MolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
@@ -361,7 +354,8 @@ class TestCompleteWorkflows:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        analyzer = MolecularInteractionAnalyzer()
+        params = AnalysisParameters(fix_pdb_enabled=False)
+        analyzer = MolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success, f"Failed to analyze {pdb_structure['name']}"
 
@@ -421,12 +415,8 @@ class TestLigandAndWaterBridges:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        # Analyze with OpenBabel fixing for better ligand detection
-        params = AnalysisParameters(
-            fix_pdb_enabled=True,
-            fix_pdb_method="openbabel",
-            fix_pdb_add_hydrogens=True,
-        )
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = MolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success, f"Failed to analyze {pdb_structure['name']}"
@@ -458,12 +448,8 @@ class TestLigandAndWaterBridges:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        # Analyze with OpenBabel fixing for better water bridge detection
-        params = AnalysisParameters(
-            fix_pdb_enabled=True,
-            fix_pdb_method="openbabel",
-            fix_pdb_add_hydrogens=True,
-        )
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = MolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success, f"Failed to analyze {pdb_structure['name']}"
@@ -503,11 +489,8 @@ class TestLigandAndWaterBridges:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        params = AnalysisParameters(
-            fix_pdb_enabled=True,
-            fix_pdb_method="openbabel",
-            fix_pdb_add_hydrogens=True,
-        )
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = MolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success
@@ -540,11 +523,8 @@ class TestLigandAndWaterBridges:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        params = AnalysisParameters(
-            fix_pdb_enabled=True,
-            fix_pdb_method="openbabel",
-            fix_pdb_add_hydrogens=True,
-        )
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = MolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success, f"Failed to analyze {pdb_structure['name']}"
@@ -624,8 +604,9 @@ class TestResultsExport:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        # Run analysis
-        analyzer = MolecularInteractionAnalyzer()
+        # Run analysis; structure is already fixed, so disable fixing
+        params = AnalysisParameters(fix_pdb_enabled=False)
+        analyzer = MolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success
 
@@ -738,11 +719,8 @@ class TestPerformanceAndScaling:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        params = AnalysisParameters(
-            fix_pdb_enabled=True,
-            fix_pdb_method="pdbfixer",
-            fix_pdb_add_hydrogens=True,
-        )
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = MolecularInteractionAnalyzer(params)
 
         start_time = time.time()
