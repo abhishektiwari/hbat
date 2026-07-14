@@ -22,7 +22,7 @@ from hbat.visualization.pymol_exporter import PyMOLExporter
 VISUALIZATION_TEST_DATA = [
     {
         "name": "6rsa.pdb",
-        "file": "example_pdb_files/6rsa.pdb",
+        "file": "example_pdb_files/fixed/6rsa_openbabel.pdb",
         "type": "protein",
         "expected_interactions": [
             "hydrogen_bonds",
@@ -36,7 +36,7 @@ VISUALIZATION_TEST_DATA = [
     },
     {
         "name": "7nwd.pdb",
-        "file": "example_pdb_files/7nwd.pdb",
+        "file": "example_pdb_files/fixed/7nwd_openbabel.pdb",
         "type": "nucleic_acid",
         "expected_interactions": [
             "hydrogen_bonds",
@@ -48,7 +48,7 @@ VISUALIZATION_TEST_DATA = [
     },
     {
         "name": "1ubi.pdb",
-        "file": "example_pdb_files/1ubi.pdb",
+        "file": "example_pdb_files/fixed/1ubi_openbabel.pdb",
         "type": "protein",
         "expected_interactions": [
             "hydrogen_bonds",
@@ -61,7 +61,7 @@ VISUALIZATION_TEST_DATA = [
     },
     {
         "name": "4laz.pdb",
-        "file": "example_pdb_files/4laz.pdb",
+        "file": "example_pdb_files/fixed/4laz_openbabel.pdb",
         "type": "protein",
         "expected_interactions": [
             "hydrogen_bonds",
@@ -77,7 +77,7 @@ VISUALIZATION_TEST_DATA = [
     },
     {
         "name": "4hhb.pdb",
-        "file": "example_pdb_files/4hhb.pdb",
+        "file": "example_pdb_files/fixed/4hhb_openbabel.pdb",
         "type": "protein",
         "expected_interactions": [
             "hydrogen_bonds",
@@ -150,12 +150,8 @@ class TestMinimalPdbExtraction:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        # Analyze structure with openbabel
-        params = AnalysisParameters(
-            fix_pdb_enabled=True,
-            fix_pdb_method="openbabel",
-            fix_pdb_add_hydrogens=True,
-        )
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = NPMolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success, f"{pdb_name}: Analysis should succeed"
@@ -209,11 +205,8 @@ class TestMinimalPdbExtraction:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        params = AnalysisParameters(
-            fix_pdb_enabled=True,
-            fix_pdb_method="openbabel",
-            fix_pdb_add_hydrogens=True,
-        )
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = NPMolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success, f"{pdb_name}: Analysis should succeed"
@@ -242,11 +235,8 @@ class TestMinimalPdbExtraction:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        params = AnalysisParameters(
-            fix_pdb_enabled=True,
-            fix_pdb_method="openbabel",
-            fix_pdb_add_hydrogens=True,
-        )
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = NPMolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success, f"{pdb_name}: Analysis should succeed"
@@ -297,11 +287,8 @@ class TestPyMOLExporter:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        params = AnalysisParameters(
-            fix_pdb_enabled=True,
-            fix_pdb_method="openbabel",
-            fix_pdb_add_hydrogens=True,
-        )
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = NPMolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success, f"{pdb_name}: Analysis should succeed"
@@ -333,11 +320,8 @@ class TestPyMOLExporter:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        params = AnalysisParameters(
-            fix_pdb_enabled=True,
-            fix_pdb_method="openbabel",
-            fix_pdb_add_hydrogens=True,
-        )
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = NPMolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success, f"{pdb_name}: Analysis should succeed"
@@ -368,15 +352,12 @@ class TestPyMOLExporter:
         Verifies that each type generates proper PyMOL commands.
         """
         pdb_name = "4laz.pdb"  # Use complex structure with many interaction types
-        pdb_file = "example_pdb_files/4laz.pdb"
+        pdb_file = "example_pdb_files/fixed/4laz_openbabel.pdb"
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        params = AnalysisParameters(
-            fix_pdb_enabled=True,
-            fix_pdb_method="openbabel",
-            fix_pdb_add_hydrogens=True,
-        )
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = NPMolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success, f"{pdb_name}: Analysis should succeed"
@@ -417,11 +398,8 @@ class TestPyMOLExporter:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        params = AnalysisParameters(
-            fix_pdb_enabled=True,
-            fix_pdb_method="openbabel",
-            fix_pdb_add_hydrogens=True,
-        )
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = NPMolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success, f"{pdb_name}: Analysis should succeed"
@@ -466,11 +444,8 @@ class TestPyMOLExporter:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        params = AnalysisParameters(
-            fix_pdb_enabled=True,
-            fix_pdb_method="openbabel",
-            fix_pdb_add_hydrogens=True,
-        )
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = NPMolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success, f"{pdb_name}: Analysis should succeed"
@@ -521,11 +496,8 @@ class TestPyMOLExporter:
         if not os.path.exists(pdb_file):
             pytest.skip(f"PDB file {pdb_file} not found")
 
-        params = AnalysisParameters(
-            fix_pdb_enabled=True,
-            fix_pdb_method="openbabel",
-            fix_pdb_add_hydrogens=True,
-        )
+        # Structure is already fixed; disable fixing for deterministic results
+        params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = NPMolecularInteractionAnalyzer(params)
         success = analyzer.analyze_file(pdb_file)
         assert success, f"{pdb_name}: Analysis should succeed"
