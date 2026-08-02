@@ -203,7 +203,7 @@ jobs:
           --app-drop-link 600 185 \
           "hbat-${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION}.dmg" \
           "dist/"
-        mv hbat-${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION}.dmg dist/
+        mv "hbat-${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION}.dmg" dist/
       env:
         NEEDS_GENERATE_VERSION_OUTPUTS_VERSION: ${{ needs.generate-version.outputs.version }}
     
@@ -389,7 +389,7 @@ jobs:
     - name: Create documentation zip
       run: |
         cd docs/build
-        zip -r ../../hbat-docs-${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION}.zip html/
+        zip -r "../../hbat-docs-${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION}.zip" html/
         cd ../..
         echo "Documentation archive created"
       env:
@@ -445,7 +445,7 @@ jobs:
         cd dist
         # Create versioned zip of Linux binaries
         if [ -f "linux/HBAT-GUI" ] && [ -f "linux/hbat" ]; then
-          zip -j hbat-linux-binaries-${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION}.zip linux/HBAT-GUI linux/hbat
+          zip -j "hbat-linux-binaries-${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION}.zip" linux/HBAT-GUI linux/hbat
           echo "Created Linux binaries archive"
           # Remove the individual files since we have them in the zip
           rm -rf linux/

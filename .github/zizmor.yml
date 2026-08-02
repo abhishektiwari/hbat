@@ -10,3 +10,13 @@ rules:
   dangerous-triggers:
     ignore:
       - release.yml
+
+  # softprops/action-gh-release drives the "Create Release" step: uploads all dist/
+  # artifacts, and builds a multi-line conditional release-notes body (pre-release
+  # banner, PIP/PyPI/Conda install blocks). Rewriting as `gh release create` in a
+  # script step would mean translating that conditional templating into bash, which
+  # is a real behavior rewrite of working release logic — not worth the risk to
+  # silence an informational-only, non-exploitable suggestion. Verified 2026-08-02.
+  superfluous-actions:
+    ignore:
+      - release.yml
