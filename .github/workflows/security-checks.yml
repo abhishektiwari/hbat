@@ -1,0 +1,96 @@
+name: Security Checks
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  zizmor:
+    name: Zizmor (Actions Security Audit)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install zizmor
+      run: pip install zizmor
+
+    - name: Audit workflows
+      run: zizmor .github/workflows
+
+  actionlint:
+    name: Actionlint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download actionlint
+      run: bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+
+    - name: Run actionlint
+      run: ./actionlint -color
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Dependency review
+      uses: actions/dependency-review-action@v4
+
+  gitleaks:
+    name: Gitleaks Secret Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Run gitleaks
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  flag-workflow-changes:
+    name: Flag Workflow File Changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Check for changes under .github/workflows
+      run: |
+        CHANGED=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" -- .github/workflows/)
+        if [ -n "$CHANGED" ]; then
+          {
+            echo "## ⚠️ This PR modifies GitHub Actions workflow files"
+            echo "Changes to CI/CD configuration require careful manual review before merge, especially from external contributors."
+            echo '```'
+            echo "$CHANGED"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::warning::This PR modifies .github/workflows/ files — requires careful manual review"
+        else
+          echo "No workflow file changes detected."
+        fi
