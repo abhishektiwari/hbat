@@ -39,7 +39,6 @@ jobs:
         BASE_VERSION=${BASE_VERSION:-0.0.0}
 
         # Generate PEP 440 compatible pre-release version with timestamp
-        SHORT_SHA=$(git rev-parse --short HEAD)
         PR_NUMBER=${{ github.event.number }}
         TIMESTAMP=$(date +%s)
 
@@ -50,10 +49,12 @@ jobs:
         # GitHub tag for releases (with PR number and timestamp)
         GITHUB_TAG="v${PRERELEASE_VERSION}"
 
-        echo "version=$PRERELEASE_VERSION" >> $GITHUB_OUTPUT
-        echo "version_tag=$PRERELEASE_TAG" >> $GITHUB_OUTPUT
-        echo "github_tag=$GITHUB_TAG" >> $GITHUB_OUTPUT
-        echo "is_prerelease=true" >> $GITHUB_OUTPUT
+        {
+          echo "version=$PRERELEASE_VERSION"
+          echo "version_tag=$PRERELEASE_TAG"
+          echo "github_tag=$GITHUB_TAG"
+          echo "is_prerelease=true"
+        } >> "$GITHUB_OUTPUT"
     
     - name: Generate version for release
       if: github.event_name == 'workflow_run'
@@ -70,15 +71,19 @@ jobs:
       id: generate_version
       run: |
         if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          echo "version=${{ steps.generate_pr_version.outputs.version }}" >> $GITHUB_OUTPUT
-          echo "version_tag=${{ steps.generate_pr_version.outputs.version_tag }}" >> $GITHUB_OUTPUT
-          echo "github_tag=${{ steps.generate_pr_version.outputs.github_tag }}" >> $GITHUB_OUTPUT
-          echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          {
+            echo "version=${{ steps.generate_pr_version.outputs.version }}"
+            echo "version_tag=${{ steps.generate_pr_version.outputs.version_tag }}"
+            echo "github_tag=${{ steps.generate_pr_version.outputs.github_tag }}"
+            echo "is_prerelease=true"
+          } >> "$GITHUB_OUTPUT"
         else
-          echo "version=${{ steps.generate_release_version.outputs.version }}" >> $GITHUB_OUTPUT
-          echo "version_tag=${{ steps.generate_release_version.outputs.version_tag }}" >> $GITHUB_OUTPUT
-          echo "github_tag=${{ steps.generate_release_version.outputs.version_tag }}" >> $GITHUB_OUTPUT
-          echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          {
+            echo "version=${{ steps.generate_release_version.outputs.version }}"
+            echo "version_tag=${{ steps.generate_release_version.outputs.version_tag }}"
+            echo "github_tag=${{ steps.generate_release_version.outputs.version_tag }}"
+            echo "is_prerelease=false"
+          } >> "$GITHUB_OUTPUT"
         fi
 
   build-python:
