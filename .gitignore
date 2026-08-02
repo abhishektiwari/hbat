@@ -278,3 +278,6 @@ example_pdb_files/*_fixed.pdb
 
 # Ignore Plans
 plan/*
+
+# Locally downloaded actionlint binary (CI downloads its own copy at runtime)
+/actionlint

@@ -19,13 +19,17 @@ jobs:
       contents: write
     
     steps:
-    - uses: actions/checkout@v4
-    
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      with:
+        persist-credentials: false
+
     - name: Clean up old pre-releases
-      uses: actions/github-script@v7
+      uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+      env:
+        DAYS_TO_KEEP: ${{ github.event.inputs.days_to_keep || '7' }}
       with:
         script: |
-          const daysToKeep = parseInt('${{ github.event.inputs.days_to_keep || '7' }}');
+          const daysToKeep = parseInt(process.env.DAYS_TO_KEEP, 10);
           const cutoffDate = new Date();
           cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
           
@@ -41,8 +45,8 @@ jobs:
           let deletedCount = 0;
           
           for (const release of releases.data) {
-            // Only process pre-releases with PR tags
-            if (release.prerelease && release.tag_name.includes('-pr')) {
+            // Only process pre-releases
+            if (release.prerelease) {
               const releaseDate = new Date(release.created_at);
               
               if (releaseDate < cutoffDate) {
