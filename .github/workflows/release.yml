@@ -13,6 +13,8 @@ on:
 jobs:
   generate-version:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     # Skip if Tests workflow failed
     if: ${{ github.event_name == 'pull_request' || github.event.workflow_run.conclusion == 'success' }}
     outputs:
@@ -26,6 +28,7 @@ jobs:
     - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       with:
         fetch-depth: 0
+        persist-credentials: false
     
     - name: Generate version for PR
       if: github.event_name == 'pull_request'
@@ -72,19 +75,25 @@ jobs:
       run: |
         if [[ "${{ github.event_name }}" == "pull_request" ]]; then
           {
-            echo "version=${{ steps.generate_pr_version.outputs.version }}"
-            echo "version_tag=${{ steps.generate_pr_version.outputs.version_tag }}"
-            echo "github_tag=${{ steps.generate_pr_version.outputs.github_tag }}"
+            echo "version=${STEPS_GENERATE_PR_VERSION_OUTPUTS_VERSION}"
+            echo "version_tag=${STEPS_GENERATE_PR_VERSION_OUTPUTS_VERSION_TAG}"
+            echo "github_tag=${STEPS_GENERATE_PR_VERSION_OUTPUTS_GITHUB_TAG}"
             echo "is_prerelease=true"
           } >> "$GITHUB_OUTPUT"
         else
           {
-            echo "version=${{ steps.generate_release_version.outputs.version }}"
-            echo "version_tag=${{ steps.generate_release_version.outputs.version_tag }}"
-            echo "github_tag=${{ steps.generate_release_version.outputs.version_tag }}"
+            echo "version=${STEPS_GENERATE_RELEASE_VERSION_OUTPUTS_VERSION}"
+            echo "version_tag=${STEPS_GENERATE_RELEASE_VERSION_OUTPUTS_VERSION_TAG}"
+            echo "github_tag=${STEPS_GENERATE_RELEASE_VERSION_OUTPUTS_VERSION_TAG}"
             echo "is_prerelease=false"
           } >> "$GITHUB_OUTPUT"
         fi
+      env:
+        STEPS_GENERATE_PR_VERSION_OUTPUTS_VERSION: ${{ steps.generate_pr_version.outputs.version }}
+        STEPS_GENERATE_PR_VERSION_OUTPUTS_VERSION_TAG: ${{ steps.generate_pr_version.outputs.version_tag }}
+        STEPS_GENERATE_PR_VERSION_OUTPUTS_GITHUB_TAG: ${{ steps.generate_pr_version.outputs.github_tag }}
+        STEPS_GENERATE_RELEASE_VERSION_OUTPUTS_VERSION: ${{ steps.generate_release_version.outputs.version }}
+        STEPS_GENERATE_RELEASE_VERSION_OUTPUTS_VERSION_TAG: ${{ steps.generate_release_version.outputs.version_tag }}
 
   build-python:
     needs: generate-version
@@ -96,7 +105,9 @@ jobs:
     
     steps:
     - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-    
+      with:
+        persist-credentials: false
+
     - name: Set up Python
       uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
@@ -112,8 +123,10 @@ jobs:
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
-        git tag -a "${{ needs.generate-version.outputs.version_tag }}" -m "Release ${{ needs.generate-version.outputs.version_tag }}"
-        echo "Created tag: ${{ needs.generate-version.outputs.version_tag }}"
+        git tag -a "${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG}" -m "Release ${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG}"
+        echo "Created tag: ${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG}"
+      env:
+        NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG: ${{ needs.generate-version.outputs.version_tag }}
     
     - name: Build package
       run: make build
@@ -135,10 +148,14 @@ jobs:
   build-macos:
     needs: generate-version
     runs-on: macos-latest
+    permissions:
+      contents: read
     
     steps:
     - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-    
+      with:
+        persist-credentials: false
+
     - name: Set up Python
       uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
@@ -155,7 +172,9 @@ jobs:
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
-        git tag -a "${{ needs.generate-version.outputs.version_tag }}" -m "Release ${{ needs.generate-version.outputs.version_tag }}"
+        git tag -a "${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG}" -m "Release ${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG}"
+      env:
+        NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG: ${{ needs.generate-version.outputs.version_tag }}
     
     - name: Build standalone macOS app
       run: make build-standalone
@@ -182,9 +201,11 @@ jobs:
           --icon "HBAT-GUI.app" 200 190 \
           --hide-extension "HBAT-GUI.app" \
           --app-drop-link 600 185 \
-          "hbat-${{ needs.generate-version.outputs.version }}.dmg" \
+          "hbat-${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION}.dmg" \
           "dist/"
-        mv hbat-${{ needs.generate-version.outputs.version }}.dmg dist/
+        mv hbat-${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION}.dmg dist/
+      env:
+        NEEDS_GENERATE_VERSION_OUTPUTS_VERSION: ${{ needs.generate-version.outputs.version }}
     
     - name: Upload macOS artifact
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -197,10 +218,14 @@ jobs:
   build-linux:
     needs: generate-version
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
     - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-    
+      with:
+        persist-credentials: false
+
     - name: Set up Python
       uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
@@ -221,7 +246,9 @@ jobs:
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
-        git tag -a "${{ needs.generate-version.outputs.version_tag }}" -m "Release ${{ needs.generate-version.outputs.version_tag }}"
+        git tag -a "${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG}" -m "Release ${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG}"
+      env:
+        NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG: ${{ needs.generate-version.outputs.version_tag }}
     
     - name: Build standalone Linux executables
       env:
@@ -243,17 +270,22 @@ jobs:
   build-conda:
     needs: generate-version
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
     - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       with:
         fetch-depth: 0
+        persist-credentials: false
     
     - name: Create version tag
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
-        git tag -a "${{ needs.generate-version.outputs.version_tag }}" -m "Release ${{ needs.generate-version.outputs.version_tag }}"
+        git tag -a "${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG}" -m "Release ${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG}"
+      env:
+        NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG: ${{ needs.generate-version.outputs.version_tag }}
     
     - name: Setup Miniconda
       uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5 # v4.0.1
@@ -280,7 +312,7 @@ jobs:
     - name: Build conda package
       shell: bash -l {0}
       run: |
-        export GIT_DESCRIBE_TAG=${{ needs.generate-version.outputs.version_tag }}
+        export GIT_DESCRIBE_TAG=${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG}
         echo "Building conda package with version: ${GIT_DESCRIBE_TAG}"
 
         conda-build conda --output-folder conda-build-output -c conda-forge
@@ -288,6 +320,8 @@ jobs:
         echo ""
         echo "Built conda packages:"
         find conda-build-output -type f \( -name "*.tar.bz2" -o -name "*.conda" \)
+      env:
+        NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG: ${{ needs.generate-version.outputs.version_tag }}
     
     - name: Upload to Anaconda Cloud
       if: needs.generate-version.outputs.is_prerelease == 'false'
@@ -319,10 +353,14 @@ jobs:
   build-docs:
     needs: generate-version
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
     - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-    
+      with:
+        persist-credentials: false
+
     - name: Set up Python
       uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
@@ -338,7 +376,9 @@ jobs:
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
-        git tag -a "${{ needs.generate-version.outputs.version_tag }}" -m "Release ${{ needs.generate-version.outputs.version_tag }}"
+        git tag -a "${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG}" -m "Release ${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG}"
+      env:
+        NEEDS_GENERATE_VERSION_OUTPUTS_VERSION_TAG: ${{ needs.generate-version.outputs.version_tag }}
 
     - name: Create docs/build directory
       run: mkdir -p docs/build/html
@@ -349,9 +389,11 @@ jobs:
     - name: Create documentation zip
       run: |
         cd docs/build
-        zip -r ../../hbat-docs-${{ needs.generate-version.outputs.version }}.zip html/
+        zip -r ../../hbat-docs-${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION}.zip html/
         cd ../..
         echo "Documentation archive created"
+      env:
+        NEEDS_GENERATE_VERSION_OUTPUTS_VERSION: ${{ needs.generate-version.outputs.version }}
     
     - name: Upload documentation artifact
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -403,12 +445,14 @@ jobs:
         cd dist
         # Create versioned zip of Linux binaries
         if [ -f "linux/HBAT-GUI" ] && [ -f "linux/hbat" ]; then
-          zip -j hbat-linux-binaries-${{ needs.generate-version.outputs.version }}.zip linux/HBAT-GUI linux/hbat
+          zip -j hbat-linux-binaries-${NEEDS_GENERATE_VERSION_OUTPUTS_VERSION}.zip linux/HBAT-GUI linux/hbat
           echo "Created Linux binaries archive"
           # Remove the individual files since we have them in the zip
           rm -rf linux/
         fi
         cd ..
+      env:
+        NEEDS_GENERATE_VERSION_OUTPUTS_VERSION: ${{ needs.generate-version.outputs.version }}
     
     - name: List all artifacts
       run: |
