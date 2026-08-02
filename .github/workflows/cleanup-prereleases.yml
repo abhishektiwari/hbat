@@ -41,8 +41,8 @@ jobs:
           let deletedCount = 0;
           
           for (const release of releases.data) {
-            // Only process pre-releases with PR tags
-            if (release.prerelease && release.tag_name.includes('-pr')) {
+            // Only process pre-releases
+            if (release.prerelease) {
               const releaseDate = new Date(release.created_at);
               
               if (releaseDate < cutoffDate) {

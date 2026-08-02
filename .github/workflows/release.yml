@@ -31,9 +31,13 @@ jobs:
       if: github.event_name == 'pull_request'
       id: generate_pr_version
       run: |
-        # Get base version from latest tag or default to 0.0.0
-        BASE_VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "0.0.0")
-        
+        # Get base version from the highest stable release tag (vX.Y.Z only, no prerelease
+        # suffix). git describe picks the nearest tag by commit distance, which can pick up
+        # a stale prerelease tag from an earlier push to this same PR and compound its rc
+        # suffix — so we ignore ancestry entirely and version-sort all stable tags instead.
+        BASE_VERSION=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1 | sed 's/^v//')
+        BASE_VERSION=${BASE_VERSION:-0.0.0}
+
         # Generate PEP 440 compatible pre-release version with timestamp
         SHORT_SHA=$(git rev-parse --short HEAD)
         PR_NUMBER=${{ github.event.number }}
