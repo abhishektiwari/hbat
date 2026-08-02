@@ -23,9 +23,11 @@ jobs:
     
     - name: Clean up old pre-releases
       uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+      env:
+        DAYS_TO_KEEP: ${{ github.event.inputs.days_to_keep || '7' }}
       with:
         script: |
-          const daysToKeep = parseInt('${{ github.event.inputs.days_to_keep || '7' }}');
+          const daysToKeep = parseInt(process.env.DAYS_TO_KEEP, 10);
           const cutoffDate = new Date();
           cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
           

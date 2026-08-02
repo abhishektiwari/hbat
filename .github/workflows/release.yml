@@ -464,38 +464,44 @@ jobs:
     - name: Comment on PR
       if: needs.generate-version.outputs.is_prerelease == 'true'
       uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+      env:
+        PR_NUMBER: ${{ needs.generate-version.outputs.pr_number }}
+        GITHUB_TAG: ${{ needs.generate-version.outputs.github_tag }}
+        HBAT_VERSION: ${{ needs.generate-version.outputs.version }}
+        REPO: ${{ github.repository }}
       with:
         script: |
-          const prNumber = ${{ needs.generate-version.outputs.pr_number }};
-          const tag = '${{ needs.generate-version.outputs.github_tag }}';
-          const version = '${{ needs.generate-version.outputs.version }}';
-          
+          const prNumber = parseInt(process.env.PR_NUMBER, 10);
+          const tag = process.env.GITHUB_TAG;
+          const version = process.env.HBAT_VERSION;
+          const repo = process.env.REPO;
+
           const comment = `## 🚧 Pre-release Ready
-          
+
           A pre-release has been created for this PR: **${tag}**
-          
+
           ### Quick Install
-          
+
           **From PyPI (recommended):**
           \`\`\`bash
           pip install hbat==${version}
           \`\`\`
-          
+
           **From GitHub Release:**
           \`\`\`bash
-          pip install https://github.com/${{ github.repository }}/releases/download/${tag}/hbat-${version}-py3-none-any.whl
+          pip install https://github.com/${repo}/releases/download/${tag}/hbat-${version}-py3-none-any.whl
           \`\`\`
-          
+
           ### Available Artifacts
           - **Python**: wheel and source distribution
           - **macOS**: DMG installer
           - **Linux**: AppImage, DEB package, and standalone executables
           - **Conda**: conda package
           - **Documentation**: HTML documentation zip file
-          
-          View all artifacts at: https://github.com/${{ github.repository }}/releases/tag/${tag}
+
+          View all artifacts at: https://github.com/${repo}/releases/tag/${tag}
           `;
-          
+
           github.rest.issues.createComment({
             issue_number: prNumber,
             owner: context.repo.owner,
