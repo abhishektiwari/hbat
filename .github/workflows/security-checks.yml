@@ -81,13 +81,13 @@ jobs:
 
     - name: Scan changed docs for hidden/invisible Unicode
       run: |
-        CHANGED=$(git diff --name-only --diff-filter=ACM "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" -- '*.md' '*.rst' '*.txt')
-        if [ -z "$CHANGED" ]; then
+        mapfile -t CHANGED < <(git diff --name-only --diff-filter=ACM "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" -- '*.md' '*.rst' '*.txt')
+        if [ ${#CHANGED[@]} -eq 0 ]; then
           echo "No documentation files changed."
           exit 0
         fi
-        echo "Scanning: $CHANGED"
-        python3 .github/scripts/scan_hidden_unicode.py $CHANGED
+        echo "Scanning: ${CHANGED[*]}"
+        python3 .github/scripts/scan_hidden_unicode.py "${CHANGED[@]}"
 
   prompt-phrase-scan:
     name: Prompt Injection Phrase Scan (Docs)
@@ -102,8 +102,8 @@ jobs:
 
     - name: Scan changed docs for suspicious instruction-style phrases
       run: |
-        CHANGED=$(git diff --name-only --diff-filter=ACM "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" -- '*.md' '*.rst' '*.txt')
-        if [ -z "$CHANGED" ]; then
+        mapfile -t CHANGED < <(git diff --name-only --diff-filter=ACM "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" -- '*.md' '*.rst' '*.txt')
+        if [ ${#CHANGED[@]} -eq 0 ]; then
           echo "No documentation files changed."
           exit 0
         fi
@@ -111,7 +111,7 @@ jobs:
         PATTERN='ignore (all |the )?(previous|prior|above) instructions|disregard (the )?(above|previous|all prior)|new instructions:|you are now (a|an)|system prompt|do not (tell|inform|mention to) the user|act as (a|an) (unrestricted|jailbroken)|forget (everything|all previous)|<\|im_start\|>|###[[:space:]]*instruction|override your (instructions|guidelines)'
 
         FOUND=0
-        for f in $CHANGED; do
+        for f in "${CHANGED[@]}"; do
           MATCHES=$(grep -inE "$PATTERN" "$f" || true)
           if [ -n "$MATCHES" ]; then
             FOUND=1

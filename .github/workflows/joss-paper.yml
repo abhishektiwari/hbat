@@ -19,7 +19,7 @@ jobs:
       uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       
     - name: Build paper PDF
-      uses: docker://openjournals/inara:latest
+      uses: docker://openjournals/inara@sha256:a0414b8b72fd8923917ede614d340d98dc7aa3102aabc2e955e9c02a6100fd62 # latest
       with:
         args: paper/paper.md
         
