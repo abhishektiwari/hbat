@@ -1,0 +1,12 @@
+rules:
+  # release.yml uses `workflow_run` (triggered by the "Tests" workflow completing on main)
+  # purely as a pass/fail gate: it only ever reads `github.event.workflow_run.conclusion`.
+  # It never checks out the triggering run's head SHA/repo and never downloads its
+  # artifacts, so the "pwn request" pattern this audit exists to catch does not apply here.
+  # Verified 2026-08-02. If that changes (e.g. a future edit checks out
+  # `github.event.workflow_run.head_sha` or consumes its artifacts), remove this ignore
+  # and re-evaluate — at that point the trigger would need to be replaced with a
+  # `workflow_call` gate instead.
+  dangerous-triggers:
+    ignore:
+      - release.yml
