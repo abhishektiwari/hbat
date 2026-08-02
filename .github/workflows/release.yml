@@ -23,7 +23,7 @@ jobs:
       pr_number: ${{ github.event.number }}
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       with:
         fetch-depth: 0
     
@@ -54,7 +54,7 @@ jobs:
     - name: Generate version for release
       if: github.event_name == 'workflow_run'
       id: generate_release_version
-      uses: paulhatch/semantic-version@v5.4.0
+      uses: paulhatch/semantic-version@a8f8f59fd7f0625188492e945240f12d7ad2dca3 # v5.4.0
       with:
         tag_prefix: "v"
         major_pattern: "(MAJOR)"
@@ -86,10 +86,10 @@ jobs:
       attestations: write
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
         python-version: '3.11'
     
@@ -110,7 +110,7 @@ jobs:
       run: make build
     
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: python-artifacts
         path: dist/*
@@ -118,7 +118,7 @@ jobs:
     
     - name: Publish to PyPI
       if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
       with:
         attestations: true
         skip-existing: true
@@ -128,10 +128,10 @@ jobs:
     runs-on: macos-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
         python-version: '3.11'
     
@@ -178,7 +178,7 @@ jobs:
         mv hbat-${{ needs.generate-version.outputs.version }}.dmg dist/
     
     - name: Upload macOS artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: macos-artifacts
         path: dist/hbat-${{ needs.generate-version.outputs.version }}.dmg
@@ -190,10 +190,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
         python-version: '3.11'
     
@@ -220,7 +220,7 @@ jobs:
       run: python build_standalone_linux.py
     
     - name: Upload Linux artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: linux-artifacts
         path: |
@@ -236,7 +236,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       with:
         fetch-depth: 0
     
@@ -247,7 +247,7 @@ jobs:
         git tag -a "${{ needs.generate-version.outputs.version_tag }}" -m "Release ${{ needs.generate-version.outputs.version_tag }}"
     
     - name: Setup Miniconda
-      uses: conda-incubator/setup-miniconda@v4.0.1
+      uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5 # v4.0.1
       with:
         auto-update-conda: true
         auto-activate-base: false
@@ -301,7 +301,7 @@ jobs:
           $PACKAGE_PATH
     
     - name: Upload conda artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: conda-artifacts
         path: conda-build-output/noarch/hbat-*.*
@@ -312,10 +312,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
         python-version: '3.11'
     
@@ -345,7 +345,7 @@ jobs:
         echo "Documentation archive created"
     
     - name: Upload documentation artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: docs-artifacts
         path: hbat-docs-${{ needs.generate-version.outputs.version }}.zip
@@ -360,31 +360,31 @@ jobs:
     
     steps:
     - name: Download Python artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         name: python-artifacts
         path: dist/
     
     - name: Download macOS artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         name: macos-artifacts
         path: dist/
     
     - name: Download Linux artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         name: linux-artifacts
         path: dist/
     
     - name: Download conda artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         name: conda-artifacts
         path: dist/
     
     - name: Download documentation artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         name: docs-artifacts
         path: dist/
@@ -407,7 +407,7 @@ jobs:
         find dist -type f -ls
     
     - name: Create Release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: dist/**/*
@@ -459,7 +459,7 @@ jobs:
     
     - name: Comment on PR
       if: needs.generate-version.outputs.is_prerelease == 'true'
-      uses: actions/github-script@v7
+      uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
       with:
         script: |
           const prNumber = ${{ needs.generate-version.outputs.pr_number }};

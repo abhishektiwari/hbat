@@ -12,10 +12,10 @@ jobs:
       contents: read
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
         python-version: '3.11'
 
@@ -32,7 +32,7 @@ jobs:
       contents: read
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
     - name: Download actionlint
       run: bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
@@ -47,10 +47,10 @@ jobs:
       contents: read
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
     - name: Dependency review
-      uses: actions/dependency-review-action@v4
+      uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
 
   gitleaks:
     name: Gitleaks Secret Scan
@@ -59,14 +59,77 @@ jobs:
       contents: read
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       with:
         fetch-depth: 0
 
     - name: Run gitleaks
-      uses: gitleaks/gitleaks-action@v2
+      uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  unicode-injection-scan:
+    name: Hidden Unicode Scan (Docs)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      with:
+        fetch-depth: 0
+
+    - name: Scan changed docs for hidden/invisible Unicode
+      run: |
+        CHANGED=$(git diff --name-only --diff-filter=ACM "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" -- '*.md' '*.rst' '*.txt')
+        if [ -z "$CHANGED" ]; then
+          echo "No documentation files changed."
+          exit 0
+        fi
+        echo "Scanning: $CHANGED"
+        python3 .github/scripts/scan_hidden_unicode.py $CHANGED
+
+  prompt-phrase-scan:
+    name: Prompt Injection Phrase Scan (Docs)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      with:
+        fetch-depth: 0
+
+    - name: Scan changed docs for suspicious instruction-style phrases
+      run: |
+        CHANGED=$(git diff --name-only --diff-filter=ACM "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" -- '*.md' '*.rst' '*.txt')
+        if [ -z "$CHANGED" ]; then
+          echo "No documentation files changed."
+          exit 0
+        fi
+
+        PATTERN='ignore (all |the )?(previous|prior|above) instructions|disregard (the )?(above|previous|all prior)|new instructions:|you are now (a|an)|system prompt|do not (tell|inform|mention to) the user|act as (a|an) (unrestricted|jailbroken)|forget (everything|all previous)|<\|im_start\|>|###[[:space:]]*instruction|override your (instructions|guidelines)'
+
+        FOUND=0
+        for f in $CHANGED; do
+          MATCHES=$(grep -inE "$PATTERN" "$f" || true)
+          if [ -n "$MATCHES" ]; then
+            FOUND=1
+            echo "::warning file=$f::Possible prompt-injection phrasing found — needs manual review"
+            {
+              echo "## Possible prompt-injection phrasing in \`$f\`"
+              echo '```'
+              echo "$MATCHES"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+        done
+
+        if [ "$FOUND" -eq 1 ]; then
+          echo "Suspicious phrases found — see job summary. This is a heuristic check (warn-only), not a hard failure."
+        else
+          echo "No suspicious instruction-style phrases found."
+        fi
 
   flag-workflow-changes:
     name: Flag Workflow File Changes
@@ -75,7 +138,7 @@ jobs:
       contents: read
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       with:
         fetch-depth: 0
 
