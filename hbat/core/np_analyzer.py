@@ -189,9 +189,7 @@ class NPMolecularInteractionAnalyzer:
                     # Store PDB fixing information including file path
                     self._pdb_fixing_info = {
                         "method": self.parameters.fix_pdb_method,
-                        "input_file_path": self._pdb_original_info[
-                            "input_file_path"
-                        ],
+                        "input_file_path": self._pdb_original_info["input_file_path"],
                         "original_atoms": original_atoms_count,
                         "fixed_atoms": new_atoms_count,
                         "original_hydrogens": original_hydrogens_count,

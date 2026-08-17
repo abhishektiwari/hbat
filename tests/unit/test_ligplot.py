@@ -49,9 +49,7 @@ def ligplot_generator(monkeypatch):
     ligand_c = make_atom(
         1, "C1", "LIG", 100, (0, 0, 0), element="C", record_type="HETATM"
     )
-    ligand_o = make_atom(
-        2, "O1", "LIG", 100, (1.4, 0, 0), record_type="HETATM"
-    )
+    ligand_o = make_atom(2, "O1", "LIG", 100, (1.4, 0, 0), record_type="HETATM")
     backbone_n = make_atom(
         3,
         "N",
@@ -70,9 +68,7 @@ def ligplot_generator(monkeypatch):
         element="H",
         backbone_sidechain="B",
     )
-    sidechain_o = make_atom(
-        5, "OD1", "ASN", 10, (-3, 3, 0), backbone_sidechain="S"
-    )
+    sidechain_o = make_atom(5, "OD1", "ASN", 10, (-3, 3, 0), backbone_sidechain="S")
     ser_o = make_atom(6, "OG", "SER", 20, (4, -2, 0), backbone_sidechain="S")
 
     hydrogen_bond = HydrogenBond(
@@ -160,7 +156,7 @@ class TestLigplotSvg:
 
         assert "ligplot-residue-node ligplot-mixed" in svg
         assert "ligplot-residue-node ligplot-sidechain" in svg
-        assert "<rect x=\"-48\" y=\"-21\" width=\"96\" height=\"42\" rx=\"7\"" in svg
+        assert '<rect x="-48" y="-21" width="96" height="42" rx="7"' in svg
 
     def test_perimeter_boxes_do_not_overlap(self, ligplot_generator):
         svg = ligplot_generator.generate_interactive_svg()

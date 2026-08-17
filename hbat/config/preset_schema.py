@@ -147,7 +147,9 @@ def preset_to_parameters(
     for section, fields in PRESET_PARAMETER_FIELDS.items():
         section_values = raw_parameters.get(section, {})
         if not isinstance(section_values, Mapping):
-            raise ValueError(f"Invalid preset parameters: '{section}' must be an object")
+            raise ValueError(
+                f"Invalid preset parameters: '{section}' must be an object"
+            )
 
         normalized_section = dict(section_values)
         aliases = PRESET_PARAMETER_ALIASES.get(section, {})

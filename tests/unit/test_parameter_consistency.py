@@ -5,7 +5,11 @@ import inspect
 
 import pytest
 
-from hbat.cli.main import CLI_PARAMETER_OVERRIDES, create_parser, load_parameters_from_args
+from hbat.cli.main import (
+    CLI_PARAMETER_OVERRIDES,
+    create_parser,
+    load_parameters_from_args,
+)
 from hbat.config.ui_config import PARAMETER_CONFIGS
 from hbat.constants.parameters import AnalysisParameters
 
@@ -45,12 +49,8 @@ def test_ui_parameters_match_analysis_parameters():
     assert set(ui_by_name) == core_names
 
     defaults = AnalysisParameters()
-    assert {
-        name: config.default
-        for name, config in ui_by_name.items()
-    } == {
-        name: getattr(defaults, name)
-        for name in core_names
+    assert {name: config.default for name, config in ui_by_name.items()} == {
+        name: getattr(defaults, name) for name in core_names
     }
 
 
@@ -71,7 +71,9 @@ def test_cli_parameters_match_analysis_parameters():
     actions = {action.dest: action for action in parser._actions}
     for cli_name, parameter_name in CLI_PARAMETER_OVERRIDES.items():
         action = actions[cli_name]
-        option = next(option for option in action.option_strings if option.startswith("--"))
+        option = next(
+            option for option in action.option_strings if option.startswith("--")
+        )
         if isinstance(action, argparse._StoreTrueAction):
             args_list.append(option)
             expected[parameter_name] = True

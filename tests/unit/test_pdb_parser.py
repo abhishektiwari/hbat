@@ -8,7 +8,9 @@ from hbat.core.pdb_parser import PDBParser
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize("invalid_value", [None, "not-a-number", float("nan"), float("inf")])
+@pytest.mark.parametrize(
+    "invalid_value", [None, "not-a-number", float("nan"), float("inf")]
+)
 def test_pdb_atom_with_invalid_coordinates_is_skipped(caplog, invalid_value):
     """Invalid PDB coordinates do not become a fake atom at the origin."""
     parser = PDBParser()
