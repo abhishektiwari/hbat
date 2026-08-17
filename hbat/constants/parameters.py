@@ -541,43 +541,7 @@ class AnalysisParameters:
         :returns: Hash value based on all parameters
         :rtype: int
         """
-        return hash(
-            (
-                self.hb_distance_cutoff,
-                self.hb_angle_cutoff,
-                self.hb_donor_acceptor_cutoff,
-                self.whb_distance_cutoff,
-                self.whb_angle_cutoff,
-                self.whb_donor_acceptor_cutoff,
-                self.xb_distance_cutoff,
-                self.xb_angle_cutoff,
-                self.pi_distance_cutoff,
-                self.pi_angle_cutoff,
-                self.pi_ccl_distance_cutoff,
-                self.pi_ccl_angle_cutoff,
-                self.pi_cbr_distance_cutoff,
-                self.pi_cbr_angle_cutoff,
-                self.pi_ci_distance_cutoff,
-                self.pi_ci_angle_cutoff,
-                self.pi_ch_distance_cutoff,
-                self.pi_ch_angle_cutoff,
-                self.pi_nh_distance_cutoff,
-                self.pi_nh_angle_cutoff,
-                self.pi_oh_distance_cutoff,
-                self.pi_oh_angle_cutoff,
-                self.pi_sh_distance_cutoff,
-                self.pi_sh_angle_cutoff,
-                self.covalent_cutoff_factor,
-                self.analysis_mode,
-                self.fix_pdb_enabled,
-                self.fix_pdb_method,
-                self.fix_pdb_add_hydrogens,
-                self.fix_pdb_add_heavy_atoms,
-                self.fix_pdb_replace_nonstandard,
-                self.fix_pdb_remove_heterogens,
-                self.fix_pdb_keep_water,
-            )
-        )
+        return hash(tuple(self.to_dict().values()))
 
     def to_dict(self) -> dict:
         """Convert parameters to dictionary format.
@@ -615,6 +579,21 @@ class AnalysisParameters:
             "pi_oh_angle_cutoff": self.pi_oh_angle_cutoff,
             "pi_sh_distance_cutoff": self.pi_sh_distance_cutoff,
             "pi_sh_angle_cutoff": self.pi_sh_angle_cutoff,
+            # π-π stacking parameters
+            "pi_pi_distance_cutoff": self.pi_pi_distance_cutoff,
+            "pi_pi_parallel_angle_cutoff": self.pi_pi_parallel_angle_cutoff,
+            "pi_pi_tshaped_angle_min": self.pi_pi_tshaped_angle_min,
+            "pi_pi_tshaped_angle_max": self.pi_pi_tshaped_angle_max,
+            "pi_pi_offset_cutoff": self.pi_pi_offset_cutoff,
+            # Carbonyl interaction parameters
+            "carbonyl_distance_cutoff": self.carbonyl_distance_cutoff,
+            "carbonyl_angle_min": self.carbonyl_angle_min,
+            "carbonyl_angle_max": self.carbonyl_angle_max,
+            # n→π* interaction parameters
+            "n_pi_distance_cutoff": self.n_pi_distance_cutoff,
+            "n_pi_sulfur_distance_cutoff": self.n_pi_sulfur_distance_cutoff,
+            "n_pi_angle_min": self.n_pi_angle_min,
+            "n_pi_angle_max": self.n_pi_angle_max,
             # General parameters
             "covalent_cutoff_factor": self.covalent_cutoff_factor,
             "analysis_mode": self.analysis_mode,

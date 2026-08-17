@@ -4,7 +4,6 @@ This module provides a framework-agnostic controller for managing
 analysis parameters, independent of any UI framework.
 """
 
-from dataclasses import asdict, fields
 from typing import Any, Dict, List, Optional
 
 from ..constants.parameters import AnalysisParameters
@@ -110,7 +109,7 @@ class ParameterController:
         Returns:
             Dictionary mapping parameter names to values
         """
-        return asdict(self.params)
+        return self.params.to_dict()
 
     def from_dict(self, params_dict: Dict[str, Any]) -> None:
         """Update parameters from dictionary.
