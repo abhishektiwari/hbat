@@ -80,6 +80,39 @@ def test_hydrogen_bond_detector_respects_analysis_mode(
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize(
+    ("weak_donor_acceptor_cutoff", "expected_count"), [(4.5, 1), (3.5, 0)]
+)
+def test_weak_hydrogen_bond_uses_weak_donor_acceptor_cutoff(
+    monkeypatch, weak_donor_acceptor_cutoff, expected_count
+):
+    """Carbon donor detection and its D...A cutoff are case-insensitive."""
+    analyzer = NPMolecularInteractionAnalyzer(
+        AnalysisParameters(
+            hb_distance_cutoff=2.5,
+            hb_donor_acceptor_cutoff=3.5,
+            whb_distance_cutoff=3.6,
+            whb_angle_cutoff=150.0,
+            whb_donor_acceptor_cutoff=weak_donor_acceptor_cutoff,
+        )
+    )
+    donor = make_atom(1, "c", "c", (0.0, 0.0, 0.0), "LIG", 1)
+    hydrogen = make_atom(2, "H", "H", (1.0, 0.0, 0.0), "LIG", 1)
+    acceptor = make_atom(3, "O", "O", (4.0, 0.0, 0.0), "LIG", 2)
+    analyzer.parser.atoms = [donor, hydrogen, acceptor]
+    analyzer._prepare_vectorized_data()
+    monkeypatch.setattr(
+        analyzer,
+        "_get_hydrogen_bond_donors",
+        lambda: [(donor, hydrogen, 0, 1)],
+    )
+
+    analyzer._find_hydrogen_bonds_vectorized()
+
+    assert len(analyzer.hydrogen_bonds) == expected_count
+
+
+@pytest.mark.unit
 @pytest.mark.parametrize(("mode", "expected_count"), [("inter", 0), ("all", 1)])
 def test_halogen_bond_detector_respects_analysis_mode(mode, expected_count):
     """Halogen bond detection applies the mode policy to same-residue pairs."""

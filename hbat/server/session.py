@@ -9,7 +9,7 @@ import shutil
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
+from pathlib import PureWindowsPath
 
 
 class SessionManager:
@@ -143,6 +143,18 @@ class SessionManager:
         :returns: Full path to the file
         :rtype: Path
         """
+        # Uploaded filenames are client-controlled. Reject path components for
+        # both POSIX and Windows syntax before joining them to the session dir.
+        # This prevents absolute paths and traversal such as ../secret or
+        # ..\\secret from escaping the session directory.
+        if (
+            not filename
+            or filename in {".", ".."}
+            or Path(filename).name != filename
+            or PureWindowsPath(filename).name != filename
+        ):
+            raise ValueError("Filename must be a simple name within the session")
+
         session_dir = self.get_session_dir(session_id)
         if create_dirs and not session_dir.exists():
             session_dir.mkdir(parents=True, exist_ok=True)

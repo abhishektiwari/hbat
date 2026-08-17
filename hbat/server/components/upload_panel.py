@@ -68,14 +68,14 @@ class UploadPanel:
                     )
                     return
 
+                if self.on_file_upload:
+                    self.on_file_upload(filename, content)
+
                 if self.upload_label:
                     self.upload_label.text = f"✓ Uploaded: {filename}"
                     self.upload_label.classes(replace="text-positive")
 
                 self.file_uploaded = True
-
-                if self.on_file_upload:
-                    self.on_file_upload(filename, content)
 
                 ui.notify(f"Uploaded {filename}", type="positive", position="top-left")
             except Exception as error:
