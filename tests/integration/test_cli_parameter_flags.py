@@ -681,6 +681,18 @@ class TestPresetViaCLIPath:
         # But other preset values still apply
         assert params.hb_angle_cutoff == 130.0
 
+    def test_preset_cli_override_equal_to_cli_default_takes_priority(self):
+        """An explicit CLI default still overrides the preset value."""
+        parser = create_parser()
+        args = parser.parse_args(
+            ["dummy.pdb", "--preset", "high_resolution", "--hb-distance", "2.5"]
+        )
+
+        assert "hb_distance" in args._explicit_options
+        params = load_parameters_from_args(args)
+
+        assert params.hb_distance_cutoff == 2.5
+
     def test_preset_by_full_path(self):
         """Test --preset with absolute path to preset file."""
         from hbat.cli.main import get_example_presets_directory

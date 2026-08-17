@@ -23,6 +23,78 @@ from ..export.results import (
 )
 
 
+class ExplicitArgumentParser(argparse.ArgumentParser):
+    """Argument parser that records which options were supplied by the user."""
+
+    def parse_known_args(self, args=None, namespace=None):
+        raw_args = list(sys.argv[1:] if args is None else args)
+        namespace, remaining = super().parse_known_args(raw_args, namespace)
+
+        explicit_options = set(getattr(namespace, "_explicit_options", set()))
+        for raw_arg in raw_args:
+            if raw_arg == "--":
+                break
+
+            option = raw_arg.split("=", 1)[0]
+            action = self._option_string_actions.get(option)
+            if action is not None:
+                explicit_options.add(action.dest)
+
+        namespace._explicit_options = explicit_options
+        return namespace, remaining
+
+
+# Map argparse destinations to AnalysisParameters attributes. Keeping this
+# mapping explicit avoids coupling CLI flag names to core parameter names.
+CLI_PARAMETER_OVERRIDES = {
+    "hb_distance": "hb_distance_cutoff",
+    "hb_angle": "hb_angle_cutoff",
+    "da_distance": "hb_donor_acceptor_cutoff",
+    "whb_distance": "whb_distance_cutoff",
+    "whb_angle": "whb_angle_cutoff",
+    "whb_da_distance": "whb_donor_acceptor_cutoff",
+    "xb_distance": "xb_distance_cutoff",
+    "xb_angle": "xb_angle_cutoff",
+    "pi_distance": "pi_distance_cutoff",
+    "pi_angle": "pi_angle_cutoff",
+    "pi_ccl_distance": "pi_ccl_distance_cutoff",
+    "pi_ccl_angle": "pi_ccl_angle_cutoff",
+    "pi_cbr_distance": "pi_cbr_distance_cutoff",
+    "pi_cbr_angle": "pi_cbr_angle_cutoff",
+    "pi_ci_distance": "pi_ci_distance_cutoff",
+    "pi_ci_angle": "pi_ci_angle_cutoff",
+    "pi_ch_distance": "pi_ch_distance_cutoff",
+    "pi_ch_angle": "pi_ch_angle_cutoff",
+    "pi_nh_distance": "pi_nh_distance_cutoff",
+    "pi_nh_angle": "pi_nh_angle_cutoff",
+    "pi_oh_distance": "pi_oh_distance_cutoff",
+    "pi_oh_angle": "pi_oh_angle_cutoff",
+    "pi_sh_distance": "pi_sh_distance_cutoff",
+    "pi_sh_angle": "pi_sh_angle_cutoff",
+    "pi_pi_distance": "pi_pi_distance_cutoff",
+    "pi_pi_parallel_angle": "pi_pi_parallel_angle_cutoff",
+    "pi_pi_tshaped_angle_min": "pi_pi_tshaped_angle_min",
+    "pi_pi_tshaped_angle_max": "pi_pi_tshaped_angle_max",
+    "pi_pi_offset": "pi_pi_offset_cutoff",
+    "carbonyl_distance": "carbonyl_distance_cutoff",
+    "carbonyl_angle_min": "carbonyl_angle_min",
+    "carbonyl_angle_max": "carbonyl_angle_max",
+    "n_pi_distance": "n_pi_distance_cutoff",
+    "n_pi_sulfur_distance": "n_pi_sulfur_distance_cutoff",
+    "n_pi_angle_min": "n_pi_angle_min",
+    "n_pi_angle_max": "n_pi_angle_max",
+    "covalent_factor": "covalent_cutoff_factor",
+    "mode": "analysis_mode",
+    "fix_pdb": "fix_pdb_enabled",
+    "fix_method": "fix_pdb_method",
+    "fix_add_hydrogens": "fix_pdb_add_hydrogens",
+    "fix_add_heavy_atoms": "fix_pdb_add_heavy_atoms",
+    "fix_replace_nonstandard": "fix_pdb_replace_nonstandard",
+    "fix_remove_heterogens": "fix_pdb_remove_heterogens",
+    "fix_keep_water": "fix_pdb_keep_water",
+}
+
+
 class ProgressBar:
     """Simple CLI progress bar for analysis operations."""
 
@@ -73,7 +145,7 @@ def create_parser() -> argparse.ArgumentParser:
     :returns: Configured argument parser
     :rtype: argparse.ArgumentParser
     """
-    parser = argparse.ArgumentParser(
+    parser = ExplicitArgumentParser(
         description="HBAT - Hydrogen Bond Analysis Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -749,6 +821,32 @@ def resolve_preset_path(preset_name: str) -> str:
     sys.exit(1)
 
 
+def _apply_cli_parameter_overrides(
+    params: AnalysisParameters, args: argparse.Namespace
+) -> AnalysisParameters:
+    """Apply explicitly supplied CLI parameters to an existing parameter set."""
+    explicit_options = getattr(args, "_explicit_options", set())
+    overrides = {
+        parameter_name: getattr(args, cli_name)
+        for cli_name, parameter_name in CLI_PARAMETER_OVERRIDES.items()
+        if cli_name in explicit_options
+    }
+
+    # Preserve the input-format-specific method selection for explicit CLI
+    # overrides, matching the non-preset code path.
+    if "fix_method" in explicit_options:
+        overrides["fix_pdb_method"] = _get_fix_pdb_method_for_input(args)
+
+    if not overrides:
+        return params
+
+    values = params.to_dict()
+    values.update(overrides)
+    updated_params = AnalysisParameters.from_dict(values)
+    updated_params.validate_or_raise("CLI overrides")
+    return updated_params
+
+
 def load_parameters_from_args(args: argparse.Namespace) -> AnalysisParameters:
     """Create AnalysisParameters from command-line arguments.
 
@@ -769,152 +867,16 @@ def load_parameters_from_args(args: argparse.Namespace) -> AnalysisParameters:
         )
         params = load_preset_file(preset_path)
 
-        # Override preset parameters with any explicitly provided CLI arguments
-        # Only override if the argument was explicitly set (not default)
-        parser = create_parser()
-        defaults = vars(parser.parse_args([]))  # Get default values
-
-        if args.hb_distance != defaults.get("hb_distance"):
-            params.hb_distance_cutoff = args.hb_distance
-        if args.hb_angle != defaults.get("hb_angle"):
-            params.hb_angle_cutoff = args.hb_angle
-        if args.da_distance != defaults.get("da_distance"):
-            params.hb_donor_acceptor_cutoff = args.da_distance
-        if args.whb_distance != defaults.get("whb_distance"):
-            params.whb_distance_cutoff = args.whb_distance
-        if args.whb_angle != defaults.get("whb_angle"):
-            params.whb_angle_cutoff = args.whb_angle
-        if args.whb_da_distance != defaults.get("whb_da_distance"):
-            params.whb_donor_acceptor_cutoff = args.whb_da_distance
-        if args.xb_distance != defaults.get("xb_distance"):
-            params.xb_distance_cutoff = args.xb_distance
-        if args.xb_angle != defaults.get("xb_angle"):
-            params.xb_angle_cutoff = args.xb_angle
-        if args.pi_distance != defaults.get("pi_distance"):
-            params.pi_distance_cutoff = args.pi_distance
-        if args.pi_angle != defaults.get("pi_angle"):
-            params.pi_angle_cutoff = args.pi_angle
-
-        # π interaction subtype parameter overrides
-        if args.pi_ccl_distance != defaults.get("pi_ccl_distance"):
-            params.pi_ccl_distance_cutoff = args.pi_ccl_distance
-        if args.pi_ccl_angle != defaults.get("pi_ccl_angle"):
-            params.pi_ccl_angle_cutoff = args.pi_ccl_angle
-        if args.pi_cbr_distance != defaults.get("pi_cbr_distance"):
-            params.pi_cbr_distance_cutoff = args.pi_cbr_distance
-        if args.pi_cbr_angle != defaults.get("pi_cbr_angle"):
-            params.pi_cbr_angle_cutoff = args.pi_cbr_angle
-        if args.pi_ci_distance != defaults.get("pi_ci_distance"):
-            params.pi_ci_distance_cutoff = args.pi_ci_distance
-        if args.pi_ci_angle != defaults.get("pi_ci_angle"):
-            params.pi_ci_angle_cutoff = args.pi_ci_angle
-        if args.pi_ch_distance != defaults.get("pi_ch_distance"):
-            params.pi_ch_distance_cutoff = args.pi_ch_distance
-        if args.pi_ch_angle != defaults.get("pi_ch_angle"):
-            params.pi_ch_angle_cutoff = args.pi_ch_angle
-        if args.pi_nh_distance != defaults.get("pi_nh_distance"):
-            params.pi_nh_distance_cutoff = args.pi_nh_distance
-        if args.pi_nh_angle != defaults.get("pi_nh_angle"):
-            params.pi_nh_angle_cutoff = args.pi_nh_angle
-        if args.pi_oh_distance != defaults.get("pi_oh_distance"):
-            params.pi_oh_distance_cutoff = args.pi_oh_distance
-        if args.pi_oh_angle != defaults.get("pi_oh_angle"):
-            params.pi_oh_angle_cutoff = args.pi_oh_angle
-        if args.pi_sh_distance != defaults.get("pi_sh_distance"):
-            params.pi_sh_distance_cutoff = args.pi_sh_distance
-        if args.pi_sh_angle != defaults.get("pi_sh_angle"):
-            params.pi_sh_angle_cutoff = args.pi_sh_angle
-
-        # π-π stacking parameter overrides
-        if args.pi_pi_distance != defaults.get("pi_pi_distance"):
-            params.pi_pi_distance_cutoff = args.pi_pi_distance
-        if args.pi_pi_parallel_angle != defaults.get("pi_pi_parallel_angle"):
-            params.pi_pi_parallel_angle_cutoff = args.pi_pi_parallel_angle
-        if args.pi_pi_tshaped_angle_min != defaults.get("pi_pi_tshaped_angle_min"):
-            params.pi_pi_tshaped_angle_min = args.pi_pi_tshaped_angle_min
-        if args.pi_pi_tshaped_angle_max != defaults.get("pi_pi_tshaped_angle_max"):
-            params.pi_pi_tshaped_angle_max = args.pi_pi_tshaped_angle_max
-        if args.pi_pi_offset != defaults.get("pi_pi_offset"):
-            params.pi_pi_offset_cutoff = args.pi_pi_offset
-
-        # Carbonyl interaction parameter overrides
-        if args.carbonyl_distance != defaults.get("carbonyl_distance"):
-            params.carbonyl_distance_cutoff = args.carbonyl_distance
-        if args.carbonyl_angle_min != defaults.get("carbonyl_angle_min"):
-            params.carbonyl_angle_min = args.carbonyl_angle_min
-        if args.carbonyl_angle_max != defaults.get("carbonyl_angle_max"):
-            params.carbonyl_angle_max = args.carbonyl_angle_max
-
-        # n→π* interaction parameter overrides
-        if args.n_pi_distance != defaults.get("n_pi_distance"):
-            params.n_pi_distance_cutoff = args.n_pi_distance
-        if args.n_pi_sulfur_distance != defaults.get("n_pi_sulfur_distance"):
-            params.n_pi_sulfur_distance_cutoff = args.n_pi_sulfur_distance
-        if args.n_pi_angle_min != defaults.get("n_pi_angle_min"):
-            params.n_pi_angle_min = args.n_pi_angle_min
-        if args.n_pi_angle_max != defaults.get("n_pi_angle_max"):
-            params.n_pi_angle_max = args.n_pi_angle_max
-
-        if args.covalent_factor != defaults.get("covalent_factor"):
-            params.covalent_cutoff_factor = args.covalent_factor
-        if args.mode != defaults.get("mode"):
-            params.analysis_mode = args.mode
-
-        return params
+        return _apply_cli_parameter_overrides(params, args)
     else:
-        # Use CLI arguments only
-        return AnalysisParameters(
-            hb_distance_cutoff=args.hb_distance,
-            hb_angle_cutoff=args.hb_angle,
-            hb_donor_acceptor_cutoff=args.da_distance,
-            whb_distance_cutoff=args.whb_distance,
-            whb_angle_cutoff=args.whb_angle,
-            whb_donor_acceptor_cutoff=args.whb_da_distance,
-            xb_distance_cutoff=args.xb_distance,
-            xb_angle_cutoff=args.xb_angle,
-            pi_distance_cutoff=args.pi_distance,
-            pi_angle_cutoff=args.pi_angle,
-            # π interaction subtype parameters
-            pi_ccl_distance_cutoff=args.pi_ccl_distance,
-            pi_ccl_angle_cutoff=args.pi_ccl_angle,
-            pi_cbr_distance_cutoff=args.pi_cbr_distance,
-            pi_cbr_angle_cutoff=args.pi_cbr_angle,
-            pi_ci_distance_cutoff=args.pi_ci_distance,
-            pi_ci_angle_cutoff=args.pi_ci_angle,
-            pi_ch_distance_cutoff=args.pi_ch_distance,
-            pi_ch_angle_cutoff=args.pi_ch_angle,
-            pi_nh_distance_cutoff=args.pi_nh_distance,
-            pi_nh_angle_cutoff=args.pi_nh_angle,
-            pi_oh_distance_cutoff=args.pi_oh_distance,
-            pi_oh_angle_cutoff=args.pi_oh_angle,
-            pi_sh_distance_cutoff=args.pi_sh_distance,
-            pi_sh_angle_cutoff=args.pi_sh_angle,
-            # π-π stacking parameters
-            pi_pi_distance_cutoff=args.pi_pi_distance,
-            pi_pi_parallel_angle_cutoff=args.pi_pi_parallel_angle,
-            pi_pi_tshaped_angle_min=args.pi_pi_tshaped_angle_min,
-            pi_pi_tshaped_angle_max=args.pi_pi_tshaped_angle_max,
-            pi_pi_offset_cutoff=args.pi_pi_offset,
-            # Carbonyl interaction parameters
-            carbonyl_distance_cutoff=args.carbonyl_distance,
-            carbonyl_angle_min=args.carbonyl_angle_min,
-            carbonyl_angle_max=args.carbonyl_angle_max,
-            # n→π* interaction parameters
-            n_pi_distance_cutoff=args.n_pi_distance,
-            n_pi_sulfur_distance_cutoff=args.n_pi_sulfur_distance,
-            n_pi_angle_min=args.n_pi_angle_min,
-            n_pi_angle_max=args.n_pi_angle_max,
-            covalent_cutoff_factor=args.covalent_factor,
-            analysis_mode=args.mode,
-            # PDB fixing parameters
-            fix_pdb_enabled=args.fix_pdb,
-            fix_pdb_method=_get_fix_pdb_method_for_input(args),
-            fix_pdb_add_hydrogens=args.fix_add_hydrogens,
-            fix_pdb_add_heavy_atoms=args.fix_add_heavy_atoms,
-            fix_pdb_replace_nonstandard=args.fix_replace_nonstandard,
-            fix_pdb_remove_heterogens=args.fix_remove_heterogens,
-            fix_pdb_keep_water=args.fix_keep_water,
-        )
+        # Use CLI arguments only. The mapping is also used by the preset path
+        # so every exposed CLI parameter has one canonical destination.
+        values = {
+            parameter_name: getattr(args, cli_name)
+            for cli_name, parameter_name in CLI_PARAMETER_OVERRIDES.items()
+        }
+        values["fix_pdb_method"] = _get_fix_pdb_method_for_input(args)
+        return AnalysisParameters(**values)
 
 
 def _get_fix_pdb_method_for_input(args: argparse.Namespace) -> str:
