@@ -240,10 +240,6 @@ _version.py
 # Conda build artifacts
 conda-build-output/
 
-# Include requirements files
-!requirements.txt
-!requirements-dev.txt
-
 # Experiments
 experiments/*
 !experiments/.gitkeep

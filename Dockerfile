@@ -46,23 +46,17 @@ RUN wget -O graphviz.tar.gz "https://gitlab.com/graphviz/graphviz/-/archive/${GR
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy requirements and install Python dependencies
+# Copy project files and install runtime dependencies from pyproject.toml
 WORKDIR /app
-COPY requirements.txt .
-
-# Install Python dependencies
-RUN pip install --upgrade pip setuptools wheel && \
-    pip install -r requirements.txt
-
-# Copy project files for installation
 COPY pyproject.toml .
 COPY hbat/ ./hbat/
 COPY README.md .
 COPY .git .git
 
-# Install the package
+# Install the package and web-server extra
 # Set SETUPTOOLS_SCM_PRETEND_VERSION as fallback if git is not available
-RUN pip install -e .
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install -e ".[server]"
 
 # Stage 2: Runtime
 FROM python:3.13-slim

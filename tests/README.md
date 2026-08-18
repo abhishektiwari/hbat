@@ -107,7 +107,7 @@ When using pytest, tests are marked with:
 
 ## Test Configuration
 
-- **pytest.ini**: Pytest configuration in project root
+- **pyproject.toml**: Pytest configuration in the project metadata
 - **conftest.py**: Shared fixtures and test setup
 - **Sample Files**: Tests use `../example_pdb_files/6rsa.pdb`
 
