@@ -43,6 +43,7 @@ jobs:
       run: xvfb-run -a bash -c "make test-unit && make test-cli && make test-gui"
       env:
         DISPLAY: :99
+        HBAT_RUN_GUI_TESTS: "1"
 
   # Integration tests (Python 3.13 only, runs in parallel with e2e)
   test-integration:
@@ -77,6 +78,7 @@ jobs:
       run: xvfb-run -a make test-integration
       env:
         DISPLAY: :99
+        HBAT_RUN_GUI_TESTS: "1"
 
   # E2E tests (Python 3.13 only, runs in parallel with integration)
   test-e2e:

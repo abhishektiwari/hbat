@@ -1,5 +1,6 @@
 """Helpers shared by NiceGUI server workflow tests."""
 
+import asyncio
 from pathlib import Path
 
 from nicegui import ui
@@ -40,11 +41,23 @@ async def disable_pdb_fixing(user) -> None:
     user.find(marker="save-pdb-fixing").click()
 
 
+async def click_when_enabled(user, marker: str, retries: int = 100) -> None:
+    """Wait for a bound control to become enabled before clicking it."""
+    for _ in range(retries):
+        interaction = user.find(marker=marker)
+        if any(element.enabled for element in interaction.elements):
+            interaction.click()
+            return
+        await asyncio.sleep(0.1)
+
+    raise AssertionError(f"element with marker={marker!r} did not become enabled")
+
+
 async def analyze_fixed_structure(user, case) -> None:
     """Run the complete upload/configure/analyze workflow for a fixed PDB."""
     await upload_fixed_structure(user, case)
     await disable_pdb_fixing(user)
-    user.find(marker="analyze").click()
+    await click_when_enabled(user, "analyze")
     await user.should_see(marker="results-ready", content=case["name"], retries=1200)
 
 

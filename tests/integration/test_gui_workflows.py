@@ -3,8 +3,8 @@
 Integration tests for HBAT GUI components and dialog coordination.
 
 These display-dependent tests cover modal-dialog and main-window coordination,
-using mocks at subsystem boundaries. Set ``HBAT_RUN_GUI_TESTS=1`` in a desktop
-session to run them.
+using mocks at subsystem boundaries. Set ``HBAT_RUN_GUI_TESTS=1`` with a virtual
+or desktop display to run them. The ``make test-gui`` target sets this automatically.
 """
 
 import os
@@ -19,7 +19,7 @@ pytestmark = [
     pytest.mark.gui,
     pytest.mark.skipif(
         os.environ.get("HBAT_RUN_GUI_TESTS") != "1",
-        reason="Set HBAT_RUN_GUI_TESTS=1 in a desktop session to run Tk tests",
+        reason="Set HBAT_RUN_GUI_TESTS=1 with a virtual or desktop display",
     ),
 ]
 
