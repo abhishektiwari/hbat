@@ -1,6 +1,6 @@
 # HBAT Development Makefile
 
-.PHONY: help install install-dev test test-all test-fast test-legacy test-pytest test-unit test-integration test-e2e test-server test-performance test-cli test-gui test-coverage test-cov test-ccd clean lint lint-fix lint-fix-tests format type-check docs generate-ccd-bonds run-server uc-build uc-deploy uc-status
+.PHONY: help install install-dev test test-all test-fast test-legacy test-pytest test-unit test-integration test-e2e test-server test-performance test-cli test-gui test-coverage test-cov test-ccd clean lint lint-fix lint-fix-tests format type-check docs generate-ccd-bonds run-server uc-build uc-run-local uc-deploy uc-status
 
 # Default target
 help:
@@ -48,6 +48,7 @@ help:
 	@echo ""
 	@echo "Uncloud Deployment:"
 	@echo "  uc-build      Build Docker image for Uncloud deployment"
+	@echo "  uc-run-local  Build and run the Uncloud image locally on port 8080"
 	@echo "  uc-deploy     Deploy web service to Uncloud"
 	@echo "  uc-status     Check deployment status on Uncloud"
 
@@ -398,6 +399,10 @@ uc-build:
 		exit 1; \
 	fi
 	uc build
+
+uc-run-local: uc-build
+	@echo "Running HBAT locally at http://localhost:8080..."
+	docker compose run --rm --name hbat-web-local -p 8080:8080 -e HBAT_ANALYTICS_ENABLED=true web
 
 uc-deploy:
 	@echo "Deploying to Uncloud..."
