@@ -94,10 +94,12 @@ test-cli:
 
 test-coverage:
 	@echo "Running tests with coverage...(excludes slow tests)"
-	pytest tests/ -v -m "not slow" --cov --cov-branch --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+	coverage erase
+	pytest tests/ -v -m "not slow" --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
 
 test-cov:
 	@echo "Running tests with coverage (terminal output)..."
+	coverage erase
 	pytest tests/ -v -m "not slow" --cov=hbat --cov-report=term-missing
 
 test-gui:
@@ -112,6 +114,7 @@ test-gui:
 
 test-unit:
 	@echo "Running unit tests..."
+	coverage erase
 	pytest tests/unit/ -v -m "unit" --cov=hbat --cov-report=term-missing
 
 test-integration:
@@ -168,7 +171,7 @@ clean:
 	rm -rf */*/__pycache__/
 	rm -rf .pytest_cache/
 	rm -rf .mypy_cache/
-	rm -rf .coverage
+	rm -f .coverage .coverage.*
 	rm -rf htmlcov/
 	rm -rf docs/build/
 	find . -name "*.pyc" -delete
