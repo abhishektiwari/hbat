@@ -240,10 +240,6 @@ _version.py
 # Conda build artifacts
 conda-build-output/
 
-# Include requirements files
-!requirements.txt
-!requirements-dev.txt
-
 # Experiments
 experiments/*
 !experiments/.gitkeep
@@ -281,3 +277,6 @@ plan/*
 
 # Locally downloaded actionlint binary (CI downloads its own copy at runtime)
 /actionlint
+
+# Ignore screenshots
+screenshots/

@@ -11,6 +11,16 @@ Install the additional dependencies for the web server:
 pip install nicegui
 ```
 
+Google Analytics is disabled by default during local development. Production
+containers should explicitly enable it with:
+
+```bash
+HBAT_ANALYTICS_ENABLED=true
+```
+
+To keep analytics disabled in a local container, set
+`HBAT_ANALYTICS_ENABLED=false`.
+
 ## Running the Server
 
 ### Method 1: Using the launcher script

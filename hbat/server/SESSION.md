@@ -49,6 +49,7 @@ services:
       - "8080:8080"
     environment:
       - HBAT_ENV=production
+      - HBAT_ANALYTICS_ENABLED=true
       - HBAT_HOST=0.0.0.0
       - HBAT_PORT=8080
 ```

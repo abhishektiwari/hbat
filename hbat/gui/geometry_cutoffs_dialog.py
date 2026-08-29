@@ -15,6 +15,7 @@ from ..constants.parameters import (
     ParametersDefault,
 )
 from ..config.parameter_controller import ParameterController
+from ..config.preset_schema import preset_to_parameters
 
 
 class ToolTip:
@@ -1387,147 +1388,11 @@ class GeometryCutoffsDialog:
         if "parameters" not in data:
             raise ValueError("Invalid preset format: missing 'parameters' section")
 
-        params = data["parameters"]
         previous_params = self.get_parameters()
 
-        # Helper to apply value to parameter
-        def apply_value(field_name, value):
-            self._param_values[field_name] = value
-            var = self._vars.get(field_name)
-            if var is not None:
-                try:
-                    var.set(value)
-                except tk.TclError:
-                    pass
-
-        # Apply hydrogen bond parameters
-        if "hydrogen_bonds" in params:
-            hb = params["hydrogen_bonds"]
-            apply_value(
-                "hb_distance_cutoff",
-                hb.get("h_a_distance_cutoff", ParametersDefault.HB_DISTANCE_CUTOFF),
-            )
-            apply_value(
-                "hb_angle_cutoff",
-                hb.get("dha_angle_cutoff", ParametersDefault.HB_ANGLE_CUTOFF),
-            )
-            apply_value(
-                "hb_donor_acceptor_cutoff",
-                hb.get("d_a_distance_cutoff", ParametersDefault.HB_DA_DISTANCE),
-            )
-
-        # Apply halogen bond parameters
-        if "halogen_bonds" in params:
-            xb = params["halogen_bonds"]
-            apply_value(
-                "xb_distance_cutoff",
-                xb.get("x_a_distance_cutoff", ParametersDefault.XB_DISTANCE_CUTOFF),
-            )
-            apply_value(
-                "xb_angle_cutoff",
-                xb.get("dxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF),
-            )
-
-        # Apply π interaction parameters
-        if "pi_interactions" in params:
-            pi = params["pi_interactions"]
-            apply_value(
-                "pi_distance_cutoff",
-                pi.get("h_pi_distance_cutoff", ParametersDefault.PI_DISTANCE_CUTOFF),
-            )
-            apply_value(
-                "pi_angle_cutoff",
-                pi.get("dh_pi_angle_cutoff", ParametersDefault.PI_ANGLE_CUTOFF),
-            )
-
-            # Apply π interaction subtype parameters
-            apply_value(
-                "pi_ccl_distance_cutoff",
-                pi.get(
-                    "ccl_pi_distance_cutoff", ParametersDefault.PI_CCL_DISTANCE_CUTOFF
-                ),
-            )
-            apply_value(
-                "pi_ccl_angle_cutoff",
-                pi.get("ccl_pi_angle_cutoff", ParametersDefault.PI_CCL_ANGLE_CUTOFF),
-            )
-            apply_value(
-                "pi_cbr_distance_cutoff",
-                pi.get(
-                    "cbr_pi_distance_cutoff", ParametersDefault.PI_CBR_DISTANCE_CUTOFF
-                ),
-            )
-            apply_value(
-                "pi_cbr_angle_cutoff",
-                pi.get("cbr_pi_angle_cutoff", ParametersDefault.PI_CBR_ANGLE_CUTOFF),
-            )
-            apply_value(
-                "pi_ci_distance_cutoff",
-                pi.get(
-                    "ci_pi_distance_cutoff", ParametersDefault.PI_CI_DISTANCE_CUTOFF
-                ),
-            )
-            apply_value(
-                "pi_ci_angle_cutoff",
-                pi.get("ci_pi_angle_cutoff", ParametersDefault.PI_CI_ANGLE_CUTOFF),
-            )
-            apply_value(
-                "pi_ch_distance_cutoff",
-                pi.get(
-                    "ch_pi_distance_cutoff", ParametersDefault.PI_CH_DISTANCE_CUTOFF
-                ),
-            )
-            apply_value(
-                "pi_ch_angle_cutoff",
-                pi.get("ch_pi_angle_cutoff", ParametersDefault.PI_CH_ANGLE_CUTOFF),
-            )
-            apply_value(
-                "pi_nh_distance_cutoff",
-                pi.get(
-                    "nh_pi_distance_cutoff", ParametersDefault.PI_NH_DISTANCE_CUTOFF
-                ),
-            )
-            apply_value(
-                "pi_nh_angle_cutoff",
-                pi.get("nh_pi_angle_cutoff", ParametersDefault.PI_NH_ANGLE_CUTOFF),
-            )
-            apply_value(
-                "pi_oh_distance_cutoff",
-                pi.get(
-                    "oh_pi_distance_cutoff", ParametersDefault.PI_OH_DISTANCE_CUTOFF
-                ),
-            )
-            apply_value(
-                "pi_oh_angle_cutoff",
-                pi.get("oh_pi_angle_cutoff", ParametersDefault.PI_OH_ANGLE_CUTOFF),
-            )
-            apply_value(
-                "pi_sh_distance_cutoff",
-                pi.get(
-                    "sh_pi_distance_cutoff", ParametersDefault.PI_SH_DISTANCE_CUTOFF
-                ),
-            )
-            apply_value(
-                "pi_sh_angle_cutoff",
-                pi.get("sh_pi_angle_cutoff", ParametersDefault.PI_SH_ANGLE_CUTOFF),
-            )
-
-        # Apply general parameters
-        if "general" in params:
-            gen = params["general"]
-            apply_value(
-                "covalent_cutoff_factor",
-                gen.get(
-                    "covalent_cutoff_factor", ParametersDefault.COVALENT_CUTOFF_FACTOR
-                ),
-            )
-            apply_value(
-                "analysis_mode",
-                gen.get("analysis_mode", ParametersDefault.ANALYSIS_MODE),
-            )
-
         try:
-            self.get_parameters().validate_or_raise("preset parameters")
+            updated_params = preset_to_parameters(data, base_params=previous_params)
+            self.set_parameters(updated_params)
         except ValueError:
             self.set_parameters(previous_params)
             raise

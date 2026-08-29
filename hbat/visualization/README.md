@@ -35,12 +35,16 @@ analyzer.analyze()
 
 # Visualize hydrogen bonds
 for i, hb in enumerate(analyzer.hydrogen_bonds[:5]):  # Show first 5
-    print(f"Hydrogen Bond {i+1}: {hb.get_donor_residue()} → {hb.get_acceptor_residue()}")
+    print(
+        f"Hydrogen Bond {i + 1}: {hb.get_donor_residue()} → {hb.get_acceptor_residue()}"
+    )
     display_hydrogen_bond(hb, pdb_content, viewer_id=f"hb_{i}")
 
 # Visualize π interactions
 for i, pi in enumerate(analyzer.pi_interactions[:5]):  # Show first 5
-    print(f"π Interaction {i+1}: {pi.get_donor_residue()} → {pi.get_acceptor_residue()}")
+    print(
+        f"π Interaction {i + 1}: {pi.get_donor_residue()} → {pi.get_acceptor_residue()}"
+    )
     display_pi_interaction(pi, pdb_content, viewer_id=f"pi_{i}")
 ```
 
@@ -50,11 +54,11 @@ for i, pi in enumerate(analyzer.pi_interactions[:5]):  # Show first 5
 
 ```python
 display_hydrogen_bond(
-    hb,                    # HydrogenBond object
-    pdb_content,           # PDB file content as string
-    viewer_id="hb_viewer", # Unique ID for this viewer
-    width=800,             # Width in pixels
-    height=600             # Height in pixels
+    hb,  # HydrogenBond object
+    pdb_content,  # PDB file content as string
+    viewer_id="hb_viewer",  # Unique ID for this viewer
+    width=800,  # Width in pixels
+    height=600,  # Height in pixels
 )
 ```
 
@@ -124,17 +128,21 @@ print(f"  n→π* Interactions: {summary.get('n_pi_interactions', {}).get('count
 print("\n## Hydrogen Bonds")
 if analyzer.hydrogen_bonds:
     hb = analyzer.hydrogen_bonds[0]
-    print(f"{hb.get_donor_residue()} → {hb.get_acceptor_residue()} ({hb.distance:.2f} Å)")
+    print(
+        f"{hb.get_donor_residue()} → {hb.get_acceptor_residue()} ({hb.distance:.2f} Å)"
+    )
     display_hydrogen_bond(hb, pdb_content, viewer_id="hb_example")
 
 print("\n## π Interactions")
 if analyzer.pi_interactions:
     pi = analyzer.pi_interactions[0]
-    print(f"{pi.get_donor_residue()} → {pi.get_acceptor_residue()} ({pi.distance:.2f} Å)")
+    print(
+        f"{pi.get_donor_residue()} → {pi.get_acceptor_residue()} ({pi.distance:.2f} Å)"
+    )
     display_pi_interaction(pi, pdb_content, viewer_id="pi_example")
 
 print("\n## π-π Stacking")
-if hasattr(analyzer, 'pi_pi_interactions') and analyzer.pi_pi_interactions:
+if hasattr(analyzer, "pi_pi_interactions") and analyzer.pi_pi_interactions:
     pi_pi = analyzer.pi_pi_interactions[0]
     print(f"{pi_pi.ring1_residue} ⇄ {pi_pi.ring2_residue} ({pi_pi._distance:.2f} Å)")
     display_pi_pi_stacking(pi_pi, pdb_content, viewer_id="pipi_example")

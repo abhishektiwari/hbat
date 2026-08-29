@@ -68,14 +68,14 @@ class UploadPanel:
                     )
                     return
 
+                if self.on_file_upload:
+                    self.on_file_upload(filename, content)
+
                 if self.upload_label:
                     self.upload_label.text = f"✓ Uploaded: {filename}"
                     self.upload_label.classes(replace="text-positive")
 
                 self.file_uploaded = True
-
-                if self.on_file_upload:
-                    self.on_file_upload(filename, content)
 
                 ui.notify(f"Uploaded {filename}", type="positive", position="top-left")
             except Exception as error:
@@ -176,8 +176,9 @@ class UploadPanel:
                     on_upload=handle_upload,
                     auto_upload=True,
                 )
-                .props('accept=".pdb,.cif"')
+                .props('accept=".pdb,.cif" data-testid="structure-upload"')
                 .classes("w-full")
+                .mark("structure-upload")
             )
 
         ui.label("OR").classes("text-center text-bold q-my-md")
@@ -223,8 +224,11 @@ class UploadPanel:
                     ).props("size=sm outline color=primary")
 
         # Status label
-        self.upload_label = ui.label("No file loaded").classes(
-            "text-caption text-grey q-mt-md"
+        self.upload_label = (
+            ui.label("No file loaded")
+            .classes("text-caption text-grey q-mt-md")
+            .props('data-testid="upload-status"')
+            .mark("upload-status")
         )
 
         # Info

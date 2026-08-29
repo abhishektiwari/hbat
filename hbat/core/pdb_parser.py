@@ -5,6 +5,7 @@ This module provides functionality to parse PDB (Protein Data Bank) files
 and extract atomic coordinates and molecular information using the pdbreader library.
 """
 
+import logging
 import math
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -23,6 +24,9 @@ except ImportError:
     raise ImportError(
         "pdbreader package is required for PDB parsing. Install with: pip install pdbreader"
     )
+
+
+logger = logging.getLogger(__name__)
 
 
 def _safe_int_convert(value: Any, default: int = 0) -> int:
@@ -68,6 +72,33 @@ def _safe_float_convert(value: Any, default: float = 0.0) -> float:
         return float_val
     except (ValueError, TypeError):
         return default
+
+
+def _parse_atom_coordinates(
+    values: Tuple[Any, Any, Any], atom_description: str
+) -> Optional[NPVec3D]:
+    """Parse finite atom coordinates, returning None for invalid values."""
+    try:
+        x, y, z = (float(value) for value in values)
+    except (OverflowError, TypeError, ValueError):
+        logger.warning(
+            "Skipping %s: invalid coordinates x=%r, y=%r, z=%r",
+            atom_description,
+            *values,
+        )
+        return None
+
+    if not all(math.isfinite(coordinate) for coordinate in (x, y, z)):
+        logger.warning(
+            "Skipping %s: non-finite coordinates x=%r, y=%r, z=%r",
+            atom_description,
+            x,
+            y,
+            z,
+        )
+        return None
+
+    return NPVec3D(x, y, z)
 
 
 class PDBParser:
@@ -273,7 +304,7 @@ class PDBParser:
                 first_line = f.readline().strip()
                 if first_line.startswith(("HEADER", "TITLE", "ATOM", "HETATM")):
                     # This is actually a PDB file despite .cif extension
-                    return self.parse_file(filename)
+                    return self._parse_pdb_file(filename)
 
             # Read CIF file as standard mmCIF
             reader = PdbxReader(open(filename, "r"))
@@ -395,11 +426,14 @@ class PDBParser:
 
             i_code = ""  # CIF uses pdbx_PDB_ins_code, simplified here
 
-            # Extract coordinates
-            x = _safe_float_convert(row[cartn_x_idx], 0.0)
-            y = _safe_float_convert(row[cartn_y_idx], 0.0)
-            z = _safe_float_convert(row[cartn_z_idx], 0.0)
-            coords = NPVec3D(x, y, z)
+            # Extract coordinates; malformed atoms are skipped rather than
+            # being silently placed at the origin.
+            coords = _parse_atom_coordinates(
+                (row[cartn_x_idx], row[cartn_y_idx], row[cartn_z_idx]),
+                f"{record_type} atom {serial} ({name}, {res_name})",
+            )
+            if coords is None:
+                return None
 
             # Extract other properties
             occupancy = _safe_float_convert(row[occupancy_idx], 1.0)
@@ -464,11 +498,14 @@ class PDBParser:
             res_seq = _safe_int_convert(atom_row.get("resid"), 0)
             i_code = str(atom_row.get("res_icode", "") or "").strip()
 
-            # Coordinates - handle None and NaN values
-            x = _safe_float_convert(atom_row.get("x"), 0.0)
-            y = _safe_float_convert(atom_row.get("y"), 0.0)
-            z = _safe_float_convert(atom_row.get("z"), 0.0)
-            coords = NPVec3D(x, y, z)
+            # Extract coordinates; malformed atoms are skipped rather than
+            # being silently placed at the origin.
+            coords = _parse_atom_coordinates(
+                (atom_row.get("x"), atom_row.get("y"), atom_row.get("z")),
+                f"{record_type} atom {serial} ({name}, {res_name})",
+            )
+            if coords is None:
+                return None
 
             # Other properties - handle None and NaN values
             occupancy = _safe_float_convert(atom_row.get("occupancy"), 1.0)

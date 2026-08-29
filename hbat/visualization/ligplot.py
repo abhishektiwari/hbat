@@ -105,7 +105,9 @@ class LigplotGenerator:
         """Return RDKit atom indices representing the ligand interaction endpoint."""
         serials = []
         for endpoint in (interaction.get_donor(), interaction.get_acceptor()):
-            if self._residue_id(endpoint) == ligand_res_id and hasattr(endpoint, "serial"):
+            if self._residue_id(endpoint) == ligand_res_id and hasattr(
+                endpoint, "serial"
+            ):
                 serials.append(endpoint.serial)
 
         for atom in getattr(interaction, "pi_atoms", []):
@@ -117,11 +119,7 @@ class LigplotGenerator:
             for atom_index, info in self.pdb_ligand_atom_info.items()
         }
         return sorted(
-            {
-                serial_to_index[serial]
-                for serial in serials
-                if serial in serial_to_index
-            }
+            {serial_to_index[serial] for serial in serials if serial in serial_to_index}
         )
 
     def _get_partner_classification(self, interaction, partner_residue: str) -> str:
@@ -228,7 +226,10 @@ class LigplotGenerator:
         ligand_center = np.mean(ligand_coords, axis=0)
         residue_ids = list(grouped)
         vectors = np.array(
-            [grouped[residue_id]["position"] - ligand_center for residue_id in residue_ids]
+            [
+                grouped[residue_id]["position"] - ligand_center
+                for residue_id in residue_ids
+            ]
         )
 
         if len(vectors) >= 2:
@@ -267,10 +268,7 @@ class LigplotGenerator:
                     y = (
                         box_height / 2 + gap + lane * (box_height + gap)
                         if side == "top"
-                        else height
-                        - box_height / 2
-                        - gap
-                        - lane * (box_height + gap)
+                        else height - box_height / 2 - gap - lane * (box_height + gap)
                     )
                 else:
                     spacing = height / (lane_entries + 1)

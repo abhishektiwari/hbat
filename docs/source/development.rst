@@ -19,8 +19,7 @@ Quick Start
 
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements-dev.txt
-   pip install -e .
+   pip install -e "[dev,docs,server]"
 
 3. Run tests
 

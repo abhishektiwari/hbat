@@ -44,6 +44,7 @@ dynamic = ["version"]
 [project.optional-dependencies]
 dev = [
     "pytest>=6.0.0",
+    "pytest-asyncio>=0.23.0",
     "pytest-cov>=2.8.0",
     "pytest-mock>=3.0.0",
     "ruff>=0.0.241",
@@ -58,6 +59,7 @@ dev = [
     "types-Pillow>=8.0.0",
     "pandas-stubs>=1.0.0",
     "psutil>=7.0.0",
+    "selenium>=4.20.0",
 ]
 build = [
     "build>=0.8.0",
@@ -84,14 +86,17 @@ gui = [
     # brew install python-tk
 ]
 server = [
-    "nicegui>=1.4.0",
+    "nicegui>=3.16.0,<4.0.0",
     "flask>=2.3.0",
     "flask-cors>=4.0.0",
     "aiofiles>=23.0.0",
 ]
 
 all = [
-    "hbat[gui,server]",
+    "nicegui>=3.16.0,<4.0.0",
+    "flask>=2.3.0",
+    "flask-cors>=4.0.0",
+    "aiofiles>=23.0.0",
 ]
 
 [project.scripts]
@@ -193,12 +198,31 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -q --strict-markers --strict-config"
+asyncio_mode = "auto"
+addopts = "-ra -q --strict-markers --strict-config --tb=short"
 testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
     "gui: marks tests that require GUI components",
+    "integration: marks tests that require sample files",
+    "unit: marks unit tests (fast, isolated)",
+    "e2e: marks end-to-end workflow tests",
+    "requires_pdb_files: marks tests that need sample PDB files",
+    "performance: marks performance benchmark tests",
+    "ccd: marks tests that require CCD data files",
+    "atomic: marks tests for atomic property lookup",
+    "cooperativity: marks tests for cooperativity analysis",
+    "preset: marks tests related to preset functionality",
+    "cli: marks command-line interface tests",
+    "server: marks web-server workflow tests",
+    "browser: marks tests that require Chrome or Chromium",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
 ]
 
 [tool.coverage.run]

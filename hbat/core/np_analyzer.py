@@ -143,6 +143,12 @@ class NPMolecularInteractionAnalyzer:
             if os.path.exists(original_file_path)
             else pdb_file
         }
+        # Keep the source path available to consumers that need the analyzed
+        # structure even when no fixed copy is created.
+        self._pdb_fixing_info = {
+            "applied": False,
+            "input_file_path": self._pdb_original_info["input_file_path"],
+        }
 
         # Progress update helper
         def update_progress(message: str) -> None:
@@ -183,6 +189,7 @@ class NPMolecularInteractionAnalyzer:
                     # Store PDB fixing information including file path
                     self._pdb_fixing_info = {
                         "method": self.parameters.fix_pdb_method,
+                        "input_file_path": self._pdb_original_info["input_file_path"],
                         "original_atoms": original_atoms_count,
                         "fixed_atoms": new_atoms_count,
                         "original_hydrogens": original_hydrogens_count,
@@ -205,13 +212,20 @@ class NPMolecularInteractionAnalyzer:
                     )
 
             except Exception as e:
-                self._pdb_fixing_info = {"applied": False, "error": str(e)}
+                self._pdb_fixing_info = {
+                    "applied": False,
+                    "input_file_path": self._pdb_original_info["input_file_path"],
+                    "error": str(e),
+                }
                 print(f"Warning: PDB fixing failed: {e}")
                 print("Continuing with original structure")
                 # Use the already parsed original structure
         else:
             # Not using PDB fixing, already parsed above
-            self._pdb_fixing_info = {"applied": False}
+            self._pdb_fixing_info = {
+                "applied": False,
+                "input_file_path": self._pdb_original_info["input_file_path"],
+            }
 
         if not self.parser.has_hydrogens():
             print("Warning: PDB file appears to lack hydrogen atoms")
@@ -424,7 +438,7 @@ class NPMolecularInteractionAnalyzer:
         weak_hb_mask = np.zeros_like(distances, dtype=bool)
 
         for h_idx, (donor_atom, _, _, _) in enumerate(donors):
-            if donor_atom.element == "C":
+            if donor_atom.element.upper() == "C":
                 # Use WHB cutoffs for carbon donors
                 weak_hb_mask[h_idx, :] = (
                     distances[h_idx, :] <= self.parameters.whb_distance_cutoff
@@ -489,7 +503,7 @@ class NPMolecularInteractionAnalyzer:
                 angle_deg = math.degrees(float(angle_rad))
 
                 # Determine if this is a weak hydrogen bond (carbon donor)
-                is_weak_hb = donor_atom.element == "C"
+                is_weak_hb = donor_atom.element.upper() == "C"
 
                 # Use appropriate angle cutoff
                 angle_cutoff = (
@@ -2213,11 +2227,6 @@ class NPMolecularInteractionAnalyzer:
                 + len(self.carbonyl_interactions)
                 + len(self.n_pi_interactions)
                 + len(self.water_bridges)
-                + (
-                    len(self.ligand_interactions.interactions)
-                    if self.ligand_interactions
-                    else 0
-                )
             ),
         }
 

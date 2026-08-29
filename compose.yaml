@@ -11,6 +11,7 @@ services:
     image: hbat-web:latest
     environment:
       - HBAT_ENV=production
+      - HBAT_ANALYTICS_ENABLED=true
       - HBAT_HOST=0.0.0.0
       - HBAT_PORT=8080
       - HBAT_RELOAD=false

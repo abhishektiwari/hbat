@@ -116,7 +116,9 @@ class ParameterPanel:
                         ui.label("PDB Fixing").classes("text-h6")
                         ui.button(
                             icon="edit", on_click=lambda: self._edit_pdb_fixing()
-                        ).props("flat round dense color=primary")
+                        ).props(
+                            'flat round dense color=primary data-testid="edit-pdb-fixing"'
+                        ).mark("edit-pdb-fixing")
                     ui.label().classes("text-caption text-grey").bind_text_from(
                         self, "fix_pdb_method", backward=lambda v: f"Method: {v}"
                     )
@@ -225,13 +227,18 @@ class ParameterPanel:
                 ui.label("PDB Fixing Parameters").classes("text-h6")
                 ui.button(
                     "Save", icon="save", on_click=lambda: self._save_and_close()
-                ).props("color=primary")
+                ).props('color=primary data-testid="save-pdb-fixing"').mark(
+                    "save-pdb-fixing"
+                )
 
             ui.separator()
 
             with ui.column().classes("w-full q-mt-md gap-4"):
-                ui.switch("Enable PDB Fixing", value=self.fix_pdb_enabled).bind_value(
-                    self, "fix_pdb_enabled"
+                (
+                    ui.switch("Enable PDB Fixing", value=self.fix_pdb_enabled)
+                    .props('data-testid="fix-pdb-enabled"')
+                    .mark("fix-pdb-enabled")
+                    .bind_value(self, "fix_pdb_enabled")
                 )
 
                 method_select = ui.select(

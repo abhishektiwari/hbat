@@ -14,7 +14,10 @@ from hbat.visualization.minimal_pdb_extractor import (
     format_minimal_pdb,
     format_structure_as_pdb,
 )
-from hbat.visualization.pymol_exporter import PyMOLExporter
+from hbat.visualization.pymol_exporter import (
+    PyMOLExporter,
+    export_interactions_to_pymol,
+)
 
 
 # Test data: PDB structures with expected interaction types
@@ -269,6 +272,30 @@ class TestMinimalPdbExtraction:
 @pytest.mark.requires_pdb_files
 class TestPyMOLExporter:
     """Test PyMOL exporter functionality with parameterized data."""
+
+    def test_pymol_export_without_pdb_fixing_uses_input_file(self, tmp_path):
+        """PyMOL export remains usable when PDB fixing is disabled."""
+        pdb_file = "example_pdb_files/fixed/6rsa_openbabel.pdb"
+        if not os.path.exists(pdb_file):
+            pytest.skip(f"PDB file {pdb_file} not found")
+
+        analyzer = NPMolecularInteractionAnalyzer(
+            AnalysisParameters(fix_pdb_enabled=False)
+        )
+        assert analyzer.analyze_file(pdb_file)
+
+        input_file_path = analyzer._pdb_fixing_info.get("input_file_path")
+        assert input_file_path == pdb_file
+
+        output_dir = tmp_path / "pymol"
+        assert export_interactions_to_pymol(
+            pdb_file_path=input_file_path,
+            parser=analyzer.parser,
+            hydrogen_bonds=analyzer.hydrogen_bonds,
+            output_dir=str(output_dir),
+        )
+        assert (output_dir / "6rsa_openbabel.pdb").exists()
+        assert (output_dir / "6rsa_openbabel.pml").exists()
 
     @pytest.mark.parametrize(
         "test_data", VISUALIZATION_TEST_DATA, ids=lambda x: x["name"]

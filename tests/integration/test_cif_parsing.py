@@ -7,6 +7,8 @@ Tests the CIF format support added to HBAT, including:
 - Format detection and routing
 """
 
+from pathlib import Path
+
 import pytest
 from hbat.core.pdb_parser import PDBParser
 
@@ -47,6 +49,19 @@ class TestCIFParsing:
 
         # For now, just verify the method exists
         assert hasattr(parser, "parse_cif_file")
+
+    def test_pdb_records_with_cif_extension_use_pdb_parser(self, tmp_path):
+        """A PDB file renamed with .cif is parsed without recursive dispatch."""
+        source = Path("example_pdb_files/6rsa.pdb")
+        mislabeled_file = tmp_path / "mislabeled.cif"
+        mislabeled_file.write_text(source.read_text())
+
+        parser = PDBParser()
+
+        result = parser.parse_file(str(mislabeled_file))
+
+        assert result is True
+        assert len(parser.atoms) > 0
 
     def test_pdb_parsing_still_works(self):
         """Verify that existing PDB parsing was not broken by refactoring."""

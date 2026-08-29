@@ -1,0 +1,111 @@
+name: Cleanup Old Release Assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      older_than_days:
+        description: 'Delete matching assets older than this many days'
+        required: true
+        default: 90
+        type: number
+      dry_run:
+        description: 'List eligible assets without deleting them'
+        required: true
+        default: true
+        type: boolean
+
+concurrency:
+  group: cleanup-old-release-assets
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Delete selected old release assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OLDER_THAN_DAYS: ${{ inputs.older_than_days }}
+      DRY_RUN: ${{ inputs.dry_run }}
+
+    steps:
+      - name: Delete matching assets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if ! [[ "$OLDER_THAN_DAYS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "older_than_days must be a positive integer" >&2
+            exit 1
+          fi
+
+          cutoff_epoch=$(date -u -d "$OLDER_THAN_DAYS days ago" +%s)
+          cutoff_iso=$(date -u -d "@$cutoff_epoch" +'%Y-%m-%dT%H:%M:%SZ')
+          checked=0
+          matched=0
+          deleted=0
+          failures=0
+
+          echo "Checking assets created before $cutoff_iso"
+          echo "Dry run: $DRY_RUN"
+
+          while IFS=$'\t' read -r release_id tag_name; do
+            checked=$((checked + 1))
+
+            while IFS=$'\t' read -r asset_id asset_name created_at; do
+              case "$asset_name" in
+                hbat_*.deb|HBAT-*-x86_64.AppImage|hbat_*.AppImage|hbat-linux-binaries-*.zip|hbat-*.dmg)
+                  ;;
+                *)
+                  continue
+                  ;;
+              esac
+
+              created_epoch=$(date -u -d "$created_at" +%s)
+              if (( created_epoch >= cutoff_epoch )); then
+                continue
+              fi
+
+              matched=$((matched + 1))
+              if [[ "$DRY_RUN" == "true" ]]; then
+                echo "Would delete $asset_name from $tag_name (created $created_at)"
+                continue
+              fi
+
+              echo "Deleting $asset_name from $tag_name (created $created_at)"
+              if gh api --method DELETE \
+                -H 'Accept: application/vnd.github+json' \
+                "/repos/$GITHUB_REPOSITORY/releases/assets/$asset_id"; then
+                deleted=$((deleted + 1))
+              else
+                failures=$((failures + 1))
+              fi
+            done < <(
+              gh api --paginate \
+                -H 'Accept: application/vnd.github+json' \
+                "/repos/$GITHUB_REPOSITORY/releases/$release_id/assets?per_page=100" \
+                --jq '.[] | [.id, .name, .created_at] | @tsv'
+            )
+          done < <(
+            gh api --paginate \
+              -H 'Accept: application/vnd.github+json' \
+              "/repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+              --jq '.[] | select(.draft == false and .prerelease == false) | [.id, .tag_name] | @tsv'
+          )
+
+          {
+            echo '## Release asset cleanup'
+            echo "- Stable releases checked: $checked"
+            echo "- Age threshold: $OLDER_THAN_DAYS days (before $cutoff_iso)"
+            echo "- Matching old assets: $matched"
+            echo "- Assets deleted: $deleted"
+            echo "- Deletion failures: $failures"
+            echo "- Dry run: $DRY_RUN"
+            echo '- Other release assets, releases, and tags were left unchanged.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if (( failures > 0 )); then
+            exit 1
+          fi

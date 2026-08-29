@@ -16,7 +16,7 @@ from typing import Any, Dict, Optional
 import tk_async_execute as tae
 
 from ..constants import APP_NAME, APP_VERSION, GUIDefaults
-from ..constants.parameters import ParametersDefault
+from ..config.preset_schema import preset_to_parameters
 from ..core.analysis import (
     AnalysisParameters,
     NPMolecularInteractionAnalyzer,
@@ -1217,75 +1217,11 @@ Author: Abhishek Tiwari
             )
             return False
 
-        params_data = preset_data["parameters"]
-
-        # Create new AnalysisParameters with preset values
-        kwargs = {}
-
-        # Apply hydrogen bond parameters
-        if "hydrogen_bonds" in params_data:
-            hb = params_data["hydrogen_bonds"]
-            kwargs.update(
-                {
-                    "hb_distance_cutoff": hb.get(
-                        "h_a_distance_cutoff", ParametersDefault.HB_DISTANCE_CUTOFF
-                    ),
-                    "hb_angle_cutoff": hb.get(
-                        "dha_angle_cutoff", ParametersDefault.HB_ANGLE_CUTOFF
-                    ),
-                    "hb_donor_acceptor_cutoff": hb.get(
-                        "d_a_distance_cutoff", ParametersDefault.HB_DA_DISTANCE
-                    ),
-                }
-            )
-
-        # Apply halogen bond parameters
-        if "halogen_bonds" in params_data:
-            xb = params_data["halogen_bonds"]
-            kwargs.update(
-                {
-                    "xb_distance_cutoff": xb.get(
-                        "x_a_distance_cutoff", ParametersDefault.XB_DISTANCE_CUTOFF
-                    ),
-                    "xb_angle_cutoff": xb.get(
-                        "dxa_angle_cutoff", ParametersDefault.XB_ANGLE_CUTOFF
-                    ),
-                }
-            )
-
-        # Apply π interaction parameters
-        if "pi_interactions" in params_data:
-            pi = params_data["pi_interactions"]
-            kwargs.update(
-                {
-                    "pi_distance_cutoff": pi.get(
-                        "h_pi_distance_cutoff", ParametersDefault.PI_DISTANCE_CUTOFF
-                    ),
-                    "pi_angle_cutoff": pi.get(
-                        "dh_pi_angle_cutoff", ParametersDefault.PI_ANGLE_CUTOFF
-                    ),
-                }
-            )
-
-        # Apply general parameters
-        if "general" in params_data:
-            gen = params_data["general"]
-            kwargs.update(
-                {
-                    "covalent_cutoff_factor": gen.get(
-                        "covalent_cutoff_factor",
-                        ParametersDefault.COVALENT_CUTOFF_FACTOR,
-                    ),
-                    "analysis_mode": gen.get(
-                        "analysis_mode", ParametersDefault.ANALYSIS_MODE
-                    ),
-                }
-            )
-
-        # Validate before replacing the active session parameters
-        preset_params = AnalysisParameters(**kwargs)
         try:
-            preset_params.validate_or_raise("preset parameters")
+            preset_params = preset_to_parameters(
+                preset_data,
+                base_params=self.session_parameters or AnalysisParameters(),
+            )
         except ValueError as e:
             messagebox.showerror("Invalid Preset", str(e))
             return False

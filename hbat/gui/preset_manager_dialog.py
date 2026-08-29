@@ -12,6 +12,7 @@ from datetime import datetime
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, Dict, Optional
 
+from ..config.preset_schema import PRESET_FORMAT_VERSION, parameters_to_preset
 from ..core.analysis import AnalysisParameters
 
 
@@ -564,83 +565,13 @@ PDB Fixing Parameters:
 
     def _create_preset_data(self) -> Dict[str, Any]:
         """Create preset data from current parameters."""
-        params = self.current_params
         preset_data = {
-            "format_version": "1.0",
+            "format_version": PRESET_FORMAT_VERSION,
             "application": "HBAT",
             "created": datetime.now().isoformat(),
             "description": self.description_var.get(),
-            "parameters": {
-                "hydrogen_bonds": {
-                    "h_a_distance_cutoff": params.hb_distance_cutoff,
-                    "dha_angle_cutoff": params.hb_angle_cutoff,
-                    "d_a_distance_cutoff": params.hb_donor_acceptor_cutoff,
-                },
-                "weak_hydrogen_bonds": {
-                    "h_a_distance_cutoff": params.whb_distance_cutoff,
-                    "dha_angle_cutoff": params.whb_angle_cutoff,
-                    "d_a_distance_cutoff": params.whb_donor_acceptor_cutoff,
-                },
-                "halogen_bonds": {
-                    "x_a_distance_cutoff": params.xb_distance_cutoff,
-                    "dxa_angle_cutoff": params.xb_angle_cutoff,
-                },
-                "pi_interactions": {
-                    "h_pi_distance_cutoff": params.pi_distance_cutoff,
-                    "dh_pi_angle_cutoff": params.pi_angle_cutoff,
-                    # π interaction subtype parameters
-                    "ccl_pi_distance_cutoff": params.pi_ccl_distance_cutoff,
-                    "ccl_pi_angle_cutoff": params.pi_ccl_angle_cutoff,
-                    "cbr_pi_distance_cutoff": params.pi_cbr_distance_cutoff,
-                    "cbr_pi_angle_cutoff": params.pi_cbr_angle_cutoff,
-                    "ci_pi_distance_cutoff": params.pi_ci_distance_cutoff,
-                    "ci_pi_angle_cutoff": params.pi_ci_angle_cutoff,
-                    "ch_pi_distance_cutoff": params.pi_ch_distance_cutoff,
-                    "ch_pi_angle_cutoff": params.pi_ch_angle_cutoff,
-                    "nh_pi_distance_cutoff": params.pi_nh_distance_cutoff,
-                    "nh_pi_angle_cutoff": params.pi_nh_angle_cutoff,
-                    "oh_pi_distance_cutoff": params.pi_oh_distance_cutoff,
-                    "oh_pi_angle_cutoff": params.pi_oh_angle_cutoff,
-                    "sh_pi_distance_cutoff": params.pi_sh_distance_cutoff,
-                    "sh_pi_angle_cutoff": params.pi_sh_angle_cutoff,
-                },
-                "pi_pi_stacking": {
-                    "distance_cutoff": params.pi_pi_distance_cutoff,
-                    "parallel_angle_cutoff": params.pi_pi_parallel_angle_cutoff,
-                    "tshaped_angle_min": params.pi_pi_tshaped_angle_min,
-                    "tshaped_angle_max": params.pi_pi_tshaped_angle_max,
-                    "offset_cutoff": params.pi_pi_offset_cutoff,
-                },
-                "carbonyl_interactions": {
-                    "distance_cutoff": params.carbonyl_distance_cutoff,
-                    "angle_min": params.carbonyl_angle_min,
-                    "angle_max": params.carbonyl_angle_max,
-                },
-                "n_pi_interactions": {
-                    "distance_cutoff": params.n_pi_distance_cutoff,
-                    "sulfur_distance_cutoff": params.n_pi_sulfur_distance_cutoff,
-                    "angle_min": params.n_pi_angle_min,
-                    "angle_max": params.n_pi_angle_max,
-                },
-                "general": {
-                    "covalent_cutoff_factor": params.covalent_cutoff_factor,
-                    "analysis_mode": params.analysis_mode,
-                },
-            },
         }
-
-        # Add PDB fixing parameters if they exist
-        if hasattr(params, "fix_pdb_enabled"):
-            preset_data["parameters"]["pdb_fixing"] = {
-                "enabled": params.fix_pdb_enabled,
-                "method": params.fix_pdb_method,
-                "add_hydrogens": params.fix_pdb_add_hydrogens,
-                "add_heavy_atoms": params.fix_pdb_add_heavy_atoms,
-                "replace_nonstandard": params.fix_pdb_replace_nonstandard,
-                "remove_heterogens": params.fix_pdb_remove_heterogens,
-                "keep_water": params.fix_pdb_keep_water,
-            }
-
+        preset_data.update(parameters_to_preset(self.current_params))
         return preset_data
 
     def _get_presets_directory(self) -> str:

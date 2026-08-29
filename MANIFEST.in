@@ -8,8 +8,6 @@ include CODE_OF_CONDUCT.md
 
 # Configuration files
 include pyproject.toml
-include pytest.ini
-include requirements*.txt
 include Makefile
 
 # Icon and graphics files

@@ -31,6 +31,12 @@ from hbat.config.ui_config import (
 )
 
 from hbat.config.parameter_controller import ParameterController
+from hbat.config.preset_schema import (
+    PRESET_FORMAT_VERSION,
+    PRESET_PARAMETER_FIELDS,
+    parameters_to_preset,
+    preset_to_parameters,
+)
 
 __all__ = [
     # Dataclasses
@@ -57,4 +63,9 @@ __all__ = [
     "get_parameters_by_category",
     # Controller
     "ParameterController",
+    # Preset schema
+    "PRESET_FORMAT_VERSION",
+    "PRESET_PARAMETER_FIELDS",
+    "parameters_to_preset",
+    "preset_to_parameters",
 ]
