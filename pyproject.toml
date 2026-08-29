@@ -60,7 +60,6 @@ dev = [
     "pandas-stubs>=1.0.0",
     "psutil>=7.0.0",
     "selenium>=4.20.0",
-    "microsoft-python-type-stubs @ git+https://github.com/microsoft/python-type-stubs.git",
 ]
 build = [
     "build>=0.8.0",
