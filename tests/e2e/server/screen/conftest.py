@@ -24,14 +24,24 @@ HAS_CHROME = bool(
 )
 
 if importlib.util.find_spec("selenium") and HAS_CHROME:
+    from nicegui.testing.screen import Screen
     from nicegui.testing.screen_plugin import (  # noqa: F401
         nicegui_chrome_options,
         nicegui_driver,
         nicegui_remove_all_screenshots,
         pytest_configure,
-        pytest_runtest_makereport,
         screen,
     )
+
+    @pytest.hookimpl(tryfirst=True, hookwrapper=True)
+    def pytest_runtest_makereport(item, call):
+        """Keep NiceGUI's root screenshot only when a test does not fully pass."""
+        outcome = yield
+        report = outcome.get_result()
+        setattr(item, f"rep_{report.when}", report)
+        if report.when == "teardown" and report.passed:
+            redundant_screenshot = Screen.SCREENSHOT_DIR / f"{item.name}.png"
+            redundant_screenshot.unlink(missing_ok=True)
 else:
 
     @pytest.fixture
