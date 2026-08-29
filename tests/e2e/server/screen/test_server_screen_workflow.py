@@ -28,6 +28,46 @@ def _has_chrome() -> bool:
     )
 
 
+def _position_tab_below_header(screen, tab) -> None:
+    """Position a result tab below the fixed header for a useful screenshot."""
+    screen.selenium.execute_script(
+        "arguments[0].scrollIntoView({block: 'start'}); window.scrollBy(0, -88);",
+        tab,
+    )
+    screen.wait(0.25)
+
+
+def _capture_result_tabs(screen, case, expected_tabs) -> None:
+    """Capture every result tab under a directory named for the PDB code."""
+    tab_elements = screen.selenium.find_elements(
+        "css selector", '[data-testid^="results-tab-"]'
+    )
+    actual_tabs = {
+        tab.get_attribute("data-testid").removeprefix("results-tab-")
+        for tab in tab_elements
+    }
+    assert actual_tabs == expected_tabs
+
+    pdb_code = Path(case["name"]).stem.lower()
+    pdb_screenshot_dir = screen.SCREENSHOT_DIR / pdb_code
+    pdb_screenshot_dir.mkdir(parents=True, exist_ok=True)
+
+    for tab_name in sorted(actual_tabs):
+        selector = f'[data-testid="results-tab-{tab_name}"]'
+        tab = screen.find_by_css(selector)
+        _position_tab_below_header(screen, tab)
+        tab.click()
+        screen.wait_for_js(
+            f"document.querySelector('{selector}').getAttribute(\"aria-selected\")",
+            "true",
+            timeout=5,
+        )
+        screen.wait(0.25)
+        assert screen.selenium.get_screenshot_as_file(
+            str(pdb_screenshot_dir / f"{tab_name}.png")
+        )
+
+
 pytestmark = [
     pytest.mark.e2e,
     pytest.mark.server,
@@ -104,11 +144,19 @@ def test_fixed_pdb_workflow_in_real_browser(screen, fixed_pdb_case):
         )
         assert tab_exists is (interaction_type in expected_interactions)
 
-    # Leave the page at the top of the results so NiceGUI's teardown screenshot
-    # captures the interaction tabs below the fixed application header.
+    expected_tabs = {"summary", "cooperativity_chains", *expected_interactions}
+    if case["expected_ligand_interactions"]:
+        expected_tabs.add("ligands")
+    _capture_result_tabs(screen, case, expected_tabs)
+
+    # Restore Summary so NiceGUI's automatic teardown screenshot remains the
+    # overview, in addition to the organized per-tab screenshots above.
     summary_tab = screen.find_by_css('[data-testid="results-tab-summary"]')
-    screen.selenium.execute_script(
-        "arguments[0].scrollIntoView({block: 'start'}); window.scrollBy(0, -88);",
-        summary_tab,
+    summary_tab.click()
+    screen.wait_for_js(
+        "document.querySelector('[data-testid=\"results-tab-summary\"]')"
+        '.getAttribute("aria-selected")',
+        "true",
+        timeout=5,
     )
-    screen.wait(0.25)
+    _position_tab_below_header(screen, summary_tab)
