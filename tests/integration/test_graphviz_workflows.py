@@ -3,7 +3,8 @@
 Integration tests for GraphViz GUI components in HBAT.
 
 These display-dependent tests coordinate GraphViz GUI components with mocks at
-external boundaries. Set ``HBAT_RUN_GUI_TESTS=1`` in a desktop session to run them.
+external boundaries. Set ``HBAT_RUN_GUI_TESTS=1`` with a virtual or desktop display
+to run them. The ``make test-gui`` target sets this automatically.
 """
 
 import os
@@ -28,7 +29,7 @@ pytestmark = [
     pytest.mark.gui,
     pytest.mark.skipif(
         os.environ.get("HBAT_RUN_GUI_TESTS") != "1",
-        reason="Set HBAT_RUN_GUI_TESTS=1 in a desktop session to run Tk tests",
+        reason="Set HBAT_RUN_GUI_TESTS=1 with a virtual or desktop display",
     ),
 ]
 
