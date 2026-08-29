@@ -44,6 +44,7 @@ dynamic = ["version"]
 [project.optional-dependencies]
 dev = [
     "pytest>=6.0.0",
+    "pytest-asyncio>=0.23.0",
     "pytest-cov>=2.8.0",
     "pytest-mock>=3.0.0",
     "ruff>=0.0.241",
@@ -58,6 +59,7 @@ dev = [
     "types-Pillow>=8.0.0",
     "pandas-stubs>=1.0.0",
     "psutil>=7.0.0",
+    "selenium>=4.20.0",
     "microsoft-python-type-stubs @ git+https://github.com/microsoft/python-type-stubs.git",
 ]
 build = [
@@ -85,14 +87,14 @@ gui = [
     # brew install python-tk
 ]
 server = [
-    "nicegui>=1.4.0",
+    "nicegui>=3.16.0,<4.0.0",
     "flask>=2.3.0",
     "flask-cors>=4.0.0",
     "aiofiles>=23.0.0",
 ]
 
 all = [
-    "nicegui>=1.4.0",
+    "nicegui>=3.16.0,<4.0.0",
     "flask>=2.3.0",
     "flask-cors>=4.0.0",
     "aiofiles>=23.0.0",
@@ -197,6 +199,7 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
+asyncio_mode = "auto"
 addopts = "-ra -q --strict-markers --strict-config --tb=short"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
@@ -215,6 +218,8 @@ markers = [
     "cooperativity: marks tests for cooperativity analysis",
     "preset: marks tests related to preset functionality",
     "cli: marks command-line interface tests",
+    "server: marks web-server workflow tests",
+    "browser: marks tests that require Chrome or Chromium",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning",

@@ -277,3 +277,6 @@ plan/*
 
 # Locally downloaded actionlint binary (CI downloads its own copy at runtime)
 /actionlint
+
+# Ignore screenshots
+screenshots/

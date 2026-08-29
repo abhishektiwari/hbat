@@ -1,6 +1,6 @@
 # HBAT Development Makefile
 
-.PHONY: help install install-dev test test-all test-fast test-legacy test-pytest test-unit test-integration test-e2e test-performance test-cli test-gui test-coverage test-cov test-ccd clean lint lint-fix lint-fix-tests format type-check docs generate-ccd-bonds run-server uc-build uc-deploy uc-status
+.PHONY: help install install-dev test test-all test-fast test-legacy test-pytest test-unit test-integration test-e2e test-server test-performance test-cli test-gui test-coverage test-cov test-ccd clean lint lint-fix lint-fix-tests format type-check docs generate-ccd-bonds run-server uc-build uc-deploy uc-status
 
 # Default target
 help:
@@ -17,6 +17,7 @@ help:
 	@echo "  test-unit     Run unit tests only (fast, isolated)"
 	@echo "  test-integration Run integration tests only (component interactions)"
 	@echo "  test-e2e      Run end-to-end workflow tests only"
+	@echo "  test-server   Run NiceGUI server tests (simulated users and Chrome)"
 	@echo "  test-performance Run performance benchmark tests only"
 	@echo "  test-cli      Run CLI tests only"
 	@echo "  test-gui      Run GUI tests only (requires display)"
@@ -120,6 +121,10 @@ test-e2e:
 	@echo "Running end-to-end tests..."
 	pytest tests/e2e/ -v -m "e2e"
 
+test-server:
+	@echo "Running NiceGUI server tests..."
+	pytest tests/e2e/server/ -v -m "server"
+
 test-performance:
 	@echo "Running performance tests..."
 	pytest tests/performance/ -v -m "performance"
@@ -180,6 +185,7 @@ clean:
 	rm -rf notebooks/__pycache__
 	rm -rf notebooks/*.png
 	rm -rf uploads/sessions/*
+	rm -rf screenshots/
 	rm -rf "~"
 	rm -f coverage.xml
 	rm -f junit.xml

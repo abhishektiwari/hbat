@@ -176,8 +176,9 @@ class UploadPanel:
                     on_upload=handle_upload,
                     auto_upload=True,
                 )
-                .props('accept=".pdb,.cif"')
+                .props('accept=".pdb,.cif" data-testid="structure-upload"')
                 .classes("w-full")
+                .mark("structure-upload")
             )
 
         ui.label("OR").classes("text-center text-bold q-my-md")
@@ -223,8 +224,11 @@ class UploadPanel:
                     ).props("size=sm outline color=primary")
 
         # Status label
-        self.upload_label = ui.label("No file loaded").classes(
-            "text-caption text-grey q-mt-md"
+        self.upload_label = (
+            ui.label("No file loaded")
+            .classes("text-caption text-grey q-mt-md")
+            .props('data-testid="upload-status"')
+            .mark("upload-status")
         )
 
         # Info

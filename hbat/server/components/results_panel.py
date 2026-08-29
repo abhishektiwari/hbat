@@ -306,7 +306,9 @@ class WebResultsPanel:
                     if interactions:
                         label = f"{label} ({len(interactions)})"
 
-                ui.tab(config["id"], label=label, icon=config["icon"])
+                ui.tab(config["id"], label=label, icon=config["icon"]).props(
+                    f'data-testid="results-tab-{config["id"]}"'
+                ).mark(f"results-tab-{config['id']}")
 
     def _create_panels(self):
         """Create panels for all available interactions."""
@@ -326,7 +328,9 @@ class WebResultsPanel:
     def _update_summary_panel(self):
         """Update summary statistics panel."""
         with self.summary_panel:
-            ui.label(f"Analysis Summary For: {self.current_file}").classes("text-h5")
+            ui.label(f"Analysis Summary For: {self.current_file}").classes(
+                "text-h5"
+            ).props('data-testid="results-ready"').mark("results-ready")
 
             summary = self.analyzer.get_summary()
 
@@ -336,18 +340,24 @@ class WebResultsPanel:
                     ui.label("Hydrogen Bonds").classes("text-h6")
                     ui.label(str(summary["hydrogen_bonds"]["count"])).classes(
                         "text-h4 text-primary"
+                    ).props('data-testid="summary-hydrogen_bonds-count"').mark(
+                        "summary-hydrogen_bonds-count"
                     )
 
                 with ui.card().classes("flex-1"):
                     ui.label("Halogen Bonds").classes("text-h6")
                     ui.label(str(summary["halogen_bonds"]["count"])).classes(
                         "text-h4 text-orange"
+                    ).props('data-testid="summary-halogen_bonds-count"').mark(
+                        "summary-halogen_bonds-count"
                     )
 
                 with ui.card().classes("flex-1"):
                     ui.label("π Inter").classes("text-h6")
                     ui.label(str(summary["pi_interactions"]["count"])).classes(
                         "text-h4 text-purple"
+                    ).props('data-testid="summary-pi_interactions-count"').mark(
+                        "summary-pi_interactions-count"
                     )
 
             with ui.row().classes("w-full gap-2"):
@@ -355,32 +365,42 @@ class WebResultsPanel:
                     ui.label("π-π Stacking").classes("text-h6")
                     ui.label(
                         str(summary.get("pi_pi_interactions", {}).get("count", 0))
-                    ).classes("text-h4 text-indigo")
+                    ).classes("text-h4 text-indigo").props(
+                        'data-testid="summary-pi_pi_interactions-count"'
+                    ).mark("summary-pi_pi_interactions-count")
 
                 with ui.card().classes("flex-1"):
                     ui.label("Carbonyl n→π*").classes("text-h6")
                     ui.label(
                         str(summary.get("carbonyl_interactions", {}).get("count", 0))
-                    ).classes("text-h4 text-teal")
+                    ).classes("text-h4 text-teal").props(
+                        'data-testid="summary-carbonyl_interactions-count"'
+                    ).mark("summary-carbonyl_interactions-count")
 
                 with ui.card().classes("flex-1"):
                     ui.label("n→π* Inter").classes("text-h6")
                     ui.label(
                         str(summary.get("n_pi_interactions", {}).get("count", 0))
-                    ).classes("text-h4 text-green")
+                    ).classes("text-h4 text-green").props(
+                        'data-testid="summary-n_pi_interactions-count"'
+                    ).mark("summary-n_pi_interactions-count")
 
                 # Ligand Interactions count
                 with ui.card().classes("flex-1"):
                     ui.label("Ligand Inter").classes("text-h6")
                     ui.label(
                         str(summary.get("ligand_interactions", {}).get("count", 0))
-                    ).classes("text-h4 text-amber")
+                    ).classes("text-h4 text-amber").props(
+                        'data-testid="summary-ligand_interactions-count"'
+                    ).mark("summary-ligand_interactions-count")
 
             with ui.row().classes("w-full gap-2"):
                 with ui.card().classes("flex-1"):
                     ui.label("Potential Chains").classes("text-h6")
                     ui.label(str(summary["cooperativity_chains"]["count"])).classes(
                         "text-h4 text-blue"
+                    ).props('data-testid="summary-cooperativity_chains-count"').mark(
+                        "summary-cooperativity_chains-count"
                     )
 
                 pdb_fix = summary["pdb_fixing"]
@@ -399,6 +419,16 @@ class WebResultsPanel:
                     ui.label("Water Bridges").classes("text-h6")
                     ui.label(str(summary["water_bridges"]["count"])).classes(
                         "text-h4 text-cyan"
+                    ).props('data-testid="summary-water_bridges-count"').mark(
+                        "summary-water_bridges-count"
+                    )
+
+                with ui.card().classes("flex-1"):
+                    ui.label("Total Interactions").classes("text-h6")
+                    ui.label(str(summary["total_interactions"])).classes(
+                        "text-h4 text-primary"
+                    ).props('data-testid="summary-total_interactions-count"').mark(
+                        "summary-total_interactions-count"
                     )
 
             # Bond Detection Information
