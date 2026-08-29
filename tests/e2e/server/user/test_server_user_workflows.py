@@ -1,6 +1,7 @@
 """End-to-end HBAT server tests using NiceGUI's simulated user."""
 
 import asyncio
+import importlib
 import json
 import os
 from pathlib import Path
@@ -95,3 +96,21 @@ async def test_two_users_have_isolated_files_and_results(user, create_user):
     assert {
         path.name for directory in new_sessions for path in directory.glob("*.pdb")
     } == {first_case["name"], second_case["name"]}
+
+
+async def test_user_simulation_cleanup_preserves_hbat_package():
+    """NiceGUI cleanup must not detach HBAT subpackages used by later tests."""
+    from nicegui.testing.user_simulation import user_simulation
+
+    subpackages = {
+        name: importlib.import_module(f"hbat.{name}")
+        for name in ("core", "gui", "utilities", "visualization")
+    }
+    main_file = Path(__file__).parents[1] / "nicegui_main.py"
+
+    async with user_simulation(main_file=main_file):
+        pass
+
+    hbat_package = importlib.import_module("hbat")
+    for name, subpackage in subpackages.items():
+        assert getattr(hbat_package, name) is subpackage
