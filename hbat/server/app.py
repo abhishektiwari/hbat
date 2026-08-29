@@ -36,12 +36,56 @@ SESSIONS_BASE_DIR.mkdir(exist_ok=True)
 # Global session manager (7 days = 168 hours)
 session_manager = SessionManager(SESSIONS_BASE_DIR, session_timeout_hours=168)
 
+ANALYTICS_ENV_VAR = "HBAT_ANALYTICS_ENABLED"
+GA_MEASUREMENT_ID = "G-Y4J82QZJ50"
+
+
+def is_analytics_enabled() -> bool:
+    """Return whether Google Analytics is enabled for this server process."""
+    return os.getenv(ANALYTICS_ENV_VAR, "false").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
+def get_google_analytics_head_html(enabled: Optional[bool] = None) -> Optional[str]:
+    """Return the Google Analytics head markup when analytics is enabled."""
+    if enabled is None:
+        enabled = is_analytics_enabled()
+
+    if not enabled:
+        return None
+
+    return f"""<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id={GA_MEASUREMENT_ID}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){{dataLayer.push(arguments);}}
+  gtag('js', new Date());
+
+  gtag('config', '{GA_MEASUREMENT_ID}');
+
+  // Data layer tracking helper
+  window.trackEvent = function(eventName, eventData = {{}}) {{
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({{
+      'event': eventName,
+      ...eventData,
+      'timestamp': new Date().toISOString()
+    }});
+    console.log('Data Layer Event:', eventName, eventData);
+  }};
+</script>"""
+
 
 class HBATWebApp:
     """Main HBAT web application class."""
 
     def __init__(self):
         """Initialize the HBAT web application."""
+        self.analytics_enabled = is_analytics_enabled()
         self.analyzer: Optional[NPMolecularInteractionAnalyzer] = None
         self.current_file: Optional[str] = None
         self.current_file_path: Optional[Path] = None
@@ -89,6 +133,9 @@ class HBATWebApp:
 
         :param analysis_time_seconds: Time taken for analysis in seconds
         """
+        if not self.analytics_enabled:
+            return
+
         import json
 
         # Extract PDB ID from filename (e.g., "1ABC.pdb" -> "1ABC")
@@ -118,6 +165,9 @@ class HBATWebApp:
 
         :param export_format: Export format (json, csv, txt, pdb, cif, zip)
         """
+        if not self.analytics_enabled:
+            return
+
         import json
 
         # Extract PDB ID from filename (e.g., "1ABC.pdb" -> "1ABC")
@@ -970,6 +1020,8 @@ def create_app():
     @ui.page("/")
     def index():
         """Main page route."""
+        hbat_app = HBATWebApp()
+
         # Configure Quasar color theme
         ui.colors(
             primary="#20c997",
@@ -987,29 +1039,12 @@ def create_app():
             '<script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>'
         )
 
-        # Add Google Analytics tracking
-        ui.add_head_html(
-            """<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-Y4J82QZJ50"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-Y4J82QZJ50');
-
-  // Data layer tracking helper
-  window.trackEvent = function(eventName, eventData = {}) {
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({
-      'event': eventName,
-      ...eventData,
-      'timestamp': new Date().toISOString()
-    });
-    console.log('Data Layer Event:', eventName, eventData);
-  };
-</script>"""
+        # Add Google Analytics tracking only when explicitly enabled.
+        analytics_head_html = get_google_analytics_head_html(
+            hbat_app.analytics_enabled
         )
+        if analytics_head_html:
+            ui.add_head_html(analytics_head_html)
 
         # Add meta tags for SEO and social sharing
         ui.add_head_html(
@@ -1072,7 +1107,6 @@ def create_app():
         """
         )
 
-        hbat_app = HBATWebApp()
         hbat_app.create_ui()
 
     # Check if running in production/Docker environment

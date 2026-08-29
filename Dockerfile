@@ -66,6 +66,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH" \
     HBAT_ENV=production \
+    HBAT_ANALYTICS_ENABLED=true \
     HBAT_RELOAD=false
 
 # Install runtime dependencies for Graphviz
