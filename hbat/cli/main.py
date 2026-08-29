@@ -10,11 +10,12 @@ import json
 import os
 import sys
 import time
-from typing import Optional
+from contextlib import nullcontext, redirect_stdout
+from io import StringIO
 
 from .. import __version__
-from ..constants.parameters import ParametersDefault
 from ..config.preset_schema import preset_to_parameters
+from ..constants.parameters import ParametersDefault
 from ..core.analysis import AnalysisParameters, NPMolecularInteractionAnalyzer
 from ..export.results import (
     export_to_csv_files,
@@ -109,7 +110,7 @@ class ProgressBar:
         self.current_step = ""
         self.last_progress = -1
 
-    def update(self, message: str, progress: Optional[int] = None) -> None:
+    def update(self, message: str, progress: int | None = None) -> None:
         """Update progress bar with new message and optional percentage.
 
         :param message: Current operation message
@@ -1075,7 +1076,9 @@ def run_analysis(args: argparse.Namespace) -> int:
 
         # Run analysis
         start_time = time.time()
-        success = analyzer.analyze_file(args.input)
+        analysis_output = redirect_stdout(StringIO()) if args.quiet else nullcontext()
+        with analysis_output:
+            success = analyzer.analyze_file(args.input)
         analysis_time = time.time() - start_time
 
         if not success:
@@ -1187,18 +1190,21 @@ def main() -> int:
     :returns: Exit code (0 for success, non-zero for failure)
     :rtype: int
     """
-    # Initialize HBAT environment first
+    parser = create_parser()
+    args = parser.parse_args()
+
+    # Keep routine environment initialization out of normal and quiet output.
+    initialization_verbose = args.verbose and not args.quiet
+    initialization_output = (
+        nullcontext() if initialization_verbose else redirect_stdout(StringIO())
+    )
     try:
         from ..core.app_config import initialize_hbat_environment
 
-        initialize_hbat_environment(
-            verbose=False
-        )  # We'll handle verbosity based on args
+        with initialization_output:
+            initialize_hbat_environment(verbose=initialization_verbose)
     except ImportError:
         pass  # Continue without app config if import fails
-
-    parser = create_parser()
-    args = parser.parse_args()
 
     # Show HBAT environment info if verbose
     if hasattr(args, "verbose") and args.verbose:
@@ -1231,6 +1237,11 @@ def main() -> int:
     # Handle conflicting options
     if args.verbose and args.quiet:
         print_error("Cannot use both --verbose and --quiet options")
+        return 1
+
+    output_options = [args.output, args.json, args.csv]
+    if sum(bool(option) for option in output_options) > 1:
+        print_error("Use only one of --output, --json, or --csv")
         return 1
 
     return run_analysis(args)

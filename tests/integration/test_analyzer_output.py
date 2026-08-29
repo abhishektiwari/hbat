@@ -144,11 +144,6 @@ class TestAnalyzerStatisticsIntegration:
                 + len(analyzer.carbonyl_interactions)
                 + len(analyzer.n_pi_interactions)
                 + len(analyzer.water_bridges)
-                + (
-                    len(analyzer.ligand_interactions.interactions)
-                    if analyzer.ligand_interactions
-                    else 0
-                )
             ),
         }
 
@@ -213,7 +208,6 @@ class TestAnalyzerStatisticsIntegration:
             + actual_carbonyl
             + actual_n_pi
             + actual_water_bridges
-            + actual_ligand
         )
 
         # Get reported statistics

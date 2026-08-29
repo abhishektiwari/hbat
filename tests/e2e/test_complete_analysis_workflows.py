@@ -10,195 +10,294 @@ This module consolidates test coverage from test_complete_workflow.py and
 test_complete_workflows.py into a data-driven parametrized structure.
 """
 
-import pytest
-import tempfile
-import os
+import csv
 import json
-import time
-from hbat.core.analyzer import MolecularInteractionAnalyzer
+import math
+from pathlib import Path
+
+import pytest
+
 from hbat.constants.parameters import AnalysisParameters
+from hbat.core.analyzer import MolecularInteractionAnalyzer
+from hbat.core.structure import Atom
+from hbat.export.results import (
+    export_to_csv_files,
+    export_to_json_files,
+    export_to_json_single_file,
+    export_to_txt_single_file,
+)
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+PRIMARY_INTERACTION_ATTRIBUTES = (
+    "hydrogen_bonds",
+    "halogen_bonds",
+    "pi_interactions",
+    "pi_pi_interactions",
+    "carbonyl_interactions",
+    "n_pi_interactions",
+    "water_bridges",
+)
+
+COUNT_ATTRIBUTES = PRIMARY_INTERACTION_ATTRIBUTES + (
+    "ligand_interactions",
+    "cooperativity_chains",
+)
 
 
-# ============================================================================
-# Parametrized Fixtures
-# ============================================================================
+def get_interaction_counts(analyzer):
+    """Return primary and derived interaction counts for regression checks."""
+    counts = {
+        name: len(getattr(analyzer, name) or [])
+        for name in PRIMARY_INTERACTION_ATTRIBUTES
+    }
+    counts["ligand_interactions"] = (
+        len(analyzer.ligand_interactions.interactions)
+        if analyzer.ligand_interactions
+        else 0
+    )
+    counts["cooperativity_chains"] = len(analyzer.cooperativity_chains or [])
+    return counts
+
+
+def get_interaction_signature(interaction_type, interaction):
+    """Return a canonical atom/residue identity for an interaction."""
+    if interaction_type == "hydrogen_bonds":
+        return (
+            interaction.donor.serial,
+            interaction.hydrogen.serial,
+            interaction.acceptor.serial,
+        )
+    if interaction_type == "halogen_bonds":
+        return (
+            interaction.donor.serial,
+            interaction.halogen.serial,
+            interaction.acceptor.serial,
+        )
+    if interaction_type == "pi_interactions":
+        return (
+            interaction.donor.serial,
+            interaction.hydrogen.serial,
+            tuple(atom.serial for atom in interaction.pi_atoms),
+        )
+    if interaction_type == "pi_pi_interactions":
+        return tuple(
+            sorted(
+                (
+                    tuple(atom.serial for atom in interaction.ring1_atoms),
+                    tuple(atom.serial for atom in interaction.ring2_atoms),
+                )
+            )
+        )
+    if interaction_type == "carbonyl_interactions":
+        return (
+            interaction.donor_carbon.serial,
+            interaction.donor_oxygen.serial,
+            interaction.acceptor_carbon.serial,
+            interaction.acceptor_oxygen.serial,
+        )
+    if interaction_type == "n_pi_interactions":
+        return (
+            interaction.lone_pair_atom.serial,
+            tuple(atom.serial for atom in interaction.pi_atoms),
+        )
+    if interaction_type == "water_bridges":
+        return (
+            interaction.donor_atom.serial,
+            interaction.acceptor_atom.serial,
+            tuple(interaction.water_residues),
+        )
+    raise AssertionError(f"Unsupported interaction type: {interaction_type}")
+
+
+def validate_interaction(interaction_type, interaction, atom_serials):
+    """Validate endpoints and geometry for a detected fixed-structure interaction."""
+    donor = interaction.get_donor()
+    acceptor = interaction.get_acceptor()
+    if isinstance(donor, Atom):
+        assert donor.serial in atom_serials
+    if isinstance(acceptor, Atom):
+        assert acceptor.serial in atom_serials
+
+    assert interaction.get_donor_residue()
+    assert interaction.get_acceptor_residue()
+    assert interaction.get_acceptor_residue() != "Unknown"
+    assert interaction.get_donor_acceptor_distance() > 0
+
+    signature = get_interaction_signature(interaction_type, interaction)
+    signature_serials = set()
+
+    def collect_serials(value):
+        if isinstance(value, int):
+            signature_serials.add(value)
+        elif isinstance(value, (tuple, list)):
+            for item in value:
+                collect_serials(item)
+
+    collect_serials(signature)
+    assert signature_serials <= atom_serials
+
+    if interaction_type in {
+        "hydrogen_bonds",
+        "halogen_bonds",
+        "pi_interactions",
+    }:
+        assert math.isfinite(interaction.distance) and interaction.distance > 0
+        assert math.isfinite(interaction.angle)
+        assert 0 <= interaction.angle <= math.pi
+    elif interaction_type == "pi_pi_interactions":
+        assert math.isfinite(interaction.distance) and interaction.distance > 0
+        assert 0 <= interaction.plane_angle <= 180
+        assert interaction.offset >= 0
+    elif interaction_type == "carbonyl_interactions":
+        assert math.isfinite(interaction.distance) and interaction.distance > 0
+        assert 0 <= interaction.burgi_dunitz_angle <= 180
+    elif interaction_type == "n_pi_interactions":
+        assert math.isfinite(interaction.distance) and interaction.distance > 0
+        assert 0 <= interaction.angle_to_plane <= 90
+    elif interaction_type == "water_bridges":
+        assert interaction.water_residues
+        assert interaction.bridge_length == len(interaction.bridge_path)
+        assert interaction.bridge_length > 0
+
+
+PDB_STRUCTURES = [
+    {
+        "name": "6rsa.pdb",
+        "file": str(REPOSITORY_ROOT / "example_pdb_files/fixed/6rsa_openbabel.pdb"),
+        "expected_interactions": [
+            "hydrogen_bonds",
+            "pi_interactions",
+            "carbonyl_interactions",
+            "n_pi_interactions",
+            "water_bridges",
+        ],
+        "expected_counts": {
+            "hydrogen_bonds": 212,
+            "halogen_bonds": 0,
+            "pi_interactions": 19,
+            "pi_pi_interactions": 0,
+            "carbonyl_interactions": 35,
+            "n_pi_interactions": 1,
+            "water_bridges": 65,
+            "ligand_interactions": 21,
+            "cooperativity_chains": 40,
+        },
+        "expected_ligand_interactions": True,
+        "expected_ligand_interactions_with_water_bridges": True,
+    },
+    {
+        "name": "7nwd.pdb",
+        "file": str(REPOSITORY_ROOT / "example_pdb_files/fixed/7nwd_openbabel.pdb"),
+        "expected_interactions": [
+            "hydrogen_bonds",
+            "pi_pi_interactions",
+            "pi_interactions",
+        ],
+        "expected_counts": {
+            "hydrogen_bonds": 27,
+            "halogen_bonds": 0,
+            "pi_interactions": 3,
+            "pi_pi_interactions": 2,
+            "carbonyl_interactions": 0,
+            "n_pi_interactions": 0,
+            "water_bridges": 0,
+            "ligand_interactions": 0,
+            "cooperativity_chains": 1,
+        },
+        "expected_ligand_interactions": False,
+        "expected_ligand_interactions_with_water_bridges": False,
+    },
+    {
+        "name": "1ubi.pdb",
+        "file": str(REPOSITORY_ROOT / "example_pdb_files/fixed/1ubi_openbabel.pdb"),
+        "expected_interactions": [
+            "hydrogen_bonds",
+            "pi_interactions",
+            "carbonyl_interactions",
+            "water_bridges",
+        ],
+        "expected_counts": {
+            "hydrogen_bonds": 125,
+            "halogen_bonds": 0,
+            "pi_interactions": 2,
+            "pi_pi_interactions": 0,
+            "carbonyl_interactions": 21,
+            "n_pi_interactions": 0,
+            "water_bridges": 15,
+            "ligand_interactions": 0,
+            "cooperativity_chains": 22,
+        },
+        "expected_ligand_interactions": False,
+        "expected_ligand_interactions_with_water_bridges": False,
+    },
+    {
+        "name": "4laz.pdb",
+        "file": str(REPOSITORY_ROOT / "example_pdb_files/fixed/4laz_openbabel.pdb"),
+        "expected_interactions": [
+            "hydrogen_bonds",
+            "halogen_bonds",
+            "pi_pi_interactions",
+            "pi_interactions",
+            "carbonyl_interactions",
+            "n_pi_interactions",
+            "water_bridges",
+        ],
+        "expected_counts": {
+            "hydrogen_bonds": 863,
+            "halogen_bonds": 1,
+            "pi_interactions": 65,
+            "pi_pi_interactions": 1,
+            "carbonyl_interactions": 157,
+            "n_pi_interactions": 1,
+            "water_bridges": 211,
+            "ligand_interactions": 34,
+            "cooperativity_chains": 148,
+        },
+        "expected_ligand_interactions": True,
+        "expected_ligand_interactions_with_water_bridges": True,
+    },
+    {
+        "name": "4hhb.pdb",
+        "file": str(REPOSITORY_ROOT / "example_pdb_files/fixed/4hhb_openbabel.pdb"),
+        "expected_interactions": [
+            "hydrogen_bonds",
+            "pi_interactions",
+            "carbonyl_interactions",
+            "water_bridges",
+        ],
+        "expected_counts": {
+            "hydrogen_bonds": 781,
+            "halogen_bonds": 0,
+            "pi_interactions": 114,
+            "pi_pi_interactions": 0,
+            "carbonyl_interactions": 242,
+            "n_pi_interactions": 0,
+            "water_bridges": 79,
+            "ligand_interactions": 17,
+            "cooperativity_chains": 137,
+        },
+        "expected_ligand_interactions": True,
+        "expected_ligand_interactions_with_water_bridges": True,
+    },
+]
 
 
 @pytest.fixture(
-    params=[
-        {
-            "name": "6rsa.pdb",
-            "file": "example_pdb_files/fixed/6rsa_openbabel.pdb",
-            "type": "protein",
-            "expected_interactions": [
-                "hydrogen_bonds",
-                "pi_interactions",
-                "carbonyl_interactions",
-                "n_pi_interactions",
-                "water_bridges",
-            ],
-            "expected_ligand_interactions": True,
-            "expected_ligand_interactions_with_water_bridges": True,
-        },
-        {
-            "name": "7nwd.pdb",
-            "file": "example_pdb_files/fixed/7nwd_openbabel.pdb",
-            "type": "nucleic_acid",
-            "expected_interactions": [
-                "hydrogen_bonds",
-                "pi_pi_interactions",
-                "pi_interactions",
-            ],
-            "expected_ligand_interactions": False,
-            "expected_ligand_interactions_with_water_bridges": False,
-        },
-        {
-            "name": "1ubi.pdb",
-            "file": "example_pdb_files/fixed/1ubi_openbabel.pdb",
-            "type": "protein",
-            "expected_interactions": [
-                "hydrogen_bonds",
-                "pi_interactions",
-                "carbonyl_interactions",
-                "water_bridges",
-            ],
-            "expected_ligand_interactions": False,
-            "expected_ligand_interactions_with_water_bridges": False,
-        },
-        {
-            "name": "4laz.pdb",
-            "file": "example_pdb_files/fixed/4laz_openbabel.pdb",
-            "type": "protein",
-            "expected_interactions": [
-                "hydrogen_bonds",
-                "halogen_bonds",
-                "pi_pi_interactions",
-                "pi_interactions",
-                "carbonyl_interactions",
-                "n_pi_interactions",
-                "water_bridges",
-            ],
-            "expected_ligand_interactions": True,
-            "expected_ligand_interactions_with_water_bridges": False,
-        },
-        {
-            "name": "4hhb.pdb",
-            "file": "example_pdb_files/fixed/4hhb_openbabel.pdb",
-            "type": "protein",
-            "expected_interactions": [
-                "hydrogen_bonds",
-                "pi_interactions",
-                "carbonyl_interactions",
-                "water_bridges",
-            ],
-            "expected_ligand_interactions": True,
-            "expected_ligand_interactions_with_water_bridges": True,
-        },
-    ]
+    params=PDB_STRUCTURES,
+    ids=[case["name"] for case in PDB_STRUCTURES],
 )
 def pdb_structure(request):
-    """Fixture providing PDB structure with expected result ranges.
+    """Fixture providing fixed PDB structures with exact expected results.
 
-    Parametrization generates 4 test variants for any test using this fixture.
+    Parametrization generates 5 test variants for any test using this fixture.
     Example test IDs: test_name[6rsa.pdb], test_name[7nwd.pdb], etc.
 
     Each structure includes:
     - file: path to PDB file
-    - type: protein or nucleic_acid
-    - expectations: dict of interaction_type -> (min_count, max_count) ranges
+    - expected_interactions: primary interaction types with non-zero counts
+    - expected_counts: exact primary and derived interaction counts
     """
     return request.param
-
-
-@pytest.fixture(
-    params=[
-        {
-            "name": "strict",
-            "hb_distance_cutoff": 3.0,
-            "hb_angle_cutoff": 140.0,
-            "analysis_mode": "inter",
-        },
-        {
-            "name": "permissive",
-            "hb_distance_cutoff": 4.0,
-            "hb_angle_cutoff": 110.0,
-            "analysis_mode": "all",
-        },
-        {
-            "name": "default",
-            "hb_distance_cutoff": None,  # Use defaults
-            "hb_angle_cutoff": None,
-            "analysis_mode": "all",
-        },
-    ]
-)
-def param_set(request):
-    """Fixture providing parameter configuration sets.
-
-    Parametrization generates 3 test variants for any test using this fixture.
-    Example test IDs: test_name[strict], test_name[permissive], test_name[default]
-    """
-    return request.param
-
-
-# ============================================================================
-# Parametrize Decorators (for use with @pytest.mark.parametrize)
-# ============================================================================
-
-FIX_CONFIGS = [
-    {
-        "name": "openbabel",
-        "enabled": True,
-        "method": "openbabel",
-        "add_hydrogens": True,
-    },
-    {
-        "name": "pdbfixer",
-        "enabled": True,
-        "method": "pdbfixer",
-        "add_hydrogens": True,
-        "add_heavy_atoms": True,
-    },
-    {"name": "no_fixing", "enabled": False, "method": None},
-]
-
-INTERACTION_SPECS = [
-    {
-        "name": "hydrogen_bonds",
-        "required_properties": ["donor", "hydrogen", "acceptor", "distance", "angle"],
-        "expected_count_key": "hydrogen_bonds",
-    },
-    {
-        "name": "water_bridges",
-        "required_properties": ["water_residues", "bridge_length"],
-        "expected_count_key": "water_bridges",
-    },
-    {
-        "name": "pi_pi_interactions",
-        "required_properties": ["plane_angle", "distance"],
-        "expected_count_key": "pi_pi_interactions",
-    },
-    {
-        "name": "carbonyl_interactions",
-        "required_properties": ["distance", "burgi_dunitz_angle"],
-        "expected_count_key": "carbonyl_interactions",
-    },
-    {
-        "name": "n_pi_interactions",
-        "required_properties": ["distance", "angle_to_plane", "donor_element"],
-        "expected_count_key": "n_pi_interactions",
-    },
-]
-
-EXPORT_FORMATS = [
-    {"name": "json", "extension": ".json"},
-    {"name": "dict", "extension": None},
-]
-
-
-# ============================================================================
-# Test Classes with Parametrized Methods
-# ============================================================================
 
 
 @pytest.mark.e2e
@@ -206,15 +305,13 @@ EXPORT_FORMATS = [
 class TestCompleteWorkflows:
     """Test complete analysis workflows with different PDB structures."""
 
-    def test_complete_workflow(self, pdb_structure):
-        """Test complete analysis workflow: file → analysis → summary.
+    def test_complete_workflow_exact_counts(self, pdb_structure):
+        """Test fixed file → analysis → exact counts → summary workflow.
 
-        Parametrization generates 4 test variants (one per pdb_structure).
-        Example test IDs: test_complete_workflow[6rsa.pdb], etc.
+        Parametrization generates 5 test variants (one per pdb_structure).
+        Example test IDs: test_complete_workflow_exact_counts[6rsa.pdb], etc.
         """
         pdb_file = pdb_structure["file"]
-        if not os.path.exists(pdb_file):
-            pytest.skip(f"PDB file {pdb_file} not found")
 
         # Structure is already fixed; disable fixing for deterministic results
         params = AnalysisParameters(fix_pdb_enabled=False)
@@ -222,182 +319,95 @@ class TestCompleteWorkflows:
         success = analyzer.analyze_file(pdb_file)
         assert success, f"Failed to analyze {pdb_structure['name']}"
 
-        # Verify all interaction attributes exist
-        assert hasattr(analyzer, "hydrogen_bonds")
-        assert hasattr(analyzer, "halogen_bonds")
-        assert hasattr(analyzer, "pi_pi_interactions")
-        assert hasattr(analyzer, "carbonyl_interactions")
-        assert hasattr(analyzer, "n_pi_interactions")
+        expected_counts = pdb_structure["expected_counts"]
+        assert set(expected_counts) == set(COUNT_ATTRIBUTES)
 
-        # Count interactions
-        h_bonds = len(analyzer.hydrogen_bonds) if analyzer.hydrogen_bonds else 0
-        x_bonds = len(analyzer.halogen_bonds) if analyzer.halogen_bonds else 0
-        pi_pi = len(analyzer.pi_pi_interactions) if analyzer.pi_pi_interactions else 0
-        carbonyl = (
-            len(analyzer.carbonyl_interactions) if analyzer.carbonyl_interactions else 0
+        expected_primary_types = {
+            name for name in PRIMARY_INTERACTION_ATTRIBUTES if expected_counts[name] > 0
+        }
+        assert expected_primary_types == set(pdb_structure["expected_interactions"])
+        assert (expected_counts["ligand_interactions"] > 0) is pdb_structure[
+            "expected_ligand_interactions"
+        ]
+
+        actual_counts = get_interaction_counts(analyzer)
+        assert actual_counts == expected_counts, (
+            f"Interaction count regression for {pdb_structure['name']}"
         )
-        n_pi = len(analyzer.n_pi_interactions) if analyzer.n_pi_interactions else 0
 
-        total = h_bonds + x_bonds + pi_pi + carbonyl + n_pi
-        assert total > 0, f"No interactions detected for {pdb_structure['name']}"
-
-        # Verify summary includes all types
         summary = analyzer.get_summary()
-        assert "hydrogen_bonds" in summary
-        assert "total_interactions" in summary
+        summary_counts = {name: summary[name]["count"] for name in COUNT_ATTRIBUTES}
+        assert summary_counts == expected_counts
 
-    @pytest.mark.parametrize(
-        "fix_config",
-        FIX_CONFIGS,
-        ids=[cfg["name"] for cfg in FIX_CONFIGS],
-    )
-    def test_pdb_fixing_workflow(self, pdb_structure, fix_config, expected_results):
-        """Test PDB fixing with different methods across multiple structures.
-
-        Parametrization generates 12 test variants:
-        - 4 pdb_structures × 3 fix_configs = 12 combinations
-
-        Example test IDs:
-          test_pdb_fixing_workflow[6rsa.pdb-openbabel]
-          test_pdb_fixing_workflow[7nwd.pdb-pdbfixer]
-          test_pdb_fixing_workflow[1ubi.pdb-no_fixing]
-        """
-        pdb_file = pdb_structure["file"]
-        if not os.path.exists(pdb_file):
-            pytest.skip(f"PDB file {pdb_file} not found")
-
-        # Structure is already fixed; disable fixing for deterministic results
-        params = AnalysisParameters(fix_pdb_enabled=False)
-
-        analyzer = MolecularInteractionAnalyzer(params)
-        success = analyzer.analyze_file(pdb_file)
-        assert success, (
-            f"Analysis failed for {pdb_structure['name']} with {fix_config['name']}"
+        expected_total = sum(
+            expected_counts[name] for name in PRIMARY_INTERACTION_ATTRIBUTES
         )
+        assert summary["total_interactions"] == expected_total
 
-        # Verify expected interactions are detected when fixing is enabled
-        if fix_config["enabled"]:
-            expected_interactions = pdb_structure.get("expected_interactions", [])
-            for interaction_type in expected_interactions:
-                # Map interaction type name to analyzer attribute
-                count = len(getattr(analyzer, interaction_type, []) or [])
-                assert count > 0, (
-                    f"{pdb_structure['name']} with {fix_config['name']}: "
-                    f"Expected to detect {interaction_type}, but found {count}"
-                )
-        else:
-            # Without fixing, some structures may not have hydrogen atoms in raw PDB
-            # Just verify analysis completed successfully
-            total = sum(
-                len(getattr(analyzer, attr) or [])
-                for attr in [
-                    "hydrogen_bonds",
-                    "halogen_bonds",
-                    "pi_interactions",
-                    "pi_pi_interactions",
-                    "carbonyl_interactions",
-                    "n_pi_interactions",
-                    "water_bridges",
-                ]
+    def test_hydrogen_bond_parameter_effects(self):
+        """Permissive geometry must strictly include the strict H-bond result set."""
+        pdb_file = PDB_STRUCTURES[0]["file"]
+        analyzers = {}
+        for name, distance, angle in (
+            ("strict", 3.0, 140.0),
+            ("permissive", 4.0, 110.0),
+        ):
+            params = AnalysisParameters(
+                fix_pdb_enabled=False,
+                hb_distance_cutoff=distance,
+                hb_angle_cutoff=angle,
+                analysis_mode="all",
             )
-            assert total >= 0, "Should have non-negative interaction count"
+            analyzer = MolecularInteractionAnalyzer(params)
+            assert analyzer.analyze_file(pdb_file)
+            analyzers[name] = analyzer
 
-    def test_parameter_effects(self, sample_pdb_file, param_set):
-        """Test how parameter sets affect interaction detection.
+        signatures = {
+            name: {
+                get_interaction_signature("hydrogen_bonds", interaction)
+                for interaction in analyzer.hydrogen_bonds
+            }
+            for name, analyzer in analyzers.items()
+        }
+        assert signatures["strict"] < signatures["permissive"]
+        assert len(signatures["strict"]) == 174
+        assert len(signatures["permissive"]) == 292
 
-        Parametrization generates 3 test variants (one per param_set).
-        Example test IDs: test_parameter_effects[strict], etc.
-        """
-        # Create analyzer with parameter set
-        kwargs = {}
-        if param_set["hb_distance_cutoff"] is not None:
-            kwargs["hb_distance_cutoff"] = param_set["hb_distance_cutoff"]
-        if param_set["hb_angle_cutoff"] is not None:
-            kwargs["hb_angle_cutoff"] = param_set["hb_angle_cutoff"]
-        if param_set["analysis_mode"]:
-            kwargs["analysis_mode"] = param_set["analysis_mode"]
+    def test_analysis_mode_effects(self):
+        """All-mode H-bonds must strictly include the inter-residue result set."""
+        pdb_file = PDB_STRUCTURES[0]["file"]
+        signatures = {}
+        for mode in ("inter", "all"):
+            params = AnalysisParameters(fix_pdb_enabled=False, analysis_mode=mode)
+            analyzer = MolecularInteractionAnalyzer(params)
+            assert analyzer.analyze_file(pdb_file)
+            signatures[mode] = {
+                get_interaction_signature("hydrogen_bonds", interaction)
+                for interaction in analyzer.hydrogen_bonds
+            }
 
-        params = AnalysisParameters(**kwargs)
+        assert signatures["inter"] < signatures["all"]
+        assert len(signatures["inter"]) == 212
+        assert len(signatures["all"]) == 214
+
+    def test_interaction_properties_and_uniqueness(self, pdb_structure):
+        """Validate every interaction and pin its canonical endpoint identity."""
+        params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = MolecularInteractionAnalyzer(params)
+        assert analyzer.analyze_file(pdb_structure["file"])
 
-        success = analyzer.analyze_file(sample_pdb_file)
-        assert success, f"Analysis failed with {param_set['name']} parameters"
-
-        # Verify results were detected
-        total = sum(
-            len(getattr(analyzer, attr) or [])
-            for attr in [
-                "hydrogen_bonds",
-                "halogen_bonds",
-                "pi_interactions",
-                "pi_pi_interactions",
-                "carbonyl_interactions",
-                "n_pi_interactions",
+        atom_serials = {atom.serial for atom in analyzer.parser.atoms}
+        for interaction_type in PRIMARY_INTERACTION_ATTRIBUTES:
+            interactions = getattr(analyzer, interaction_type)
+            signatures = [
+                get_interaction_signature(interaction_type, interaction)
+                for interaction in interactions
             ]
-        )
-        assert total >= 0, "Should have non-negative interaction count"
-
-    @pytest.mark.parametrize(
-        "interaction_spec",
-        INTERACTION_SPECS,
-        ids=[spec["name"] for spec in INTERACTION_SPECS],
-    )
-    def test_interaction_detection(
-        self, pdb_structure, interaction_spec, expected_results
-    ):
-        """Test specific interaction type detection across structures.
-
-        Parametrization generates 4 test variants (one per interaction_spec).
-        Example test IDs: test_interaction_detection[hydrogen_bonds], etc.
-        """
-        pdb_file = pdb_structure["file"]
-        if not os.path.exists(pdb_file):
-            pytest.skip(f"PDB file {pdb_file} not found")
-
-        params = AnalysisParameters(fix_pdb_enabled=False)
-        analyzer = MolecularInteractionAnalyzer(params)
-        success = analyzer.analyze_file(pdb_file)
-        assert success, f"Failed to analyze {pdb_structure['name']}"
-
-        # Get interaction list for this type
-        interaction_attr = interaction_spec["expected_count_key"]
-        interactions = getattr(analyzer, interaction_attr, []) or []
-
-        # Check if this interaction type is expected for this structure
-        expected_interactions = pdb_structure.get("expected_interactions", [])
-        is_expected = interaction_attr in expected_interactions
-
-        if is_expected:
-            # This interaction type should be detected for this structure
-            assert len(interactions) > 0, (
-                f"{pdb_structure['name']}: Expected to find {interaction_attr} "
-                f"(one of expected interactions), but found none"
+            assert len(signatures) == len(set(signatures)), (
+                f"Duplicate {interaction_type} in {pdb_structure['name']}"
             )
-
-            # Verify interaction properties for detected interactions
-            for interaction in interactions[:5]:  # Check first 5
-                for prop in interaction_spec["required_properties"]:
-                    assert hasattr(interaction, prop), (
-                        f"Missing property {prop} in {interaction_attr}"
-                    )
-
-            # Verify consistency in summary
-            summary = analyzer.get_summary()
-            if interaction_attr in summary:
-                if isinstance(summary[interaction_attr], dict):
-                    summary_count = summary[interaction_attr].get("count", 0)
-                    assert summary_count == len(interactions), (
-                        f"{pdb_structure['name']}: Summary count for {interaction_attr} "
-                        f"({summary_count}) doesn't match actual ({len(interactions)})"
-                    )
-        else:
-            # This interaction type is not expected, but if found, verify its properties
-            if len(interactions) > 0:
-                for interaction in interactions[:5]:  # Check first 5
-                    for prop in interaction_spec["required_properties"]:
-                        assert hasattr(interaction, prop), (
-                            f"Missing property {prop} in {interaction_attr}"
-                        )
+            for interaction in interactions:
+                validate_interaction(interaction_type, interaction, atom_serials)
 
 
 @pytest.mark.e2e
@@ -408,12 +418,10 @@ class TestLigandAndWaterBridges:
     def test_ligand_interactions(self, pdb_structure):
         """Test ligand interaction detection for structures that should have them.
 
-        Parametrization generates 4 test variants (one per pdb_structure).
+        Parametrization generates 5 test variants (one per pdb_structure).
         Example test IDs: test_ligand_interactions[6rsa.pdb], etc.
         """
         pdb_file = pdb_structure["file"]
-        if not os.path.exists(pdb_file):
-            pytest.skip(f"PDB file {pdb_file} not found")
 
         # Structure is already fixed; disable fixing for deterministic results
         params = AnalysisParameters(fix_pdb_enabled=False)
@@ -421,96 +429,15 @@ class TestLigandAndWaterBridges:
         success = analyzer.analyze_file(pdb_file)
         assert success, f"Failed to analyze {pdb_structure['name']}"
 
-        # Check ligand interactions
-        has_ligand_interactions = (
-            analyzer.ligand_interactions
-            and len(analyzer.ligand_interactions.interactions) > 0
-        )
+        ligand_count = len(analyzer.ligand_interactions.interactions)
+        expected_count = pdb_structure["expected_counts"]["ligand_interactions"]
+        assert ligand_count == expected_count
+        assert (ligand_count > 0) is pdb_structure["expected_ligand_interactions"]
 
-        if pdb_structure.get("expected_ligand_interactions"):
-            assert has_ligand_interactions, (
-                f"{pdb_structure['name']}: Expected to find ligand interactions"
+        if ligand_count:
+            assert analyzer.ligand_interactions.ligand_info, (
+                f"{pdb_structure['name']}: Ligand info should be present"
             )
-        else:
-            # If ligand interactions are found, verify they have proper structure
-            if has_ligand_interactions:
-                assert analyzer.ligand_interactions.ligand_info, (
-                    f"{pdb_structure['name']}: Ligand info should be present"
-                )
-
-    def test_water_bridges(self, pdb_structure):
-        """Test water bridge detection for structures that should have them.
-
-        Parametrization generates 4 test variants (one per pdb_structure).
-        Example test IDs: test_water_bridges[6rsa.pdb], etc.
-        """
-        pdb_file = pdb_structure["file"]
-        if not os.path.exists(pdb_file):
-            pytest.skip(f"PDB file {pdb_file} not found")
-
-        # Structure is already fixed; disable fixing for deterministic results
-        params = AnalysisParameters(fix_pdb_enabled=False)
-        analyzer = MolecularInteractionAnalyzer(params)
-        success = analyzer.analyze_file(pdb_file)
-        assert success, f"Failed to analyze {pdb_structure['name']}"
-
-        # Check water bridges
-        wb_count = len(analyzer.water_bridges) if analyzer.water_bridges else 0
-
-        if pdb_structure.get("expected_water_bridges"):
-            assert wb_count > 0, (
-                f"{pdb_structure['name']}: Expected to find water bridges, found {wb_count}"
-            )
-
-            # Verify water bridge properties
-            for wb in analyzer.water_bridges[:3]:  # Check first 3
-                assert hasattr(wb, "water_residues"), (
-                    "Bridge should have water_residues"
-                )
-                assert hasattr(wb, "bridge_length"), "Bridge should have bridge_length"
-                assert hasattr(wb, "get_donor_acceptor_distance"), (
-                    "Bridge should have get_donor_acceptor_distance method"
-                )
-        else:
-            # If water bridges are found, verify their properties
-            if wb_count > 0:
-                for wb in analyzer.water_bridges[:3]:
-                    assert len(wb.water_residues) > 0, (
-                        "Bridge should have water residues"
-                    )
-                    assert wb.bridge_length > 0, "Bridge length should be positive"
-
-    def test_ligand_water_bridge_integration(self, pdb_structure):
-        """Test integration of ligand interactions and water bridges.
-
-        Verify both are tracked independently when both are expected.
-        """
-        pdb_file = pdb_structure["file"]
-        if not os.path.exists(pdb_file):
-            pytest.skip(f"PDB file {pdb_file} not found")
-
-        # Structure is already fixed; disable fixing for deterministic results
-        params = AnalysisParameters(fix_pdb_enabled=False)
-        analyzer = MolecularInteractionAnalyzer(params)
-        success = analyzer.analyze_file(pdb_file)
-        assert success
-
-        summary = analyzer.get_summary()
-
-        # Verify summary includes ligand_interactions and water_bridges
-        assert "ligand_interactions" in summary
-        assert "water_bridges" in summary
-
-        # Check counts match analyzer
-        lig_count = (
-            len(analyzer.ligand_interactions.interactions)
-            if analyzer.ligand_interactions
-            else 0
-        )
-        wb_count = len(analyzer.water_bridges) if analyzer.water_bridges else 0
-
-        assert summary["ligand_interactions"]["count"] == lig_count
-        assert summary["water_bridges"]["count"] == wb_count
 
     def test_ligand_water_bridge_relationships(self, pdb_structure):
         """Test if ligands have water bridge interactions.
@@ -520,8 +447,6 @@ class TestLigandAndWaterBridges:
         - False: ligands don't have water bridge interactions (or no ligands)
         """
         pdb_file = pdb_structure["file"]
-        if not os.path.exists(pdb_file):
-            pytest.skip(f"PDB file {pdb_file} not found")
 
         # Structure is already fixed; disable fixing for deterministic results
         params = AnalysisParameters(fix_pdb_enabled=False)
@@ -529,59 +454,21 @@ class TestLigandAndWaterBridges:
         success = analyzer.analyze_file(pdb_file)
         assert success, f"Failed to analyze {pdb_structure['name']}"
 
-        # Get ligand and water bridge info
-        has_ligands = (
-            analyzer.ligand_interactions
-            and len(analyzer.ligand_interactions.interactions) > 0
-        )
-        has_water_bridges = analyzer.water_bridges and len(analyzer.water_bridges) > 0
-
         expected_with_wb = pdb_structure.get(
             "expected_ligand_interactions_with_water_bridges", False
         )
+        ligand_residues = set(analyzer.ligand_interactions.ligand_info)
+        ligand_water_bridges = [
+            wb
+            for wb in analyzer.water_bridges
+            if wb.get_donor_residue() in ligand_residues
+            or wb.get_acceptor_residue() in ligand_residues
+        ]
 
-        if expected_with_wb:
-            # Should have both ligands and water bridges
-            assert has_ligands, (
-                f"{pdb_structure['name']}: Expected ligands with water bridges"
-            )
-            assert has_water_bridges, (
-                f"{pdb_structure['name']}: Expected water bridges with ligands"
-            )
-
-            # Verify ligands are involved in water bridges
-            if has_ligands and has_water_bridges:
-                ligand_residues = set(analyzer.ligand_interactions.ligand_info.keys())
-
-                # Check if any water bridge involves a ligand residue
-                ligand_in_wb = False
-                for wb in analyzer.water_bridges:
-                    try:
-                        donor_res = wb.get_donor_residue()
-                        acceptor_res = wb.get_acceptor_residue()
-
-                        # Check if ligand residue is in donor or acceptor
-                        for lig_res in ligand_residues:
-                            if lig_res in donor_res or lig_res in acceptor_res:
-                                ligand_in_wb = True
-                                break
-                    except (AttributeError, TypeError):
-                        # Some water bridges may not have these methods
-                        continue
-
-                    if ligand_in_wb:
-                        break
-
-                assert ligand_in_wb, (
-                    f"{pdb_structure['name']}: Expected ligands to be involved in water bridges"
-                )
-        else:
-            # Either no ligands, or ligands without water bridge interactions
-            # This is acceptable - just verify consistency
-            if has_ligands and has_water_bridges:
-                # Both exist but ligands not expected to have WB interactions
-                # This is valid for structures where WB exist independently
-                pass
+        assert bool(ligand_water_bridges) is expected_with_wb, (
+            f"{pdb_structure['name']}: expected ligand water-bridge relationship "
+            f"to be {expected_with_wb}, found {len(ligand_water_bridges)} bridges"
+        )
 
 
 @pytest.mark.e2e
@@ -589,218 +476,157 @@ class TestLigandAndWaterBridges:
 class TestResultsExport:
     """Test results export and data generation workflows."""
 
-    @pytest.mark.parametrize(
-        "export_format",
-        EXPORT_FORMATS,
-        ids=[fmt["name"] for fmt in EXPORT_FORMATS],
-    )
-    def test_results_export_workflow(self, pdb_structure, export_format):
-        """Test results export in different formats.
-
-        Parametrization generates 2 test variants (one per export_format).
-        Example test IDs: test_results_export_workflow[json], etc.
-        """
+    def test_single_json_export_exact_counts(self, pdb_structure, tmp_path):
+        """Production single-file JSON must preserve every expected count."""
         pdb_file = pdb_structure["file"]
-        if not os.path.exists(pdb_file):
-            pytest.skip(f"PDB file {pdb_file} not found")
 
-        # Run analysis; structure is already fixed, so disable fixing
         params = AnalysisParameters(fix_pdb_enabled=False)
         analyzer = MolecularInteractionAnalyzer(params)
-        success = analyzer.analyze_file(pdb_file)
-        assert success
+        assert analyzer.analyze_file(pdb_file)
 
-        # Get results
-        summary = analyzer.get_summary()
-        assert "total_interactions" in summary
+        output_file = tmp_path / "results.json"
+        export_to_json_single_file(analyzer, str(output_file), pdb_file)
+        with output_file.open(encoding="utf-8") as exported_file:
+            exported = json.load(exported_file)
 
-        if export_format["name"] == "json":
-            # Export as JSON
-            results_dict = {
-                "summary": summary,
-                "metadata": {
-                    "input_file": pdb_file,
-                    "export_format": "json",
-                },
-                "interactions": {
-                    "hydrogen_bonds": [
-                        {
-                            "distance": hb.distance,
-                            "angle": hb.angle,
-                        }
-                        for hb in (analyzer.hydrogen_bonds or [])[:10]
-                    ],
-                },
-            }
-
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".json", delete=False
-            ) as f:
-                json.dump(results_dict, f)
-                temp_path = f.name
-
-            try:
-                assert os.path.exists(temp_path)
-                with open(temp_path, "r") as f:
-                    loaded = json.load(f)
-                assert "summary" in loaded
-                assert "metadata" in loaded
-            finally:
-                os.unlink(temp_path)
-        else:
-            # Dict format (in-memory)
-            results_dict = {
-                "summary": summary,
-                "interaction_count": summary["total_interactions"],
-            }
-            assert isinstance(results_dict, dict)
-            assert results_dict["interaction_count"] >= 0
-
-    def test_json_export_workflow(self, expected_results):
-        """Test JSON export workflow with expected result validation.
-
-        Tests a subset of structures (6rsa, 1ubi) with expected result ranges.
-        """
-        for pdb_name in ["6rsa.pdb", "1ubi.pdb"]:
-            if pdb_name not in expected_results:
-                pytest.skip(f"No expected results for {pdb_name}")
-
-            pdb_file = expected_results[pdb_name]["file"]
-            if not os.path.exists(pdb_file):
-                pytest.skip(f"PDB file {pdb_file} not found")
-
-            # Run analysis with PDB fixing
-            params = AnalysisParameters(
-                fix_pdb_enabled=True,
-                fix_pdb_method="pdbfixer",
-                fix_pdb_add_hydrogens=True,
+        output_keys = {
+            "hydrogen_bonds": "hydrogen_bonds",
+            "halogen_bonds": "halogen_bonds",
+            "pi_interactions": "pi_interactions",
+            "pi_pi_interactions": "pi_pi_stacking",
+            "carbonyl_interactions": "carbonyl_interactions",
+            "n_pi_interactions": "n_pi_interactions",
+            "water_bridges": "water_bridges",
+            "cooperativity_chains": "cooperativity_chains",
+        }
+        expected_counts = pdb_structure["expected_counts"]
+        for interaction_type, output_key in output_keys.items():
+            assert (
+                len(exported.get(output_key, [])) == expected_counts[interaction_type]
             )
-            analyzer = MolecularInteractionAnalyzer(params)
-            success = analyzer.analyze_file(pdb_file)
-            assert success
+            assert (
+                exported["summary"][interaction_type]["count"]
+                == expected_counts[interaction_type]
+            )
 
-            # Export and validate
-            summary = analyzer.get_summary()
-            export_data = {
-                "metadata": {
-                    "input_file": pdb_file,
-                    "pdb_name": pdb_name,
-                },
-                "summary": summary,
-            }
-
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".json", delete=False
-            ) as f:
-                json.dump(export_data, f)
-                temp_path = f.name
-
-            try:
-                with open(temp_path, "r") as f:
-                    loaded = json.load(f)
-                assert loaded["summary"]["hydrogen_bonds"]["count"] >= 0
-            finally:
-                os.unlink(temp_path)
-
-
-@pytest.mark.e2e
-@pytest.mark.requires_pdb_files
-@pytest.mark.slow
-class TestPerformanceAndScaling:
-    """Test performance and scaling with larger structures."""
-
-    def test_large_structure_analysis(self, pdb_structure):
-        """Test analysis performance with larger PDB structures.
-
-        Uses pdb_structure fixture to test 4 different structures.
-        Example test IDs: test_large_structure_analysis[6rsa.pdb], etc.
-        """
-        pdb_file = pdb_structure["file"]
-        if not os.path.exists(pdb_file):
-            pytest.skip(f"PDB file {pdb_file} not found")
-
-        # Structure is already fixed; disable fixing for deterministic results
-        params = AnalysisParameters(fix_pdb_enabled=False)
-        analyzer = MolecularInteractionAnalyzer(params)
-
-        start_time = time.time()
-        success = analyzer.analyze_file(pdb_file)
-        analysis_time = time.time() - start_time
-
-        assert success, f"Analysis failed for {pdb_structure['name']}"
-        # Allow up to 120s for large structure analysis
-        assert analysis_time < 120.0, (
-            f"{pdb_structure['name']}: Analysis took {analysis_time:.2f}s"
+        ligand_count = sum(
+            len(ligand["interactions"]) + len(ligand["water_bridges"])
+            for ligand in exported["ligand_interactions"]
         )
+        assert ligand_count == expected_counts["ligand_interactions"]
+        assert exported["metadata"]["input_file"] == pdb_file
 
-        # Verify substantial results
-        total = sum(
-            len(getattr(analyzer, attr) or [])
-            for attr in [
-                "hydrogen_bonds",
-                "halogen_bonds",
-                "pi_interactions",
-                "pi_pi_interactions",
-                "carbonyl_interactions",
-                "n_pi_interactions",
-            ]
+    def test_json_csv_txt_export_count_parity(self, tmp_path):
+        """Production JSON, CSV, and TXT exports must match analyzer counts."""
+        pdb_file = next(
+            case["file"] for case in PDB_STRUCTURES if case["name"] == "4laz.pdb"
         )
-        assert total >= 10, f"Expected >= 10 interactions for {pdb_structure['name']}"
+        analyzer = MolecularInteractionAnalyzer(
+            AnalysisParameters(fix_pdb_enabled=False)
+        )
+        assert analyzer.analyze_file(pdb_file)
+        expected_counts = get_interaction_counts(analyzer)
+
+        base_filename = tmp_path / "results"
+        export_to_json_files(analyzer, str(base_filename), pdb_file)
+        export_to_csv_files(analyzer, str(base_filename))
+        txt_file = tmp_path / "results.txt"
+        export_to_txt_single_file(analyzer, str(txt_file))
+
+        filename_stems = {
+            "hydrogen_bonds": "h_bonds",
+            "halogen_bonds": "x_bonds",
+            "pi_interactions": "pi_interactions",
+            "pi_pi_interactions": "pi_pi_interactions",
+            "carbonyl_interactions": "carbonyl_interactions",
+            "n_pi_interactions": "n_pi_interactions",
+            "water_bridges": "water_bridges",
+            "cooperativity_chains": "cooperativity_chains",
+        }
+        for interaction_type, filename_stem in filename_stems.items():
+            expected_count = expected_counts[interaction_type]
+            json_file = tmp_path / f"results_{filename_stem}.json"
+            csv_file = tmp_path / f"results_{filename_stem}.csv"
+            assert json_file.exists()
+            assert csv_file.exists()
+
+            with json_file.open(encoding="utf-8") as exported_file:
+                assert len(json.load(exported_file)["interactions"]) == expected_count
+            with csv_file.open(encoding="utf-8", newline="") as exported_file:
+                assert sum(1 for _ in csv.reader(exported_file)) - 1 == expected_count
+
+        ligand_json_count = 0
+        for ligand_file in tmp_path.glob("results_ligand_*.json"):
+            with ligand_file.open(encoding="utf-8") as exported_file:
+                ligand_data = json.load(exported_file)
+            ligand_json_count += len(ligand_data.get("interactions", []))
+            ligand_json_count += len(ligand_data.get("water_bridges", []))
+        assert ligand_json_count == expected_counts["ligand_interactions"]
+
+        txt_summary = txt_file.read_text(encoding="utf-8").split("\n\n", 1)[0]
+        txt_labels = {
+            "hydrogen_bonds": "Hydrogen Bonds",
+            "halogen_bonds": "Halogen Bonds",
+            "pi_interactions": "π Interactions",
+            "pi_pi_interactions": "π-π Stacking",
+            "carbonyl_interactions": "Carbonyl Interactions",
+            "n_pi_interactions": "n→π* Interactions",
+            "water_bridges": "Water Bridges",
+            "cooperativity_chains": "Cooperativity Chains",
+        }
+        for interaction_type, label in txt_labels.items():
+            assert f"  {label}: {expected_counts[interaction_type]}" in txt_summary
+        assert (
+            f"  Ligand interactions: {expected_counts['ligand_interactions']}"
+            in txt_summary
+        )
+        expected_total = sum(
+            expected_counts[name] for name in PRIMARY_INTERACTION_ATTRIBUTES
+        )
+        assert f"  Total interactions: {expected_total}" in txt_summary
 
 
 @pytest.mark.e2e
 @pytest.mark.requires_pdb_files
 class TestCooperativityAnalysis:
-    """Test cooperativity chain detection and export workflows."""
+    """Test deterministic cooperativity-chain detection."""
 
-    def test_cooperativity_workflow(self, sample_pdb_file):
-        """Test complete workflow with cooperativity chain analysis."""
-        analyzer = MolecularInteractionAnalyzer()
-        success = analyzer.analyze_file(sample_pdb_file)
-        assert success
+    def test_all_cooperativity_chains_are_valid(self):
+        """Every chain must be non-trivial and reference detected interactions."""
+        pdb_structure = next(
+            case for case in PDB_STRUCTURES if case["name"] == "6rsa.pdb"
+        )
+        analyzer = MolecularInteractionAnalyzer(
+            AnalysisParameters(fix_pdb_enabled=False)
+        )
+        assert analyzer.analyze_file(pdb_structure["file"])
 
         chains = analyzer.cooperativity_chains
-        summary = analyzer.get_summary()
+        assert len(chains) == pdb_structure["expected_counts"]["cooperativity_chains"]
+        assert analyzer.get_summary()["cooperativity_chains"]["count"] == len(chains)
 
-        # Verify cooperativity analysis
-        if len(chains) > 0:
-            cooperativity_count = summary.get("cooperativity_chains", {}).get(
-                "count", 0
+        detected_interactions = {
+            id(interaction)
+            for attribute in ("hydrogen_bonds", "halogen_bonds", "pi_interactions")
+            for interaction in getattr(analyzer, attribute)
+        }
+        chained_interactions = []
+        for chain in chains:
+            assert chain.chain_length == len(chain.interactions)
+            assert chain.chain_length >= 2
+            assert chain.chain_type
+            assert len({id(interaction) for interaction in chain.interactions}) == (
+                chain.chain_length
             )
-            assert cooperativity_count == len(chains)
+            assert all(
+                id(interaction) in detected_interactions
+                for interaction in chain.interactions
+            )
+            chained_interactions.extend(chain.interactions)
 
-            # Verify chain properties
-            for chain in chains[:3]:  # Check first 3
-                assert hasattr(chain, "chain_length")
-                assert hasattr(chain, "chain_type")
-                assert len(chain.interactions) == chain.chain_length
-
-    def test_cooperativity_export(self, sample_pdb_file):
-        """Test workflow for exporting cooperativity chain data."""
-        analyzer = MolecularInteractionAnalyzer()
-        success = analyzer.analyze_file(sample_pdb_file)
-        assert success
-
-        chains = analyzer.cooperativity_chains
-
-        if len(chains) > 0:
-            # Prepare chain export data
-            chain_data = [
-                {
-                    "chain_id": i,
-                    "length": chain.chain_length,
-                    "type": chain.chain_type,
-                    "interaction_count": len(chain.interactions),
-                }
-                for i, chain in enumerate(chains[:5])
-            ]
-
-            # Verify structure
-            assert len(chain_data) > 0
-            for chain_info in chain_data:
-                assert "chain_id" in chain_info
-                assert "length" in chain_info
-                assert chain_info["interaction_count"] == chain_info["length"]
+        assert len({id(interaction) for interaction in chained_interactions}) == len(
+            chained_interactions
+        )
 
 
 @pytest.mark.e2e
@@ -808,84 +634,54 @@ class TestCooperativityAnalysis:
 class TestRobustness:
     """Test workflow robustness and error handling."""
 
-    def test_backward_compatibility(self, sample_pdb_file):
-        """Test that existing H-bond and X-bond detection is unchanged."""
-        analyzer = MolecularInteractionAnalyzer()
-        success = analyzer.analyze_file(sample_pdb_file)
-        assert success
+    def test_invalid_and_empty_structures_fail(self, tmp_path):
+        """Missing, malformed, and atom-free structures must fail explicitly."""
+        invalid_file = tmp_path / "invalid.pdb"
+        invalid_file.write_text("INVALID PDB CONTENT\n", encoding="utf-8")
+        empty_file = tmp_path / "empty.pdb"
+        empty_file.write_text("HEADER    EMPTY STRUCTURE\nEND\n", encoding="utf-8")
 
-        # Traditional interactions should still work
-        assert analyzer.hydrogen_bonds is not None
-        if analyzer.hydrogen_bonds:
-            h_bond = analyzer.hydrogen_bonds[0]
-            assert hasattr(h_bond, "donor")
-            assert hasattr(h_bond, "acceptor")
-            assert hasattr(h_bond, "distance")
+        params = AnalysisParameters(fix_pdb_enabled=False)
+        for pdb_file in (
+            tmp_path / "missing.pdb",
+            invalid_file,
+            empty_file,
+        ):
+            analyzer = MolecularInteractionAnalyzer(params)
+            assert analyzer.analyze_file(str(pdb_file)) is False
+            assert get_interaction_counts(analyzer) == {
+                name: 0 for name in COUNT_ATTRIBUTES
+            }
 
-        # Summary should include traditional interactions
-        summary = analyzer.get_summary()
-        assert "hydrogen_bonds" in summary
-        assert "halogen_bonds" in summary
+    def test_non_interacting_structure(self, tmp_path):
+        """A valid water-only structure must succeed with zero interactions."""
+        water_file = tmp_path / "water_only.pdb"
+        water_file.write_text(
+            "HETATM 1892  O   DOD A 128      23.190  14.929  29.168"
+            "  1.00  0.00           O  \nEND\n",
+            encoding="utf-8",
+        )
 
-    def test_error_handling(self):
-        """Test error handling for invalid files and configurations."""
-        analyzer = MolecularInteractionAnalyzer()
+        analyzer = MolecularInteractionAnalyzer(
+            AnalysisParameters(fix_pdb_enabled=False)
+        )
+        assert analyzer.analyze_file(str(water_file))
+        assert get_interaction_counts(analyzer) == {
+            name: 0 for name in COUNT_ATTRIBUTES
+        }
+        assert analyzer.get_summary()["total_interactions"] == 0
 
-        # Non-existent file
-        success = analyzer.analyze_file("nonexistent_file.pdb")
-        assert not success, "Should fail for non-existent file"
+    def test_analyzer_reuse_clears_previous_results(self):
+        """Analyzing a second file must replace rather than accumulate results."""
+        first_case = next(case for case in PDB_STRUCTURES if case["name"] == "6rsa.pdb")
+        second_case = next(
+            case for case in PDB_STRUCTURES if case["name"] == "7nwd.pdb"
+        )
+        analyzer = MolecularInteractionAnalyzer(
+            AnalysisParameters(fix_pdb_enabled=False)
+        )
 
-        # Invalid file content
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".pdb", delete=False) as f:
-            f.write("INVALID PDB CONTENT\n")
-            temp_path = f.name
-
-        try:
-            success = analyzer.analyze_file(temp_path)
-            assert isinstance(success, bool), "Should return boolean status"
-        finally:
-            os.unlink(temp_path)
-
-    def test_parameter_validation(self):
-        """Test parameter validation for new interaction types."""
-        params = AnalysisParameters()
-
-        # Verify new parameters exist
-        assert hasattr(params, "pi_pi_distance_cutoff")
-        assert hasattr(params, "carbonyl_distance_cutoff")
-        assert hasattr(params, "n_pi_distance_cutoff")
-
-        # Verify reasonable default ranges
-        assert 3.0 <= params.pi_pi_distance_cutoff <= 6.0
-        assert 2.5 <= params.carbonyl_distance_cutoff <= 4.0
-        assert 3.0 <= params.n_pi_distance_cutoff <= 4.0
-
-    def test_empty_structure_handling(self, sample_pdb_file):
-        """Test handling of structures without certain interaction types."""
-        params = AnalysisParameters()
-        analyzer = MolecularInteractionAnalyzer(params)
-
-        # Should not crash even if some interaction types have no detections
-        success = analyzer.analyze_file(sample_pdb_file)
-        assert success
-
-        # Empty interaction lists should be handled gracefully
-        summary = analyzer.get_summary()
-        assert "total_interactions" in summary
-        assert summary["total_interactions"] >= 0
-
-        # All interaction types should be present in summary
-        required_keys = [
-            "hydrogen_bonds",
-            "halogen_bonds",
-            "pi_interactions",
-            "pi_pi_interactions",
-            "carbonyl_interactions",
-            "n_pi_interactions",
-        ]
-        for key in required_keys:
-            assert key in summary, f"Missing {key} in summary"
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+        assert analyzer.analyze_file(first_case["file"])
+        assert get_interaction_counts(analyzer) == first_case["expected_counts"]
+        assert analyzer.analyze_file(second_case["file"])
+        assert get_interaction_counts(analyzer) == second_case["expected_counts"]

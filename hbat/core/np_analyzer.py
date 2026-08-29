@@ -2227,11 +2227,6 @@ class NPMolecularInteractionAnalyzer:
                 + len(self.carbonyl_interactions)
                 + len(self.n_pi_interactions)
                 + len(self.water_bridges)
-                + (
-                    len(self.ligand_interactions.interactions)
-                    if self.ligand_interactions
-                    else 0
-                )
             ),
         }
 
