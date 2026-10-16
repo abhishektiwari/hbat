@@ -131,7 +131,7 @@ jobs:
       run: make build
     
     - name: Upload build artifacts
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: python-artifacts
         path: dist/*
@@ -206,7 +206,7 @@ jobs:
         NEEDS_GENERATE_VERSION_OUTPUTS_VERSION: ${{ needs.generate-version.outputs.version }}
     
     - name: Upload macOS artifact
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: macos-artifacts
         path: dist/hbat-${{ needs.generate-version.outputs.version }}.dmg
@@ -253,7 +253,7 @@ jobs:
       run: python build_standalone_linux.py
     
     - name: Upload Linux artifacts
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: linux-artifacts
         path: |
@@ -341,7 +341,7 @@ jobs:
           "$PACKAGE_PATH"
     
     - name: Upload conda artifacts
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: conda-artifacts
         path: conda-build-output/noarch/hbat-*.*
@@ -392,7 +392,7 @@ jobs:
         NEEDS_GENERATE_VERSION_OUTPUTS_VERSION: ${{ needs.generate-version.outputs.version }}
     
     - name: Upload documentation artifact
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: docs-artifacts
         path: hbat-docs-${{ needs.generate-version.outputs.version }}.zip
