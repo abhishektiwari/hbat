@@ -62,7 +62,7 @@ jobs:
     - name: Generate version for release
       if: github.event_name == 'workflow_run'
       id: generate_release_version
-      uses: paulhatch/semantic-version@a8f8f59fd7f0625188492e945240f12d7ad2dca3 # v5.4.0
+      uses: paulhatch/semantic-version@4d6da96a9bc3116da3613309a11ff75fba58eb8d # v6.0.4
       with:
         tag_prefix: "v"
         major_pattern: "(MAJOR)"
